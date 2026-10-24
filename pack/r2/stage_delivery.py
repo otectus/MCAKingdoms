@@ -25,7 +25,7 @@ def main():
     shutil.copytree(ROOT/'pack/r1/kubejs',OUT/'kubejs')
     shutil.copytree(ROOT/'pack/r2/kubejs',OUT/'kubejs',dirs_exist_ok=True)
     for release in ['r1','r2']:
-        shutil.copytree(ROOT/f'pack/{release}/providers',OUT/f'provider-sources/{release}',ignore=shutil.ignore_patterns('__pycache__'))
+        shutil.copytree(ROOT/f'docs/history/provider-patches/{release}',OUT/f'provider-sources/{release}',ignore=shutil.ignore_patterns('__pycache__'))
     shutil.copy2(ROOT/'docs/R2-Institutions-and-Agreements.md',OUT/'R2-Implementation.md')
     shutil.copy2(ROOT/'docs/R1-Civic-Foundation.md',OUT/'R1-Implementation.md')
     shutil.copy2(ROOT/'build/r2-validation.json',OUT/'validation.json')
@@ -41,7 +41,7 @@ Staged delivery; no live installation has been performed.
 
 Back up the complete world, playerdata and instance together. Replace the matching four runtime jars in mods on both clients and server; remove duplicate older versions. Merge kubejs into the existing pack. The overlay contains the twelve R1 adaptations and the new once-only paid workshop commission. Restart with matching jars.
 
-R2 institutional services default to enabled. Existing explicit false values for regional_civic_network.institutionalServices in ultima-kingdoms-civic-common.toml remain respected; change those to true to enable R2. Enable Crime's Townstead and service-restriction options for paid workshop service. Existing civic, membership and provider-owned gameplay retains its own configuration. See R2-Implementation.md for institutional recognition, qualifications, native restitution, signed hospitality, recovery and persistence boundaries.
+R2 institutional services default to enabled. Existing explicit false values for regional_civic_network.institutionalServices in mcakingdoms-civic-common.toml remain respected; change those to true to enable R2. Enable Crime's Townstead and service-restriction options for paid workshop service. Existing civic, membership and provider-owned gameplay retains its own configuration. See R2-Implementation.md for institutional recognition, qualifications, native restitution, signed hospitality, recovery and persistence boundaries.
 
 api contains development artifacts, not additional runtime mods. provider-sources contains the R1 baseline changes and layered R2 source deltas/hash manifests. Apply only against matching baselines; these exports do not modify sibling checkouts automatically. validation.json records the exact tested artifacts and remaining limits. No world data is included.
 ''')

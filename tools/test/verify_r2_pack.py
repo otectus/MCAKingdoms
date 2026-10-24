@@ -5,7 +5,7 @@ ROOT=pathlib.Path(__file__).resolve().parents[2]
 def main():
     count=0
     for provider in ('MCAQuests','MCACrime'):
-        exported=ROOT/'pack/r2/providers'/provider
+        exported=ROOT/'docs/history/provider-patches/r2'/provider
         source=exported/('sources' if (exported/'sources').is_dir() else 'files')
         changes=json.loads((exported/'changes.json').read_text())
         for change in changes:

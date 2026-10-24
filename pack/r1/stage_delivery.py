@@ -3,7 +3,7 @@
 import hashlib,json,pathlib,shutil,zipfile
 ROOT=pathlib.Path(__file__).resolve().parents[2]
 OUT=ROOT/'build/r1-delivery'
-ARTIFACTS=[ROOT/'build/libs/ultima_kingdoms-0.1.0.jar',ROOT/'build/r1-provider-work/MCAQuests/build/libs/mcaquests-1.6.6.jar',ROOT/'build/r1-provider-work/MCAConversations/build/libs/mcaconversations-1.7.2.jar']
+ARTIFACTS=[ROOT/'build/libs/mcakingdoms-0.1.0.jar',ROOT/'build/r1-provider-work/MCAQuests/build/libs/mcaquests-1.6.6.jar',ROOT/'build/r1-provider-work/MCAConversations/build/libs/mcaconversations-1.7.2.jar']
 def main():
     if OUT.exists():raise SystemExit(f'Refusing to overwrite existing delivery: {OUT}')
     for artifact in ARTIFACTS:
@@ -13,7 +13,7 @@ def main():
     for artifact in (ROOT/'build/libs').glob('*-api.jar'):shutil.copy2(artifact,OUT/'api'/artifact.name)
     for artifact in (ROOT/'build/r1-provider-work/MCAQuests/build/libs').glob('*-api.jar'):shutil.copy2(artifact,OUT/'api'/artifact.name)
     shutil.copytree(ROOT/'pack/r1/kubejs',OUT/'kubejs')
-    shutil.copytree(ROOT/'pack/r1/providers',OUT/'provider-sources',ignore=shutil.ignore_patterns('__pycache__'))
+    shutil.copytree(ROOT/'docs/history/provider-patches/r1',OUT/'provider-sources',ignore=shutil.ignore_patterns('__pycache__'))
     shutil.copy2(ROOT/'pack/r1/quest-manifest.json',OUT/'quest-manifest.json')
     shutil.copy2(ROOT/'docs/R1-Civic-Foundation.md',OUT/'R1-Implementation.md')
     shutil.copy2(ROOT/'build/r1-completion-validation.json',OUT/'validation.json')

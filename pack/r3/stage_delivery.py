@@ -17,7 +17,7 @@ def main():
         for api in artifact.parent.glob('*-api.jar'):shutil.copy2(api,OUT/'api'/api.name)
     for release in ['r1','r2','r3']:
         shutil.copytree(ROOT/f'pack/{release}/kubejs',OUT/'kubejs',dirs_exist_ok=True)
-        shutil.copytree(ROOT/f'pack/{release}/providers',OUT/f'provider-sources/{release}',ignore=shutil.ignore_patterns('__pycache__'))
+        shutil.copytree(ROOT/f'docs/history/provider-patches/{release}',OUT/f'provider-sources/{release}',ignore=shutil.ignore_patterns('__pycache__'))
     shutil.copytree(ROOT/'pack/r3/config',OUT/'config')
     shutil.copy2(ROOT/'docs/R3-Native-Control.md',OUT/'R3-Implementation.md')
     shutil.copy2(ROOT/'build/r3-validation.json',OUT/'validation.json')
