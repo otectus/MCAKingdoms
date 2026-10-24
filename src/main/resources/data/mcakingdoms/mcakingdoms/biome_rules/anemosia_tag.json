@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "kingdom": "mcakingdoms:anemosia",
+  "priority": 90,
+  "include": ["#mcakingdoms:kingdom/anemosia"],
+  "exclude": []
+}

@@ -2,16 +2,16 @@ modLoader="javafml"
 loaderVersion="[47,48)"
 license="Test fixture only"
 [[mods]]
-modId="ultima_kingdoms_acceptance"
+modId="mcakingdoms_acceptance"
 version="1"
-displayName="Ultima Kingdoms Acceptance Harness"
-[[dependencies.ultima_kingdoms_acceptance]]
-modId="ultima_kingdoms"
+displayName="MCA: Kingdoms Acceptance Harness"
+[[dependencies.mcakingdoms_acceptance]]
+modId="mcakingdoms"
 mandatory=true
 versionRange="[0.1.0,)"
 ordering="AFTER"
 side="SERVER"
-[[dependencies.ultima_kingdoms_acceptance]]
+[[dependencies.mcakingdoms_acceptance]]
 modId="mca"
 mandatory=false
 versionRange="[7.6.26+1.20.1]"

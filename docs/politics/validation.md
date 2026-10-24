@@ -9,19 +9,19 @@ Target: Java 17, Minecraft 1.20.1, Forge 47.4.23. Optional artifacts and hashes 
 Commands were run from the repository; the Gradle helper uses its absolute repository argument.
 
 ```sh
-/home/otectus/Projects/.mcmod-tools/gradlew-quiet.sh /home/otectus/Projects/UltimaKingdoms build productionTestJar productionClientTestJar -I tools/test/production-tests.gradle -I tools/client-test/client-test.gradle
+/home/otectus/Projects/.mcmod-tools/gradlew-quiet.sh /home/otectus/Projects/McaKingdoms build productionTestJar productionClientTestJar -I tools/test/production-tests.gradle -I tools/client-test/client-test.gradle
 python3 tools/test/run_gametests.py -PrunDir=build/politics-gametest-20260920-release
 python3 tools/test/verify_artifacts.py
-python3 /home/otectus/Projects/.mcmod-tools/check_mod.py /home/otectus/Projects/UltimaKingdoms --json
+python3 /home/otectus/Projects/.mcmod-tools/check_mod.py /home/otectus/Projects/McaKingdoms --json
 git diff --check
 ```
 
-- Build passed: `/tmp/gradle-UltimaKingdoms-build-20260920-091544.log`.
+- Build passed: `/tmp/gradle-McaKingdoms-build-20260920-091544.log`.
 - JUnit: 32 discovered, 31 passed, one pre-existing optional Townstead binding test skipped, no failures/errors. All four political persistence tests passed. XML reports: `build/test-results/test/`.
-- GameTests: all 35 required tests passed, including political authorization/privacy/replay/stale revisions, hash validation, revoked signatory authority, named succession, duplicate/canceled NPC death, settlement-only migration, capital reassignment, merge redirect and conflicting local offices. Log: `/tmp/gradle-UltimaKingdoms-runGameTestServer-20260920-091904.log`.
+- GameTests: all 35 required tests passed, including political authorization/privacy/replay/stale revisions, hash validation, revoked signatory authority, named succession, duplicate/canceled NPC death, settlement-only migration, capital reassignment, merge redirect and conflicting local offices. Log: `/tmp/gradle-McaKingdoms-runGameTestServer-20260920-091904.log`.
 - Artifact checks passed for main/API/sources: no bundled optional dependencies or test fixtures; API contains only API classes. Content helper returned no findings; whitespace check passed.
 
-Political milestone main jar (before the subsequent Shimaguni addition; `build/libs` may contain a newer build): `build/libs/ultima_kingdoms-0.1.0.jar`, SHA-256 `a5359f9ed0cf42a24ae68e2d2ddb78004f186bceed8f3973b69e081ff366a68b`.
+Political milestone main jar (before the subsequent Shimaguni addition; `build/libs` may contain a newer build): `build/libs/mcakingdoms-0.1.0.jar`, SHA-256 `a5359f9ed0cf42a24ae68e2d2ddb78004f186bceed8f3973b69e081ff366a68b`.
 API jar SHA-256: `f448706a91aeb26206bd033b030004caaf5416e819a766bfaf1b5197c5d858aa`.
 Sources jar SHA-256: `6e3f642d9ca35283af33c88acd68b6878c98823fe647894d44547b0875f2261b`.
 
@@ -52,17 +52,17 @@ Log: `build/politics-production-cycle-20260920/politics-cycle.log`; artifact man
 ## Client checks
 
 ```sh
-env -u WAYLAND_DISPLAY DISPLAY=:97 XDG_SESSION_TYPE=x11 LIBGL_ALWAYS_SOFTWARE=1 /home/otectus/Projects/.mcmod-tools/gradlew-quiet.sh /home/otectus/Projects/UltimaKingdoms runClientTest -I tools/client-test/client-test.gradle -PclientTestPolitics=true
+env -u WAYLAND_DISPLAY DISPLAY=:97 XDG_SESSION_TYPE=x11 LIBGL_ALWAYS_SOFTWARE=1 /home/otectus/Projects/.mcmod-tools/gradlew-quiet.sh /home/otectus/Projects/McaKingdoms runClientTest -I tools/client-test/client-test.gradle -PclientTestPolitics=true
 env -u WAYLAND_DISPLAY DISPLAY=:97 XDG_SESSION_TYPE=x11 LIBGL_ALWAYS_SOFTWARE=1 python3 tools/client-test/politics_multiplayer.py --work-dir build/politics-multiplayer-20260920-release-c
 ```
 
-Integrated client passed actual packets, capital founding, council display, action clicks, compact-window form, tabs and ledger return. Log: `/tmp/gradle-UltimaKingdoms-runClientTest-20260920-092004.log`; marker `build/client-validation/POLITICS_PASS.txt`. Screenshots: `build/client-validation/screenshots/politics-{overview,council,form-compact,petitions-compact}.png`.
+Integrated client passed actual packets, capital founding, council display, action clicks, compact-window form, tabs and ledger return. Log: `/tmp/gradle-McaKingdoms-runClientTest-20260920-092004.log`; marker `build/client-validation/POLITICS_PASS.txt`. Screenshots: `build/client-validation/screenshots/politics-{overview,council,form-compact,petitions-compact}.png`.
 
 Two real clients against the final packaged dedicated server passed: the authorized player receives and signs the private proposal; the unrelated player receives no proposal and is refused even when given its record ID/hash. Markers: `build/politics-multiplayer-20260920-release-c/{leader,stranger}-PASS.txt`; client/server logs and `artifacts.sha256` are in that directory.
 
 Two earlier repetitions timed out because the minimal harness did not retry a request dropped by the four-server-tick rate limit. Client ticks can catch up faster than server ticks during login. The harness now retries the identical request after one second, exercising persisted receipt semantics; the production ledger already has bounded identical-request retries. This was a harness correction, not a relaxation of authorization or throttling. Failed attempts remain in `build/politics-multiplayer-20260920-release` and `-release-b`.
 
-Test-only harness rebuild logs: `/tmp/gradle-UltimaKingdoms-productionTestJar-20260920-092150.log` and `/tmp/gradle-UltimaKingdoms-productionClientTestJar-20260920-092626.log`. These do not change the final main jar.
+Test-only harness rebuild logs: `/tmp/gradle-McaKingdoms-productionTestJar-20260920-092150.log` and `/tmp/gradle-McaKingdoms-productionClientTestJar-20260920-092626.log`. These do not change the final main jar.
 
 ## Scope of evidence
 

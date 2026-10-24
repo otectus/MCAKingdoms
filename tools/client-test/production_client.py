@@ -34,11 +34,11 @@ def main():
     jars=[PACK/n for n in ['minecraft-comes-alive-7.6.26+1.20.1-universal.jar','architectury-9.2.14-forge.jar','townstead-0.7.6+1.20.1.jar']]
     jars+=list(PACK.glob('Patchouli-1.20.1-85*.jar'))
     jars+=list((ROOT/'build/integration-artifacts').glob('*.jar'))
-    jars+=[ROOT/'build/test-artifacts/ultima_kingdoms-0.1.0-client-acceptance.jar']
+    jars+=[ROOT/'build/test-artifacts/mcakingdoms-0.1.0-client-acceptance.jar']
     if len(jars)!=9:raise SystemExit(f'Expected 9 jars, found {jars}')
     for jar in jars:shutil.copy2(jar,WORK/'mods'/jar.name)
     (WORK/'artifacts.json').write_text(json.dumps({j.name:hashlib.sha256(j.read_bytes()).hexdigest() for j in jars},indent=2))
-    values={'auth_player_name':'BlueprintTest','version_name':'forge-47.4.23','game_directory':str(WORK),'assets_root':str(INSTALL/'assets'),'assets_index_name':vanilla['assetIndex']['id'],'auth_uuid':uuid.uuid3(uuid.NAMESPACE_DNS,'OfflinePlayer:BlueprintTest').hex,'auth_access_token':'0','clientid':'','auth_xuid':'','user_type':'legacy','version_type':'release','natives_directory':str(WORK/'natives'),'launcher_name':'UltimaAcceptance','launcher_version':'1','classpath':':'.join(cp),'classpath_separator':':','library_directory':str(INSTALL/'libraries')}
+    values={'auth_player_name':'BlueprintTest','version_name':'forge-47.4.23','game_directory':str(WORK),'assets_root':str(INSTALL/'assets'),'assets_index_name':vanilla['assetIndex']['id'],'auth_uuid':uuid.uuid3(uuid.NAMESPACE_DNS,'OfflinePlayer:BlueprintTest').hex,'auth_access_token':'0','clientid':'','auth_xuid':'','user_type':'legacy','version_type':'release','natives_directory':str(WORK/'natives'),'launcher_name':'KingdomsAcceptance','launcher_version':'1','classpath':':'.join(cp),'classpath_separator':':','library_directory':str(INSTALL/'libraries')}
     def expand(args):
         result=[]
         for arg in args:
@@ -50,7 +50,7 @@ def main():
                 if expanded.startswith('-DignoreList='): expanded+=',1.20.1.jar'
                 result.append(expanded)
         return result
-    cmd=['java','-Xmx4G',f'-Dultima.clientTest.output={WORK}','-Dultima.clientTest.blueprint=true']+expand(vanilla['arguments']['jvm']+forge['arguments']['jvm'])+[forge['mainClass']]+expand(vanilla['arguments']['game']+forge['arguments']['game'])+['--width','1280','--height','800']
+    cmd=['java','-Xmx4G',f'-Dmcakingdoms.clientTest.output={WORK}','-Dmcakingdoms.clientTest.blueprint=true']+expand(vanilla['arguments']['jvm']+forge['arguments']['jvm'])+[forge['mainClass']]+expand(vanilla['arguments']['game']+forge['arguments']['game'])+['--width','1280','--height','800']
     (WORK/'launch-command.json').write_text(json.dumps(cmd,indent=2))
     with (WORK/'client.log').open('w') as log:
         result=subprocess.run(cmd,cwd=WORK,stdout=log,stderr=subprocess.STDOUT,timeout=480)

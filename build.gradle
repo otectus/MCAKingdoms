@@ -58,6 +58,9 @@ minecraft {
             workingDirectory project.file(configuredRunDirectory)
             property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'info'
+            // Forge 47 reads mixin configs only from a jar's MixinConfigs manifest attribute (below), which a dev
+            // run built from source sets does not have. Without this the Recruits hooks never apply in dev.
+            args '-mixin.config=mcakingdoms.mixins.json'
         }
 
         client {
@@ -174,7 +177,7 @@ tasks.named('processResources', ProcessResources).configure {
     ]
     inputs.properties replaceProperties
 
-    filesMatching(['META-INF/mods.toml', 'pack.mcmeta', 'ultima_kingdoms-politics.properties']) {
+    filesMatching(['META-INF/mods.toml', 'pack.mcmeta', 'mcakingdoms-politics.properties']) {
         expand replaceProperties + [project: project]
     }
 }
@@ -188,7 +191,7 @@ tasks.named('jar', Jar).configure {
                 'Implementation-Title'     : project.name,
                 'Implementation-Version'   : project.jar.archiveVersion,
                 'Implementation-Vendor'    : mod_authors,
-                'MixinConfigs'             : 'ultima_kingdoms.mixins.json',
+                'MixinConfigs'             : 'mcakingdoms.mixins.json',
         ])
     }
     finalizedBy 'reobfJar'
@@ -200,8 +203,8 @@ tasks.register('apiJar', Jar) {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
     from(sourceSets.main.output.classesDirs) {
-        include 'com/ultimakingdoms/api/**'
-        exclude 'com/ultimakingdoms/api/ApiBootstrap.class'
+        include 'dev/otectus/mcakingdoms/api/**'
+        exclude 'dev/otectus/mcakingdoms/api/ApiBootstrap.class'
     }
 
     manifest {
@@ -222,12 +225,12 @@ tasks.register('verifyApiJar') {
             zip.entries().each { entry -> entries << entry.name }
         }
 
-        if (!entries.any { it.startsWith('com/ultimakingdoms/api/') && it.endsWith('.class') }) {
+        if (!entries.any { it.startsWith('dev/otectus/mcakingdoms/api/') && it.endsWith('.class') }) {
             throw new GradleException("${jarFile.name} contains no public API classes")
         }
 
         def nonApiClasses = entries.findAll {
-            it.endsWith('.class') && !it.startsWith('com/ultimakingdoms/api/')
+            it.endsWith('.class') && !it.startsWith('dev/otectus/mcakingdoms/api/')
         }
         if (!nonApiClasses.isEmpty()) {
             throw new GradleException("${jarFile.name} contains implementation classes: ${nonApiClasses.take(20)}")
@@ -240,8 +243,8 @@ tasks.register('verifyApiJar') {
             throw new GradleException("${jarFile.name} must be classes only: ${resources.take(20)}")
         }
 
-        def forbiddenReferences = ['com/ultimakingdoms/core/', 'com/ultimakingdoms/client/',
-                                   'com/ultimakingdoms/compat/', 'forge/net/mca/']
+        def forbiddenReferences = ['dev/otectus/mcakingdoms/core/', 'dev/otectus/mcakingdoms/client/',
+                                   'dev/otectus/mcakingdoms/compat/', 'forge/net/mca/']
         def linking = []
         new java.util.zip.ZipFile(jarFile).withCloseable { zip ->
             zip.entries().each { entry ->

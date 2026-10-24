@@ -11,8 +11,8 @@ All durations and deadlines below use game ticks. Commands that take a revision 
 Evolution starts paused. An operator must enable the world and then opt individual settlements in by UUID:
 
 ```text
-/ultima-evolution configure <enabled:true|false> <drama:true|false>
-/ultima-evolution region <settlement UUID> <enabled:true|false>
+/kingdoms-evolution configure <enabled:true|false> <drama:true|false>
+/kingdoms-evolution region <settlement UUID> <enabled:true|false>
 ```
 
 The first flag controls ordinary authored scenarios. The second flag separately permits dramatic scenarios and the negotiated Recruits transfer extension. Changing the world enabled flag clears the currently active sampling set; it does not delete saved scenarios. Disabling a region removes it from eligibility and pauses its active sampling.
@@ -22,9 +22,9 @@ Only an online visitor standing in an eligible settlement makes that region acti
 Players manage their own digest subscription and browse only scenarios visible through their settlement knowledge:
 
 ```text
-/ultima-evolution digest <enabled:true|false>
-/ultima-evolution list [offset]
-/ultima-evolution inspect <scenario UUID>
+/kingdoms-evolution digest <enabled:true|false>
+/kingdoms-evolution list [offset]
+/kingdoms-evolution inspect <scenario UUID>
 ```
 
 `offset` must be a multiple of 10. Digest cursors are saved before a notification is sent, so restart does not intentionally repeat the same digest interval.
@@ -32,11 +32,11 @@ Players manage their own digest subscription and browse only scenarios visible t
 An ordinary scenario lists its authored outcomes and current revision. The mutation commands are:
 
 ```text
-/ultima-evolution contribute <aid|mediate|introduce|negotiate|succeed> <scenario UUID> <revision>
-/ultima-evolution withdraw <scenario UUID> <revision>
-/ultima-evolution resolve <aid|mediate|introduce|negotiate|succeed|decline> <scenario UUID> <revision> [counterpart kingdom]
-/ultima-evolution retry <scenario UUID>
-/ultima-evolution release_rejected <scenario UUID>
+/kingdoms-evolution contribute <aid|mediate|introduce|negotiate|succeed> <scenario UUID> <revision>
+/kingdoms-evolution withdraw <scenario UUID> <revision>
+/kingdoms-evolution resolve <aid|mediate|introduce|negotiate|succeed|decline> <scenario UUID> <revision> [counterpart kingdom]
+/kingdoms-evolution retry <scenario UUID>
+/kingdoms-evolution release_rejected <scenario UUID>
 ```
 
 Only outcomes present in that scenario's frozen template are accepted. Aid, mediation, and autonomy negotiation contributions require a completed scoped MCA Quests contract. Introduction and succession revalidate their owner evidence. Resolution records a durable intent before calling politics; `retry` uses the same actor, request ID, and frozen political revision after an interrupted acknowledgment. `release_rejected` reopens only an uncommitted owner request. Withdrawing a contribution leaves its service receipt consumed so it cannot support a second choice. `decline` ends an opportunity peacefully.
@@ -48,7 +48,7 @@ Scenario deadlines pause while their settlement is outside the sampled active se
 The kingdom screen includes a **History** tab. The equivalent command reads its first viewer-filtered page:
 
 ```text
-/ultima politics inspect <kingdom> history
+/kingdoms politics inspect <kingdom> history
 ```
 
 History facts have a stable source receipt ID, actor attribution, affected kingdoms and players, a game-tick/revision order, visibility, and a current correction state. Superseded agreement and petition lifecycle entries are returned as `SUPERSEDED`; elapsed entries are returned as `EXPIRED`. Public facts are visible to everyone. Party facts require an affected player or current `PROPOSE`/`RATIFY` authority in an affected kingdom. Private petitions are limited to affected players and current `REVIEW` authority in their kingdom. A private ballot is visible only to its voter. A foreign viewer does not receive these facts.
@@ -62,14 +62,14 @@ This history is the mod's bounded operational ledger. Townstead 0.7.6 has no sup
 A protection pact enumerates the only duties it may request. Valid duty tokens are `civic_aid`, `defense_assistance`, and `mediation` and may be comma-separated:
 
 ```text
-/ultima-protection propose <protector kingdom> <subordinate kingdom> <beneficiary settlement UUID> <duties> <duration> <notice> <terms...>
-/ultima-protection sign <pact UUID> <kingdom> <revision>
-/ultima-protection list
-/ultima-protection inspect <pact UUID>
-/ultima-protection request <pact UUID> <duty> <revision>
-/ultima-protection fulfill <obligation UUID> <revision>
-/ultima-protection refuse <obligation UUID> <revision> <reason...>
-/ultima-protection exit <pact UUID> <kingdom> <revision>
+/kingdoms-protection propose <protector kingdom> <subordinate kingdom> <beneficiary settlement UUID> <duties> <duration> <notice> <terms...>
+/kingdoms-protection sign <pact UUID> <kingdom> <revision>
+/kingdoms-protection list
+/kingdoms-protection inspect <pact UUID>
+/kingdoms-protection request <pact UUID> <duty> <revision>
+/kingdoms-protection fulfill <obligation UUID> <revision>
+/kingdoms-protection refuse <obligation UUID> <revision> <reason...>
+/kingdoms-protection exit <pact UUID> <kingdom> <revision>
 ```
 
 Both governments must sign frozen terms with current `RATIFY` authority. On the second signature, both signing authorities must be online and still authorized. The hierarchy is checked and limited to depth four. A request outside the pact's enumerated duties is refused. Refusal is an explicit saved result that may support later negotiation; it does not declare war or transfer property.
@@ -77,7 +77,7 @@ Both governments must sign frozen terms with current `RATIFY` authority. On the 
 An open scenario or protection obligation can authorize exactly one of the scoped native quest kinds `aid`, `mediation`, `autonomy`, or `defense`:
 
 ```text
-/ultima-evolution contract <scenario-or-obligation UUID> <giver UUID> <aid|mediation|autonomy|defense>
+/kingdoms-evolution contract <scenario-or-obligation UUID> <giver UUID> <aid|mediation|autonomy|defense>
 ```
 
 The giver must be a nearby, loaded, living, visible institutional contact. The scope, settlement, authored outcome/duty, deadline, institution, player, and provider binding must all match. MCA Quests owns acceptance, objectives, item consumption, and payment. After native completion, the volunteer uses `fulfill`; R4 consumes the durable provider epoch/receipt once. Replays, arbitrary scopes, closed obligations, and repeat reward attempts are refused.
@@ -89,7 +89,7 @@ Either signatory can record an exit after current ratification authority is chec
 The explicit family entry point is:
 
 ```text
-/ultima-evolution family_introduction
+/kingdoms-evolution family_introduction
 ```
 
 It requires a reciprocal, non-deceased MCA marriage record, a loaded spouse, verified residences in different kingdoms, a known counterpart government, and an enabled current region. It creates a private scenario for the requesting player. No chunk is loaded to find the spouse, and marriage grants no office, ownership, or political authority.
@@ -97,8 +97,8 @@ It requires a reciprocal, non-deceased MCA marriage record, a loaded spouse, ver
 For the family scenario, contribute `introduce`, then resolve `introduce` with the exact counterpart kingdom shown by the verified family context:
 
 ```text
-/ultima-evolution contribute introduce <scenario UUID> <revision>
-/ultima-evolution resolve introduce <scenario UUID> <revision> <counterpart kingdom>
+/kingdoms-evolution contribute introduce <scenario UUID> <revision>
+/kingdoms-evolution resolve introduce <scenario UUID> <revision> <counterpart kingdom>
 ```
 
 The relationship is revalidated at contribution, resolution, and recovery. A successful resolution submits a normal introduction petition through the political owner. Changed or unavailable native family evidence pauses the operation rather than inventing continuity.
@@ -108,13 +108,13 @@ The relationship is revalidated at contribution, resolution, and recovery. A suc
 Negotiated transfer is enabled only when world drama is enabled and the audited Recruits provider is ready:
 
 ```text
-/ultima-transfer propose <recruit UUID> <recipient player UUID> <recipient group UUID> <family:true|false>
-/ultima-transfer inspect <transfer UUID>
-/ultima-transfer consent <transfer UUID> <revision>
-/ultima-transfer cancel <transfer UUID> <revision>
-/ultima-transfer apply <transfer UUID> <revision>
-/ultima-transfer confirm <transfer UUID>
-/ultima-transfer restore <transfer UUID>
+/kingdoms-transfer propose <recruit UUID> <recipient player UUID> <recipient group UUID> <family:true|false>
+/kingdoms-transfer inspect <transfer UUID>
+/kingdoms-transfer consent <transfer UUID> <revision>
+/kingdoms-transfer cancel <transfer UUID> <revision>
+/kingdoms-transfer apply <transfer UUID> <revision>
+/kingdoms-transfer confirm <transfer UUID>
+/kingdoms-transfer restore <transfer UUID>
 ```
 
 Proposal freezes the loaded recruit's identity, equipment digest, source owner, and recipient/group. Application captures and saves the current source group, remaining native wage timer, original orders, and native counts before any handoff. The recipient must be online to preview and consent. `family=true` additionally requires a reciprocal MCA marriage between the two players every time the agreement is used. Consent alone changes nothing. The source owner may apply only after 1,200 ticks of notice and before the 72,000-tick deadline, with both the recipient and recruit loaded.
@@ -128,25 +128,25 @@ A transfer may be marked `accountingDiverged` if unrelated native recruit accoun
 If unrelated native recruitment, deaths, or recounts occur during a pending transfer, the saved `accountingDiverged` flag prevents automatic count repair, even if totals later return to their previous values. An operator can independently reconcile the native state and then acknowledge it:
 
 ```text
-/ultima-transfer reconciliation_preview <transfer UUID>
-/ultima-transfer reconcile <transfer UUID> <revision> <fingerprint> <reason>
+/kingdoms-transfer reconciliation_preview <transfer UUID>
+/kingdoms-transfer reconcile <transfer UUID> <revision> <fingerprint> <reason>
 ```
 
 The preview reports the current owner, group, equipment fingerprint, and both native counts. The acknowledgment requires permission level 2, the current revision and fingerprint, a reason, and successful native disk verification. It performs no ownership or count writes. The distinct terminal `RECONCILED` receipt retains the original snapshot and divergence evidence; it does not claim the original transfer completed.
 
 ## Dynamic organization lifecycle
 
-Lifecycle commands are under `/ultima guild lifecycle`:
+Lifecycle commands are under `/kingdoms guild lifecycle`:
 
 ```text
-/ultima guild lifecycle status <organization id>
-/ultima guild lifecycle found <organization id> <template id> <sponsor kingdom> <revision> <display name...>
-/ultima guild lifecycle merge propose <source id> <target id> <revision>
-/ultima guild lifecycle merge consent <merge UUID> <revision>
-/ultima guild lifecycle merge opt_out <merge UUID> <revision>
-/ultima guild lifecycle merge novate <merge UUID> <obligation UUID> <revision>
-/ultima guild lifecycle merge finalize <merge UUID> <revision>
-/ultima guild lifecycle dissolve <organization id> <revision>
+/kingdoms guild lifecycle status <organization id>
+/kingdoms guild lifecycle found <organization id> <template id> <sponsor kingdom> <revision> <display name...>
+/kingdoms guild lifecycle merge propose <source id> <target id> <revision>
+/kingdoms guild lifecycle merge consent <merge UUID> <revision>
+/kingdoms guild lifecycle merge opt_out <merge UUID> <revision>
+/kingdoms guild lifecycle merge novate <merge UUID> <obligation UUID> <revision>
+/kingdoms guild lifecycle merge finalize <merge UUID> <revision>
+/kingdoms guild lifecycle dissolve <organization id> <revision>
 ```
 
 Founding copies a bounded installed template into a durable dynamic definition. It requires current `RECOGNIZE` authority in the sponsor kingdom, reserves a new resource ID, and enrolls only the founder. Reloaded or removed source templates do not mutate the frozen definition.
@@ -160,13 +160,13 @@ Accepted civic commissions and scoped civilian contracts are enumerated blockers
 A government keeps its existing succession behavior until its current leader explicitly adopts a constitutional rule:
 
 ```text
-/ultima politics transition_rule <kingdom> <elections:true|false> <regency:true|false> <election ticks> <grace ticks> <regency ticks> <comma-separated permissions>
-/ultima politics election_open <kingdom> <first player> <second player>
-/ultima politics election_inspect <election UUID>
-/ultima politics election_vote <election UUID> <candidate player>
-/ultima politics election_close <election UUID>
-/ultima politics appoint_regent <kingdom> <player>
-/ultima politics end_regency <kingdom>
+/kingdoms politics transition_rule <kingdom> <elections:true|false> <regency:true|false> <election ticks> <grace ticks> <regency ticks> <comma-separated permissions>
+/kingdoms politics election_open <kingdom> <first player> <second player>
+/kingdoms politics election_inspect <election UUID>
+/kingdoms politics election_vote <election UUID> <candidate player>
+/kingdoms politics election_close <election UUID>
+/kingdoms politics appoint_regent <kingdom> <player>
+/kingdoms politics end_regency <kingdom>
 ```
 
 Rule durations are bounded by the command: election and regency durations are 1,200–2,419,200 ticks, and grace is 200–172,800 ticks. Permissions use political enum names such as `APPOINT,SEAT`. The command surface opens a two-candidate ballot; the authenticated API supports the rule's frozen maximum, currently up to eight.
@@ -177,17 +177,17 @@ Regency requires explicit rule opt-in. The appointment freezes the named success
 
 ## Authored drama
 
-Installed drama template IDs are `ultima_kingdoms:border_campaign`, `ultima_kingdoms:occupied_rebellion`, `ultima_kingdoms:frontier_invasion`, and `ultima_kingdoms:concord_schism`.
+Installed drama template IDs are `mcakingdoms:border_campaign`, `mcakingdoms:occupied_rebellion`, `mcakingdoms:frontier_invasion`, and `mcakingdoms:concord_schism`.
 
 ```text
-/ultima-drama list [offset]
-/ultima-drama inspect <drama UUID>
-/ultima-drama propose <request UUID> <global drama revision> <template id> <settlement UUID> [subject]
-/ultima-drama consent <drama UUID> <record revision>
-/ultima-drama execute <drama UUID> <record revision>
-/ultima-drama negotiate <drama UUID> <record revision>
-/ultima-drama exit <drama UUID> <record revision>
-/ultima-drama recover <drama UUID> <record revision>
+/kingdoms-drama list [offset]
+/kingdoms-drama inspect <drama UUID>
+/kingdoms-drama propose <request UUID> <global drama revision> <template id> <settlement UUID> [subject]
+/kingdoms-drama consent <drama UUID> <record revision>
+/kingdoms-drama execute <drama UUID> <record revision>
+/kingdoms-drama negotiate <drama UUID> <record revision>
+/kingdoms-drama exit <drama UUID> <record revision>
+/kingdoms-drama recover <drama UUID> <record revision>
 ```
 
 Military proposals require a known civic settlement, a provider-saved native claim/control binding, an explicitly mapped source faction commanded by the proposer, and an independently commanded opposing faction. Rebellion additionally requires a current saved occupation grievance. Invasion uses the authored target and transfer objective, but still requires both involved native leaders to opt in. Execution calls the existing authority-checked campaign declaration, accord, or withdrawal owner. It never invents a siege, victory, control transition, or town destruction.
@@ -202,13 +202,13 @@ R4 writes independent sidecars under `<world>/data`:
 
 | File | Owner state | Recovery behavior |
 | --- | --- | --- |
-| `ultima_kingdoms_evolution.dat` | World/region opt-in, scenarios, contributions, digest cursors, receipts | Unsupported or partial schema is preserved read-only; `retry` or `release_rejected` handles saved resolution intent. |
-| `ultima_kingdoms_protection.dat` | Pacts, obligations, refusals, completion receipts | Unsupported schema is preserved read-only; no new obligation is inferred. |
-| `ultima_kingdoms_recruit_transfers.dat` | Bilateral terms and native before/after recovery snapshots | Unsupported schema is preserved read-only; `confirm` and `restore` operate only on retained, authorized intent. |
-| `ultima_kingdoms_evolution_drama.dat` | Frozen drama terms/evidence, participant consent, provider intent | Unsupported schema is preserved read-only; `recover` retries a bounded saved provider operation. |
-| `ultima_kingdoms_organizations.dat` | Membership, deeds, dynamic definitions, redirects, tombstones, merge consent | Unsupported/future schema is preserved read-only; unsettled obligations block destructive lifecycle changes. |
-| `ultima_kingdoms_politics.dat` | Governments, agreements, petitions, typed history, receipts, elections, regencies | Unsupported/future or partial transition payload is preserved read-only; request receipts make owner acknowledgment recoverable. |
-| `ultima_kingdoms_civilian_contracts.dat` | Native quest offers, accepted bindings, terminal provider proofs, R4 scopes | Accepted identities and completion proofs remain durable; replay cannot issue another reward or satisfy another duty. |
+| `mcakingdoms_evolution.dat` | World/region opt-in, scenarios, contributions, digest cursors, receipts | Unsupported or partial schema is preserved read-only; `retry` or `release_rejected` handles saved resolution intent. |
+| `mcakingdoms_protection.dat` | Pacts, obligations, refusals, completion receipts | Unsupported schema is preserved read-only; no new obligation is inferred. |
+| `mcakingdoms_recruit_transfers.dat` | Bilateral terms and native before/after recovery snapshots | Unsupported schema is preserved read-only; `confirm` and `restore` operate only on retained, authorized intent. |
+| `mcakingdoms_evolution_drama.dat` | Frozen drama terms/evidence, participant consent, provider intent | Unsupported schema is preserved read-only; `recover` retries a bounded saved provider operation. |
+| `mcakingdoms_organizations.dat` | Membership, deeds, dynamic definitions, redirects, tombstones, merge consent | Unsupported/future schema is preserved read-only; unsettled obligations block destructive lifecycle changes. |
+| `mcakingdoms_politics.dat` | Governments, agreements, petitions, typed history, receipts, elections, regencies | Unsupported/future or partial transition payload is preserved read-only; request receipts make owner acknowledgment recoverable. |
+| `mcakingdoms_civilian_contracts.dat` | Native quest offers, accepted bindings, terminal provider proofs, R4 scopes | Accepted identities and completion proofs remain durable; replay cannot issue another reward or satisfy another duty. |
 
 These owners use bounded payloads and durable writes for state transitions that precede external provider calls. Do not delete a sidecar to clear a pending operation; that discards the evidence needed to decide whether the provider already changed state. Back up the world, inspect the relevant record, restore provider availability/version, then use its explicit retry, confirm, restore, release, exit, or novation path.
 
@@ -223,8 +223,8 @@ The current provider contracts are:
 
 ## Validation evidence
 
-- `gradlew-quiet.sh <repository> build productionTestJar productionClientTestJar -I tools/test/production-tests.gradle -I tools/client-test/client-test.gradle`: passed. Log: `/tmp/gradle-UltimaKingdoms-build-20260920-222623.log`. Includes API-jar verification and 123 unit tests: 122 passed, one existing Townstead binding test skipped.
-- `python3 tools/test/run_gametests.py -PrunDir=build/r4-gametest-final`: all 39 required tests passed. Log: `/tmp/gradle-UltimaKingdoms-runGameTestServer-20260920-222703.log`.
+- `gradlew-quiet.sh <repository> build productionTestJar productionClientTestJar -I tools/test/production-tests.gradle -I tools/client-test/client-test.gradle`: passed. Log: `/tmp/gradle-McaKingdoms-build-20260920-222623.log`. Includes API-jar verification and 123 unit tests: 122 passed, one existing Townstead binding test skipped.
+- `python3 tools/test/run_gametests.py -PrunDir=build/r4-gametest-final`: all 39 required tests passed. Log: `/tmp/gradle-McaKingdoms-runGameTestServer-20260920-222703.log`.
 - `python3 tools/test/integration_runtime.py --work-dir build/r4-native-g --phase r4 --mod …`: passed native consent, veto/listener recovery, counter-divergence detection, operator reconciliation, history privacy, lawful succession, competing outcomes, protection refusal/exit, restart, provider absence, retained-snapshot reinstall, and future-schema byte preservation. Logs and exact tested artifact hashes: `build/r4-native-g/`.
 - The same runtime driver with `--phase r4-service` passed real MCA Quests scoped delivery, native payment, voluntary duty fulfillment and replay refusal: `build/r4-service-a/r4-service.log`.
 - `--phase r4-extensions` passed elections, regency expiry, merger blockers/opt-outs, peaceful schism and provider-confirmed campaign declaration: `build/r4-extensions-b/r4-extensions.log`.
@@ -237,4 +237,4 @@ Runtime provider inputs are recorded in each directory's `artifacts.sha256`; the
 - `python3 tools/test/integration_runtime.py --work-dir build/r4-crash-a --phase r4-crash --mod …`: the driver killed the process after the native handoff was saved but before R4 completion acknowledgment. Restart retained `APPLYING`, confirmed the saved outcome, and refused repeat mutation. Logs: `build/r4-crash-a/r4-crash.log` and `r4-crash-restart.log`.
 - `python3 tools/client-test/r1_pack.py --r4 --work-dir build/r4-full-pack-d`: passed in the 404-mod pack using a copied existing world. Original-world hashes remained identical. The real History tab received and rendered its authorized page; screenshot: `build/r4-full-pack-d/screenshots/r4-political-history.png`.
 
-The final packaged JAR hash matches the crash-recovery, two-client, and full-pack runs. The build artifact is `build/libs/ultima_kingdoms-0.1.0.jar`; world evolution remains opt-in.
+The final packaged JAR hash matches the crash-recovery, two-client, and full-pack runs. The build artifact is `build/libs/mcakingdoms-0.1.0.jar`; world evolution remains opt-in.

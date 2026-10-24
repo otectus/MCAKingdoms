@@ -1,0 +1,6 @@
+{
+  "schema": 1,
+  "kingdom": "mcakingdoms:yew",
+  "priority": 110,
+  "styles": ["minecraft:taiga"]
+}

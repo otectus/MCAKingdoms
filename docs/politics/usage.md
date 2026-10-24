@@ -6,12 +6,12 @@ Political choices come from datapacks. Disabled actions explain missing authorit
 
 ## Founding and offices
 
-An operator can create identity records using existing `/ultima village` commands, then constitute a government:
+An operator can create identity records using existing `/kingdoms village` commands, then constitute a government:
 
 ```text
-/ultima politics bootstrap ultima_kingdoms:serenum Bellmeadow ultima_kingdoms:serenum_charter PlayerName
-/ultima politics appoint ultima_kingdoms:serenum ultima_kingdoms:keeper_of_records <entity selector>
-/ultima politics inspect ultima_kingdoms:serenum council
+/kingdoms politics bootstrap mcakingdoms:serenum Bellmeadow mcakingdoms:serenum_charter PlayerName
+/kingdoms politics appoint mcakingdoms:serenum mcakingdoms:keeper_of_records <entity selector>
+/kingdoms politics inspect mcakingdoms:serenum council
 ```
 
 Settlement arguments accept UUIDs, slugs, names and quoted names containing spaces. Office appointment accepts a player or an eligible, loaded adult NPC with confirmed civic residence. Vanilla adult villagers work without optional mods; the selected Townstead tuple supplies provider life-stage evidence for MCA villagers. Unknown adulthood blocks appointment.
@@ -19,9 +19,9 @@ Settlement arguments accept UUIDs, slugs, names and quoted names containing spac
 An office adds political information and permissions without renaming an NPC or changing profession, home, family, schedule, needs, clothing or AI. The default limit is two offices per person per government. The leader delegates permissions explicitly:
 
 ```text
-/ultima politics delegate ultima_kingdoms:serenum PlayerName RATIFY
-/ultima politics revoke ultima_kingdoms:serenum PlayerName
-/ultima politics seat ultima_kingdoms:serenum ReplacementSettlement
+/kingdoms politics delegate mcakingdoms:serenum PlayerName RATIFY
+/kingdoms politics revoke mcakingdoms:serenum PlayerName
+/kingdoms politics seat mcakingdoms:serenum ReplacementSettlement
 ```
 
 Mandates are kingdom-scoped and revocable. Scoped office appointments accept an additional settlement argument. A local steward can recognize institutions only in that settlement. Only the leader can create delegated mandates; delegation itself cannot be redelegated. Operators can initialize a government or repair vacant leadership, but cannot use operator status alone to ratify treaties.
@@ -35,10 +35,10 @@ The ledger supports institution recognition, honor nominations and diplomatic in
 Agreement types include diplomatic recognition, hospitality, scholarly exchange, craft/market charters and civic aid. The latter four require active diplomatic recognition. Each proposal freezes its terms and duration. Both governments must sign the same terms. Authority is checked for each signature, including the first signatory's authority when the counterpart signs. Offline signatories do not need to keep an entity loaded.
 
 ```text
-/ultima politics propose ultima_kingdoms:serenum ultima_kingdoms:lunari ultima_kingdoms:diplomatic_recognition Mutual diplomatic recognition
-/ultima politics inspect ultima_kingdoms:serenum agreements
-/ultima politics sign ultima_kingdoms:serenum <agreement UUID> <terms hash>
-/ultima politics sign ultima_kingdoms:lunari <agreement UUID> <same terms hash>
+/kingdoms politics propose mcakingdoms:serenum mcakingdoms:lunari mcakingdoms:diplomatic_recognition Mutual diplomatic recognition
+/kingdoms politics inspect mcakingdoms:serenum agreements
+/kingdoms politics sign mcakingdoms:serenum <agreement UUID> <terms hash>
+/kingdoms politics sign mcakingdoms:lunari <agreement UUID> <same terms hash>
 ```
 
 The ledger carries the hash automatically after selecting the proposal. Command inspection prints it for command users. Unratified proposals, including withdrawn/declined proposals, remain private to authorized parties. Ratified agreements become public. Timers use simulation ticks: sleep, `/time set`, and calendar changes do not skip their deadlines. A bounded maintenance pass persists expirations; queries and signatures enforce the deadline immediately.
@@ -53,9 +53,9 @@ The House action records one political house label, motto and explicitly selecte
 
 ## Data and limits
 
-Definitions live under `data/<namespace>/ultima_kingdoms/` in `governments`, `offices`, `agreements`, `petitions`, `honors`, and `institution_charters`. Built-in JSON files are complete examples of schema 1. The definition loader validates the entire political snapshot before publishing it at the reload boundary. Accepted terms stay on records; missing definitions disable affected actions without rewriting old terms.
+Definitions live under `data/<namespace>/mcakingdoms/` in `governments`, `offices`, `agreements`, `petitions`, `honors`, and `institution_charters`. Built-in JSON files are complete examples of schema 1. The definition loader validates the entire political snapshot before publishing it at the reload boundary. Accepted terms stay on records; missing definitions disable affected actions without rewriting old terms.
 
-The sidecar is `world/data/ultima_kingdoms_politics.dat`, schema 1, separate from settlement and faction data. It stores typed JSON records in an NBT envelope. Unsupported or malformed data stays read-only and is retained intact. Identity queries remain available, but merges/reassignments are blocked when opaque political references cannot be validated.
+The sidecar is `world/data/mcakingdoms_politics.dat`, schema 1, separate from settlement and faction data. It stores typed JSON records in an NBT envelope. Unsupported or malformed data stays read-only and is retained intact. Identity queries remain available, but merges/reassignments are blocked when opaque political references cannot be validated.
 
 Pages contain at most 20 records. Defaults allow three concurrent petitions per player/kingdom, one pending/active agreement per type and pair, and 256 operational notices per kingdom. Storage bounds are 128 governments, 4,096 agreements/petitions/recognitions each, 8,192 honors and 8,192 retained request receipts. Capacity exhaustion refuses new mutations with a diagnostic rather than dropping evidence. There is no automatic receipt pruning or destructive repair command. The operational journal is not a narrative archive; no unavailable provider is reported as having accepted an event.
 

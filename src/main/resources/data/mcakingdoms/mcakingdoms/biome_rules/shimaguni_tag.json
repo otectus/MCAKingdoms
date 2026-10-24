@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "kingdom": "mcakingdoms:shimaguni",
+  "priority": 85,
+  "include": [
+    "#mcakingdoms:kingdom/shimaguni"
+  ],
+  "exclude": []
+}

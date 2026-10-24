@@ -4,13 +4,13 @@ from production_runtime import read_nbt
 
 def run(root,mca):
     work=root/'build'/('production-mca' if mca else 'production-standalone')
-    path=work/'world/data/ultima_kingdoms_settlements.dat'
+    path=work/'world/data/mcakingdoms_settlements.dat'
     def records():return read_nbt(path)['data']['Settlements']
     before=next(r for r in records() if r['DisplayName']=='Bellmeadow')
-    pack=work/'world/datapacks/acceptance/data/ultima_kingdoms/ultima_kingdoms'
+    pack=work/'world/datapacks/acceptance/data/mcakingdoms/mcakingdoms'
     kingdoms=pack/'kingdoms';kingdoms.mkdir(parents=True,exist_ok=True)
-    custom=json.loads((root/'src/main/resources/data/ultima_kingdoms/ultima_kingdoms/kingdoms/serenum.json').read_text())
-    custom.update(id='ultima_kingdoms:temporary_test',fallback=False,style_hints=[])
+    custom=json.loads((root/'src/main/resources/data/mcakingdoms/mcakingdoms/kingdoms/serenum.json').read_text())
+    custom.update(id='mcakingdoms:temporary_test',fallback=False,style_hints=[])
     customfile=kingdoms/'temporary_test.json';customfile.write_text(json.dumps(custom))
     log=work/'04-live-reload.log'
     with log.open('w') as out:
@@ -27,25 +27,25 @@ def run(root,mca):
             start=log.stat().st_size;send('save-all flush');wait('Saved the game',start)
         try:
             wait('Done (',timeout=180)
-            send('execute positioned 3000 64 3000 run ultima village create 32 RemovedDefinitionVillage')
-            send('ultima village setkingdom RemovedDefinitionVillage ultima_kingdoms:temporary_test');save()
+            send('execute positioned 3000 64 3000 run kingdoms village create 32 RemovedDefinitionVillage')
+            send('kingdoms village setkingdom RemovedDefinitionVillage mcakingdoms:temporary_test');save()
             custombefore=next(r for r in records() if r['DisplayName']=='RemovedDefinitionVillage')
-            assert custombefore['Kingdom']=='ultima_kingdoms:temporary_test'
+            assert custombefore['Kingdom']=='mcakingdoms:temporary_test'
             rule=pack/'biome_rules/live_override.json';rule.parent.mkdir(parents=True,exist_ok=True)
-            rule.write_text(json.dumps({'schema':1,'kingdom':'ultima_kingdoms:yew','priority':20000,'include':['minecraft:plains'],'exclude':[]}))
-            customfile.unlink();start=log.stat().st_size;send('ultima reload');wait('Reloaded Ultima Kingdoms data',start)
-            send('ultima kingdom info ultima_kingdoms:temporary_test')
-            send('execute positioned 4000 64 4000 run ultima village create 32 LiveReloadVillage');save()
+            rule.write_text(json.dumps({'schema':1,'kingdom':'mcakingdoms:yew','priority':20000,'include':['minecraft:plains'],'exclude':[]}))
+            customfile.unlink();start=log.stat().st_size;send('kingdoms reload');wait('Reloaded MCA: Kingdoms data',start)
+            send('kingdoms kingdom info mcakingdoms:temporary_test')
+            send('execute positioned 4000 64 4000 run kingdoms village create 32 LiveReloadVillage');save()
             after=next(r for r in records() if r['DisplayName']=='Bellmeadow')
             assert (after['Id'],after['DisplayName'],after['Kingdom'])==(before['Id'],before['DisplayName'],before['Kingdom'])
-            created=next(r for r in records() if r['DisplayName']=='LiveReloadVillage');assert created['Kingdom']=='ultima_kingdoms:yew'
+            created=next(r for r in records() if r['DisplayName']=='LiveReloadVillage');assert created['Kingdom']=='mcakingdoms:yew'
             missing=next(r for r in records() if r['DisplayName']=='RemovedDefinitionVillage')
             assert (missing['Id'],missing['DisplayName'],missing['Kingdom'])==(custombefore['Id'],custombefore['DisplayName'],custombefore['Kingdom'])
             assert 'Unavailable Kingdom' in log.read_text(), 'Missing definition placeholder not presented'
             print('PASS successful live reload preserves established UUID/name/assignment and classifies new village with changed rules',flush=True)
             print('PASS removed custom definition retains save identity and resolves safe placeholder',flush=True)
-            send('ultima village reclassify Bellmeadow');save();changed=next(r for r in records() if r['DisplayName']=='Bellmeadow')
-            assert changed['Id']==before['Id'] and changed['Kingdom']=='ultima_kingdoms:yew'
+            send('kingdoms village reclassify Bellmeadow');save();changed=next(r for r in records() if r['DisplayName']=='Bellmeadow')
+            assert changed['Id']==before['Id'] and changed['Kingdom']=='mcakingdoms:yew'
             print('PASS explicit reclassification uses live committed rules',flush=True)
         finally:
             if proc.poll() is None:send('stop');proc.wait(timeout=60)

@@ -52,7 +52,7 @@ def main():
                 except Exception: process.terminate()
     atexit.register(cleanup)
     def boot(stage):
-        log=work/f'{stage}.log';out=log.open('w');proc=subprocess.Popen(['java','-Xmx2G',*(['-Dultima.acceptance.commands=true'] if args.commands_only else []),launcher,'nogui'],cwd=work,stdin=subprocess.PIPE,stdout=out,stderr=out,text=True)
+        log=work/f'{stage}.log';out=log.open('w');proc=subprocess.Popen(['java','-Xmx2G',*(['-Dmcakingdoms.acceptance.commands=true'] if args.commands_only else []),launcher,'nogui'],cwd=work,stdin=subprocess.PIPE,stdout=out,stderr=out,text=True)
         running.append(proc);wait(proc,log,'Done (',180);return proc,log,out
     def wait(proc,log,text,timeout=60):
         end=time.monotonic()+timeout
@@ -63,46 +63,46 @@ def main():
         proc.terminate();raise RuntimeError(f'Timeout waiting {text}: {log}')
     def send(proc,cmd):proc.stdin.write(cmd+'\n');proc.stdin.flush()
     def stop(proc,out):send(proc,'stop');assert proc.wait(timeout=60)==0;out.close()
-    def records():return read_nbt(work/'world/data/ultima_kingdoms_settlements.dat')['data']['Settlements']
+    def records():return read_nbt(work/'world/data/mcakingdoms_settlements.dat')['data']['Settlements']
     if args.lifecycle_only or args.commands_only:
         proc,log,out=boot('mca-lifecycle');assert proc.wait(timeout=180)==0;out.close()
         result=(work/('command-results.txt' if args.commands_only else 'mca-lifecycle-results.txt')).read_text();print(result,end='');assert result.startswith('PASS ');print(f'Artifacts: {work}');return
     proc,log,out=boot('01-create')
     mob='mca:male_villager' if args.mca else 'minecraft:villager'
-    commands=['execute positioned 1000 64 1000 run ultima village create 32 InitialFord','ultima village rename InitialFord Bellmeadow','ultima village setkingdom Bellmeadow ultima_kingdoms:serenum','forceload add 1000 1000',
+    commands=['execute positioned 1000 64 1000 run kingdoms village create 32 InitialFord','kingdoms village rename InitialFord Bellmeadow','kingdoms village setkingdom Bellmeadow mcakingdoms:serenum','forceload add 1000 1000',
               f'summon {mob} 1000 65 1000 {{NoAI:1b,PersistenceRequired:1b,Tags:["uk_acceptance"]}}',
-              'ultima citizen setorigin @e[tag=uk_acceptance,limit=1] Bellmeadow',
-              'ultima citizen setresidence @e[tag=uk_acceptance,limit=1] Bellmeadow','save-all flush']
+              'kingdoms citizen setorigin @e[tag=uk_acceptance,limit=1] Bellmeadow',
+              'kingdoms citizen setresidence @e[tag=uk_acceptance,limit=1] Bellmeadow','save-all flush']
     for cmd in commands:send(proc,cmd)
     wait(proc,log,'Saved the game');stop(proc,out)
-    first=next(r for r in records() if r['DisplayName']=='Bellmeadow');assert first['Kingdom']=='ultima_kingdoms:serenum';print('PASS production create/rename/assign/save',flush=True)
-    pack=work/'world/datapacks/acceptance';data=pack/'data/ultima_kingdoms/ultima_kingdoms/biome_rules';data.mkdir(parents=True)
+    first=next(r for r in records() if r['DisplayName']=='Bellmeadow');assert first['Kingdom']=='mcakingdoms:serenum';print('PASS production create/rename/assign/save',flush=True)
+    pack=work/'world/datapacks/acceptance';data=pack/'data/mcakingdoms/mcakingdoms/biome_rules';data.mkdir(parents=True)
     (pack/'pack.mcmeta').write_text(json.dumps({'pack':{'pack_format':15,'description':'Acceptance reload fixture'}}))
-    rule=data/'test_override.json';rule.write_text(json.dumps({'schema':1,'kingdom':'ultima_kingdoms:lunari','priority':9999,'include':['minecraft:plains'],'exclude':[]}))
+    rule=data/'test_override.json';rule.write_text(json.dumps({'schema':1,'kingdom':'mcakingdoms:lunari','priority':9999,'include':['minecraft:plains'],'exclude':[]}))
     proc,log,out=boot('02-restart-rules');send(proc,'save-all flush');wait(proc,log,'Saved the game')
     second=next(r for r in records() if r['DisplayName']=='Bellmeadow')
     assert (first['Id'],first['DisplayName'],first['Kingdom'])==(second['Id'],second['DisplayName'],second['Kingdom']);print('PASS production restart with changed rules preserves identity',flush=True)
-    send(proc,'ultima village reclassify Bellmeadow');send(proc,'data get entity @e[tag=uk_acceptance,limit=1] ForgeData');send(proc,'save-all flush');time.sleep(2)
-    third=next(r for r in records() if r['DisplayName']=='Bellmeadow');assert third['Id']==first['Id'] and third['Kingdom']=='ultima_kingdoms:lunari';print('PASS explicit reclassification applies new rule',flush=True)
-    assert 'OriginKingdom: \"ultima_kingdoms:serenum\"' in log.read_text(errors='replace'),'Historical citizen origin not retained after restart/reclassification'
+    send(proc,'kingdoms village reclassify Bellmeadow');send(proc,'data get entity @e[tag=uk_acceptance,limit=1] ForgeData');send(proc,'save-all flush');time.sleep(2)
+    third=next(r for r in records() if r['DisplayName']=='Bellmeadow');assert third['Id']==first['Id'] and third['Kingdom']=='mcakingdoms:lunari';print('PASS explicit reclassification applies new rule',flush=True)
+    assert 'OriginKingdom: \"mcakingdoms:serenum\"' in log.read_text(errors='replace'),'Historical citizen origin not retained after restart/reclassification'
     print('PASS citizen historical origin retained across restart/reclassification',flush=True)
     rule.write_text('{ broken json');send(proc,'reload');wait(proc,log,'Failed to execute reload',90)
-    send(proc,'execute positioned 2000 64 2000 run ultima village create 32 AfterInvalidReload');send(proc,'save-all flush');time.sleep(2);stop(proc,out)
-    final=next(r for r in records() if r['DisplayName']=='AfterInvalidReload');assert final['Kingdom']=='ultima_kingdoms:lunari';print('PASS invalid reload retained last committed definitions',flush=True)
+    send(proc,'execute positioned 2000 64 2000 run kingdoms village create 32 AfterInvalidReload');send(proc,'save-all flush');time.sleep(2);stop(proc,out)
+    final=next(r for r in records() if r['DisplayName']=='AfterInvalidReload');assert final['Kingdom']=='mcakingdoms:lunari';print('PASS invalid reload retained last committed definitions',flush=True)
     if args.mca:assert re.search(r'Attached MCA 7\.6\.26\+1\.20\.1 integration through package root forge\.net\.(?:conczin\.)?mca ',log.read_text());print('PASS production exact MCA adapter startup',flush=True)
     # Verify the real SavedData storage path refuses future schemas without overwriting bytes.
     import hashlib
-    save=work/'world/data/ultima_kingdoms_settlements.dat';original=save.read_bytes()
+    save=work/'world/data/mcakingdoms_settlements.dat';original=save.read_bytes()
     raw=gzip.decompress(original);marker=b'\x03\x00\x06Schema\x00\x00\x00\x01'
     assert marker in raw
     save.write_bytes(gzip.compress(raw.replace(marker,b'\x03\x00\x06Schema\x00\x00\x00\x63')))
     before=hashlib.sha256(save.read_bytes()).hexdigest();rule.unlink()
     refusal=work/'03-future-schema.log'
     with refusal.open('w') as out:
-        proc=subprocess.Popen(['java','-Xmx2G',*(['-Dultima.acceptance.commands=true'] if args.commands_only else []),launcher,'nogui'],cwd=work,stdin=subprocess.PIPE,stdout=out,stderr=out,text=True)
+        proc=subprocess.Popen(['java','-Xmx2G',*(['-Dmcakingdoms.acceptance.commands=true'] if args.commands_only else []),launcher,'nogui'],cwd=work,stdin=subprocess.PIPE,stdout=out,stderr=out,text=True)
         try: proc.wait(timeout=120)
         except subprocess.TimeoutExpired: proc.terminate();proc.wait(timeout=15);raise RuntimeError('Future schema server did not refuse startup')
-    assert 'Unsupported Ultima Kingdoms save schema 99' in refusal.read_text(errors='replace')
+    assert 'Unsupported MCA: Kingdoms save schema 99' in refusal.read_text(errors='replace')
     assert hashlib.sha256(save.read_bytes()).hexdigest()==before,'Refused future save was overwritten'
     save.write_bytes(original)
     print('PASS actual future-schema startup refusal preserves original bytes',flush=True)

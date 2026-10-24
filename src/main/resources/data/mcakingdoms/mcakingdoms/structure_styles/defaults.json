@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "id": "mcakingdoms:defaults",
+  "kingdom": "mcakingdoms:serenum",
+  "priority": 100,
+  "styles": ["minecraft:plains"]
+}

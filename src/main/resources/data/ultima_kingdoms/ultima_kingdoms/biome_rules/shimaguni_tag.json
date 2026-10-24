@@ -1,9 +1,0 @@
-{
-  "schema": 1,
-  "kingdom": "ultima_kingdoms:shimaguni",
-  "priority": 85,
-  "include": [
-    "#ultima_kingdoms:kingdom/shimaguni"
-  ],
-  "exclude": []
-}

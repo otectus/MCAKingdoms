@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "kingdom": "mcakingdoms:shimaguni",
+  "priority": 110,
+  "styles": [
+    "minecraft:jungle"
+  ]
+}

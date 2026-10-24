@@ -15,8 +15,8 @@ from production_client import allowed
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 INSTALL = pathlib.Path('/home/otectus/Documents/curseforge/minecraft/Install')
-DEFAULT_MOD = ROOT / 'build/libs/ultima_kingdoms-0.1.0.jar'
-DEFAULT_HARNESS = ROOT / 'build/test-artifacts/ultima_kingdoms-0.1.0-client-acceptance.jar'
+DEFAULT_MOD = ROOT / 'build/libs/mcakingdoms-0.1.0.jar'
+DEFAULT_HARNESS = ROOT / 'build/test-artifacts/mcakingdoms-0.1.0-client-acceptance.jar'
 DEFAULT_XVFB = pathlib.Path('/tmp/jewelcraft-xvfb/usr/bin/Xvfb')
 SCREENSHOTS = [
     '01-create-review.png',
@@ -49,6 +49,7 @@ def expand(arguments, values):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--work-dir', required=True, type=pathlib.Path)
+    parser.add_argument('--gui-style', action='store_true', help='Tour every Kingdoms GUI after the interaction checks')
     parser.add_argument('--suite', choices=['interactions', 'politics'], default='interactions')
     parser.add_argument('--mod', type=pathlib.Path, default=DEFAULT_MOD)
     parser.add_argument('--harness', type=pathlib.Path, default=DEFAULT_HARNESS)
@@ -105,16 +106,18 @@ def main():
         'auth_uuid': uuid.uuid3(uuid.NAMESPACE_DNS, 'OfflinePlayer:InteractionTest').hex,
         'auth_access_token': '0', 'clientid': '', 'auth_xuid': '', 'user_type': 'legacy',
         'version_type': 'release', 'natives_directory': str(work / 'natives'),
-        'launcher_name': 'UltimaAcceptance', 'launcher_version': '1',
+        'launcher_name': 'KingdomsAcceptance', 'launcher_version': '1',
         'classpath': ':'.join(classpath), 'classpath_separator': ':',
         'library_directory': str(INSTALL / 'libraries'),
     }
     command = [
-        'java', '-Xmx4G', f'-Dultima.clientTest.output={work}', f'-Dultima.clientTest.{args.suite}=true',
+        'java', '-Xmx4G', f'-Dmcakingdoms.clientTest.output={work}', f'-Dmcakingdoms.clientTest.{args.suite}=true',
         *expand(vanilla['arguments']['jvm'] + forge['arguments']['jvm'], values), forge['mainClass'],
         *expand(vanilla['arguments']['game'] + forge['arguments']['game'], values),
         '--width', '1280', '--height', '800',
     ]
+    if args.gui_style:
+        command.insert(1, '-Dmcakingdoms.clientTest.guiStyle=true')
     (work / 'launch-command.json').write_text(json.dumps(command, indent=2) + '\n')
     environment = os.environ.copy()
     environment.update(DISPLAY=args.display, LIBGL_ALWAYS_SOFTWARE='1')

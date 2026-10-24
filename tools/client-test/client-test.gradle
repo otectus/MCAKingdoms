@@ -17,14 +17,14 @@ allprojects {
                 client true
                 workingDirectory p.file('build/client-validation/run')
                 property 'forge.logging.console.level', 'info'
-                property 'ultima.clientTest.output', p.file('build/client-validation').absolutePath
-                property 'ultima.clientTest.politics', p.findProperty('clientTestPolitics') ?: 'false'
-                property 'ultima.clientTest.focused', p.findProperty('clientTestFocused') ?: 'false'
-                property 'ultima.clientTest.commandsOnly', p.findProperty('clientTestCommands') ?: 'false'
+                property 'mcakingdoms.clientTest.output', p.file('build/client-validation').absolutePath
+                property 'mcakingdoms.clientTest.politics', p.findProperty('clientTestPolitics') ?: 'false'
+                property 'mcakingdoms.clientTest.focused', p.findProperty('clientTestFocused') ?: 'false'
+                property 'mcakingdoms.clientTest.commandsOnly', p.findProperty('clientTestCommands') ?: 'false'
                 args '--width', '1280', '--height', '800', '--username', 'ClientTest'
                 mods {
-                    ultima_kingdoms { source p.sourceSets.main }
-                    ultima_client_test { source p.sourceSets.clientTest }
+                    mcakingdoms { source p.sourceSets.main }
+                    mcakingdoms_client_test { source p.sourceSets.clientTest }
                 }
             }
         }

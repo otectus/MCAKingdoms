@@ -40,8 +40,8 @@ def main():
         raise SystemExit(f'Packaged Forge server libraries are missing: {libraries}')
     (server / 'libraries').symlink_to(libraries, target_is_directory=True)
 
-    mod = ROOT / 'build/libs/ultima_kingdoms-0.1.0.jar'
-    harness = ROOT / 'build/test-artifacts/ultima_kingdoms-0.1.0-client-acceptance.jar'
+    mod = ROOT / 'build/libs/mcakingdoms-0.1.0.jar'
+    harness = ROOT / 'build/test-artifacts/mcakingdoms-0.1.0-client-acceptance.jar'
     for artifact in (mod, harness):
         if not artifact.is_file():
             raise SystemExit(f'Missing packaged artifact: {artifact}')
@@ -130,7 +130,7 @@ def main():
                                            version=3)).replace('-', ''),
                 'auth_access_token': '0', 'clientid': '', 'auth_xuid': '', 'user_type': 'legacy',
                 'version_type': 'release', 'natives_directory': str(folder / 'natives'),
-                'launcher_name': 'UltimaAcceptance', 'launcher_version': '1',
+                'launcher_name': 'KingdomsAcceptance', 'launcher_version': '1',
                 'classpath': ':'.join(classpath), 'classpath_separator': ':',
                 'library_directory': str(INSTALL / 'libraries'),
             }
@@ -149,10 +149,10 @@ def main():
                         result.append(value)
                 return result
 
-            command = (['java', '-Xmx2G', f'-Dultima.clientTest.output={folder}',
-                        '-Dultima.clientTest.civicMultiplayer=true',
-                        f'-Dultima.clientTest.shared={work}', f'-Dultima.clientTest.role={role}',
-                        f'-Dultima.clientTest.server=127.0.0.1:{port}']
+            command = (['java', '-Xmx2G', f'-Dmcakingdoms.clientTest.output={folder}',
+                        '-Dmcakingdoms.clientTest.civicMultiplayer=true',
+                        f'-Dmcakingdoms.clientTest.shared={work}', f'-Dmcakingdoms.clientTest.role={role}',
+                        f'-Dmcakingdoms.clientTest.server=127.0.0.1:{port}']
                        + expand(vanilla['arguments']['jvm'] + forge['arguments']['jvm'])
                        + [forge['mainClass']]
                        + expand(vanilla['arguments']['game'] + forge['arguments']['game'])

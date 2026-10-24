@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "id": "mcakingdoms:madera",
+  "translation_key": "kingdom.mcakingdoms.madera",
+  "name_pool": "mcakingdoms:madera",
+  "fallback": false,
+  "style_hints": ["minecraft:savanna"],
+  "heraldry": {"icon": "mcakingdoms:madera", "color": "#C9793E"},
+  "metadata": {"petition_honor": "mcakingdoms:living_craft", "theme": "living_craft", "environment": "warm_woodland"}
+}

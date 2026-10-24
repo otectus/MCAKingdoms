@@ -1,7 +1,0 @@
-{
-  "schema": 1,
-  "kingdom": "ultima_kingdoms:anemosia",
-  "priority": 95,
-  "include": ["minecraft:windswept_savanna"],
-  "exclude": []
-}

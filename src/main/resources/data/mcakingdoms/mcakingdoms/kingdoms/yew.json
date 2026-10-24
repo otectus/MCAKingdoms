@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "id": "mcakingdoms:yew",
+  "translation_key": "kingdom.mcakingdoms.yew",
+  "name_pool": "mcakingdoms:yew",
+  "fallback": false,
+  "style_hints": ["minecraft:taiga"],
+  "heraldry": {"icon": "mcakingdoms:yew", "color": "#315D3A"},
+  "metadata": {"petition_honor": "mcakingdoms:greenwood", "theme": "greenwood_compact", "environment": "old_forest"}
+}

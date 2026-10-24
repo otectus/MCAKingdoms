@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "kingdom": "mcakingdoms:lunari",
+  "priority": 90,
+  "include": ["#mcakingdoms:kingdom/lunari"],
+  "exclude": []
+}

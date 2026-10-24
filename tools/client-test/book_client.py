@@ -15,8 +15,8 @@ from production_client import allowed
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 INSTALL = pathlib.Path('/home/otectus/Documents/curseforge/minecraft/Install')
-DEFAULT_MOD = ROOT / 'build/libs/ultima_kingdoms-0.1.0.jar'
-DEFAULT_HARNESS = ROOT / 'build/test-artifacts/ultima_kingdoms-0.1.0-client-acceptance.jar'
+DEFAULT_MOD = ROOT / 'build/libs/mcakingdoms-0.1.0.jar'
+DEFAULT_HARNESS = ROOT / 'build/test-artifacts/mcakingdoms-0.1.0-client-acceptance.jar'
 DEFAULT_XVFB = pathlib.Path('/tmp/jewelcraft-xvfb/usr/bin/Xvfb')
 SCREENSHOTS = [
     '01-book-open.png',
@@ -111,14 +111,14 @@ def main():
         'user_type': 'legacy',
         'version_type': 'release',
         'natives_directory': str(work / 'natives'),
-        'launcher_name': 'UltimaAcceptance',
+        'launcher_name': 'KingdomsAcceptance',
         'launcher_version': '1',
         'classpath': ':'.join(classpath),
         'classpath_separator': ':',
         'library_directory': str(INSTALL / 'libraries'),
     }
     command = [
-        'java', '-Xmx4G', f'-Dultima.clientTest.output={work}', '-Dultima.clientTest.bookGuide=true',
+        'java', '-Xmx4G', f'-Dmcakingdoms.clientTest.output={work}', '-Dmcakingdoms.clientTest.bookGuide=true',
         *expand(vanilla['arguments']['jvm'] + forge['arguments']['jvm'], values),
         forge['mainClass'],
         *expand(vanilla['arguments']['game'] + forge['arguments']['game'], values),

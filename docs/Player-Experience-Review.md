@@ -1,6 +1,6 @@
 # Player experience review
 
-Ultima Kingdoms now has two complementary in-game interfaces. The **Book of Kingdoms** explains rules, prerequisites, consequences, and recovery paths. **Kingdom Tasks** is the live, server-owned interface for reading records and taking action.
+MCA: Kingdoms now has two complementary in-game interfaces. The **Book of Kingdoms** explains rules, prerequisites, consequences, and recovery paths. **Kingdom Tasks** is the live, server-owned interface for reading records and taking action.
 
 ## The normal player path
 
@@ -71,12 +71,12 @@ The interface uses current English names from the server and bundled language re
 
 ## Validation of this implementation
 
-- `gradlew-quiet.sh /home/otectus/Projects/UltimaKingdoms build -I tools/client-test/client-test.gradle` passed: 125 unit tests passed, one skipped; API packaging checks passed. Final build log: `/tmp/gradle-UltimaKingdoms-build-20260921-000538.log`.
-- `python3 tools/test/run_gametests.py -PrunDir=build/interaction-gametest-delivery` passed all 44 required dedicated-server GameTests. This includes session isolation, stale selections, repeat apply, private selectors, permission loss, stable named aliases, bounded replies, and NPC movement. Log: `/tmp/gradle-UltimaKingdoms-runGameTestServer-20260921-000405.log`.
+- `gradlew-quiet.sh /home/otectus/Projects/McaKingdoms build -I tools/client-test/client-test.gradle` passed: 125 unit tests passed, one skipped; API packaging checks passed. Final build log: `/tmp/gradle-McaKingdoms-build-20260921-000538.log`.
+- `python3 tools/test/run_gametests.py -PrunDir=build/interaction-gametest-delivery` passed all 44 required dedicated-server GameTests. This includes session isolation, stale selections, repeat apply, private selectors, permission loss, stable named aliases, bounded replies, and NPC movement. Log: `/tmp/gradle-McaKingdoms-runGameTestServer-20260921-000405.log`.
 - `python3 tools/client-test/interaction_client.py --work-dir /tmp/kingdom-actions-client-final --display :96` passed real K-key opening, search, settlement creation/reading/renaming, compact paging, and War Room campaign handoff without opening chat. Screenshots and tested artifact hashes are in that directory.
 - `python3 tools/client-test/interaction_client.py --work-dir /tmp/kingdom-politics-client-1 --suite politics` passed government establishment through the new form, council and petition pages, compact named appointment choices, and return to the ledger.
 - `python3 tools/test/integration_runtime.py --work-dir build/interaction-native-military-1 --phase military --mod build/r3-military-runtime-final/mods/recruits-1.20.1-1.15.2.jar` passed provider-backed campaign declaration and named recruit deployment through the form handlers, duplicate-result checks, native persistence, and restart recovery. These service-handler checks complement the packaged client tests; they do not simulate every provider workflow through mouse clicks.
 - `python3 tools/client-test/book_client.py --work-dir /tmp/kingdom-book-gui-final` passed against the final JAR: recipe, actual item use, packaged guide resources, chapter/search/navigation controls, compact layout, scrolling, and reopening the last topic. Screenshots and exact artifact hashes are retained in that directory.
-- `check_mod.py /home/otectus/Projects/UltimaKingdoms` reported zero errors or warnings; `git diff --check` passed.
+- `check_mod.py /home/otectus/Projects/McaKingdoms` reported zero errors or warnings; `git diff --check` passed.
 
-Final local mod: `build/libs/ultima_kingdoms-0.1.0.jar`, SHA-256 `d536a7fd2da71ad54a00632f86b6854b8b91a8a3157e0d1b35bf94c61ce5db3c`. The final package includes the subsequent guide/help corrections and nearby-person location hints; the final dedicated-server suite covers the location-hint change. Client test directories retain the exact hashes they tested.
+Final local mod: `build/libs/mcakingdoms-0.1.0.jar`, SHA-256 `d536a7fd2da71ad54a00632f86b6854b8b91a8a3157e0d1b35bf94c61ce5db3c`. The final package includes the subsequent guide/help corrections and nearby-person location hints; the final dedicated-server suite covers the location-hint change. Client test directories retain the exact hashes they tested.

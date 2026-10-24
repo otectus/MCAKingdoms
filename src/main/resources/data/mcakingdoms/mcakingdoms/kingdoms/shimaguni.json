@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "id": "mcakingdoms:shimaguni",
+  "translation_key": "kingdom.mcakingdoms.shimaguni",
+  "name_pool": "mcakingdoms:shimaguni",
+  "fallback": false,
+  "style_hints": [
+    "minecraft:jungle"
+  ],
+  "heraldry": {
+    "icon": "mcakingdoms:shimaguni",
+    "color": "#C85A54"
+  },
+  "metadata": {"petition_honor": "mcakingdoms:tide_archive", 
+    "theme": "island_covenant",
+    "environment": "jungle_islands",
+    "historic_seat": "Akatsura",
+    "archive": "Tide Archive"
+  }
+}

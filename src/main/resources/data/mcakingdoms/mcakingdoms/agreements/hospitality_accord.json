@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "offices": [],
+  "permissions": [],
+  "requires": [
+    "mcakingdoms:diplomatic_recognition"
+  ],
+  "buildingTypes": [],
+  "durationTicks": 720000,
+  "maxOffices": 2,
+  "independentApproval": true,
+  "commissionPool": "mcakingdoms:hospitality_accord",
+  "kind": "agreement",
+  "title": "politics.mcakingdoms.hospitality_accord",
+  "clauses": [
+    "HOSPITALITY"
+  ]
+}

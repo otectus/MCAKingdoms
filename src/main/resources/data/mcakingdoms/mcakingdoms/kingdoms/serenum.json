@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "id": "mcakingdoms:serenum",
+  "translation_key": "kingdom.mcakingdoms.serenum",
+  "name_pool": "mcakingdoms:serenum",
+  "fallback": true,
+  "style_hints": ["minecraft:plains"],
+  "heraldry": {"icon": "mcakingdoms:serenum", "color": "#E6C65C"},
+  "metadata": {"petition_honor": "mcakingdoms:open_bell", "theme": "open_bell_heartland", "environment": "open_temperate"}
+}

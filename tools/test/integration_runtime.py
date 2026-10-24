@@ -15,28 +15,28 @@ def main():
     (work/'server.properties').write_text('online-mode=false\nserver-ip=127.0.0.1\nserver-port=0\nlevel-type=minecraft:flat\ngenerate-structures=false\nview-distance=2\nsimulation-distance=2\nspawn-protection=0\ngenerator-settings={"layers":[{"block":"minecraft:bedrock","height":1},{"block":"minecraft:dirt","height":2},{"block":"minecraft:grass_block","height":1}],"biome":"minecraft:plains"}\n')
     if args.seed_world:shutil.copytree(args.seed_world,work/'world')
     if args.phase=='named':
-        pack=work/'world/datapacks/integration';folder=pack/'data/ultima_acceptance/ultima_kingdoms/kingdom_gates';folder.mkdir(parents=True)
+        pack=work/'world/datapacks/integration';folder=pack/'data/mcakingdoms_acceptance/mcakingdoms/kingdom_gates';folder.mkdir(parents=True)
         (pack/'pack.mcmeta').write_text(json.dumps({'pack':{'pack_format':15,'description':'Named gate runtime fixture'}}))
-        (folder/'named.json').write_text(json.dumps({'subject':'giver_residence','include':['ultima_kingdoms:serenum']}))
+        (folder/'named.json').write_text(json.dumps({'subject':'giver_residence','include':['mcakingdoms:serenum']}))
     if args.phase in ('r2','r2-legacy'):
         shutil.copy2(root/'pack/r2/kubejs/data/ultima/mcaquests/quests/civic/lamplighters/workshop_lanterns.json',work/'workshop_lanterns.json')
         (work/'config').mkdir(exist_ok=True)
-        (work/'config/ultima-kingdoms-civic-common.toml').write_text('[regional_civic_network]\nenabled = true\n')
+        (work/'config/mcakingdoms-civic-common.toml').write_text('[regional_civic_network]\nenabled = true\n')
     if args.phase=='civic-loop':
         shutil.copy2(root/'pack/r1/kubejs/data/ultima/mcaquests/quests/civic/lamplighters/fire_in_poor_hands.json',work/'fire_in_poor_hands.json')
     if args.phase=='r3':
         (work/'config').mkdir(exist_ok=True)
-        (work/'config/ultima-kingdoms-warfare-common.toml').write_text('[political_warfare]\n')
+        (work/'config/mcakingdoms-warfare-common.toml').write_text('[political_warfare]\n')
     def boot(phase,crash=False):
         log=work/f'{phase}.log'
         with log.open('w') as out:
-            proc=subprocess.Popen(['java','-Xmx2G',f'-Dultima.acceptance.integration={phase}','@libraries/net/minecraftforge/forge/1.20.1-47.4.23/unix_args.txt','nogui'],cwd=work,stdin=subprocess.PIPE,stdout=out,stderr=out,text=True)
+            proc=subprocess.Popen(['java','-Xmx2G',f'-Dmcakingdoms.acceptance.integration={phase}','@libraries/net/minecraftforge/forge/1.20.1-47.4.23/unix_args.txt','nogui'],cwd=work,stdin=subprocess.PIPE,stdout=out,stderr=out,text=True)
             try:
                 deadline=time.monotonic()+(1500 if args.phase=='politics-cycle' else 180)
                 while proc.poll() is None and time.monotonic()<deadline:
                     body=log.read_text(errors='replace')
                     if args.startup_only and 'Done (' in body:
-                        proc.stdin.write('stop\n');proc.stdin.flush();assert proc.wait(timeout=60)==0;print(f'PASS optional companion startup without Ultima Kingdoms: {log}',flush=True);return
+                        proc.stdin.write('stop\n');proc.stdin.flush();assert proc.wait(timeout=60)==0;print(f'PASS optional companion startup without MCA: Kingdoms: {log}',flush=True);return
                     if crash and 'CRASH_READY integration' in body:
                         proc.kill();proc.wait(timeout=20);print(f'PASS process killed after durable source/target/ack: {log}',flush=True);return
                     time.sleep(.25)
@@ -63,7 +63,7 @@ def main():
         finally:retained.rename(native)
         (work/'world').rename(work/'world-provider-absent');native_world.rename(work/'world')
         boot('r4-reinstalled')
-        saves=[work/'world/data'/f'{name}.dat' for name in ('ultima_kingdoms_evolution','ultima_kingdoms_recruit_transfers')]
+        saves=[work/'world/data'/f'{name}.dat' for name in ('mcakingdoms_evolution','mcakingdoms_recruit_transfers')]
         for save in saves:
             raw=gzip.decompress(save.read_bytes());marker=b'\x03\x00\x06Schema\x00\x00\x00\x01';assert marker in raw
             save.write_bytes(gzip.compress(raw.replace(marker,b'\x03\x00\x06Schema\x00\x00\x00\x63',1)))
@@ -80,7 +80,7 @@ def main():
         try:boot('r3-absent')
         finally:retained.rename(native)
         boot('r3-reinstalled')
-        save=work/'world/data/ultima_kingdoms_control.dat'
+        save=work/'world/data/mcakingdoms_control.dat'
         raw=gzip.decompress(save.read_bytes());marker=b'\x03\x00\x06Schema\x00\x00\x00\x01';assert marker in raw
         save.write_bytes(gzip.compress(raw.replace(marker,b'\x03\x00\x06Schema\x00\x00\x00\x63',1)))
         before=hashlib.sha256(save.read_bytes()).hexdigest();boot('r3-future')
@@ -94,7 +94,7 @@ def main():
         boot('r1-restart')
     if args.phase=='politics':
         boot('politics-restart')
-        save=work/'world/data/ultima_kingdoms_politics.dat'
+        save=work/'world/data/mcakingdoms_politics.dat'
         raw=gzip.decompress(save.read_bytes());marker=b'\x03\x00\x06Schema\x00\x00\x00\x01';assert marker in raw
         save.write_bytes(gzip.compress(raw.replace(marker,b'\x03\x00\x06Schema\x00\x00\x00\x63',1)))
         before=hashlib.sha256(save.read_bytes()).hexdigest();boot('politics-future')
@@ -103,13 +103,23 @@ def main():
     if args.phase=='migration':
         boot('migration-restart')
         boot('loops')
+    if args.phase=='split-village':
+        def summaries(phase):
+            return [line for line in (work/f'{phase}.log').read_text(errors='replace').splitlines() if 'Village reconciliation (' in line]
+        first=summaries('split-village')
+        assert len(first)==1 and 'Village reconciliation (startup): merged 1 split record(s) into 1 village(s)' in first[0],first
+        save=work/'world/data/mcakingdoms_settlements.dat';before=hashlib.sha256(save.read_bytes()).hexdigest()
+        boot('split-village-restart')
+        assert summaries('split-village-restart')==[],'restart reconciled again'
+        assert hashlib.sha256(save.read_bytes()).hexdigest()==before,'settlements file changed across restart'
+        print('PASS split village: one start-up summary line, file unchanged and one record after restart',flush=True)
     if args.crash_replay:
         boot('restart')
         boot('regressions')
-        config=work/'config/ultima_kingdoms-factions-common.toml'
+        config=work/'config/mcakingdoms-factions-common.toml'
         config.write_text(config.read_text().replace('mode = \"MCA_TO_FACTION\"','mode = \"SHADOW\"'))
         boot('shadow')
-        save=work/'world/data/ultima_kingdoms_factions.dat';raw=gzip.decompress(save.read_bytes());marker=b'\x03\x00\x06Schema\x00\x00\x00\x01';assert marker in raw
+        save=work/'world/data/mcakingdoms_factions.dat';raw=gzip.decompress(save.read_bytes());marker=b'\x03\x00\x06Schema\x00\x00\x00\x01';assert marker in raw
         save.write_bytes(gzip.compress(raw.replace(marker,b'\x03\x00\x06Schema\x00\x00\x00\x63')))
         before=hashlib.sha256(save.read_bytes()).hexdigest();boot('future');assert hashlib.sha256(save.read_bytes()).hexdigest()==before
         print('PASS future faction schema remains byte-identical after server save/shutdown',flush=True)

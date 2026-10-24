@@ -10,9 +10,9 @@ def main():
     work=args.work_dir.resolve()
     if work.exists():raise SystemExit(f'Refusing to reuse {work}')
     work.mkdir(parents=True);server=work/'server';server.mkdir();(server/'mods').mkdir();(server/'libraries').symlink_to(ROOT/'build/forge-server/libraries',target_is_directory=True)
-    mod=ROOT/'build/libs/ultima_kingdoms-0.1.0.jar';harness=ROOT/'build/test-artifacts/ultima_kingdoms-0.1.0-client-acceptance.jar'
+    mod=ROOT/'build/libs/mcakingdoms-0.1.0.jar';harness=ROOT/'build/test-artifacts/mcakingdoms-0.1.0-client-acceptance.jar'
     native=pathlib.Path('/home/otectus/Documents/curseforge/minecraft/Instances/Ultima/mods/recruits-1.20.1-1.15.2.jar')
-    acceptance=ROOT/'build/test-artifacts/ultima_kingdoms-0.1.0-acceptance.jar'
+    acceptance=ROOT/'build/test-artifacts/mcakingdoms-0.1.0-acceptance.jar'
     for jar in [native,acceptance]:shutil.copy2(jar,server/'mods'/jar.name)
     shutil.copy2(mod,server/'mods'/mod.name);shutil.copy2('/home/otectus/Projects/MCACrime/run/eula.txt',server/'eula.txt')
     with socket.socket() as sock:sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
@@ -39,12 +39,12 @@ def main():
     os.environ.update(DISPLAY=':97',LIBGL_ALWAYS_SOFTWARE='1')
     time.sleep(1)
     try:
-        slog=server/'console.log';srv=spawn(['java','-Xmx2G','-Dultima.acceptance.r4Multiplayer=true','@libraries/net/minecraftforge/forge/1.20.1-47.4.23/unix_args.txt','nogui'],server,slog)
+        slog=server/'console.log';srv=spawn(['java','-Xmx2G','-Dmcakingdoms.acceptance.r4Multiplayer=true','@libraries/net/minecraftforge/forge/1.20.1-47.4.23/unix_args.txt','nogui'],server,slog)
         wait_until(lambda:'Done (' in slog.read_text(errors='replace'))
         for role,name in [('leader','PoliticalLeader'),('stranger','PoliticalOther')]:
             folder=work/role;folder.mkdir();(folder/'mods').mkdir();(folder/'natives').mkdir()
             for jar in [mod,harness,native]:shutil.copy2(jar,folder/'mods'/jar.name)
-            values={'auth_player_name':name,'version_name':'forge-47.4.23','game_directory':str(folder),'assets_root':str(INSTALL/'assets'),'assets_index_name':vanilla['assetIndex']['id'],'auth_uuid':str(uuid.UUID(bytes=hashlib.md5(('OfflinePlayer:'+name).encode()).digest(),version=3)).replace('-',''),'auth_access_token':'0','clientid':'','auth_xuid':'','user_type':'legacy','version_type':'release','natives_directory':str(folder/'natives'),'launcher_name':'UltimaAcceptance','launcher_version':'1','classpath':':'.join(cp),'classpath_separator':':','library_directory':str(INSTALL/'libraries')}
+            values={'auth_player_name':name,'version_name':'forge-47.4.23','game_directory':str(folder),'assets_root':str(INSTALL/'assets'),'assets_index_name':vanilla['assetIndex']['id'],'auth_uuid':str(uuid.UUID(bytes=hashlib.md5(('OfflinePlayer:'+name).encode()).digest(),version=3)).replace('-',''),'auth_access_token':'0','clientid':'','auth_xuid':'','user_type':'legacy','version_type':'release','natives_directory':str(folder/'natives'),'launcher_name':'KingdomsAcceptance','launcher_version':'1','classpath':':'.join(cp),'classpath_separator':':','library_directory':str(INSTALL/'libraries')}
             def expand(arguments):
                 result=[]
                 for arg in arguments:
@@ -56,7 +56,7 @@ def main():
                         if value.startswith('-DignoreList='):value+=',1.20.1.jar'
                         result.append(value)
                 return result
-            command=['java','-Xmx2G',f'-Dultima.clientTest.output={folder}','-Dultima.clientTest.evolutionMultiplayer=true',f'-Dultima.clientTest.shared={work}',f'-Dultima.clientTest.role={role}',f'-Dultima.clientTest.server=127.0.0.1:{port}']+expand(vanilla['arguments']['jvm']+forge['arguments']['jvm'])+[forge['mainClass']]+expand(vanilla['arguments']['game']+forge['arguments']['game'])+['--width','960','--height','640']
+            command=['java','-Xmx2G',f'-Dmcakingdoms.clientTest.output={folder}','-Dmcakingdoms.clientTest.evolutionMultiplayer=true',f'-Dmcakingdoms.clientTest.shared={work}',f'-Dmcakingdoms.clientTest.role={role}',f'-Dmcakingdoms.clientTest.server=127.0.0.1:{port}']+expand(vanilla['arguments']['jvm']+forge['arguments']['jvm'])+[forge['mainClass']]+expand(vanilla['arguments']['game']+forge['arguments']['game'])+['--width','960','--height','640']
             spawn(command,folder,folder/'console.log')
         wait_until(lambda:all(name+' logged in' in slog.read_text(errors='replace') or re.search(name+r'\[.*logged in',slog.read_text(errors='replace')) for name in ['PoliticalLeader','PoliticalOther']))
         srv.stdin.write('r4-fixture setup\n');srv.stdin.flush()

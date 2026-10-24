@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "kingdom": "mcakingdoms:serenum",
+  "priority": 80,
+  "include": ["#mcakingdoms:kingdom/serenum"],
+  "exclude": []
+}

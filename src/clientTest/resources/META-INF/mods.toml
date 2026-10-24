@@ -2,6 +2,6 @@ modLoader="javafml"
 loaderVersion="[47,)"
 license="All Rights Reserved"
 [[mods]]
-modId="ultima_client_test"
+modId="mcakingdoms_client_test"
 version="1.0"
-displayName="Ultima client validation harness"
+displayName="MCA: Kingdoms client validation harness"

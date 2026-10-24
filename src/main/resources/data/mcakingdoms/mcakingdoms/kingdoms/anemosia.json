@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "id": "mcakingdoms:anemosia",
+  "translation_key": "kingdom.mcakingdoms.anemosia",
+  "name_pool": "mcakingdoms:anemosia",
+  "fallback": false,
+  "style_hints": ["minecraft:desert"],
+  "heraldry": {"icon": "mcakingdoms:anemosia", "color": "#D9AE65"},
+  "metadata": {"petition_honor": "mcakingdoms:open_road", "theme": "roads_without_walls", "environment": "arid_windswept"}
+}

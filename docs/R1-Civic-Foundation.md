@@ -1,18 +1,18 @@
 # R1 — regional civic network
 
-Implementation and acceptance record for Phases 0–2 of the [integration roadmap](Ultima-Factions-Integration-Audit-and-Roadmap.md). **R1 regional civic network is implemented and validated; staged delivery is separate from live installation.** This document supersedes the earlier foundation-preview description; the older preview's hashes and runtime results are not evidence for the new receipt bridge.
+Implementation and acceptance record for Phases 0–2 of the [integration roadmap](MCAKingdoms-Factions-Integration-Audit-and-Roadmap.md). **R1 regional civic network is implemented and validated; staged delivery is separate from live installation.** This document supersedes the earlier foundation-preview description; the older preview's hashes and runtime results are not evidence for the new receipt bridge.
 
 ## Gameplay and ownership
 
 The Lamplighters provide the first peaceful civic network. They are a voluntary guild, separate from kingdom citizenship, government office, personal affection, sovereign standing, military allegiance, race and worship.
 
 1. Complete an existing Lamplighters service quest. MCA Quests still owns offers, objectives, inventory consumption, native rewards, cooldowns and completion history.
-2. After a verified player-file save, its durable completion outbox supplies the authoritative receipt. Ultima acknowledges separate guild service once per player, guild and quest template. Repeatable native quests retain their ordinary rewards without farming guild standing.
-3. Existing authored Lamplighters quest givers become prospective guild contacts. An adult resident needs a real, loaded Townstead workshop to activate chapter services. Ordinary professions alone never enroll NPCs. Family, hearts, genetics, home and personal opinion remain with their providers.
+2. After a verified player-file save, its durable completion outbox supplies the authoritative receipt. MCA: Kingdoms acknowledges separate guild service once per player, guild and quest template. Repeatable native quests retain their ordinary rewards without farming guild standing.
+3. Existing authored Lamplighters quest givers become prospective guild contacts. An adult resident needs a real, loaded workshop building to activate chapter services: MCA's own village buildings answer this, or Townstead's building query when Townstead is installed (since 0.1.1; before that Townstead was required). Ordinary professions alone never enroll NPCs. Family, hearts, genetics, home and personal opinion remain with their providers.
 4. Earn introductions and curated commissions through membership or the independent service route. An introduction discloses one existing neighboring chapter to the requesting player. A commission menu selects existing, ordinarily eligible quests; it does not duplicate quests or replace their native acceptance checks.
 5. Departure preserves service and private history. A sufficiently accomplished independent contributor retains neutral access. Destroying/changing the workshop or moving out of interaction range suspends services; restoring the provider-owned building recovers them.
 
-The network does not generate undiscovered settlements, force-load distant chunks, create military territory, or pretend every village already hosts a chapter. Chapters must exist through authored contacts or authorized institutional appointments. A regional introduction requires another existing chapter within the configured radius. Existing map mods retain their own discovery rules; Ultima supplies private known coordinates rather than writing their files or revealing their maps.
+The network does not generate undiscovered settlements, force-load distant chunks, create military territory, or pretend every village already hosts a chapter. Chapters must exist through authored contacts or authorized institutional appointments. A regional introduction requires another existing chapter within the configured radius. Existing map mods retain their own discovery rules; MCA: Kingdoms supplies private known coordinates rather than writing their files or revealing their maps.
 
 ### Qualifications
 
@@ -26,13 +26,13 @@ Member ranks are volunteer / Lamplighter / route warden at 0 / 60 / 100 standing
 ## Player and administrator entry points
 
 - Village Ledger → **Guilds**: own membership, standing, verified deeds, rank progress, qualification reasons, nearby contact, provider health, recent evidence and private history; Join, Leave, Introduction, Commissions, Refresh.
-- `/ultima guild`, `join <organization>`, `leave <organization>`, and `explain <organization> <permission>`.
-- `/ultima guild introduction <organization>` and `commissions <organization>` resolve the actual nearest eligible contact, then revalidate the actor, speaker, current institution and current qualification.
-- `/ultima guild chapters` and `institutions` list bounded pages of discovered places. Unknown coordinates are not returned.
-- `/ultima guild charter <organization> <institution UUID>` binds a chapter to an existing recognized political institution. `/ultima guild appoint <chapter UUID> <NPC selector>` appoints a nearby adult resident. `/ultima guild dismiss <NPC UUID>` revokes the role durably, including automatic reactivation from old authored evidence. These writes require institutional recognition authority or operator permission; moving a contact between chapters also requires authority over its former chapter.
-- `/ultima guild qualify <skill_level|deity|race|lore_collected> <subject> <minimum>` performs an actor-private provider read. Skill subjects use provider names such as `building`; deity/race subjects use their namespaced IDs; lore subjects use actual RPG Lore book IDs. A missing/unsupported provider is **unavailable**, not a successful qualification. This diagnostic never awards progress.
-- `/ultima military here` observes the current Overworld claim through exact Recruits 1.15.2. It never changes claims, teams, relations or troops.
-- Operator `/ultima integrations` reports installed versions and civic/discovery health. Installation alone is not proof that a capability bound successfully.
+- `/kingdoms guild`, `join <organization>`, `leave <organization>`, and `explain <organization> <permission>`.
+- `/kingdoms guild introduction <organization>` and `commissions <organization>` resolve the actual nearest eligible contact, then revalidate the actor, speaker, current institution and current qualification.
+- `/kingdoms guild chapters` and `institutions` list bounded pages of discovered places. Unknown coordinates are not returned.
+- `/kingdoms guild charter <organization> <institution UUID>` binds a chapter to an existing recognized political institution. `/kingdoms guild appoint <chapter UUID> <NPC selector>` appoints a nearby adult resident. `/kingdoms guild dismiss <NPC UUID>` revokes the role durably, including automatic reactivation from old authored evidence. These writes require institutional recognition authority or operator permission; moving a contact between chapters also requires authority over its former chapter.
+- `/kingdoms guild qualify <skill_level|deity|race|lore_collected> <subject> <minimum>` performs an actor-private provider read. Skill subjects use provider names such as `building`; deity/race subjects use their namespaced IDs; lore subjects use actual RPG Lore book IDs. A missing/unsupported provider is **unavailable**, not a successful qualification. This diagnostic never awards progress.
+- `/kingdoms military here` observes the current Overworld claim through exact Recruits 1.15.2. It never changes claims, teams, relations or troops.
+- Operator `/kingdoms integrations` reports installed versions and civic/discovery health. Installation alone is not proof that a capability bound successfully.
 
 Native MCA Conversations integration ships in MCA Conversations 1.8.0, and the MCA Quests half ships in MCA Quests 1.7.0; the R1 provider patches are superseded for those versions. It provides a private guild-contact topic, current qualification/workshop branches and authenticated introduction/commission actions. It uses the actual speaker and requester; it does not broadcast standing, private worship or destinations into public NPC chat. See provider delivery and final acceptance below.
 
@@ -50,7 +50,7 @@ Native MCA Conversations integration ships in MCA Conversations 1.8.0, and the M
 | MCA Quests provider | isolated provider checkout and patch | Completion receipt outbox, targeted player-save fence, acknowledgment and scoped native offers |
 | MCA Conversations provider | isolated provider checkout and patch | Optional reflection-only civic context, fail-closed topic gate, private native actions |
 
-The existing mod ID remains `ultima_kingdoms`. Existing sovereign faction APIs, standing records, settlement IDs and political saves retain their meanings. There is no score-to-membership migration. The classes-only API artifact does not expose optional provider implementation types.
+The existing mod ID remains `mcakingdoms`. Existing sovereign faction APIs, standing records, settlement IDs and political saves retain their meanings. There is no score-to-membership migration. The classes-only API artifact does not expose optional provider implementation types.
 
 ### Read predicates
 
@@ -65,16 +65,16 @@ Different provider versions remain unsupported until their surfaces are checked.
 
 ## Datapack and pack content
 
-Guild definitions: `data/<namespace>/ultima_factions/factions/<path>.json`, schema 1. ID must match the resource path. Supported fields include kind, localized purpose, optional membership conflicts/exclusive group, ordered ranks and permissions, service thresholds, neutral thresholds, and exact whitelisted quest/credit pairs. At most 128 guild definitions; each quest can fan out to at most 128 effects. Credit is positive and bounded to 10,000. Invalid batches retain the previous committed generation.
+Guild definitions: `data/<namespace>/mcakingdoms_factions/factions/<path>.json`, schema 1. ID must match the resource path. Supported fields include kind, localized purpose, optional membership conflicts/exclusive group, ordered ranks and permissions, service thresholds, neutral thresholds, and exact whitelisted quest/credit pairs. At most 128 guild definitions; each quest can fan out to at most 128 effects. Credit is positive and bounded to 10,000. Invalid batches retain the previous committed generation.
 
 Service rules add optional paired `neutral_minimum_standing` and `neutral_required_deeds`, never lower than member requirements. Omitting them preserves membership-only behavior. Missing definitions preserve records and history, suspend new membership/services, and permit resignation.
 
-Civic rules: `data/<namespace>/ultima_factions/civic_network/<path>.json`, schema 1:
+Civic rules: `data/<namespace>/mcakingdoms_factions/civic_network/<path>.json`, schema 1:
 
 ```json
 {
   "schema": 1,
-  "organization": "ultima_kingdoms:lamplighters",
+  "organization": "mcakingdoms:lamplighters",
   "sponsor_quests": ["ultima:civic/lamplighters/fire_in_poor_hands"],
   "building_families": ["workshop"],
   "commissions": ["ultima:civic/lamplighters/fire_in_poor_hands"]
@@ -120,10 +120,10 @@ Membership, departure and deed commits append bounded actor-private history and 
 
 New world data is additive:
 
-- `ultima_kingdoms_organizations.dat`: memberships, evidence and private history, schema 1.
-- `ultima_kingdoms_knowledge.dat`: discovered settlement UUIDs and frozen legacy-public adoption.
-- `ultima_kingdoms_civic_network.dat`: chapter references, appointments, pending authored roles, dismissal tombstones and introduction receipts, schema 1.
-- `ultima_kingdoms_quest_receipts.dat`: frozen delivery intents, schema 1.
+- `mcakingdoms_organizations.dat`: memberships, evidence and private history, schema 1.
+- `mcakingdoms_knowledge.dat`: discovered settlement UUIDs and frozen legacy-public adoption.
+- `mcakingdoms_civic_network.dat`: chapter references, appointments, pending authored roles, dismissal tombstones and introduction receipts, schema 1.
+- `mcakingdoms_quest_receipts.dat`: frozen delivery intents, schema 1.
 - MCA Quests completion outbox: lives in the existing player capability and has its own producer schema/migration rules.
 
 Existing schema-1 guild saves default missing history to empty. Earlier civic seeds with a settlement UUID do not need the new unresolved-community fields. Unknown or malformed payloads preserve their raw data read-only. These files must be backed up with the world and playerdata; do not roll individual ledgers back independently or delete evidence to resolve a capacity alarm.
@@ -134,7 +134,7 @@ An introduction commits its chosen destination and cooldown before revealing it.
 
 ## Configuration and operational limits
 
-`ultima-kingdoms-civic-common.toml`:
+`mcakingdoms-civic-common.toml`:
 
 | Setting | Default | Range / behavior |
 |---|---:|---|
@@ -167,11 +167,11 @@ Do not substitute earlier preview logs for these checks. Later warfare, crime mu
 
 | Check | Result / evidence |
 |---|---|
-| Main check/build and packaged test artifacts | PASS; 56 tests, 1 skipped, no failures/errors; `/tmp/gradle-UltimaKingdoms-check-20260920-131714.log` |
+| Main check/build and packaged test artifacts | PASS; 56 tests, 1 skipped, no failures/errors; `/tmp/gradle-McaKingdoms-check-20260920-131714.log` |
 | MCA Quests build | PASS; 1,330 tests, 16 skipped, no failures/errors; `/tmp/gradle-MCAQuests-build-20260920-125650.log` |
 | MCA Conversations build and generated content | PASS; 1,604 tests, 6 skipped, no failures/errors; `/tmp/gradle-MCAConversations-build-20260920-131545.log` |
 | Native quest, conversation, replay and restart | PASS; `build/r1-civic-loop-h/civic-loop.log`, `civic-loop-restart.log`; actual receipt survives policy removal, fabricated delivery proof rejected, private native actions revalidate the requester |
-| Companions without Ultima | PASS startup and clean shutdown; `build/r1-provider-absence-final/initial.log` |
+| Companions without MCA: Kingdoms | PASS startup and clean shutdown; `build/r1-provider-absence-final/initial.log` |
 | Real clients | PASS; `build/r1-civic-clients-delivery/leader-PASS.txt`, `peer-PASS.txt`; two normal/compact screenshots per client (four total) under their `screenshots/` directories |
 | Full current pack, copied existing world | PASS load/save/clean exit; 404 loaded mod entries, twelve quest IDs, civic service and all four progression read adapters; `build/r1-full-pack-final-b/R1_PACK_PASS.txt` |
 | Original world integrity | PASS; full before/after file hash maps match in `build/r1-full-pack-final-b/source-world-{before,after}.json` |
@@ -185,17 +185,17 @@ The first full-pack launch was blocked by sandbox display sockets and was rerun 
 Build and runtime invocations:
 
 ```sh
-/home/otectus/Projects/.mcmod-tools/gradlew-quiet.sh /home/otectus/Projects/UltimaKingdoms check build productionTestJar productionClientTestJar -I tools/test/production-tests.gradle -I tools/client-test/client-test.gradle
-/home/otectus/Projects/.mcmod-tools/gradlew-quiet.sh /home/otectus/Projects/UltimaKingdoms productionTestJar -I tools/test/production-tests.gradle
-/home/otectus/Projects/.mcmod-tools/gradlew-quiet.sh /home/otectus/Projects/UltimaKingdoms/build/r1-provider-work/MCAQuests build -PmcaReputationClasses=/home/otectus/Projects/MCAReputation/build/classes/java/main
-/home/otectus/Projects/.mcmod-tools/gradlew-quiet.sh /home/otectus/Projects/UltimaKingdoms/build/r1-provider-work/MCAConversations build
+/home/otectus/Projects/.mcmod-tools/gradlew-quiet.sh /home/otectus/Projects/McaKingdoms check build productionTestJar productionClientTestJar -I tools/test/production-tests.gradle -I tools/client-test/client-test.gradle
+/home/otectus/Projects/.mcmod-tools/gradlew-quiet.sh /home/otectus/Projects/McaKingdoms productionTestJar -I tools/test/production-tests.gradle
+/home/otectus/Projects/.mcmod-tools/gradlew-quiet.sh /home/otectus/Projects/McaKingdoms/build/r1-provider-work/MCAQuests build -PmcaReputationClasses=/home/otectus/Projects/MCAReputation/build/classes/java/main
+/home/otectus/Projects/.mcmod-tools/gradlew-quiet.sh /home/otectus/Projects/McaKingdoms/build/r1-provider-work/MCAConversations build
 python3 tools/client-test/civic_multiplayer.py --work-dir build/r1-civic-clients-delivery
 python3 tools/client-test/r1_pack.py --work-dir build/r1-full-pack-final-b
 python3 tools/test/integration_runtime.py --work-dir build/r1-provider-absence-final --startup-only --mod build/r1-provider-work/MCAQuests/build/libs/mcaquests-1.6.6.jar --mod build/r1-provider-work/MCAConversations/build/libs/mcaconversations-1.7.2.jar --mod build/politics-production-mca-20260920-release/mods/minecraft-comes-alive-7.6.26+1.20.1-universal.jar --mod /home/otectus/Documents/curseforge/minecraft/Instances/Ultima/mods/architectury-9.2.14-forge.jar
 python3 tools/test/integration_runtime.py --work-dir build/r1-civic-loop-h --phase civic-loop --mod build/r1-provider-work/MCAQuests/build/libs/mcaquests-1.6.6.jar --mod build/r1-provider-work/MCAConversations/build/libs/mcaconversations-1.7.2.jar --mod build/politics-production-mca-20260920-release/mods/minecraft-comes-alive-7.6.26+1.20.1-universal.jar --mod /home/otectus/Documents/curseforge/minecraft/Instances/Ultima/mods/architectury-9.2.14-forge.jar --mod /home/otectus/Documents/curseforge/minecraft/Instances/Ultima/mods/townstead-0.7.6+1.20.1.jar --mod '/home/otectus/Documents/curseforge/minecraft/Instances/Ultima/mods/FireSticks+V.1.5+[1.20.1][FORGE].jar' --mod /home/otectus/Documents/curseforge/minecraft/Instances/Ultima/mods/Patchouli-1.20.1-85-FORGE.jar
 python3 tools/test/verify_r1_pack.py
-python3 /home/otectus/Projects/.mcmod-tools/check_mod.py /home/otectus/Projects/UltimaKingdoms
-python3 pack/r1/providers/apply_sources.py --apply
+python3 /home/otectus/Projects/.mcmod-tools/check_mod.py /home/otectus/Projects/McaKingdoms
+python3 pack/r1/providers/apply_sources.py --apply   # historical; now docs/history/provider-patches/r1, do not apply
 ```
 
 Use a new work directory when repeating the isolated runtime commands; the runners intentionally refuse to overwrite evidence.

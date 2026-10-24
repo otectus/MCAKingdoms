@@ -1,12 +1,12 @@
 # Political compatibility and evidence
 
-Target: Minecraft 1.20.1, Forge 47.4.23, Java 17, Ultima Kingdoms development version 0.1.0. Dependency declarations remain in `gradle.properties`; an accepted version range is not a compatibility claim.
+Target: Minecraft 1.20.1, Forge 47.4.23, Java 17, MCA: Kingdoms development version 0.1.0. Dependency declarations remain in `gradle.properties`; an accepted version range is not a compatibility claim.
 
 On 2026-09-20, GitHub commit endpoints still returned the guide's exact heads:
 
 | Repository / branch | Commit |
 | --- | --- |
-| UltimaKingdoms / main | `fe05c7c952367d38e699e280f019cc7321ecfc64` |
+| MCAKingdoms / main | `fe05c7c952367d38e699e280f019cc7321ecfc64` |
 | mca_capitals_addon / forge-1.3.8 | `63358cb4f5dcc715f3edc038f3ed41979f3b790f` |
 | Townstead / main | `4d6206cdf8b9d0f558694d7b35b223f4f6ace61e` |
 | Townstead / early-chronicles | `f93dc271125a750c0f15741ed384282fe0531881` |
@@ -26,9 +26,9 @@ These local artifacts were used by the pre-existing packaged server test in `bui
 
 The original Townstead attempt without Patchouli failed its declared dependency check. The corrected tuple passed startup, calendar reads, building enumeration, civic reassignment and historical origin checks. Political checks subsequently passed standalone, MCA-only and the exact complete tuple, including NPC appointment, provider building recognition, restart and future-schema preservation. Ledger interaction, two-client authorization and full-day observations are tracked separately in `validation.md`.
 
-Political NPC adulthood and institution evidence require this exact Townstead version plus healthy read capabilities. Unavailable, unsupported, unloaded or unconfirmed evidence rejects the dependent action with a reason. Without Townstead, adult vanilla villagers can hold offices. Unsupported NPC providers do not acquire fabricated adulthood evidence. Players are validated against server identities, not villager snapshot placeholder fields.
+Political NPC adulthood evidence requires Townstead's villager and origin capabilities when Townstead is installed, and institution evidence requires a building capability: Townstead's building query, or MCA's own village buildings when Townstead is absent. Capabilities are probed member by member, not by version string (until 0.1.1 this paragraph required exactly the version above); start-up logs the installed and the validated Townstead version. Unavailable, unsupported, unloaded or unconfirmed evidence rejects the dependent action with a reason. Without Townstead, adult vanilla villagers can hold offices. Unsupported NPC providers do not acquire fabricated adulthood evidence. Players are validated against server identities, not villager snapshot placeholder fields.
 
-Chronicles ingestion, known-news queries, provider completion receipts, automated hereditary succession and elections are not advertised as supported. No compatibility is claimed for NeoForge, MCA 7.7, other Townstead releases, or actual Capitals co-installation. The conflict guard can be exercised independently of whether those mods can load together.
+Chronicles ingestion, known-news queries, automated hereditary succession and elections are not advertised as supported. Provider completion receipts are: MCA: Quests' receipts credit paid workshop commissions with civic honors, and the overview page reports whether they bound. No compatibility is claimed for NeoForge, MCA 7.7, other Townstead releases, or actual Capitals co-installation. The conflict guard can be exercised independently of whether those mods can load together.
 
 ## Accepted, not validated
 
@@ -37,7 +37,8 @@ The companion ranges were widened after the family integration review of 2026-09
 is a statement that the reflective bridges are expected to bind or fail closed, not that a newer
 release was exercised; the tuple above remains the only runtime-validated one. MCA: Reputation 0.6.1
 ships the standing journal this mod's `ReputationOutboxBridge` binds, and the `[integration]`
-`enableUltimaKingdomsIntegration` switch on Reputation's side refuses this mod's writes when off.
+`enableKingdomsIntegration` switch on Reputation's side refuses this mod's writes when off (its
+pre-rename name `enableUltimaKingdomsIntegration` is still honoured for one release; either one off refuses).
 
 ## Current validation
 
@@ -45,8 +46,8 @@ See `validation.md` for commands, actual results and remaining checks. Runtime a
 
 ## Range policy
 
-Ultima Kingdoms follows the MCA add-on family's rule (`MCAReputation/docs/FAMILY_COMPATIBILITY.md`):
+MCA: Kingdoms follows the MCA add-on family's rule (`MCAReputation/docs/FAMILY_COMPATIBILITY.md`):
 companion ranges carry a lower bound only, because Forge enforces an optional range whenever the mod is
-present and every Ultima bridge already probes the companion's API and fails closed on drift. Townstead
+present and every MCA: Kingdoms bridge already probes the companion's API and fails closed on drift. Townstead
 is the exception (`[0.7.6,0.9)`): it is third-party, its 0.8 line is the one that adds `api.v1`, and
 `0.9` is the first release nobody has probed.

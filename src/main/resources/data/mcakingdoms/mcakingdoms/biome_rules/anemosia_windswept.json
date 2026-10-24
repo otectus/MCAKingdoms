@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "kingdom": "mcakingdoms:anemosia",
+  "priority": 95,
+  "include": ["minecraft:windswept_savanna"],
+  "exclude": []
+}

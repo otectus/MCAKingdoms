@@ -14,7 +14,7 @@ gradle.projectsEvaluated {
         archiveClassifier = 'acceptance'
         destinationDirectory = p.layout.buildDirectory.dir('test-artifacts')
         from p.sourceSets.runtimeTest.output
-        from(p.sourceSets.gameTest.output) { include 'com/ultimakingdoms/test/McaGameTests.class', 'com/ultimakingdoms/test/KingdomGameTests*.class' }
+        from(p.sourceSets.gameTest.output) { include 'dev/otectus/mcakingdoms/test/McaGameTests.class', 'dev/otectus/mcakingdoms/test/KingdomGameTests*.class' }
         finalizedBy 'reobfProductionTestJar'
     }
     p.reobf { productionTestJar {} }

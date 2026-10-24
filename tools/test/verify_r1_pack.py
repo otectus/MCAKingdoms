@@ -15,9 +15,9 @@ def main():
             assert new['dialogue'][key]['extra'][0]==old['dialogue'][key]
             new['dialogue'][key]=old['dialogue'][key]
         assert new==old,f'Unexpected mechanical change in {overlay}'
-    definition=json.loads((ROOT/'src/main/resources/data/ultima_kingdoms/ultima_factions/factions/lamplighters.json').read_text())
+    definition=json.loads((ROOT/'src/main/resources/data/mcakingdoms/mcakingdoms_factions/factions/lamplighters.json').read_text())
     assert ids=={d['quest_id'] for d in definition['deeds']}
-    civic=json.loads((ROOT/'src/main/resources/data/ultima_kingdoms/ultima_factions/civic_network/lamplighters.json').read_text())
+    civic=json.loads((ROOT/'src/main/resources/data/mcakingdoms/mcakingdoms_factions/civic_network/lamplighters.json').read_text())
     assert set(civic['commissions'])==ids and set(civic['sponsor_quests'])<=ids
     # The independent route remains attainable entirely within the existing peaceful civic chain.
     peaceful=[d for d in definition['deeds'] if '/lamplighters/' in d['quest_id']]

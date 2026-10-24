@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "kingdom": "mcakingdoms:yew",
+  "priority": 80,
+  "include": ["#mcakingdoms:kingdom/yew"],
+  "exclude": []
+}

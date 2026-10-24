@@ -21,7 +21,7 @@ def main():
     for name in ['options.txt','optionsof.txt']:
         if (PACK/name).is_file():shutil.copy2(PACK/name,work/name)
     shutil.copytree(args.source_world,work/'saves/r1-old-world-copy')
-    replacements=[ROOT/'build/libs/ultima_kingdoms-0.1.0.jar',ROOT/'build/r1-provider-work/MCAQuests/build/libs/mcaquests-1.6.6.jar',ROOT/'build/r1-provider-work/MCAConversations/build/libs/mcaconversations-1.7.2.jar',ROOT/'build/test-artifacts/ultima_kingdoms-0.1.0-client-acceptance.jar']
+    replacements=[ROOT/'build/libs/mcakingdoms-0.1.0.jar',ROOT/'build/r1-provider-work/MCAQuests/build/libs/mcaquests-1.6.6.jar',ROOT/'build/r1-provider-work/MCAConversations/build/libs/mcaconversations-1.7.2.jar',ROOT/'build/test-artifacts/mcakingdoms-0.1.0-client-acceptance.jar']
     if args.r2 or args.r3:
         replacements=[p for p in replacements if 'MCAQuests' not in str(p)]
         replacements.extend([ROOT/'build/r2-provider-work/MCAQuests/build/libs/mcaquests-1.6.6.jar',ROOT/'build/r2-provider-work/MCACrime/build/libs/mcacrime-0.7.5.jar'])
@@ -53,7 +53,7 @@ def main():
     for lib in vanilla['libraries']+forge['libraries']:
         if allowed(lib.get('rules')):libraries[':'.join(lib['name'].split(':')[:2]) + (':'+lib['name'].split(':')[3] if len(lib['name'].split(':'))>3 else '')]=lib
     cp=[str(INSTALL/'libraries'/lib['downloads']['artifact']['path']) for lib in libraries.values() if lib.get('downloads',{}).get('artifact')]+[str(INSTALL/'versions/1.20.1/1.20.1.jar')]
-    values={'auth_player_name':'R1PackTest','version_name':'forge-47.4.23','game_directory':str(work),'assets_root':str(INSTALL/'assets'),'assets_index_name':vanilla['assetIndex']['id'],'auth_uuid':uuid.uuid3(uuid.NAMESPACE_DNS,'OfflinePlayer:R1PackTest').hex,'auth_access_token':'0','clientid':'','auth_xuid':'','user_type':'legacy','version_type':'release','natives_directory':str(work/'natives'),'launcher_name':'UltimaAcceptance','launcher_version':'1','classpath':':'.join(cp),'classpath_separator':':','library_directory':str(INSTALL/'libraries')}
+    values={'auth_player_name':'R1PackTest','version_name':'forge-47.4.23','game_directory':str(work),'assets_root':str(INSTALL/'assets'),'assets_index_name':vanilla['assetIndex']['id'],'auth_uuid':uuid.uuid3(uuid.NAMESPACE_DNS,'OfflinePlayer:R1PackTest').hex,'auth_access_token':'0','clientid':'','auth_xuid':'','user_type':'legacy','version_type':'release','natives_directory':str(work/'natives'),'launcher_name':'KingdomsAcceptance','launcher_version':'1','classpath':':'.join(cp),'classpath_separator':':','library_directory':str(INSTALL/'libraries')}
     def expand(arguments):
         result=[]
         for arg in arguments:
@@ -65,12 +65,12 @@ def main():
                 if value.startswith('-DignoreList='):value+=',1.20.1.jar'
                 result.append(value)
         return result
-    command=['java','-Xmx8G',f'-Dultima.clientTest.output={work}','-Dultima.clientTest.r1Pack=true']+expand(vanilla['arguments']['jvm']+forge['arguments']['jvm'])+[forge['mainClass']]+expand(vanilla['arguments']['game']+forge['arguments']['game'])+['--width','1280','--height','800']
-    if args.r2 or args.r3:command.insert(1,'-Dultima.clientTest.r2Pack=true')
+    command=['java','-Xmx8G',f'-Dmcakingdoms.clientTest.output={work}','-Dmcakingdoms.clientTest.r1Pack=true']+expand(vanilla['arguments']['jvm']+forge['arguments']['jvm'])+[forge['mainClass']]+expand(vanilla['arguments']['game']+forge['arguments']['game'])+['--width','1280','--height','800']
+    if args.r2 or args.r3:command.insert(1,'-Dmcakingdoms.clientTest.r2Pack=true')
     if args.r3:
-        command.insert(1,'-Dultima.clientTest.r3Pack=true')
-        if args.r4:command.insert(1,'-Dultima.clientTest.r4Pack=true')
-        if args.gui_style:command.insert(1,'-Dultima.clientTest.guiStyle=true')
+        command.insert(1,'-Dmcakingdoms.clientTest.r3Pack=true')
+        if args.r4:command.insert(1,'-Dmcakingdoms.clientTest.r4Pack=true')
+        if args.gui_style:command.insert(1,'-Dmcakingdoms.clientTest.guiStyle=true')
     (work/'launch-command.json').write_text(json.dumps(command,indent=2))
     environment=os.environ.copy();environment.update(DISPLAY=':98',LIBGL_ALWAYS_SOFTWARE='1')
     with (work/'xvfb.log').open('w') as xlog,(work/'client.log').open('w') as log:

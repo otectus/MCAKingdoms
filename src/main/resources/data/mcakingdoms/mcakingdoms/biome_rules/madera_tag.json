@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "kingdom": "mcakingdoms:madera",
+  "priority": 85,
+  "include": ["#mcakingdoms:kingdom/madera"],
+  "exclude": []
+}

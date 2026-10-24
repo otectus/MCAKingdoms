@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "id": "mcakingdoms:lunari",
+  "translation_key": "kingdom.mcakingdoms.lunari",
+  "name_pool": "mcakingdoms:lunari",
+  "fallback": false,
+  "style_hints": ["minecraft:snowy"],
+  "heraldry": {"icon": "mcakingdoms:lunari", "color": "#9DB7D6"},
+  "metadata": {"petition_honor": "mcakingdoms:winter_record", "theme": "moon_winter_scholarship", "environment": "snowy_open"}
+}
