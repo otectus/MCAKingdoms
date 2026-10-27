@@ -1,5 +1,7 @@
 # MCA: Kingdoms review and integration audit
 
+> **Historical review (2026-10-01).** Its open wording is not a current bug list; each finding's current disposition is in the [completion ledger](docs/Completion-Ledger.md).
+
 Date: 2026-10-01. Target: Minecraft 1.20.1, Forge 47.x, Java 17. Reviewed tree: the uncommitted
 working tree on `main` after commit `3a9538b` (the `ultima_kingdoms` → `mcakingdoms` rename), version
 0.1.1. Companion trees: MCAQuests 1.7.1, MCAReputation 0.6.1, MCAConversations 1.8.0 (and MCACrime

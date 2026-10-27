@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 final class GuiStyleAcceptance {
     private static final String[] PAGES={"ledger","settlement","guild","kingdom","form","blueprint-header","guide","war-room","entry","getting-started",
-            "start","categories","settings","guide-recipe","settings-tasks","history-confirm"};
+            "start","categories","settings","guide-recipe","settings-tasks","history-confirm","settings-politics","residence"};
     private static final int STEPS=PAGES.length*3;
     private final Path output;
     /** Screenshot name prefix, such as {@code es_es-} for a tour in another language; empty for English. */
@@ -83,7 +83,8 @@ final class GuiStyleAcceptance {
                 case 8 -> new EntryPreview((dev.otectus.mcakingdoms.presentation.SettlementSummary)field(ledger,"selected"));
                 case 12 -> new KingdomsSettingsScreen(null);
                 case 13 -> new KingdomGuideScreen(null,"ledger_recipe");
-                case 14, 15 -> new KingdomsSettingsScreen(null);
+                case 14, 15, 16 -> new KingdomsSettingsScreen(null);
+                case 17 -> new KingdomActionsScreen(null,"citizen.register_residence","");
                 default -> new KingdomActionsScreen(null,"","");
             };
             mc.setScreen(screen);ticks=0;captured=false;behaviorChecked=false;
@@ -101,7 +102,7 @@ final class GuiStyleAcceptance {
             case 1 -> field(screen,"selected")!=null;
             case 2 -> field(screen,"view")!=null&&field(screen,"pending")==null;
             case 3 -> field(screen,"page")!=null&&field(screen,"pending")==null;
-            case 4 -> reply(screen)!=null&&field(screen,"pending")==null;
+            case 4, 17 -> reply(screen)!=null&&field(screen,"pending")==null;
             case 7 -> field(screen,"snapshot")!=null;
             case 9, 10, 11 -> reply(screen)!=null&&field(screen,"pending")==null&&reply(screen).mode().equals("start");
             default -> true;
@@ -287,6 +288,34 @@ final class GuiStyleAcceptance {
                 if((int)field(screen,"page")!=1)throw new AssertionError("Settings Tasks tab did not open");
                 assertBookButtons(screen,"Settings Tasks tab");
                 behaviorChecked=true;ticks=15;return false;
+            }
+            if (page == 16) {
+                // 0.3.0 (A02): the Politics tab, by keyboard; a draft changes nothing until Apply and Cancel keeps the file.
+                assertBookButtons(screen,"Settings");
+                String politics=Component.translatableWithFallback("menu.mcakingdoms.settings.tab.politics","Politics").getString();
+                press(screen,politics);
+                if((int)field(screen,"page")!=2)throw new AssertionError("Settings Politics tab did not open");
+                assertBookButtons(screen,"Settings Politics tab");
+                var savedNotices=dev.otectus.mcakingdoms.presentation.PresentationConfig.POLITICAL_NOTICES.get();
+                var cycles=screen.children().stream().filter(BookCycleButton.class::isInstance).map(AbstractWidget.class::cast).toList();
+                var sliders=screen.children().stream().filter(BookSlider.class::isInstance).map(AbstractWidget.class::cast).toList();
+                if(cycles.size()!=2||sliders.size()!=1)throw new AssertionError("Politics tab should offer notices, badges and badge distance");
+                if(sliders.get(0).active!=(boolean)field(screen,"badges"))throw new AssertionError("Badge distance must follow the badge switch");
+                screen.setFocused(cycles.get(0));
+                if(!screen.keyPressed(GLFW.GLFW_KEY_SPACE,0,0)||field(screen,"notices")==savedNotices)throw new AssertionError("Notices cycle did not change the draft");
+                if(dev.otectus.mcakingdoms.presentation.PresentationConfig.POLITICAL_NOTICES.get()!=savedNotices)throw new AssertionError("Notices cycle wrote configuration before Apply");
+                press(screen,Component.translatableWithFallback("menu.mcakingdoms.settings.cancel","Cancel").getString());
+                if(dev.otectus.mcakingdoms.presentation.PresentationConfig.POLITICAL_NOTICES.get()!=savedNotices)throw new AssertionError("Settings Cancel changed political notices");
+                screen=new KingdomsSettingsScreen(null);mc.setScreen(screen);
+                press(screen,politics);
+                behaviorChecked=true;ticks=15;return false;
+            }
+            if (page == 17) {
+                // 0.3.0 (A01): Register my residence opens as a real form and explains its evidence; nothing is applied here.
+                var residence=reply(screen);
+                if(residence.mode().equals("error")||residence.mode().equals("unavailable"))
+                    throw new AssertionError("Register my residence did not open: "+residence.mode()+" "+residence.detail());
+                System.out.println("RESIDENCE_FORM mode="+residence.mode()+" steps="+residence.steps()+" action="+residence.action());
             }
             if (page == 15 && !historyConfirmOpened) {
                 assertBookButtons(screen,"Settings");

@@ -342,7 +342,8 @@ public final class InteractionNetwork {
         var c=s.context(p);
         if(s.field==s.task.fields().size()){
             validate(p,s);s.version=s.task.version().apply(c);var lines=new ArrayList<Component>();lines.add(help(s.task));
-            lines.add(heading("review.section.choices","Your choices"));
+            // A task without questions (Register my residence, for one) has no choices to list or edit.
+            if(!s.task.fields().isEmpty())lines.add(heading("review.section.choices","Your choices"));
             var editable=new ArrayList<Option>();
             for(int i=0;i<s.task.fields().size();i++){var f=s.task.fields().get(i);var chosen=s.selected.get(f.key());Component value;
                 if(f.kind()==Kind.MULTI){var picked=Arrays.asList(s.values.getOrDefault(f.key(),"").split(","));var names=Component.empty();boolean first=true;
@@ -362,7 +363,7 @@ public final class InteractionNetwork {
             Component action=ActionRegistry.applyLabel(s.task,c);
             lines.add(s.task.consequential()?msg("review.consequential.named","Review the people, terms and consequences above. %s performs this action once; backing out changes nothing.",action)
                     :msg("review.ready","Ready. Continue to perform this task."));
-            if(s.task.consequential())lines.add(msg("review.edit","Choose Edit an answer to change one answer; the review is rebuilt from current records before you can apply."));
+            if(s.task.consequential()&&!s.task.fields().isEmpty())lines.add(msg("review.edit","Choose Edit an answer to change one answer; the review is rebuilt from current records before you can apply."));
             int steps=steps(s.task);
             return new Reply(q.request(),s.id,s.state,"review",encode(title(s.task)),encode(lines(lines)),editable.size()<=20?editable:editable.subList(0,20),s.task.id(),0,false,s.field>0,false,steps,steps,"",encode(action),"","");
         }

@@ -64,20 +64,29 @@ public final class ResidenceTasks {
         var evidence = review.evidence();
         var rows = new ArrayList<Requirement>();
         if (evidence.check() == Check.DISABLED) { rows.add(Requirement.of(false, r("req.enabled", "Self-registration on this server"), explain(c, review))); return rows; }
+        // Registering needs no record yet and moving needs one; say so before the button rather than only after it.
+        if (review.decision() == Check.ALREADY_REGISTERED) rows.add(Requirement.of(false, r("req.unregistered", "No residence recorded yet"), explain(c, review)));
+        if (review.decision() == Check.NOT_REGISTERED) rows.add(Requirement.of(false, r("req.registered", "A recorded residence to move"), explain(c, review)));
+        // An unmet evidence row carries the reason and the next practical step for that check, in the reader's language.
+        Component why = explain(c, new ResidenceRegistration.Review(review.intent(), evidence, review.current(), review.currentResidence(),
+                review.cooldownRemaining(), review.override(), evidence.check()));
         if (evidence.source().equals("provider"))
             rows.add(Requirement.of(evidence.settlement().isPresent(), r("req.provider", "Your home, as recorded by an installed mod"), evidence.settlement().map(ResidenceTasks::name).orElse(Component.empty())));
         else {
             boolean bed = evidence.check() != Check.NO_BED && evidence.check() != Check.COMMAND_SPAWN;
-            rows.add(Requirement.of(bed, r("req.bed", "A respawn point set by a bed"), evidence.bed().<Component>map(p -> Component.literal(p.toShortString())).orElse(r("req.none", "none"))));
+            rows.add(Requirement.of(bed, r("req.bed", "A respawn point set by a bed"), bed ? evidence.bed().<Component>map(p -> Component.literal(p.toShortString())).orElse(Component.empty()) : why));
             if (bed) {
                 boolean standing = evidence.check() != Check.BED_UNLOADED && evidence.check() != Check.BED_MISSING;
-                rows.add(Requirement.of(standing, r("req.bed_present", "The bed is still there (checked in a loaded area)"), Component.empty()));
-                if (standing) rows.add(Requirement.of(evidence.check() != Check.BED_OUTSIDE_SETTLEMENT, r("req.in_settlement", "The bed is inside a recognized settlement"),
-                        evidence.settlement().map(ResidenceTasks::name).orElse(Component.empty())));
+                rows.add(Requirement.of(standing, r("req.bed_present", "The bed is still there (checked in a loaded area)"), standing ? Component.empty() : why));
+                boolean inside = evidence.check() != Check.BED_OUTSIDE_SETTLEMENT;
+                if (standing) rows.add(Requirement.of(inside, r("req.in_settlement", "The bed is inside a recognized settlement"),
+                        inside ? evidence.settlement().map(ResidenceTasks::name).orElse(Component.empty()) : why));
             }
         }
-        if (evidence.settlement().isPresent())
-            rows.add(Requirement.of(evidence.check() != Check.NOT_PRESENT, r("req.present", "You are in %s now", name(evidence.settlement().get())), Component.empty()));
+        if (evidence.settlement().isPresent()) {
+            boolean present = evidence.check() != Check.NOT_PRESENT;
+            rows.add(Requirement.of(present, r("req.present", "You are in %s now", name(evidence.settlement().get())), present ? Component.empty() : why));
+        }
         if (intent == Intent.MOVE && review.currentResidence().isPresent())
             rows.add(Requirement.of(review.cooldownRemaining() == 0, r("req.cooldown", "Time since your last residence change"),
                     review.cooldownRemaining() == 0 ? r("req.cooldown.done", "the wait is over") : r("req.cooldown.left", "%s left", Names.durationText(review.cooldownRemaining()))));

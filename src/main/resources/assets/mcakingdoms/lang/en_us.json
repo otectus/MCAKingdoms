@@ -2546,7 +2546,6 @@
   "interaction.mcakingdoms.residence.req.enabled": "Self-registration on this server",
   "interaction.mcakingdoms.residence.req.provider": "Your home, as recorded by an installed mod",
   "interaction.mcakingdoms.residence.req.bed": "A respawn point set by a bed",
-  "interaction.mcakingdoms.residence.req.none": "none",
   "interaction.mcakingdoms.residence.req.bed_present": "The bed is still there (checked in a loaded area)",
   "interaction.mcakingdoms.residence.req.in_settlement": "The bed is inside a recognized settlement",
   "interaction.mcakingdoms.residence.req.present": "You are in %s now",
@@ -2604,5 +2603,7 @@
   "menu.mcakingdoms.settings.badges.hidden": "Hidden",
   "menu.mcakingdoms.settings.badges.help": "A small line above public office holders near you naming their office, such as Leader of Serenum. Their names are never changed.",
   "menu.mcakingdoms.settings.badges.distance": "Badge distance: %s blocks",
-  "interaction.mcakingdoms.help.residence": "To take part in civic life, and to found a government where that is allowed, record a civic residence: sleep in a bed inside a settlement so your respawn point is there, stand in the settlement and use Register my residence. It records a civic home only; it claims no land."
+  "interaction.mcakingdoms.help.residence": "To take part in civic life, and to found a government where that is allowed, record a civic residence: sleep in a bed inside a settlement so your respawn point is there, stand in the settlement and use Register my residence. It records a civic home only; it claims no land.",
+  "interaction.mcakingdoms.residence.req.unregistered": "No residence recorded yet",
+  "interaction.mcakingdoms.residence.req.registered": "A recorded residence to move"
 }

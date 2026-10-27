@@ -318,6 +318,61 @@
         "/kingdoms politics inspect \"<kingdom name>\" history"
       ],
       "task": "politics.read_history"
+    },
+    {
+      "id": "political_notices_and_badges",
+      "category": "politics",
+      "title": "Avisos políticos e insignias de cargo",
+      "summary": "Avisos opcionales de los momentos políticos públicos y una línea con el cargo de los funcionarios cercanos.",
+      "keywords": [
+        "aviso",
+        "insignia",
+        "anuncio",
+        "memorial",
+        "cargo"
+      ],
+      "commands": [],
+      "blocks": [
+        {
+          "id": "text_0",
+          "type": "paragraph",
+          "text": "Los avisos políticos te informan de los momentos públicos del registro político confirmado: la fundación de un gobierno, la llegada de un líder o funcionario a su cargo, un cargo que queda vacante y un memorial cuando se confirma la muerte de un funcionario. Cada momento se muestra una sola vez y con palabras neutrales: un cargo conserva el nombre que le da su constitución y de nadie se dice que fue coronado. Los avisos están desactivados hasta que los activas."
+        },
+        {
+          "id": "text_1",
+          "type": "paragraph",
+          "text": "Abre Ajustes desde Tareas del reino y elige la pestaña Política. Avisos políticos: Desactivados no muestra ninguno, Línea de chat añade una línea al chat y Línea de chat y rótulo muestra además un breve rótulo en pantalla. No suena nada y nada interrumpe lo que estás haciendo; la línea de chat es la versión en texto del aviso."
+        },
+        {
+          "id": "text_2",
+          "type": "paragraph",
+          "text": "Solo se anuncian hechos públicos. Los mandatos privados, las propuestas, las papeletas y los consentimientos nunca se anuncian. Un cargo local solo se anuncia a los jugadores que conocen su asentamiento. Nunca se da por muerta a una persona que solo está desconectada o en una zona sin cargar."
+        },
+        {
+          "id": "text_3",
+          "type": "paragraph",
+          "text": "Las insignias de cargo son una línea pequeña sobre quien ocupa un cargo público cerca de ti con el nombre de su cargo: ♛ indica un líder, ⚑ otro cargo y +N cuántos cargos más ocupa. El nombre propio, el nombre personalizado, la apariencia y el equipo de la persona nunca cambian, y ningún cargo se deduce de un nombre. Las insignias siguen los nombramientos, destituciones y sucesiones, y desaparecen cuando la persona sale de tu vista o te desconectas. La pestaña Política las oculta o fija desde qué distancia se ven (de 4 a 48 bloques, 16 por defecto)."
+        },
+        {
+          "id": "text_4",
+          "type": "paragraph",
+          "text": "Los selectores de personas de Tareas del reino y la lista del consejo también nombran los cargos públicos de cada persona. Un operador del servidor puede desactivar los avisos o las insignias para todos; entonces los ajustes no tienen nada que mostrar."
+        },
+        {
+          "id": "more",
+          "type": "links",
+          "links": [
+            {
+              "kind": "guide",
+              "target": "offices_and_permissions"
+            },
+            {
+              "kind": "guide",
+              "target": "read_political_history"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

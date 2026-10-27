@@ -1,5 +1,7 @@
 # MCA: Kingdoms audit
 
+> **Historical audit (2026-09-21).** Its open wording is not a current bug list; each finding's current disposition is in the [completion ledger](Completion-Ledger.md).
+
 Audit of commit `ad0fbad5b99712ac7fb9fadfd4c595b757fe9ad7` (branch `main`), performed 2026-09-21 as a combined engineering and player-experience review. No production code was changed; this document is the only repository change. Line references are to the working tree at that commit.
 
 ## 1. Scope and method

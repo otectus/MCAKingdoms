@@ -6,7 +6,7 @@
       "title": "Run a world safely",
       "summary": "Keep setup, player authority, and recovery as separate jobs.",
       "body": [
-        "Operator commands typically require permission level 2. Kingdom Tasks shows operators additional administration and standing tasks. These use named settlement, person, region, migration, and reconciliation choices. Revisions and reconciliation fingerprints travel with the reviewed selection and cannot be typed or guessed in the GUI. Start with Server health: it shows the feature switches, installed providers, saved-data writability, the last definition reload, this start's Ultima migration, and discovery and reconciliation activity.",
+        "Operator commands typically require permission level 2. Kingdom Tasks shows operators additional administration and standing tasks. These use named settlement, person, region, migration, and reconciliation choices. Revisions and reconciliation fingerprints travel with the reviewed selection and cannot be typed or guessed in the GUI. Start with Server health: it shows the feature switches, installed providers, saved-data writability, how full each record collection is, the last definition reload, this start's Ultima migration, and discovery and reconciliation activity.",
         "Some useful tasks still require a connected player because they use that player’s location, selected entity, private knowledge, or political authority. Running from the server console is not always equivalent. Commands remain an optional equivalent interface for automation.",
         "Start with definitions and integrations, then register or discover actual settlements, establish needed governments, recognize suitable institutions, and appoint real contacts. Enable optional world evolution only when you want it. Once a world is opted in, every settlement of a kingdom with a government is an eligible region by default (autoEligibleRegions); pause the ones you do not want. Do not give yourself every political role merely to make a diagnostic pass.",
         "Before migration or repair, stop normal play and back up the entire world together: level data, world/data sidecars, dimensions, entity regions, and playerdata. Native quests, inventories, political records, and troops can span several files. Restoring only one receipt ledger is not a world rollback.",
@@ -73,7 +73,7 @@
         "Faction migration imports supported legacy local reputation into kingdom baselines. First run migration dry_run and inspect source availability, already-imported status, groups, unmapped communities, and conflicts with existing records. The default aggregation is MEAN; the configured alternatives include MEDIAN, MAX, MIN, and SUM.",
         "Resolve every unavailable source, missing community mapping, and conflicting existing baseline before import. A completed import marker prevents treating the same old data as new repeatedly. Import creates baselines without fabricating a stream of historical incidents or guild deeds.",
         "For any migration, use a whole-world backup and a quiet maintenance window. Settlement merges, kingdom reassignment, organization mergers, and provider removal are different operations with different owners. Choose the tool matching the change; one operation is not a substitute for the others.",
-        "Unknown future or malformed data is retained read-only by affected ledgers. Restore a compatible version or a coherent backup; overwriting that file with an empty one can orphan native effects that already happened. Capacity limits also stop new writes rather than silently erasing retained proof.",
+        "Unknown future or malformed data is retained read-only by affected ledgers. A settlement file that cannot be read completely, or a failed Ultima carry-over, stops the server from starting instead of starting it empty; the log names the file and what to do. Restore a compatible version or a coherent backup; overwriting that file with an empty one can orphan native effects that already happened. Capacity limits also stop new writes rather than silently erasing retained proof; see Capacity and record maintenance.",
         "Removing a mod that owns entities can cause vanilla to discard unknown entity types when their chunks load. Test optional-provider absence on a copy. Reinstall tests that need those entities must use the retained pre-removal world snapshot. MCA: Kingdoms preserves its own suspended records; it does not reconstruct native mobs deleted by vanilla."
       ],
       "commands": [
@@ -81,6 +81,25 @@
         "/kingdoms faction migration import"
       ],
       "task": "standing.migration_preview",
+      "operator": true
+    },
+    {
+      "id": "capacity_and_maintenance",
+      "category": "operators",
+      "title": "Capacity and record maintenance",
+      "summary": "Watch the bounded record stores and archive finished records safely.",
+      "body": [
+        "Every MCA: Kingdoms store has defensive bounds that keep saves, replies and ticks bounded. At a bound, the owning service refuses new records of that kind with a message; nothing is deleted to make room, and everything else keeps working. Server health's Capacity section lists every collection at 80% or more, fullest first; /kingdoms maintenance capacity lists them all with what relieves each.",
+        "Some collections prune themselves: political history, political request receipts and campaign history. Finished recruit transfers and finished opportunities can be archived by an operator. Run the compact command without apply first, which only counts; back up the world; then add apply. The records are written as readable JSON to the world's mcakingdoms_archive folder before they leave the store, so a failure never loses them.",
+        "Only transfers that are complete, cancelled or expired, three Minecraft days past their deadline and never diverged are archived; reconciled and unfinished transfers stay. Opportunity compaction also drops lapsed cooldowns and the schedules of players no longer subscribed. Used evidence, used receipts and dismissed contacts are never compacted: they stop work from counting twice.",
+        "The other collections (governments, agreements, petitions, recognitions, honors, elections, campaigns, world events, pacts, guild chapters, commissions and discovery) hold records that other records point at, so they keep refusing at their bound. Before one fills, finish or withdraw open work, take a full world backup and follow the offline procedure in the mod's documentation. Never edit or delete the saved files by hand."
+      ],
+      "commands": [
+        "/kingdoms maintenance capacity",
+        "/kingdoms maintenance compact transfers [apply]",
+        "/kingdoms maintenance compact opportunities [apply]"
+      ],
+      "task": "administration.health",
       "operator": true
     },
     {

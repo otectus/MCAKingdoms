@@ -167,7 +167,7 @@ def main():
         raise SystemExit(f'Interaction client acceptance failed; inspect {work}/client.log\n{detail}')
     expected = list(SCREENSHOTS) if args.suite == 'interactions' else ['politics-overview.png', 'politics-council.png', 'politics-form-compact.png', 'politics-petitions-compact.png']
     if args.gui_style:
-        pages = ['start', 'categories', 'ledger', 'settlement', 'guild', 'kingdom', 'form', 'blueprint-header', 'guide', 'guide-recipe', 'war-room', 'entry', 'getting-started', 'settings', 'settings-tasks', 'history-confirm']
+        pages = ['start', 'categories', 'ledger', 'settlement', 'guild', 'kingdom', 'form', 'blueprint-header', 'guide', 'guide-recipe', 'war-room', 'entry', 'getting-started', 'settings', 'settings-tasks', 'history-confirm', 'settings-politics', 'residence']
         if args.task_style:
             pages = ['start', 'categories', 'form', 'getting-started']
         for prefix in [''] + [f'{code.strip()}-' for code in args.languages.split(',') if code.strip()]:

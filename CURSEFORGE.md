@@ -20,6 +20,8 @@ If Read this settlement finds nothing yet, walk further into the village and try
 
 - Kingdom Tasks: search what you want to do in your own language, choose people and places by name, and review every change before applying it
 - Persistent settlement names, kingdom membership, territory, and discovery records
+- Register your own civic residence: the server checks that your bed-set respawn point is in the settlement and that you are there, and a cooldown applies to moves. It is a civic record, not a land claim.
+- Optional political notices for foundings, accessions, vacancies and memorials, turned on per player, plus office badges above public office holders. Names and skins are never changed.
 - Six kingdoms with distinct name pools, biome rules, colors, and heraldry
 - Automatic detection of village structures and village point-of-interest clusters
 - The Book of Kingdoms guide and the Village Ledger, with kingdom filters and detail pages
@@ -49,7 +51,16 @@ MCA: Kingdoms civic identity is stored separately from MCA identity. The integra
 
 ## Other companions
 
-All optional. Townstead `0.7.6` (validated), Recruits exactly `1.15.2` for military actions (other Recruits versions run with the military integration unavailable), MCA Quests for guild jobs and commissions, MCA Reputation `0.6.1` or later for live standing synchronization, MCA: Crime for paid workshop jobs, and MCA Conversations for kingdom-gated topics. The README's compatibility table records accepted and validated versions.
+All optional:
+
+- Townstead `0.7.6` (validated).
+- Recruits exactly `1.15.2` for military actions. Other Recruits versions run with the military integration unavailable.
+- MCA Quests for guild jobs and commissions. Paid workshop jobs also need a Quests build with the MCA: Kingdoms institutional contract, which the public 1.7.1 source lacks; Server health shows whether yours has it.
+- MCA Reputation `0.6.1` or later for live standing synchronization.
+- MCA: Crime for paid workshop jobs.
+- MCA Conversations for kingdom-gated topics.
+
+The README's compatibility table separates the accepted range, the validated jar and the public source. With MCA: Capitals installed, MCA: Kingdoms turns its own governments off.
 
 ## For modpack authors
 

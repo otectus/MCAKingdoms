@@ -156,7 +156,7 @@
         "MCA: Kingdoms añade registros separados de origen y residencia a las entidades admitidas. Las pruebas positivas de un hogar actual pueden actualizar la residencia cívica. El primer hogar conocido puede fijar el origen; los recién nacidos en un asentamiento reconocido también pueden recibir ese asentamiento como origen inicial.",
         "El origen se conserva como historia cuando un residente se muda. La residencia actual debe estar respaldada; ver a un PNJ cruzar un mercado no basta para declarar que se ha mudado allí. Desconocer el hogar de alguien no equivale a que no tenga hogar, haya muerto o sea hostil.",
         "Con MCA instalado, los nombres personales, la genética, los corazones, la familia, la personalidad y el hogar de MCA siguen siendo datos de MCA. Renombrar un asentamiento de MCA: Kingdoms cambia la etiqueta cívica sin renombrar a los residentes ni reescribir la historia familiar. Nombrar a alguien para un cargo no sustituye su profesión ni le da un nuevo horario de IA.",
-        "Algunos papeles requieren un adulto vivo y cargado con residencia confirmada. Una etapa vital desconocida o un PNJ sin cargar pueden impedir un nombramiento sin que eso signifique que el PNJ haya muerto. Los operadores pueden inspeccionar la identidad y corregir deliberadamente el origen o la residencia, pero esos comandos no son herramientas para que los jugadores se muden."
+        "Algunos papeles requieren un adulto vivo y cargado con residencia confirmada. Una etapa vital desconocida o un PNJ sin cargar pueden impedir un nombramiento sin que eso signifique que el PNJ haya muerto. Los operadores pueden inspeccionar la identidad y corregir deliberadamente el origen o la residencia, pero esos comandos no son herramientas para que los jugadores se muden. Los jugadores registran o mudan su propia residencia con Registrar mi residencia y Mudar mi residencia."
       ],
       "commands": [
         "/kingdoms citizen info <entity selector>",
@@ -165,6 +165,117 @@
       ],
       "task": "citizen.inspect",
       "operator": true
+    },
+    {
+      "id": "register_residence",
+      "task": "citizen.register_residence",
+      "category": "settlements",
+      "title": "Registra tu residencia",
+      "summary": "Registra un asentamiento como tu hogar cívico, verificado por el servidor.",
+      "keywords": [
+        "residencia",
+        "hogar",
+        "cama",
+        "registrar",
+        "mudarse"
+      ],
+      "commands": [
+        "/kingdoms residence status",
+        "/kingdoms residence register",
+        "/kingdoms residence move"
+      ],
+      "blocks": [
+        {
+          "id": "journey_heading",
+          "type": "heading",
+          "text": "El registro, de un vistazo"
+        },
+        {
+          "id": "journey",
+          "type": "diagram",
+          "alt": "Fija tu punto de reaparición durmiendo en una cama dentro del asentamiento, quédate en ese asentamiento, revisa lo que encontró el servidor y tu residencia cívica queda registrada.",
+          "nodes": [
+            {
+              "id": "n0",
+              "label": "Duerme en una cama allí",
+              "item": "minecraft:red_bed"
+            },
+            {
+              "id": "n1",
+              "label": "Quédate en el asentamiento",
+              "item": "minecraft:compass"
+            },
+            {
+              "id": "n2",
+              "label": "Revisa las pruebas",
+              "item": "minecraft:writable_book"
+            },
+            {
+              "id": "n3",
+              "label": "Residencia registrada",
+              "item": "minecraft:name_tag"
+            }
+          ],
+          "edges": [
+            {
+              "from": "n0",
+              "to": "n1"
+            },
+            {
+              "from": "n1",
+              "to": "n2"
+            },
+            {
+              "from": "n2",
+              "to": "n3"
+            }
+          ]
+        },
+        {
+          "id": "text_0",
+          "type": "paragraph",
+          "text": "La residencia cívica es el asentamiento que MCA: Kingdoms registra como tu hogar. La fundación por residentes y los electorados de residentes la consultan. Es un registro, no una propiedad: registrarla no concede ningún cargo, terreno, edificio, hogar de PNJ, pertenencia a un gremio ni deber de guerra, y no reclama nada que pertenezca a otra persona."
+        },
+        {
+          "id": "text_1",
+          "type": "paragraph",
+          "text": "1. Duerme en una cama dentro del asentamiento para que sea tu punto de reaparición; un punto fijado con un comando no cuenta. 2. Quédate dentro del mismo asentamiento. 3. Abre Registrar mi residencia en Tareas del reino. Su revisión muestra el asentamiento, la cama que encontró el servidor y lo que cambiará, incluido tu origen si aún no tienes uno. El servidor vuelve a comprobarlo todo al aplicar."
+        },
+        {
+          "id": "text_2",
+          "type": "paragraph",
+          "text": "El servidor solo lee fragmentos cargados y sus propios registros. Si la cama está en una zona sin cargar, se rompió o queda fuera de todo asentamiento reconocido, o si no estás dentro del asentamiento, la solicitud se rechaza con el motivo y el siguiente paso. Visitar, dormir o comerciar por sí solos nunca cambian tu residencia; solo lo hace tu solicitud explícita. Si hay instalado un proveedor que registra un hogar de jugador con autoridad, se usa en lugar de la cama."
+        },
+        {
+          "id": "text_3",
+          "type": "paragraph",
+          "text": "Para cambiarla más adelante, fija tu cama en el nuevo asentamiento y abre Mudar mi residencia. Una mudanza espera el tiempo de espera del servidor desde tu último cambio de residencia (un día de Minecraft de tiempo del servidor por defecto); tu origen se mantiene. Registrar el asentamiento que ya tienes no cambia nada. Consultar mi residencia muestra tu registro, las pruebas actuales y cualquier espera. Mudarte nunca reescribe una elección ya abierta ni un mandato ya otorgado."
+        },
+        {
+          "id": "operators",
+          "type": "callout",
+          "tone": "note",
+          "text": "Los operadores pueden seguir fijando la residencia de cualquiera con Establecer la residencia cívica y saltarse la espera en su propia mudanza. Un servidor puede desactivar el registro de jugadores; entonces solo los operadores y los complementos registran residencias."
+        },
+        {
+          "id": "more",
+          "type": "links",
+          "links": [
+            {
+              "kind": "guide",
+              "target": "found_a_government"
+            },
+            {
+              "kind": "guide",
+              "target": "npc_identity"
+            },
+            {
+              "kind": "task",
+              "target": "citizen.residence_status"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "settlement_changes",

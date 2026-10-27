@@ -28,4 +28,4 @@ For packs built around Recruits. Military actions need **Recruits exactly 1.15.2
 
 - Kingdom standing synchronization starts in `SHADOW`: MCA Reputation changes are read and what they would do is recorded, but standing does not change. Review `/kingdoms faction diagnostics` before choosing `MCA_TO_FACTION` or `BIDIRECTIONAL_SEMANTIC` (MCA Reputation 0.6.1 or later).
 - World evolution and world events stay off. No configuration file turns them on: an operator opts each world in with **Configure world evolution** in Kingdom Tasks, and world events are a second, separate choice on that form.
-- Resident founding (`politics.openFounding`) stays on. A player still needs a recorded civic residence, which an operator or an addon records.
+- Resident founding (`politics.openFounding`) and player residence registration (`civicIdentity.playerRegistration`) stay on. A player records their civic residence with Register my residence (their bed-set respawn point inside the settlement, while standing there); an operator or an addon can also record one.

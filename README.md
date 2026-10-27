@@ -47,20 +47,27 @@ The Book of Kingdoms is the in-game rules reference. The documents under `docs/`
 
 ## Compatibility
 
-Every companion is optional. "Accepted" is what the dependency metadata lets Forge load; "validated" is what has actually been run. An accepted but unvalidated version may work, may bind fewer capabilities, or may be refused by a capability check; Server health reports which.
+Every companion is optional. Three things are recorded separately for each one:
 
-| Provider | Accepted by metadata | Validated / runtime behaviour |
-| --- | --- | --- |
-| MCA Reborn | `[7.6,8)` | Runtime validation used `7.6.26+1.20.1` with Architectury API `9.2.14`. The adapter capability-probes four known MCA 7.x package roots. |
-| Architectury API | No MCA: Kingdoms dependency | Install the version MCA Reborn itself requires; the validated tuple used `9.2.14`. |
-| Townstead | `[0.7.6,0.9)` | Validated with `0.7.6+1.20.1`. Bindings are probed member by member; Server health lists the capabilities that bound. |
-| Recruits | `[1.15.2,)` permits launch | Military actions bind only to exactly `1.15.2`. Another version runs with the military integration unavailable, and Server health says so. |
-| MCA Quests | `[1.6.5,)` | Needed for guild jobs, commissions and completion receipts, and for its quests' kingdom conditions. |
-| MCA Reputation | `[0.6.0,)` | Read-only with 0.6.0; live standing synchronization needs 0.6.1 or later. |
-| MCA: Crime | `[0.7.5,)` | Its workshop-legality provider is required for paid workshop jobs. |
-| MCA Conversations | Not declared | Bound at runtime when present (conversation `kingdom_gate` topics). |
+- what the dependency metadata **accepts** (Forge loads it);
+- the exact jar that was **validated** in acceptance runs (each listed with its SHA-256 in [`tools/test/companions.json`](tools/test/companions.json));
+- what the newest inspected **public source** carries.
 
-The companions bind the renamed `mcakingdoms` id from MCA: Quests 1.7.1, MCA: Reputation 0.6.1, MCA: Conversations 1.8.0 and MCA: Crime 0.7.5. On 2026-10-24 their source trees were at Quests 1.7.1, Reputation 0.6.1, Conversations 1.8.1 and Crime 0.8.0, each declaring `mcakingdoms`; whether those builds are publicly released was not checked. For one release they also recognize a pack that still ships the old Ultima Kingdoms jar.
+An accepted but unvalidated version may work, may bind fewer capabilities, or may be refused by a capability check. Server health reports which.
+
+| Provider | Accepted by metadata | Validated artifact | Behaviour and public source |
+| --- | --- | --- | --- |
+| MCA Reborn | `[7.6,8)` | `7.6.26+1.20.1` | The adapter capability-probes four known MCA 7.x package roots. |
+| Architectury API | No MCA: Kingdoms dependency | `9.2.14` | Install the version MCA Reborn itself requires. |
+| Townstead | `[0.7.6,0.9)` | `0.7.6+1.20.1` | Bindings are probed member by member; Server health lists the capabilities that bound. |
+| Recruits | `[1.15.2,)` permits launch | `1.15.2` | Military actions bind only to exactly `1.15.2`. Another version runs with the military integration unavailable, and Server health says so. |
+| MCA Quests | `[1.6.5,)` | `1.7.1`, built from unreleased local work | Guild jobs, commissions and completion receipts use its public receipt API. **Paid workshop jobs** also need `McaQuestsApi.institutionalCompletionConsumer()` naming an `mcakingdoms` consumer. The public 1.7.1 source (`784f5d5`) does not have it; unreleased Quests work (1.7.2) adds it. Without it, Server health reports `legacy_consumer_contract` and paid workshop jobs are refused before any offer; ordinary guild work is unaffected. |
+| MCA Reputation | `[0.6.0,)` | `0.6.1`, built from unreleased local work | Read-only with 0.6.0; live standing synchronization needs 0.6.1 or later. Carrying a pre-rename standing journal over to `mcakingdoms:factions` needs Reputation's unreleased outbox handoff. Without it, the renamed consumer starts at the journal tail, and Kingdoms reports the skipped range as a journal gap. |
+| MCA: Crime | `[0.7.5,)` | `0.7.5` | Its workshop-legality provider is required for paid workshop jobs. The public 0.8.0 source has the same interface. |
+| MCA Conversations | Not declared | `1.8.0` | Bound at runtime when present (conversation `kingdom_gate` topics). The public 1.8.1 source recognizes both mod ids. |
+| MCA: Capitals | Not declared | — | When installed, MCA: Kingdoms turns its native governance off. No interoperability between the two political systems is claimed. |
+
+The companions bind the renamed `mcakingdoms` id. For now they also recognize a pack that still ships the old Ultima Kingdoms jar. Removing that is a coordinated release step; see [Upgrade and recovery](docs/Upgrade-and-Recovery.md#old-names-runtime-aliases-and-on-disk-migration).
 
 ## Installation
 
@@ -89,14 +96,16 @@ The first time a player enters a recognized settlement, the client shows its nam
 Beyond identity, the optional systems are:
 
 - **Kingdom standing**, with optional MCA Reputation synchronization that starts in observe-only `SHADOW` mode.
+- **Your residence**: **Register my residence** in Kingdom Tasks records a settlement as your civic home. The server first checks its own evidence: your respawn point, set by sleeping in a bed, lies inside the settlement, and you are standing there. **Move my residence** changes it after a wait (one Minecraft day of server time by default), and **Check my residence** shows what the server sees. It is a civic record, not land ownership: it grants no office, land, guild membership or war duty. Sleeping, visiting or trading never moves it. `/kingdoms residence status|register|move` are the command equivalents.
 - **Governments**: capital charters, offices, mandates, petitions, institution recognition, honors, peaceful agreements, elections and regency. With `politics.openFounding` on (the default), a player whose recorded civic residence is in a kingdom can found its first government with themselves as leader; operators can always found. See [political usage](docs/politics/usage.md) and [ownership](docs/politics/ownership.md).
+- **Political notices and office badges** (optional). Each player can turn on notices under Settings → Politics, as a chat line or a chat line plus a silent banner. Notices cover foundings, accessions, vacancies and a memorial for a confirmed death. They come from the committed political record, once each; private mandates and proposals are never announced. A small line above public office holders near you names their office, without changing their name, skin or equipment. Kingdom Tasks' person pickers and the council list name offices too.
 - **Guilds and service**: Lamplighters membership, verified quest service, chapter contacts, introductions, commissions and paid workshop jobs. Guild jobs are quests from the modpack's content and need MCA Quests. See the [civic foundation record](docs/R1-Civic-Foundation.md) and [institutions record](docs/R2-Institutions-and-Agreements.md).
 - **Warfare and exploration**: campaigns, settlement control agreements, temporary recruit deployments (Recruits 1.15.2), civilian recovery contracts, and discovered world sites and routes. See the [native control record](docs/R3-Native-Control.md).
 - **An evolving world**: opportunities, protection pacts, organization history, family introductions and recruit transfers. It is off for every world until an operator opts that world in; `autoEligibleRegions` then decides which settlements are eligible regions, it never opts a world in. See the [evolving world record](docs/R4-Evolving-World.md).
 
 ## MCA Reborn integration
 
-With the supported MCA version installed, MCA: Kingdoms reads MCA's village records to recognize settlements and reads an MCA villager's current home as positive residence evidence. An MCA villager's first observed civic residence becomes their origin if no origin is already recorded. Newborns inside an already recognized settlement can also receive that settlement as their initial civic identity. Players' residences are not inferred from movement, sleeping or trading; an operator or an addon records them.
+With the supported MCA version installed, MCA: Kingdoms reads MCA's village records to recognize settlements and reads an MCA villager's current home as positive residence evidence. An MCA villager's first observed civic residence becomes their origin if no origin is already recorded. Newborns inside an already recognized settlement can also receive that settlement as their initial civic identity. Players' residences are never inferred from movement, sleeping or trading. A player registers one explicitly, with the server checking their bed-set respawn point and presence; an operator or an addon can also record one.
 
 The integration adds separate MCA: Kingdoms civic data to entities. It does not write MCA personal names, family relationships, homes, genetics, personalities, dialogue state, or relationship values. Renaming an MCA: Kingdoms settlement therefore changes its civic label without renaming its residents or changing their MCA family and home data.
 
@@ -105,6 +114,8 @@ The integration adds separate MCA: Kingdoms civic data to entities. It does not 
 - **Server health** (Kingdom Tasks, operators) and `/kingdoms health` (also from the console) report the feature switches, installed providers and the capabilities that bound, saved-data writability, the last definition reload, this start's Ultima migration results, and discovery and reconciliation activity: work queued and done, refused merges, and whether the one-time start-up pass is recorded as done for this world.
 - **Reloading definitions** (`/kingdoms reload`, or Reload server definitions in Kingdom Tasks) reports each definition domain as accepted or rejected. A rejected domain keeps its previous definitions, and the report names the file, field and expected value. See the [datapack reference](docs/Datapack-Reference.md#reload-and-failure-behaviour).
 - **Reconcile nearby village records** (or `/kingdoms village reconcile [radiusChunks]`) merges split records of one generated village in the loaded area around you. Its review shows how many records are in scope and what a merge keeps; the result reports what was merged and what lies in no known village.
+- **Capacity**: Server health's Capacity section lists every record collection at 80% or more of its bound, and `/kingdoms maintenance capacity` lists them all. Finished recruit transfers and opportunities can be archived with a dry-run-first command. Nothing is deleted automatically. See [Capacity and record maintenance](docs/Capacity-and-Maintenance.md).
+- **Fail-closed starts**: the server stops instead of starting empty in two cases: a settlement file this version cannot read completely, and a failed Ultima Kingdoms carry-over. The log names the file and the remedy. See the [upgrade and recovery runbook](docs/Upgrade-and-Recovery.md), which also covers downgrades, read-only stores, interrupted operations and companion contract problems.
 - `/kingdoms help [topic]` prints command syntax. Clicking a line puts it in the chat box; nothing runs until you send it.
 
 ## Upgrading from Ultima Kingdoms
@@ -125,8 +136,10 @@ A file is copied only when its new name does not exist yet, and the old files ar
 2. Update the companions to builds that bind `mcakingdoms` (see [Compatibility](#compatibility)), and move any pack-owned datapack folders from `data/ultima_kingdoms/` to `data/mcakingdoms/`.
 3. Start the server once, before anyone joins. Open Server health or run `/kingdoms health`: the migration section lists each file as copied, skipped because its new name already existed, or failed. Only this start's results are shown; earlier starts are not recorded.
 4. If every file copied, check that settlements, known places, governments, guild memberships and kingdom standing look right, then reopen the server.
-5. If a file failed, stop the server before anyone plays on. That store started empty for this run, and the old file is untouched. If the new `mcakingdoms_*.dat` file named in the report now exists, it holds only what this run saved: move it aside (keep it), fix or restore the old `ultima_kingdoms_*.dat` file, and start again to retry that one copy. This applies only to a failed first copy before new progress was saved. Once players have made progress on the renamed world, restore the complete backup instead, or repair the specific record through a supported task or command; never delete live stores.
+5. If a file failed, the server does not start. Since 0.3.0 a failed copy of any saved-data file, or of a common config file, stops the world before any store is created. The log and `world/data/mcakingdoms_migration_report.txt` name each failed file and why. Nothing was written in its place, and the old file is untouched. Fix the cause (permissions, disk space, or a damaged old file restored from the backup) and start again. Copies that succeeded are kept; only the failed ones are retried. Do not delete existing `mcakingdoms_*` files to force a copy: they may hold newer play.
 6. The kingdom standing *import* from older standing data is a separate, operator-reviewed step (Preview legacy reputation migration, then Import reviewed legacy reputation). It is not part of the namespace migration.
+
+Copying old files is permanent **on-disk migration** support. Reading old names during play is a separate set of **runtime aliases**: old slugs, item names and civic-identity keys. Those aliases are removed only in a coordinated release with the companions, and the on-disk migration stays. See [Upgrade and recovery](docs/Upgrade-and-Recovery.md#old-names-runtime-aliases-and-on-disk-migration).
 
 ## Optional command reference
 
@@ -146,6 +159,9 @@ The following commands are available to players:
 /kingdoms kingdom info <kingdom-definition-id>
 /kingdoms village here
 /kingdoms village info ["settlement name"]
+/kingdoms residence status
+/kingdoms residence register
+/kingdoms residence move
 ```
 
 The remaining commands require permission level 2:
@@ -165,8 +181,14 @@ The remaining commands require permission level 2:
 /kingdoms citizen info <entity>
 /kingdoms citizen setorigin <entity> "Old Bellmeadow"
 /kingdoms citizen setresidence <entity> "Old Bellmeadow"
+/kingdoms residence move now
+/kingdoms maintenance capacity
+/kingdoms maintenance compact transfers [apply]
+/kingdoms maintenance compact opportunities [apply]
 /kingdoms reload
 ```
+
+`residence move now` moves the operator's own residence without waiting for the cooldown; the evidence checks still apply. The `compact` commands are dry runs until `apply` is added.
 
 Manual settlement radii range from 16 to 512 blocks and default to 64. Discovery radii range from 1 to 32 chunks and default to 8.
 
@@ -194,8 +216,8 @@ MCA: Kingdoms writes eight files to `config/`. The [configuration reference](doc
 
 | File | Covers |
 | --- | --- |
-| `mcakingdoms-common.toml` | Settlement discovery and village identity, reconciliation, resident founding (`politics.openFounding`) and NPC civic evidence (18 keys) |
-| `mcakingdoms-client.toml` | Each player's settlement entry title, what Kingdom Tasks opens to, its introduction, and recipe animation (also in the in-game settings screen) |
+| `mcakingdoms-common.toml` | Settlement discovery and village identity, reconciliation, resident founding (`politics.openFounding`), political notices and office badges, NPC civic evidence and player residence registration (22 keys) |
+| `mcakingdoms-client.toml` | Each player's settlement entry title, what Kingdom Tasks opens to, its introduction, recipe animation, and political notices and office badges (also in the in-game settings screen) |
 | `mcakingdoms-civic-common.toml` | Guild chapter services, institutional services and the contact range (default 8 blocks, 2 to 32) |
 | `mcakingdoms-factions-common.toml` | Kingdom standing and MCA Reputation synchronization (`SHADOW` by default) |
 | `mcakingdoms-warfare-common.toml` | Military actions, civilian contracts, target protection and world context |
@@ -248,6 +270,8 @@ build/libs/mcakingdoms-<version>-sources.jar
 ```
 
 `<version>` is `mod_version` in `gradle.properties`. `python3 tools/test/run_gametests.py` runs the GameTests; move `run/world` aside first, because several settlement tests expect a fresh world.
+
+The packaged acceptance and client scripts under `tools/test/` and `tools/client-test/` find their prerequisites through `tools/test/environment.py`, never through paths in the source. Those prerequisites are an accepted EULA file, a Forge installation, a modpack instance, Java 17, an Xvfb binary and a Gradle wrapper. Supply them as environment variables (`MCAKINGDOMS_EULA`, `MCAKINGDOMS_MC_INSTALL`, `MCAKINGDOMS_PACK`, `MCAKINGDOMS_JAVA`, `MCAKINGDOMS_XVFB`, `MCAKINGDOMS_GRADLEW_QUIET`) or in an ignored `tools/test/local-environment.json` (see `local-environment.example.json`). `python3 tools/test/environment.py` reports what was found, and a missing prerequisite stops a script with its name. `python3 tools/test/verify_companions.py --pack` checks the instance's companion jars against `tools/test/companions.json`.
 
 Forge 47 reads mixin configs only from a jar's `MixinConfigs` manifest attribute, so every development run passes `-mixin.config=mcakingdoms.mixins.json` instead. The Recruits hooks still apply only to Recruits 1.15.2: put that jar in `run/mods` to exercise warfare in a development run.
 

@@ -156,7 +156,7 @@
         "MCA: Kingdoms adds separate origin and residence records to eligible entities. Positive evidence of a current home can update civic residence. A first known home can establish origin; newborns in a recognized settlement can also receive that settlement as an initial origin.",
         "An origin remains historical when a resident moves. A current residence must be supported; seeing an NPC walk through a market is not enough to declare that they moved there. Unknown home evidence is different from homelessness, death, or hostile allegiance.",
         "With MCA installed, personal names, genetics, hearts, family, personality, and the MCA home remain MCA's data. Renaming an MCA: Kingdoms settlement changes the civic label without renaming residents or rewriting family history. An office appointment does not replace a profession or start a new AI schedule.",
-        "Some roles require a living, loaded adult with a confirmed residence. An unknown life stage or an unloaded NPC can block an appointment without implying that the NPC is dead. Operators can inspect identity and make deliberate origin/residence corrections, but those commands are not ordinary player relocation tools."
+        "Some roles require a living, loaded adult with a confirmed residence. An unknown life stage or an unloaded NPC can block an appointment without implying that the NPC is dead. Operators can inspect identity and make deliberate origin/residence corrections, but those commands are not ordinary player relocation tools. Players register or move their own residence with Register my residence and Move my residence."
       ],
       "commands": [
         "/kingdoms citizen info <entity selector>",
@@ -165,6 +165,117 @@
       ],
       "task": "citizen.inspect",
       "operator": true
+    },
+    {
+      "id": "register_residence",
+      "task": "citizen.register_residence",
+      "category": "settlements",
+      "title": "Register your residence",
+      "summary": "Record a settlement as your civic home, verified by the server.",
+      "keywords": [
+        "residence",
+        "home",
+        "bed",
+        "register",
+        "move house"
+      ],
+      "commands": [
+        "/kingdoms residence status",
+        "/kingdoms residence register",
+        "/kingdoms residence move"
+      ],
+      "blocks": [
+        {
+          "id": "journey_heading",
+          "type": "heading",
+          "text": "Registering, at a glance"
+        },
+        {
+          "id": "journey",
+          "type": "diagram",
+          "alt": "Set your respawn point by sleeping in a bed inside the settlement, stand in that settlement, review what the server found, and your civic residence is recorded.",
+          "nodes": [
+            {
+              "id": "n0",
+              "label": "Sleep in a bed there",
+              "item": "minecraft:red_bed"
+            },
+            {
+              "id": "n1",
+              "label": "Stand in the settlement",
+              "item": "minecraft:compass"
+            },
+            {
+              "id": "n2",
+              "label": "Review the evidence",
+              "item": "minecraft:writable_book"
+            },
+            {
+              "id": "n3",
+              "label": "Residence recorded",
+              "item": "minecraft:name_tag"
+            }
+          ],
+          "edges": [
+            {
+              "from": "n0",
+              "to": "n1"
+            },
+            {
+              "from": "n1",
+              "to": "n2"
+            },
+            {
+              "from": "n2",
+              "to": "n3"
+            }
+          ]
+        },
+        {
+          "id": "text_0",
+          "type": "paragraph",
+          "text": "A civic residence is the settlement MCA: Kingdoms records as your home. Resident founding and resident electorates read it. It is a record, not property: registering grants no office, land, building, NPC home, guild membership or war duty, and it claims nothing that belongs to anyone else."
+        },
+        {
+          "id": "text_1",
+          "type": "paragraph",
+          "text": "1. Sleep in a bed inside the settlement so it becomes your respawn point; a spawn point set by a command does not count. 2. Stand inside the same settlement. 3. Open Register my residence in Kingdom Tasks. Its review shows the settlement, the bed the server found and what will change, including your origin when you have none yet. The server checks everything again when you apply."
+        },
+        {
+          "id": "text_2",
+          "type": "paragraph",
+          "text": "The server reads only loaded chunks and its own records. If the bed is in an unloaded area, was broken or lies outside every recognized settlement, or if you are not standing in the settlement, the request is refused with the reason and the next step. Visiting, sleeping or trading on their own never change your residence; only your explicit request does. When a provider that records an authoritative player home is installed, it is used instead of the bed."
+        },
+        {
+          "id": "text_3",
+          "type": "paragraph",
+          "text": "To change it later, set your bed in the new settlement and open Move my residence. A move waits for the server's cooldown after your last residence change (one Minecraft day of server time by default); your origin stays. Registering the settlement you already have changes nothing. Check my residence shows your record, the current evidence and any wait. Moving never rewrites an election that is already open or a mandate already given."
+        },
+        {
+          "id": "operators",
+          "type": "callout",
+          "tone": "note",
+          "text": "Operators can still set anyone's residence with Set civic residence, and can skip the cooldown for their own move. A server can turn player registration off; then only operators and addons record residences."
+        },
+        {
+          "id": "more",
+          "type": "links",
+          "links": [
+            {
+              "kind": "guide",
+              "target": "found_a_government"
+            },
+            {
+              "kind": "guide",
+              "target": "npc_identity"
+            },
+            {
+              "kind": "task",
+              "target": "citizen.residence_status"
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "settlement_changes",

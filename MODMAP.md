@@ -22,7 +22,7 @@ Machine-generated map of this mod. Read this first when picking the project up.
 
 ```
 dev.otectus.mcakingdoms                              1 file
-dev.otectus.mcakingdoms.api                          19 files
+dev.otectus.mcakingdoms.api                          21 files
 dev.otectus.mcakingdoms.api.civic                    4 files
 dev.otectus.mcakingdoms.api.event                    10 files
 dev.otectus.mcakingdoms.api.factions                 11 files
@@ -35,44 +35,47 @@ dev.otectus.mcakingdoms.api.townstead                19 files
 dev.otectus.mcakingdoms.api.townstead.event          1 file
 dev.otectus.mcakingdoms.api.warfare                  1 file
 dev.otectus.mcakingdoms.api.worldcontext             1 file
-dev.otectus.mcakingdoms.citizen                      1 file
-dev.otectus.mcakingdoms.civic                        10 files
-dev.otectus.mcakingdoms.client                       13 files
+dev.otectus.mcakingdoms.citizen                      2 files
+dev.otectus.mcakingdoms.civic                        11 files
+dev.otectus.mcakingdoms.client                       18 files
+dev.otectus.mcakingdoms.client.book                  9 files
+dev.otectus.mcakingdoms.client.guide                 4 files
 dev.otectus.mcakingdoms.client.politics              1 file
+dev.otectus.mcakingdoms.client.rich                  2 files
 dev.otectus.mcakingdoms.client.townstead             1 file
-dev.otectus.mcakingdoms.command                      3 files
+dev.otectus.mcakingdoms.command                      6 files
 dev.otectus.mcakingdoms.compat.crime                 2 files
 dev.otectus.mcakingdoms.compat.mca                   3 files
 dev.otectus.mcakingdoms.compat.progression           1 file
-dev.otectus.mcakingdoms.compat.quests                1 file
+dev.otectus.mcakingdoms.compat.quests                2 files
 dev.otectus.mcakingdoms.compat.quests.receipts       2 files
 dev.otectus.mcakingdoms.compat.recruits              9 files
 dev.otectus.mcakingdoms.compat.reputation            2 files
 dev.otectus.mcakingdoms.compat.townstead             6 files
 dev.otectus.mcakingdoms.compat.townstead.network     3 files
 dev.otectus.mcakingdoms.config                       1 file
-dev.otectus.mcakingdoms.core                         8 files
-dev.otectus.mcakingdoms.data                         2 files
+dev.otectus.mcakingdoms.core                         10 files
+dev.otectus.mcakingdoms.data                         5 files
 dev.otectus.mcakingdoms.evolution                    15 files
 dev.otectus.mcakingdoms.evolution.drama              6 files
 dev.otectus.mcakingdoms.factions                     12 files
 dev.otectus.mcakingdoms.factions.command             1 file
 dev.otectus.mcakingdoms.factions.config              1 file
 dev.otectus.mcakingdoms.factions.organization        9 files
-dev.otectus.mcakingdoms.guide                        1 file
+dev.otectus.mcakingdoms.guide                        2 files
 dev.otectus.mcakingdoms.integration                  2 files
 dev.otectus.mcakingdoms.integration.gating           1 file
-dev.otectus.mcakingdoms.interaction                  15 files
+dev.otectus.mcakingdoms.interaction                  26 files
 dev.otectus.mcakingdoms.item                         3 files
 dev.otectus.mcakingdoms.kingdom                      3 files
 dev.otectus.mcakingdoms.knowledge                    1 file
 dev.otectus.mcakingdoms.mixin                        9 files
 dev.otectus.mcakingdoms.naming                       3 files
-dev.otectus.mcakingdoms.network                      5 files
-dev.otectus.mcakingdoms.persistence                  1 file
-dev.otectus.mcakingdoms.politics                     6 files
+dev.otectus.mcakingdoms.network                      9 files
+dev.otectus.mcakingdoms.persistence                  5 files
+dev.otectus.mcakingdoms.politics                     7 files
 dev.otectus.mcakingdoms.presentation                 5 files
-dev.otectus.mcakingdoms.settlement                   3 files
+dev.otectus.mcakingdoms.settlement                   4 files
 dev.otectus.mcakingdoms.warfare                      11 files
 dev.otectus.mcakingdoms.warfare.contracts            4 files
 dev.otectus.mcakingdoms.warfare.mobilization         5 files
@@ -106,13 +109,13 @@ _No datagen providers detected — assets and data JSON are hand-written._
 | block models | 0 |
 | item models | 2 |
 | block textures | 0 |
-| item textures | 0 |
+| item textures | 2 |
 | recipes | 2 |
 | block loot tables | 0 |
 | block tags | 0 |
 | item tags | 0 |
 | biome modifiers | 0 |
-| lang files | en_us.json |
+| lang files | en_us.json, es_es.json, zh_cn.json |
 
 Run `check_mod.py` for a full consistency check (missing models, lang keys, textures).
 
@@ -120,17 +123,22 @@ Run `check_mod.py` for a full consistency check (missing models, lang keys, text
 
 ## Current focus
 
-Two usability passes, both uncommitted for review: U1–U11 (2026-10-24) and the visual guidebook plan now in
-`MCAKingdoms_Usability_Implementation_Plan.md` (UX-01–UX-12, 2026-10-26). `docs/Usability-Implementation-Record.md` lists
-what changed, where, and how it was validated, with a dated section for each pass.
+0.3.0 on the local `release/0.3.0` branch (not pushed) implements the 2026-10-27 review handoff (F01–F17, A01, A02).
+`docs/Completion-Ledger.md` maps every finding, and every historical audit item, to its commit, tests and disposition.
+`build/v030-evidence/` holds the work plan, Gradle logs, the F13 profile, the language and Book update scripts and the
+runtime evidence. Companion publishing (MCA Quests 1.7.2, the MCA Reputation outbox handoff) waits for its owner.
 
-The subsequent manuscript overhaul of the Book and Ledger is recorded in `docs/Book-Interface-Design.md`, including
-the shared components, asset sources and packaged-client evidence. Kingdom Tasks now reuses the same manuscript
-materials and controls. War Room, Guilds, government and Settings now share this system too; embedded headers and arrival banners use compact parchment plaques.
+The 0.2.0 manuscript interface (`docs/Book-Interface-Design.md`) and the usability record
+(`docs/Usability-Implementation-Record.md`) remain the design references for every screen.
 
 ## Roadmap
 
-- [ ] Remove the one-release `ultima_kingdoms` compatibility (here and in the companions).
+- [ ] Publish the companion contract (Quests `institutionalCompletionConsumer()`, Reputation `adoptRenamedConsumer`), then
+  validate the published tuple and update `tools/test/companions.json`.
+- [ ] After that, remove the runtime `ultima_kingdoms` aliases here and in the companions in one coordinated release. The
+  on-disk migration (`persistence/LegacyRename`) stays.
+- [ ] Reference-aware compaction for the collections that still refuse at their bound (`docs/Capacity-and-Maintenance.md`).
+- [ ] Key the remaining English result sentences produced inside the political, mobilization and campaign services.
 
 ## Decisions
 
@@ -138,11 +146,15 @@ materials and controls. War Room, Guilds, government and Settings now share this
   `ultima_kingdoms_*.dat` and pre-rename config file once (only when the new name is absent, never deleting the
   old), rewriting `ultima_kingdoms:` ids and `.ultima_kingdoms.` keys; `CivicIdentityStore` moves the entity key
   on read; a `MissingMappingsEvent` remaps the two items. `LegacyRenameTest` fails if a new saved-data store or
-  config file is added without a migration entry.
-- **Companions accept both ids for one release** (Quests `KingdomIntegration`, Conversations `KingdomsIdentity`,
-  Reputation's namespace gate, every `mods.toml`). Remove `ultima_kingdoms` everywhere in the release after next.
+  config file is added without a migration entry. A failed saved-data or common-config copy stops the world before any
+  store exists (F03; `requireMigrated`), and `world/data/mcakingdoms_migration_report.txt` records each step.
+- **Companions accept both ids** (Quests `KingdomIntegration`, Conversations `KingdomsIdentity`, Reputation's namespace
+  gate, every `mods.toml`). Runtime aliases go only in a coordinated release after the companions are published and
+  upgrade-tested; on-disk migration support stays (`docs/Upgrade-and-Recovery.md`).
 - **Completion-receipt consumer.** Kingdoms polls as whatever `McaQuestsApi.institutionalCompletionConsumer()`
-  names (fallback `mcakingdoms:regional_civic_network`), never its own spelling.
+  names (fallback `mcakingdoms:regional_civic_network`), never its own spelling. Paid institutional work needs that
+  method to name an `mcakingdoms` consumer: `QuestCompletionBridge.institutionalContract` probes methods only and
+  `CivicService.workshop` refuses before any offer otherwise (F04). The companion tuple is `tools/test/companions.json`.
 - **Townstead is probed, not version-matched.** Political evidence needs the capabilities it reads;
   `politics_townstead_version` is only the validated version logged at start-up. Building evidence falls back
   to MCA's loaded-village buildings when Townstead's query is absent (`TownsteadBinding.buildingFallback`).
@@ -159,12 +171,15 @@ materials and controls. War Room, Guilds, government and Settings now share this
 - **Kingdom Tasks protocol 4** (`interaction/InteractionNetwork`): the authorized task index (`INDEX`, now with group and
   availability) is searched on the client in the player's language; record choices (`FILTER`) on the server in the three
   bundled languages. `START` returns the start view (`interaction/Suggestions`); replies carry the confirm label, a status
-  (`done`, `waiting`, `refused`, `unknown`, or `read` for read-only tasks) and a Book topic. Other channels on 2026-10-26:
-  main 6 (ledger search and sort, kingdom gallery), `civic` 4 (read-only structured guild view), `politics` 4 (record
+  (`done`, `waiting`, `refused`, `unknown`, or `read` for read-only tasks) and a Book topic. Handlers return a typed
+  `ActionRegistry.Outcome` (applied, pending, refused, unknown, read); `CHECK` asks the task's registered `Probe` and never
+  runs the handler again (F07). Other channels on 2026-10-27: main 7 (ledger search and sort, kingdom gallery, gallery
+  stale notices, political notices, office badges), `civic` 4 (read-only structured guild view), `politics` 4 (record
   fields, header), `war_room` 4 (sections, per-link availability). Design note: `docs/Localized-Search-Design.md`.
 - **Feature checks before forms.** `interaction/TaskMeta` maps each task to the server features it needs (config switches,
   companion mods, capability probes); an unavailable task is listed and explained, never opened as a form. The War Room
-  marks its links the same way. Owning services still decide every request.
+  marks its links the same way. Owning services still decide every request. `TaskMeta.Intent` keeps cleanup reachable:
+  inspect and cancel need no feature; verify and restore need only their native provider (F08).
 - **Requirement rows are projections.** `ActionRegistry.requirements`, `interaction/Requirements` and
   `civic/CivicRequirements` read each owning service's rule for display (`MET`, `UNMET`, `UNKNOWN`, or `NOTE` for
   information such as which route applies); they never decide anything.
@@ -195,19 +210,40 @@ materials and controls. War Room, Guilds, government and Settings now share this
 - **Examples are executable.** `examples/datapack` (and its `invalid/` variants with `expected.txt`) is loaded by the
   `ExamplePack*Test` unit tests through the real loaders; `examples/addon` is compiled against the API jar by `check`.
 
+- **Settlement loads are all-or-nothing** (F02). `SettlementSavedData.read` validates records, ids, bounds, redirects
+  (cycles, dangling, live sources) and external references before anything is writable; a refusal keeps the original
+  tag, is never dirty, and `get()` throws so the server stops. An existing but undecodable file is refused through
+  `fresh(true)`. Tests are GameTests (`SettlementLoadRefusalGameTests`) because unit tests cannot bootstrap registries.
+- **Maintenance is per domain** (F05): `GovernmentService.due` builds each domain's due list (deadline, then id, budget 8);
+  evolution credits occupied time from presence, not consecutive samples (F06), and announces only after a commit (F09).
+- **Capacity** (F12): `persistence/Capacity` inventories every bounded collection (`Capacity.all`, Server health,
+  `/kingdoms maintenance capacity`). Only finished transfers and opportunities compact, dry run first, archive
+  (`persistence/Archive`, `<world>/mcakingdoms_archive/`) before removal. Everything else refuses at its bound.
+- **Settlement paging** (F13): `core/OrderedSettlements` keeps one sorted snapshot per store revision.
+- **Residence registration** (A01): `citizen/ResidenceRegistration` owns the evidence policy (bed-set respawn point,
+  loaded chunk, inside a recognized settlement, player present; provider player-home evidence first). Moves wait
+  `residenceMoveCooldown` on overworld game time. Tasks live in `interaction/ResidenceTasks`; `/kingdoms residence`.
+- **Political presentation** (A02): `politics/OfficePresentation` diffs offices on `PoliticalCommittedEvent`; notices are
+  bounded (16 queued, 20 ticks apart) and audience-filtered; badges go `TRACKING_ENTITY_AND_SELF` only.
+  `client/PoliticalPresentation` draws an additive line above the name tag and never touches names.
+- **Portable acceptance** (F16): `tools/test/environment.py` resolves the EULA, installation, pack, Java, Xvfb and
+  wrapper from `MCAKINGDOMS_*` variables or the ignored `tools/test/local-environment.json`. Historical provider-patch
+  checks live in `tools/history/`.
+
 ## Known issues
 
-- **Packaged `r3` acceptance is intermittent at "saved native siege appears in history".** One run on
-  2026-10-01 (`build/remed-rt4-r3/r3.log`) left `isUnderSiege=0` in the saved `recruitsClaims.dat` after the
-  fixture's `setUnderSiege(true)`, so no siege reached control history; the next run (`build/remed-rt5-r3`)
-  passed all five boots. The warfare path is unchanged from the pre-rename commit. Astra's diagnosis (moderate
-  confidence, `~/.claude/external-workers/runs/20261001T234906Z-ee347fb3/diagnosis.md`): a fixture race.
-  `WarfareScenario` calls `WarfareConfig.MILITARY.set(false)` mid-run; Forge's config watcher then reloads the
-  file on another thread and clears cached values, so `CampaignService.siegeAllowed` can read the default
-  `true` and `RecruitsEvents.siege` cancels the Start (no online defender, no campaign). Suggested fix: write
-  `militaryActions = false` before launching `r3` (`tools/test/integration_runtime.py`) instead of toggling it
-  in `WarfareScenario.run()` (lines 82 and 96), and assert the native flag right after `setUnderSiege`.
+- **Packaged `r3` acceptance (fixture fixed in 0.3.0, F16).** The 2026-10-01 intermittent failure at "saved native siege
+  appears in history" was attributed to `WarfareScenario` toggling `WarfareConfig.MILITARY` mid-run while Forge's config
+  watcher reloaded the file on another thread. `integration_runtime.py` now writes `militaryActions = false` into the
+  isolated fixture config before launch, the scenario no longer toggles it, and it asserts the native `isUnderSiege` flag
+  immediately after `setUnderSiege`. On 2026-10-27 the packaged R3 sequence passed all five boots (r3, restart, Recruits absent, reinstalled,
+  future schema) in three runs on jar `812e3e41`, three on the pre-fix `d0f578bd` and one on the release jar `0dd679e4`; the
+  saved native siege reached history every time (`build/v030-evidence/runtime/`). The earlier failure was intermittent, so these passes support the
+  race explanation rather than prove it; keep the immediate siege-flag assertion.
+- **Companion contract unpublished.** The public MCA Quests 1.7.1 source lacks `institutionalCompletionConsumer()`; the
+  validated pack jar was built from local work. Kingdoms reports `legacy_consumer_contract` and refuses paid workshop jobs.
 - Advancement, recipe-book and statistics progress recorded under `ultima_kingdoms:` is not migrated (the
   welcome advancement can repeat once; recipes unlock again on holding the items).
-- The R1–R3 provider patches under `docs/history/provider-patches/` still name `ultima_kingdoms`; they are a
-  record and must not be applied.
+- The R1–R3 provider patches under `docs/history/provider-patches/` still name `ultima_kingdoms`; they are a record and
+  must not be applied. Their old verification lives in `tools/history/verify_r2_provider_exports.py`.
+- Some result sentences inside the political, mobilization and campaign services are still English (F14 residual).

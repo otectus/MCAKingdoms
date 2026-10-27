@@ -6,7 +6,7 @@
       "title": "Administra un mundo con seguridad",
       "summary": "Mantén separados la configuración, la autoridad de los jugadores y la recuperación.",
       "body": [
-        "Los comandos de operador suelen requerir el nivel de permiso 2. Tareas del reino muestra a los operadores tareas adicionales de administración y de prestigio. Usan opciones con nombre de asentamientos, personas, regiones, migraciones y conciliaciones. Las revisiones y las huellas de conciliación viajan con la selección revisada y no se pueden escribir ni adivinar en la interfaz. Empieza por Estado del servidor: muestra los interruptores de funciones, los proveedores instalados, si los datos guardados admiten escritura, la última recarga de definiciones, la migración de Ultima de este arranque y la actividad de descubrimiento y conciliación.",
+        "Los comandos de operador suelen requerir el nivel de permiso 2. Tareas del reino muestra a los operadores tareas adicionales de administración y de prestigio. Usan opciones con nombre de asentamientos, personas, regiones, migraciones y conciliaciones. Las revisiones y las huellas de conciliación viajan con la selección revisada y no se pueden escribir ni adivinar en la interfaz. Empieza por Estado del servidor: muestra los interruptores de funciones, los proveedores instalados, si los datos guardados admiten escritura, cuánto se han llenado las colecciones de registros, la última recarga de definiciones, la migración de Ultima de este arranque y la actividad de descubrimiento y conciliación.",
         "Algunas tareas útiles siguen requiriendo un jugador conectado porque usan su posición, la entidad seleccionada, su conocimiento privado o su autoridad política. Ejecutarlas desde la consola del servidor no siempre es equivalente. Los comandos siguen siendo una interfaz equivalente opcional para la automatización.",
         "Empieza por las definiciones y las integraciones; después registra o descubre asentamientos reales, establece los gobiernos necesarios, reconoce instituciones adecuadas y nombra contactos reales. Activa la evolución del mundo opcional solo cuando la quieras. Una vez activado un mundo, todo asentamiento de un reino con gobierno es una región elegible por defecto (autoEligibleRegions); pausa los que no quieras. No te asignes todos los papeles políticos solo para hacer una prueba de diagnóstico.",
         "Antes de una migración o reparación, detén el juego normal y haz una copia de seguridad de todo el mundo a la vez: datos del nivel, archivos auxiliares de world/data, dimensiones, regiones de entidades y datos de jugadores. Las misiones nativas, los inventarios, los registros políticos y las tropas pueden repartirse entre varios archivos. Restaurar un solo libro de justificantes no es revertir el mundo.",
@@ -73,7 +73,7 @@
         "La migración de facciones importa la reputación local heredada admitida como base de prestigio en los reinos. Ejecuta primero migration dry_run (Previsualizar la migración de reputación heredada) y revisa la disponibilidad de las fuentes, lo que ya se importó, los grupos, las comunidades sin vincular y los conflictos con los registros existentes. La agregación predeterminada es MEAN; las alternativas configurables son MEDIAN, MAX, MIN y SUM.",
         "Resuelve toda fuente no disponible, todo vínculo de comunidad que falte y toda base existente en conflicto antes de importar. Una marca de importación completada impide tratar los mismos datos antiguos como nuevos una y otra vez. La importación crea las bases sin fabricar una serie de incidentes históricos ni de hazañas gremiales.",
         "Para cualquier migración, usa una copia de seguridad de todo el mundo y un periodo de mantenimiento tranquilo. Fusionar asentamientos, reasignar reinos, fusionar organizaciones y retirar un proveedor son operaciones distintas con responsables distintos. Elige la herramienta que corresponde al cambio; una operación no sustituye a las demás.",
-        "Los datos desconocidos de una versión futura o mal formados se conservan en solo lectura en los registros afectados. Restaura una versión compatible o una copia de seguridad coherente; sobrescribir ese archivo con uno vacío puede dejar huérfanos efectos nativos que ya ocurrieron. Los límites de capacidad también detienen las escrituras nuevas en lugar de borrar en silencio las pruebas conservadas.",
+        "Los datos desconocidos de una versión futura o mal formados se conservan en solo lectura en los registros afectados. Un archivo de asentamientos que no se puede leer por completo, o un traspaso fallido desde Ultima, impide que el servidor arranque en lugar de arrancarlo vacío; el registro del servidor indica el archivo y qué hacer. Restaura una versión compatible o una copia de seguridad coherente; sobrescribir ese archivo con uno vacío puede dejar huérfanos efectos nativos que ya ocurrieron. Los límites de capacidad también detienen las escrituras nuevas en lugar de borrar en silencio las pruebas conservadas; consulta Capacidad y mantenimiento de registros.",
         "Quitar un mod que gestiona entidades puede hacer que el juego base descarte los tipos de entidad desconocidos al cargar sus chunks. Prueba la ausencia de un proveedor opcional en una copia. Las pruebas de reinstalación que necesiten esas entidades deben usar la instantánea del mundo conservada de antes de quitarlo. MCA: Kingdoms conserva sus propios registros suspendidos; no reconstruye las criaturas nativas que haya borrado el juego base."
       ],
       "commands": [
@@ -81,6 +81,25 @@
         "/kingdoms faction migration import"
       ],
       "task": "standing.migration_preview",
+      "operator": true
+    },
+    {
+      "id": "capacity_and_maintenance",
+      "category": "operators",
+      "title": "Capacidad y mantenimiento de registros",
+      "summary": "Vigila los almacenes de registros limitados y archiva con seguridad los registros terminados.",
+      "body": [
+        "Cada almacén de MCA: Kingdoms tiene límites defensivos que mantienen acotados los guardados, las respuestas y los ticks. Al llegar a un límite, el servicio propietario rechaza los registros nuevos de ese tipo con un mensaje; no se borra nada para hacer sitio y todo lo demás sigue funcionando. La sección Capacidad de Estado del servidor muestra cada colección al 80 % o más, de la más llena a la menos; /kingdoms maintenance capacity las muestra todas con lo que libera cada una.",
+        "Algunas colecciones se depuran solas: el historial político, los recibos de solicitudes políticas y el historial de campañas. Un operador puede archivar las transferencias de reclutas terminadas y las oportunidades terminadas. Ejecuta primero el comando compact sin apply, que solo cuenta; haz una copia de seguridad del mundo; después añade apply. Los registros se escriben como JSON legible en la carpeta mcakingdoms_archive del mundo antes de salir del almacén, así que un fallo nunca los pierde.",
+        "Solo se archivan las transferencias completadas, canceladas o vencidas, con su plazo superado en tres días de Minecraft y sin divergencias; las conciliadas y las no terminadas se quedan. La compactación de oportunidades también descarta los tiempos de espera vencidos y los calendarios de jugadores que ya no están suscritos. Las pruebas usadas, los recibos usados y los contactos destituidos nunca se compactan: impiden que un trabajo cuente dos veces.",
+        "Las demás colecciones (gobiernos, acuerdos, peticiones, reconocimientos, honores, elecciones, campañas, eventos del mundo, pactos, sedes de gremios, encargos y descubrimientos) guardan registros a los que apuntan otros registros, así que siguen rechazando al llegar a su límite. Antes de que una se llene, termina o retira el trabajo abierto, haz una copia de seguridad completa del mundo y sigue el procedimiento sin conexión de la documentación del mod. Nunca edites ni borres a mano los archivos guardados."
+      ],
+      "commands": [
+        "/kingdoms maintenance capacity",
+        "/kingdoms maintenance compact transfers [apply]",
+        "/kingdoms maintenance compact opportunities [apply]"
+      ],
+      "task": "administration.health",
       "operator": true
     },
     {

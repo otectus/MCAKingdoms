@@ -34,6 +34,7 @@ The other services follow the same pattern: `KingdomsPoliticsApi.get`, `Kingdoms
 - `getSettlementPage(kingdom, offset, limit)` takes a limit from 1 to 64 in a stable order. `getSettlements(kingdom)` is unbounded; prefer pages for listings.
 - `findSettlement` accepts a UUID, slug, display name or historical alias, ignoring case and spacing, and refuses an ambiguous name.
 - `getSettlementAt` uses saved bounds and loads nothing; `discover` examines only loaded chunks (0 to 32 chunks around a point).
+- `CivicIdentityView.source()` says how the current record was made: `AUTOMATIC`, `MCA`, `ADDON`, `COMMAND`, `MIGRATION`, or, since 0.3.0, `REGISTERED` (declared by the player and verified by the server). Keep a default branch for values a later version may add; builds before 0.3.0 read a saved `REGISTERED` as `MIGRATION`.
 
 **Stored ids and merges.** A merge retires the merged record's id: from then on it resolves to the surviving record. If you store settlement ids, pass them through `resolveSettlementId` before comparing or looking them up, and update stored copies on `SettlementMergedEvent`. A stored id can also stop resolving at all; treat an empty lookup as normal.
 
@@ -44,6 +45,7 @@ The other services follow the same pattern: `KingdomsPoliticsApi.get`, `Kingdoms
 - Settlement mutations (`rename`, `setKingdom`, `reclassify`, `setLocks`, `merge`) and civic mutations (`setOrigin`, `setResidence`) apply immediately and return the new view. Repeating a call with the current values changes nothing. A refusal throws `IllegalArgumentException` and leaves the records unchanged: an unknown record, a locked name or kingdom, a name in use, a bound out of range, or a provider preflight.
 - Other mods can refuse settlement changes through `SettlementMutationPreflightEvent` (it is cancelable, and runs on the server thread). A listener must only decide; mutating settlements during a preflight throws.
 - `registerCandidate` returns the existing settlement when the candidate belongs to one, so it is safe to repeat.
+- A `CivicEvidenceProvider` hint whose `residenceSettlement()` names a settlement for a **player** is used by Register my residence (0.3.0) as that player's home evidence, ahead of the bed check. The player must still be standing in that settlement, and only their explicit request records it: providers never move a player's residence by themselves. A provider that throws counts as no evidence.
 - **Political requests** (`PoliticalService.execute`) carry a request id and the political revision you read. Keep the same request id when retrying: the same request returns the original result instead of applying twice, a reused id with different content is refused, and a stale revision is refused with "Political state changed; refresh before retrying". The actor is the authenticated player making the request, and their current permissions are checked again when it runs.
 
 ## Events are notifications

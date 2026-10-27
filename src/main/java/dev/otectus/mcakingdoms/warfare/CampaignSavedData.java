@@ -46,7 +46,7 @@ public final class CampaignSavedData extends SavedData {
                 new dev.otectus.mcakingdoms.persistence.Capacity(NAME, "control agreements", s.accords.size(), cap, dev.otectus.mcakingdoms.persistence.Capacity.Relief.OFFLINE_PROCEDURE),
                 new dev.otectus.mcakingdoms.persistence.Capacity(NAME, "settlement decisions", s.decisions.size(), cap, dev.otectus.mcakingdoms.persistence.Capacity.Relief.OFFLINE_PROCEDURE),
                 new dev.otectus.mcakingdoms.persistence.Capacity(NAME, "request receipts", s.receipts.size(), cap * 4L, dev.otectus.mcakingdoms.persistence.Capacity.Relief.OFFLINE_PROCEDURE),
-                new dev.otectus.mcakingdoms.persistence.Capacity(NAME, "history", s.history.size(), cap, dev.otectus.mcakingdoms.persistence.Capacity.Relief.OFFLINE_PROCEDURE));
+                new dev.otectus.mcakingdoms.persistence.Capacity(NAME, "history", s.history.size(), cap, dev.otectus.mcakingdoms.persistence.Capacity.Relief.RETENTION));
     }
     CampaignState snapshot() {
         var copy = new CampaignState(); copy.revision = state.revision;

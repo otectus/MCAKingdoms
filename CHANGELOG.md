@@ -1,5 +1,114 @@
 # Changelog
 
+## 0.3.0 — unreleased
+
+Reliability, recovery and documentation repairs from the 27 October 2026 review, plus two approved additions: verified
+player residence registration, and optional political notices with office badges. Clients and servers must update
+together: the main network channel is now protocol 7. Upgrade, downgrade and recovery steps are in
+[Upgrade and recovery](docs/Upgrade-and-Recovery.md). Every finding's disposition and tests are in the
+[completion ledger](docs/Completion-Ledger.md).
+
+### New for players
+
+- **Register my residence** and **Move my residence** in Kingdom Tasks (and `/kingdoms residence status|register|move`).
+  The server verifies its own evidence: your respawn point set by sleeping in a bed, in a loaded chunk, inside a
+  recognized settlement, while you stand there. Client coordinates, the world spawn, discovery and passing through are
+  never proof. The review shows the current record, the evidence, the origin rule and any wait, and names the reason
+  and the next step for any condition that is not met. A move waits
+  `residenceMoveCooldown` (24,000 ticks of server time by default). Registering the settlement you already have does
+  nothing. Residence grants no office, land, NPC home, guild membership or war duty, and an open election is never
+  rewritten. A fresh survival player can now register and found their kingdom's first government without an operator.
+- **Political notices** (optional, off until each player turns them on under Settings → Politics). Foundings,
+  accessions, vacancies and a memorial for a confirmed death come from the committed political record, once each, in
+  neutral words that keep each constitution's own titles. Private mandates and proposals are never announced. A local
+  office is announced only to players who know its settlement. They appear as a chat line, optionally with a silent
+  banner.
+- **Office badges**: a small line above public office holders near you, for example "♛ Leader of Serenum", with "+N"
+  for further offices. Badges are sent only for entities your client tracks and cleared on dismissal, succession,
+  unload, dimension change and disconnect. Names, custom names, skins and equipment are never changed. Person pickers
+  and the council list name offices too. Server health notes that Townstead offers no political narrative bridge, so
+  notices present this mod's own record.
+- Kingdom Tasks results are now truthful. A pending, refused or unconfirmed operation is no longer shown as done, and
+  **Check this action** reads the owner's current state without sending the action again (warfare, recruit transfers,
+  world events, the evolving world and government).
+- Inspect and cancel tasks stay reachable when the feature that creates those records is switched off. Native verify and
+  restore tasks need only their provider.
+- A recruit transfer offer that nobody acts on now expires after its deadline. Both players are told, nothing native
+  changes, and the recruit is free to be offered again.
+- The Book's kingdom gallery stops after three attempts and offers **Try again** instead of retrying on every frame. It
+  refreshes once when the server reports a change: your own discovery, or a definition reload.
+- Election, regency, transition and civic results arrive as translation keys and show in your language.
+- A task without questions (such as Register my residence) no longer shows an empty "Your choices" heading or an
+  "Edit an answer" hint on its review.
+- New Book topics: *Register your residence*, *Political notices and office badges*, and, for operators, *Capacity and
+  record maintenance*. Existing topics on residence, transfers, server health and saves were updated in all three
+  languages.
+- The Chinese text uses one term each for guilds (行会), settlements (聚居地), opportunities (机会), recruits (新兵) and
+  transfers (移交) throughout the Book and the interface.
+
+### Saves and recovery
+
+- A player's civic identity survives death and returning from the End (`PlayerEvent.Clone`). Only Kingdoms' own key is
+  copied.
+- The settlement store is validated as a whole: records, ids, bounds, redirects (cycles, dangling targets, live
+  sources) and external references. A file this version cannot read completely is refused and the server stops, with
+  the file left exactly as it was. Previously such a load could start over and overwrite the save.
+- A failed Ultima Kingdoms carry-over now stops the world before any store exists, instead of starting that store
+  empty. Successful copies are kept and resumed. `world/data/mcakingdoms_migration_report.txt` lists each step.
+- Evolving-world announcements are sent only after the opportunity is saved.
+
+### Fairness and scale
+
+- Political deadlines (agreements, petitions, elections and regencies) are maintained per domain, ordered by deadline
+  and bounded per pass. One busy domain can no longer starve the others.
+- Evolving-world activity is credited from players' actual presence, not from consecutive samples, so eight populated
+  regions all advance under a budget of four. Digests go oldest first.
+- Settlement pages reuse one sorted snapshot per change: 25,000 settlements page in about 35 ms instead of about 10 s.
+  Ledger search totals count every match you can see.
+- Political and civic reviews are voided only by changes to the records, governments, definitions and authority they
+  name.
+
+### Operators
+
+- **Capacity**: Server health and `/kingdoms maintenance capacity` show how full every bounded record collection is,
+  with what relieves it. Finished recruit transfers and opportunities can be archived to
+  `<world>/mcakingdoms_archive/` with `/kingdoms maintenance compact transfers|opportunities`, a dry run until
+  `apply`. Archives are written before anything leaves the store. Used evidence is never compacted, and nothing is
+  deleted automatically. See [Capacity and record maintenance](docs/Capacity-and-Maintenance.md).
+- **MCA Quests contract**: Server health reports whether paid workshop jobs can complete: `available`,
+  `legacy_consumer_contract`, `foreign_consumer_namespace` or `missing_institutional_methods`. A provider without the
+  `mcakingdoms` institutional consumer is refused before any offer, not after payment.
+- New settings: `civicIdentity.playerRegistration`, `civicIdentity.residenceMoveCooldown`, `politics.politicalNotices` and
+  `politics.officeBadges` (common); `politics.notices`, `politics.officeBadges` and `politics.officeBadgeDistance` (client).
+  See the [configuration reference](docs/Configuration.md).
+
+### Compatibility and tooling
+
+- The README's compatibility table separates the metadata range, the validated jar and the public source.
+  `tools/test/companions.json` records the exact companion jars used for acceptance, by SHA-256, and
+  `tools/test/verify_companions.py --pack` checks an instance against it. The public MCA Quests 1.7.1 source does not
+  carry the institutional consumer that paid workshop jobs need; the validated pack jar was built from unreleased work.
+- Acceptance and client scripts read their prerequisites from `MCAKINGDOMS_*` environment variables or an ignored
+  `tools/test/local-environment.json` (`python3 tools/test/environment.py` reports them). They no longer use paths from
+  the maintainer's machine. Historical provider-patch verification moved to `tools/history/`.
+- The R3 acceptance fixture sets `militaryActions = false` before launch and asserts the native siege flag at once,
+  instead of toggling the setting mid-run.
+
+### Documentation
+
+- New: [completion ledger](docs/Completion-Ledger.md), [capacity and record maintenance](docs/Capacity-and-Maintenance.md),
+  and the [upgrade and recovery runbook](docs/Upgrade-and-Recovery.md). The runbook covers runtime old-name aliases
+  versus on-disk migration.
+- README, CurseForge text, configuration reference, compatibility table and MODMAP updated together. Historical reviews
+  and audits are labelled as such.
+
+### Known limitations
+
+- Collections other than transfers and opportunities still refuse new records at their bound. Their offline procedure
+  is documented; reference-aware compaction is future work.
+- Some result sentences produced deep inside the political, mobilization and campaign services are still English.
+- Old-name runtime aliases remain until the companion contract is published and tested.
+
 ## 0.2.0 — unreleased
 
 Usability, navigation, localization and GUI improvements across the Book of Kingdoms, Village Ledger, Kingdom Tasks,

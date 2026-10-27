@@ -318,6 +318,61 @@
         "/kingdoms politics inspect \"<kingdom name>\" history"
       ],
       "task": "politics.read_history"
+    },
+    {
+      "id": "political_notices_and_badges",
+      "category": "politics",
+      "title": "Political notices and office badges",
+      "summary": "Optional notices of public political moments, and a line naming nearby officials.",
+      "keywords": [
+        "notice",
+        "badge",
+        "announcement",
+        "memorial",
+        "office"
+      ],
+      "commands": [],
+      "blocks": [
+        {
+          "id": "text_0",
+          "type": "paragraph",
+          "text": "Political notices tell you about public moments in the committed political record: a government founded, a leader or official taking office, an office falling vacant, and a memorial when an official's death is confirmed. Each moment is shown once, in neutral words: an office keeps the name its constitution gives it, and no one is said to be crowned. Notices are off until you turn them on."
+        },
+        {
+          "id": "text_1",
+          "type": "paragraph",
+          "text": "Open Settings from Kingdom Tasks and choose the Politics tab. Political notices: Off shows none, Chat line adds one line to chat, and Chat line and banner also shows a short banner. No sound plays and nothing interrupts what you are doing; the chat line is the text version of the banner."
+        },
+        {
+          "id": "text_2",
+          "type": "paragraph",
+          "text": "Only public facts are announced. Private mandates, proposals, ballots and consent never are. A local office is announced only to players who know its settlement. A person who is merely offline or in an unloaded area is never reported dead."
+        },
+        {
+          "id": "text_3",
+          "type": "paragraph",
+          "text": "Office badges are a small line above a public office holder near you naming their office: ♛ marks a leader, ⚑ another office, and +N how many more they hold. The person's own name, custom name, skin and equipment never change, and no office is guessed from a name. Badges follow appointments, dismissals and successions and are dropped when the person leaves your view or you disconnect. The Politics tab hides them or sets how far away they show (4 to 48 blocks, 16 by default)."
+        },
+        {
+          "id": "text_4",
+          "type": "paragraph",
+          "text": "Kingdom Tasks' person pickers and the council list also name each person's public offices. A server operator can turn notices or badges off for everyone; then the settings have nothing to show."
+        },
+        {
+          "id": "more",
+          "type": "links",
+          "links": [
+            {
+              "kind": "guide",
+              "target": "offices_and_permissions"
+            },
+            {
+              "kind": "guide",
+              "target": "read_political_history"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

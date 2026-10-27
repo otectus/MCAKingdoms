@@ -8,15 +8,15 @@ MCA: Kingdoms writes eight TOML files to the instance's `config/` folder the fir
 - **reload** — read when definitions are parsed. It applies at the next data pack reload (`/kingdoms reload`, or Reload server definitions in Kingdom Tasks).
 - **start-up pass** — only affects the one-time start-up reconciliation described under `reconcileOnStartup`.
 
-**Inspecting the effective state.** Operators open **Server health** in Kingdom Tasks (K by default) or run `/kingdoms health`. It lists the feature switches, installed providers and which capabilities bound, saved-data writability, the last definition reload, this start's Ultima migration, and discovery/reconciliation activity. Players see the public part through **What is available here?**. `/kingdoms faction diagnostics` reports the standing synchronization in detail.
+**Inspecting the effective state.** Operators open **Server health** in Kingdom Tasks (K by default) or run `/kingdoms health`. It lists the feature switches, installed providers and which capabilities bound, saved-data writability, how full each bounded record collection is ([capacity](Capacity-and-Maintenance.md)), the last definition reload, this start's Ultima migration, and discovery/reconciliation activity. Players see the public part through **What is available here?**. `/kingdoms faction diagnostics` reports the standing synchronization in detail.
 
 **Units.** Durations are in *game ticks*: 20 ticks are one second while the server keeps up, so the conversions given below are nominal. Ticks do not advance while a server is stopped or a single-player world is paused, and a lagging server advances them more slowly than the clock. Distances are in blocks unless a key says chunks (16 blocks).
 
 Presets for a peaceful and a warfare-focused pack are in [docs/presets](presets/README.md). They are examples to copy by hand; nothing applies them automatically.
 
-## `mcakingdoms-common.toml` — discovery, identity, founding and civic evidence
+## `mcakingdoms-common.toml` — discovery, identity, founding, residence and political presentation
 
-Owner: `config/McaKingdomsConfig`. 18 keys.
+Owner: `config/McaKingdomsConfig`. 22 keys.
 
 | Key | Default | Allowed | Applies | Meaning |
 | --- | --- | --- | --- | --- |
@@ -37,13 +37,17 @@ Owner: `config/McaKingdomsConfig`. 18 keys.
 | `settlementDiscovery.poiSurfaceOnly` | `true` | — | live | Ignore clusters whose mean height is more than 24 blocks below the surface. |
 | `settlementDiscovery.candidateOverlapFraction` | 0.5 | 0.1–1.0 | live | Spatial fallback only: share of the smaller area two bounds must overlap for a candidate to match. |
 | `civicIdentity.evidenceInterval` | 200 | 20–24000 | live | Ticks between home-evidence checks for each loaded NPC (default 10 seconds). |
-| `politics.openFounding` | `true` | — | live | A player whose recorded civic residence is in a kingdom may found that kingdom's first government, with the residence as capital and themselves as leader. Operators can always found. Residence is a civic record set by an operator (`/kingdoms citizen setresidence`, Set civic residence) or an addon; visiting, sleeping and trading do not set it. |
+| `civicIdentity.playerRegistration` | `true` | — | live | Players may register or move their own civic residence (Register my residence, Move my residence, `/kingdoms residence`). The server checks its own evidence: the player's respawn point set by sleeping in a bed (not a command-set spawn), in a loaded chunk, still a bed, inside a recognized settlement, while the player stands in that settlement. A provider that reports an authoritative player home takes precedence over the bed. It records a civic home only: no land, office, NPC home, guild membership or war duty. Off: only operators and addons record player residences; existing records stay. |
+| `civicIdentity.residenceMoveCooldown` | 24000 | 0–2400000 | live | Game ticks after any residence change before a player may move their residence again (default one Minecraft day of server ticks, not wall time; counted on the overworld clock, so it continues across dimensions and restarts). 0 turns the wait off. A first registration does not wait. An operator can skip the wait for their own move with Move my residence now (operator), and can still set anyone's residence with Set civic residence. |
+| `politics.openFounding` | `true` | — | live | A player whose recorded civic residence is in a kingdom may found that kingdom's first government, with the residence as capital and themselves as leader. Operators can always found. Players record a residence themselves with Register my residence (see `civicIdentity.playerRegistration`); operators (`/kingdoms citizen setresidence`, Set civic residence) and addons can also set one. Visiting, sleeping and trading alone do not. |
+| `politics.politicalNotices` | `true` | — | live | Send committed foundings, accessions, vacancies and confirmed-death memorials to players who turned notices on in their own settings (off by default on each client). Only public facts are announced, once each; a local office is announced only to players who know its settlement; private mandates and proposals are never announced. Off: nothing is sent. |
+| `politics.officeBadges` | `true` | — | live | Send each player the public offices of holders their client is tracking, for the badge line above them. Nothing is sent for entities a player is not tracking. Off: no badges are sent. Person pickers in Kingdom Tasks name public offices either way. |
 
 With the defaults, a point-of-interest cluster counts only with at least five points, a bed or bell among them, and near the surface. Generated villages are recognized from their structure regardless of those three rules.
 
-## `mcakingdoms-client.toml` — entry title, Kingdom Tasks and the Book (client)
+## `mcakingdoms-client.toml` — entry title, Kingdom Tasks, the Book and political presentation (client)
 
-Owner: `presentation/PresentationConfig`. 8 keys in four sections. Each player sets these for their own client, either in this file or in the **MCA: Kingdoms settings** screen (Kingdom Tasks → Settings, or Mods → MCA: Kingdoms → Config). The screen saves on Apply; Cancel leaves the file unchanged.
+Owner: `presentation/PresentationConfig`. 11 keys in five sections. Each player sets these for their own client, either in this file or in the **MCA: Kingdoms settings** screen (Kingdom Tasks → Settings, or Mods → MCA: Kingdoms → Config). The screen saves on Apply; Cancel leaves the file unchanged.
 
 Section `entryOverlay`:
 
@@ -62,6 +66,14 @@ Sections `onboarding`, `tasks` and `guide`:
 | `onboarding.showIntro` | `true` | — | Show the short introduction at the top of Kingdom Tasks' start view. Getting started stays available either way. |
 | `tasks.openTo` | `START` | `START`, `ALL_TASKS` | What the Kingdom Tasks key opens: the start view (where you are, suggested next steps, favourites, recent tasks and features), or the full task list. |
 | `guide.reducedMotion` | `false` | — | Show the first accepted item of a recipe ingredient instead of cycling through the alternatives every two seconds. |
+
+Section `politics` (the **Politics** tab of the settings screen). Notices and badges only show what the server sends; the server settings `politics.politicalNotices` and `politics.officeBadges` decide whether anything is sent.
+
+| Key | Default | Allowed | Meaning |
+| --- | --- | --- | --- |
+| `notices` | `OFF` | `OFF`, `CHAT`, `BANNER` | Political notices (foundings, accessions, vacancies and memorials) from the server's committed record. `CHAT` adds one chat line; `BANNER` adds the chat line and a short silent banner. No sound plays, and each moment is shown once. |
+| `officeBadges` | `true` | — | Show a small line above public office holders near you naming their office (with a mark for a leader, and how many more offices they hold). Names, skins and equipment are never changed. |
+| `officeBadgeDistance` | 16 | 4–48 | How far away, in blocks, office badges are drawn. |
 
 Bookmarks, recent topics and tasks, favourite tasks and the last topic read are not settings: they are kept in `config/mcakingdoms-client-state.json` on the player's own computer (at most 32 bookmarks, 16 favourites and 8 recent entries of each kind). Deleting the file, or **Clear history** in the settings screen, forgets them; nothing about them is sent to a server.
 

@@ -1,5 +1,7 @@
 # Player experience review
 
+> **Historical review, written before the 0.2.0 usability and manuscript work.** Its gaps section is out of date: the interface is no longer text-only (Book illustrations, crafting grids, diagrams, kingdom gallery, manuscript screens), confirm buttons name their action, and the interface is localized in English, Spanish and Chinese. Current behaviour: the [README](../README.md#playing). Current finding dispositions: the [completion ledger](Completion-Ledger.md).
+
 MCA: Kingdoms now has two complementary in-game interfaces. The **Book of Kingdoms** explains rules, prerequisites, consequences, and recovery paths. **Kingdom Tasks** is the live, server-owned interface for reading records and taking action.
 
 ## The normal player path
