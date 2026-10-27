@@ -209,6 +209,11 @@ final class OrganizationSavedData extends SavedData {
         return retainedRaw == null;
     }
 
+    public static dev.otectus.mcakingdoms.persistence.StoreStatus status(net.minecraft.server.MinecraftServer server) {
+        var data = get(server);
+        return dev.otectus.mcakingdoms.persistence.StoreStatus.of(DATA_NAME, data.writable(), data.diagnostic());
+    }
+
     String diagnostic() {
         return diagnostic;
     }

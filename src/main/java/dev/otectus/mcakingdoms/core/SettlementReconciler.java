@@ -363,5 +363,15 @@ public final class SettlementReconciler {
         Report report() {
             return report;
         }
+
+        /** Records still queued for this pass. */
+        int remaining() {
+            return queue.size();
+        }
+    }
+
+    /** Merges refused this session and remembered for the reconcile command. */
+    int refusalCount() {
+        return refusals.size();
     }
 }

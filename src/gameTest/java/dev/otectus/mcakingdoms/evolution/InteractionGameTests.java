@@ -54,7 +54,7 @@ public final class InteractionGameTests {
 
         var checked=request(operator,review.session(),review.state(),"CHECK","","",0);
         check(checked.mode().equals("review")&&checked.session().equals(review.session())&&checked.state().equals(review.state()),"CHECK did not retrieve the unchanged reviewed form");
-        var applied=call(operator,review,"APPLY","");check(applied.mode().equals("result")&&applied.detail().contains("Registered Wizard Reach"),"Create action failed: "+applied.detail());
+        var applied=call(operator,review,"APPLY","");check(applied.mode().equals("result")&&applied.detailText().contains("Registered Wizard Reach"),"Create action failed: "+applied.detailText());
         var api=McaKingdomsApi.get(helper.getLevel().getServer());var settlement=api.getSettlementAt(helper.getLevel(),operator.blockPosition()).orElseThrow();
         check(settlement.displayName().equals("Wizard Reach"),"Wizard did not create named settlement");long revision=api.revision();
         var duplicate=request(operator,review.session(),review.state(),"APPLY","","",0);

@@ -272,6 +272,20 @@ tasks.named('check').configure {
     dependsOn tasks.named('verifyApiJar')
 }
 
+// The addon example (examples/addon) compiles against the API jar and Forge alone, as a real addon does, so
+// `check` fails if the example or the API contract it shows drifts.
+sourceSets {
+    addonExample {
+        java.setSrcDirs(['examples/addon/src/main/java'])
+        resources.setSrcDirs([])
+        compileClasspath += sourceSets.main.compileClasspath + files(tasks.named('apiJar').flatMap { it.archiveFile })
+    }
+}
+
+tasks.named('check').configure {
+    dependsOn tasks.named('compileAddonExampleJava')
+}
+
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }

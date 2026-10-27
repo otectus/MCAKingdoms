@@ -49,14 +49,15 @@ public final class CivicCommands {
                         (view.claimId().isEmpty()?"":" | owner "+view.ownerId()+" | siege "+view.underSiege())),false); return 1;
             })))
             .then(Commands.literal("integrations").requires(s -> s.hasPermission(2)).executes(c -> {
-                for(String id:new String[]{"mca","mcaquests","mcaconversations","mcareputation","mcacrime","townstead","recruits","dotcoinmod","runicskills","runic_gods","runic_races"}) {
+                for(String id:dev.otectus.mcakingdoms.interaction.StandingTasks.INTEGRATIONS) {
                     var mod=ModList.get().getModContainerById(id);
                     c.getSource().sendSuccess(() -> Component.literal(id+": "+mod.map(m -> "installed "+m.getModInfo().getVersion()).orElse("absent")),false);
                 }
                 c.getSource().sendSuccess(() -> Component.literal("Civic network: "+CivicRuntime.get(c.getSource().getServer()).diagnostic()),false);
                 var knowledge=dev.otectus.mcakingdoms.knowledge.SettlementKnowledge.get(c.getSource().getServer());
                 c.getSource().sendSuccess(() -> Component.literal(knowledge.writable()?"Discovery storage: available":knowledge.diagnostic()),false);
-                c.getSource().sendSuccess(() -> Component.literal("Installation is not an API guarantee. Guild quest credit requires the durable completion API. Recruits access is observation only, audited for 1.15.2."),false); return 1;
+                c.getSource().sendSuccess(() -> Component.translatableWithFallback("interaction.mcakingdoms.integrations.recruits","Recruits: the military bridge is gated to exactly Recruits 1.15.2; any other version runs with the integration off."),false);
+                c.getSource().sendSuccess(() -> Component.translatableWithFallback("interaction.mcakingdoms.integrations.note","Installed is not the same as usable. Guild quest credit needs MCA Quests' completion receipts. Run /kingdoms health for the capabilities that bound."),false); return 1;
             })));
     }
     private static int result(net.minecraft.commands.CommandSourceStack source,CivicService.Result result) {

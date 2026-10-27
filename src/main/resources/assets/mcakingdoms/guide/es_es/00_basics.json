@@ -1,0 +1,511 @@
+{
+  "schema": 2,
+  "entries": [
+    {
+      "id": "start_here",
+      "task": "*",
+      "category": "basics",
+      "title": "Empieza aquí",
+      "summary": "Una primera sesión tranquila, sin cargos, ejércitos ni gremios.",
+      "keywords": [
+        "empezar",
+        "primeros pasos",
+        "jugador nuevo",
+        "tutorial",
+        "ayuda"
+      ],
+      "blocks": [
+        {
+          "id": "intro",
+          "type": "paragraph",
+          "text": "MCA: Kingdoms da a los asentamientos nombres e identidades de reino duraderos. También ofrece servicio voluntario en gremios, gobiernos, diplomacia y eventos militares y del mundo opcionales. Puedes explorar, comerciar, construir y ayudar a la gente sin gobernar nada ni unirte a un ejército."
+        },
+        {
+          "id": "first_steps_heading",
+          "type": "heading",
+          "text": "Tus primeros pasos"
+        },
+        {
+          "id": "first_steps",
+          "type": "steps",
+          "items": [
+            {
+              "text": "Aprende para qué sirven los dos libros: este Libro explica, el Registro de aldeas enumera los lugares que conoces.",
+              "link": {
+                "kind": "guide",
+                "target": "two_books",
+                "label": "Dos libros, dos propósitos"
+              }
+            },
+            {
+              "text": "Fabrica un Registro de aldeas con papel, un libro y una brújula. Su tema muestra la receta.",
+              "link": {
+                "kind": "guide",
+                "target": "ledger_recipe",
+                "label": "Fabricar el Registro de aldeas"
+              }
+            },
+            "Entra en una aldea. La primera vez que entras en un asentamiento reconocido, un rótulo muestra su nombre y su reino, y se añade a tu registro.",
+            {
+              "text": "Pulsa {key:tasks} para abrir Tareas del reino y elige Consultar este asentamiento para ver dónde estás.",
+              "link": {
+                "kind": "task",
+                "target": "settlement.here"
+              }
+            },
+            {
+              "text": "Si quieres, busca trabajos de gremio locales. Unirse a un gremio es opcional.",
+              "link": {
+                "kind": "guide",
+                "target": "first_guild_steps",
+                "label": "Ayudar a los Faroleros"
+              }
+            }
+          ]
+        },
+        {
+          "id": "review",
+          "type": "callout",
+          "tone": "tip",
+          "text": "Las tareas que cambian registros terminan en una página de revisión que nombra a las personas, los lugares y las consecuencias. No pasa nada hasta que eliges el botón final, que nombra la acción; volver atrás no cambia nada."
+        },
+        {
+          "id": "roles",
+          "type": "paragraph",
+          "text": "El reino de un asentamiento describe quiénes son sus habitantes. No significa que un ejército sea dueño de las tierras de alrededor, y tener cualquiera de los dos libros no da ningún permiso político."
+        },
+        {
+          "id": "government",
+          "type": "callout",
+          "tone": "note",
+          "text": "Gobernar es opcional. Un operador puede fundar el primer gobierno de un reino sin organizar; si el servidor permite la fundación por residentes, también puede hacerlo un jugador cuya residencia registrada esté en ese reino."
+        },
+        {
+          "id": "more",
+          "type": "links",
+          "links": [
+            {
+              "kind": "guide",
+              "target": "tasks_workflow"
+            },
+            {
+              "kind": "guide",
+              "target": "found_a_government"
+            },
+            {
+              "kind": "task",
+              "target": "*",
+              "label": "Abrir Tareas del reino"
+            }
+          ]
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "two_books",
+      "category": "basics",
+      "title": "Dos libros, dos propósitos",
+      "summary": "El Libro de los reinos sirve para aprender; el Registro de aldeas, para los lugares que conoces.",
+      "keywords": [
+        "libro",
+        "registro",
+        "diferencia",
+        "qué libro",
+        "objetos"
+      ],
+      "blocks": [
+        {
+          "id": "comparison",
+          "type": "comparison",
+          "alt": "El Libro de los reinos explica cómo funciona todo y nunca cambia el mundo. El Registro de aldeas enumera los asentamientos que conoces y abre sus páginas de reino, gremio y Sala de guerra.",
+          "columns": [
+            {
+              "title": "Libro de los reinos",
+              "item": "mcakingdoms:book_of_kingdoms",
+              "points": [
+                "Explica cada sistema, lo que necesita y lo que cambia.",
+                "Se puede buscar, con marcadores y recetas en vivo.",
+                "Leerlo nunca cambia el mundo."
+              ]
+            },
+            {
+              "title": "Registro de aldeas",
+              "item": "mcakingdoms:village_ledger",
+              "points": [
+                "Enumera los asentamientos que has descubierto, además de los públicos.",
+                "Muestra el reino de cada uno y dónde está.",
+                "Abre su gobierno, sus servicios de gremio y su Sala de guerra."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "no_book_needed",
+          "type": "paragraph",
+          "text": "Ninguno de los dos libros es necesario para Tareas del reino: pulsa {key:tasks} en cualquier momento. Su vista inicial también abre este Libro con el botón Guía."
+        },
+        {
+          "id": "recipes",
+          "type": "links",
+          "links": [
+            {
+              "kind": "guide",
+              "target": "book_recipe"
+            },
+            {
+              "kind": "guide",
+              "target": "ledger_recipe"
+            }
+          ]
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "book_recipe",
+      "category": "basics",
+      "title": "Fabricar el Libro de los reinos",
+      "summary": "Un libro y un papel, en cualquier disposición.",
+      "keywords": [
+        "fabricar",
+        "receta",
+        "libro",
+        "papel",
+        "guía"
+      ],
+      "blocks": [
+        {
+          "id": "recipe",
+          "type": "recipe",
+          "recipe": "mcakingdoms:book_of_kingdoms",
+          "output": "mcakingdoms:book_of_kingdoms"
+        },
+        {
+          "id": "use",
+          "type": "steps",
+          "items": [
+            "Coloca los ingredientes en cualquier lugar de una cuadrícula de fabricación; basta con la pequeña de tu inventario.",
+            "Sujeta el Libro de los reinos y úsalo para abrir este lector.",
+            "Busca un objetivo o abre Capítulos para ver el índice."
+          ]
+        },
+        {
+          "id": "unlock",
+          "type": "callout",
+          "tone": "tip",
+          "text": "Tener un libro en el inventario desbloquea esta receta en tu libro de recetas."
+        },
+        {
+          "id": "next",
+          "type": "links",
+          "links": [
+            {
+              "kind": "guide",
+              "target": "ledger_recipe"
+            },
+            {
+              "kind": "guide",
+              "target": "using_the_book"
+            }
+          ]
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "ledger_recipe",
+      "task": "settlement.inspect",
+      "category": "basics",
+      "title": "Fabricar el Registro de aldeas",
+      "summary": "Usa el registro para consultar los asentamientos que conoces.",
+      "keywords": [
+        "fabricar",
+        "receta",
+        "papel",
+        "libro",
+        "brújula",
+        "registro",
+        "mapa"
+      ],
+      "blocks": [
+        {
+          "id": "recipe",
+          "type": "recipe",
+          "recipe": "mcakingdoms:village_ledger",
+          "output": "mcakingdoms:village_ledger"
+        },
+        {
+          "id": "use",
+          "type": "steps",
+          "items": [
+            "Fabrica el registro en una mesa de trabajo.",
+            "Úsalo para consultar los asentamientos que has descubierto.",
+            "Selecciona un asentamiento para ver sus detalles."
+          ]
+        },
+        {
+          "id": "unlock",
+          "type": "callout",
+          "tone": "tip",
+          "text": "Tener un libro o una brújula en el inventario desbloquea esta receta en tu libro de recetas."
+        },
+        {
+          "id": "discovery_help",
+          "type": "links",
+          "links": [
+            {
+              "kind": "guide",
+              "target": "ledger_and_discovery",
+              "label": "Cómo funciona el descubrimiento"
+            },
+            {
+              "kind": "task",
+              "target": "settlement.inspect",
+              "label": "Consultar un asentamiento conocido"
+            }
+          ]
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "tasks_workflow",
+      "task": "*",
+      "category": "basics",
+      "title": "Tareas del reino, paso a paso",
+      "summary": "Cómo una tarea pasa de elegirla a un resultado confirmado.",
+      "keywords": [
+        "tareas",
+        "menú",
+        "revisión",
+        "aplicar",
+        "confirmar",
+        "cómo",
+        "vista inicial",
+        "categorías"
+      ],
+      "blocks": [
+        {
+          "id": "flow",
+          "type": "diagram",
+          "alt": "Una tarea va desde elegirla, a responder sus preguntas, a una página de revisión, a tu confirmación y a un resultado que comunica el servidor.",
+          "nodes": [
+            {
+              "id": "choose",
+              "label": "Elige una tarea",
+              "note": "Busca un objetivo o una categoría"
+            },
+            {
+              "id": "answer",
+              "label": "Responde",
+              "note": "Una pregunta por página"
+            },
+            {
+              "id": "review",
+              "label": "Revisa",
+              "note": "Quién, qué cambia, consentimiento"
+            },
+            {
+              "id": "confirm",
+              "label": "Confirma",
+              "note": "El botón nombra la acción"
+            },
+            {
+              "id": "result",
+              "label": "Resultado",
+              "note": "Hecho, en espera o rechazado"
+            }
+          ],
+          "edges": [
+            {
+              "from": "choose",
+              "to": "answer"
+            },
+            {
+              "from": "answer",
+              "to": "review"
+            },
+            {
+              "from": "review",
+              "to": "confirm"
+            },
+            {
+              "from": "confirm",
+              "to": "result"
+            }
+          ]
+        },
+        {
+          "id": "steps",
+          "type": "steps",
+          "items": [
+            "Pulsa {key:tasks}. La vista inicial muestra el asentamiento en el que estás, hasta tres pasos sugeridos, tus tareas recientes y favoritas, y botones para Todas las tareas, la Guía, Gremios y Ajustes.",
+            "Busca por objetivo, como \"trabajo pagado\", \"hacer las paces\" o \"dónde estoy\", o elige una categoría como Lugares o Gremios y trabajos.",
+            "Responde una pregunta por página. Las opciones son registros con nombre que el servidor sabe que puedes ver. Atrás conserva tus respuestas anteriores.",
+            "Lee la revisión: las personas y los lugares, qué cambia, cualquier coste, los plazos y de quién se necesita el consentimiento. Edita una respuesta si lo necesitas; la revisión se vuelve a crear.",
+            "El resultado indica si la acción terminó, si espera a otro participante o si fue rechazada, y ofrece un siguiente paso razonable."
+          ]
+        },
+        {
+          "id": "unavailable",
+          "type": "callout",
+          "tone": "requirement",
+          "text": "Una tarea no disponible dice por qué: está desactivada en este servidor, falta un mod complementario o aún no cumples un requisito. Son cosas distintas, y solo la última depende de ti."
+        },
+        {
+          "id": "timeout",
+          "type": "callout",
+          "tone": "tip",
+          "text": "Si no llega respuesta, elige Comprobar esta acción antes de volver a intentarlo. El servidor nunca aplica dos veces una acción revisada."
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "task",
+              "target": "*",
+              "label": "Abrir Tareas del reino"
+            },
+            {
+              "kind": "guide",
+              "target": "ledger_and_discovery"
+            },
+            {
+              "kind": "task",
+              "target": "help.available"
+            }
+          ]
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "using_the_book",
+      "category": "basics",
+      "title": "Cómo usar este libro",
+      "summary": "Busca por objetivo, recorre los capítulos y lee sin cambiar el mundo.",
+      "keywords": [
+        "controls",
+        "keyboard",
+        "bookmark",
+        "back",
+        "navigation"
+      ],
+      "blocks": [
+        {
+          "id": "search",
+          "type": "paragraph",
+          "text": "Busca un objetivo o abre Capítulos para ver el índice. Primero aparecen los temas cuyo título coincide, luego las palabras clave, el resumen y el texto. Las palabras comunes encuentran sus sinónimos: encargo encuentra trabajos, sección encuentra capítulos y tratado encuentra acuerdos."
+        },
+        {
+          "id": "moving_heading",
+          "type": "heading",
+          "text": "Cómo moverse"
+        },
+        {
+          "id": "moving",
+          "type": "steps",
+          "items": [
+            "Inicio abre Empieza aquí y la lista de capítulos. En la vista de dos páginas, las pestañas numeradas de cuero abren directamente un capítulo.",
+            "Atrás restaura el tema anterior con su búsqueda, capítulo y posición de lectura. Alt + Izquierda también retrocede.",
+            "Las flechas simples cambian de página dentro del tema; las dobles cambian de tema. Las flechas bajo el índice cambian sus páginas.",
+            "La cinta con ☆ guarda el tema en Guardados, junto con los temas recientes. Una ★ indica que ya está marcado.",
+            "Cerrar vuelve a la pantalla desde la que abriste el libro."
+          ]
+        },
+        {
+          "id": "keyboard_heading",
+          "type": "heading",
+          "text": "Leer con el teclado"
+        },
+        {
+          "id": "keyboard",
+          "type": "paragraph",
+          "text": "Tab recorre los controles y enlaces; Intro o Espacio activa el elemento seleccionado. Re Pág y Av Pág cambian de página; con el artículo seleccionado, las flechas, Inicio y Fin desplazan el texto. Ctrl + F selecciona la búsqueda. Escape cierra el libro. En ventanas estrechas, Índice / Artículo cambia de página sin reducir el texto."
+        },
+        {
+          "id": "commands",
+          "type": "paragraph",
+          "text": "Los comandos solo aparecen en Comandos y detalles avanzados. Son referencias opcionales y nunca se ejecutan desde el Libro."
+        },
+        {
+          "id": "live",
+          "type": "callout",
+          "tone": "note",
+          "text": "Esta es una guía del mod, no una pantalla de estado en vivo. Las recetas y la galería de reinos vienen del servidor en el que estás; los demás valores son los predeterminados. Usa Tareas del reino para el estado en vivo."
+        },
+        {
+          "id": "packs",
+          "type": "paragraph",
+          "text": "Los paquetes de recursos pueden traducir o sustituir el Libro; las traducciones que falten usan el inglés. El lector no pausa el juego; ciérralo ante un peligro."
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "guide",
+              "target": "start_here"
+            },
+            {
+              "kind": "guide",
+              "target": "tasks_workflow"
+            }
+          ]
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "roles_are_separate",
+      "category": "basics",
+      "title": "Distingue tus distintos papeles",
+      "summary": "Hogar, afiliación gremial, reputación, cargo y lealtad militar responden a preguntas distintas.",
+      "body": [
+        "Un asentamiento es un lugar con nombre y una identidad guardada. Su reino cívico es la sociedad a la que pertenece en los registros de MCA: Kingdoms. El origen de un PNJ es su primer hogar cívico conocido; la residencia es su hogar confirmado actual. Pasar por una aldea no es lo mismo que mudarse a ella.",
+        "Una organización, como los Faroleros, es una asociación voluntaria. La afiliación, el prestigio gremial, las hazañas completadas y el rango pertenecen a esa organización. Son distintos de la reputación con un reino soberano y del aprecio que te tenga un aldeano.",
+        "Un cargo es un puesto político, como líder o administrador. Solo otorga los permisos definidos para ese cargo y su jurisdicción. Un mandato es la concesión explícita de un permiso por parte de un líder a un jugador. Un miembro famoso de un gremio no tiene automáticamente ninguno de los dos.",
+        "Una facción de Recruits controla sus propios equipos, tropas, diplomacia, reclamaciones y batallas. Una relación amistosa no es un pacto de protección, y un pacto de protección no da a su gobernante el mando de las tropas de otro jugador. Durante una ocupación, el control militar y la soberanía civil reconocida pueden no coincidir.",
+        "La raza, la deidad, las habilidades, los lazos familiares, los hogares y los corazones personales siguen en manos de los mods que los proporcionan. MCA: Kingdoms puede leer una cualificación compatible, pero unirse a un gremio o firmar un tratado no reescribe esas elecciones personales."
+      ],
+      "commands": []
+    },
+    {
+      "id": "optional_features",
+      "category": "basics",
+      "title": "Qué admite tu instalación",
+      "summary": "El juego básico de asentamientos funciona solo; algunos servicios necesitan mods complementarios y contenido a juego.",
+      "body": [
+        "Tanto el servidor como el cliente necesitan MCA: Kingdoms para Minecraft 1.20.1 en Forge. La identidad básica de los asentamientos, el Registro de aldeas, las definiciones de reinos y los registros de gobierno no requieren ningún mod externo de libro guía. Este libro viene incluido en el propio MCA: Kingdoms.",
+        "MCA Reborn aporta personas, lazos familiares y pruebas del hogar. Townstead aporta pruebas de edificios reconocidos y de etapa vital para las instituciones compatibles. MCA Quests aporta objetivos reales, aceptación, entrega de objetos, recompensas y pruebas guardadas de finalización. Una integración compatible de MCA Conversations ofrece opciones privadas de conversación cívica. Que un mod esté instalado no demuestra que su integración necesaria esté disponible.",
+        "El catálogo de misiones de los Faroleros también necesita su contenido escrito para el modpack. La definición del gremio en MCA: Kingdoms puede nombrar una misión existente sin aportar la misión completa. Importan las capas del modpack y las versiones de los mods complementarios. Si no aparecen trabajos adecuados, pide al operador que revise el contenido y las integraciones antes de repetir trabajos sin relación.",
+        "Recruits aporta las operaciones militares y el traspaso negociado de tropas. MCA Crime aporta sus propios casos, su aplicación de la ley y sus reparaciones. Runic Skills, Runic Gods, Runic Races y RPG Lore pueden aportar cualificaciones privadas. Nada de esto se simula si falta el mod.",
+        "La evolución del mundo empieza desactivada y necesita que un operador active explícitamente cada mundo; después, los asentamientos de reinos con gobierno son regiones elegibles salvo que un operador los pause. Los escenarios dramáticos necesitan una activación aparte. Los interruptores de guerra y de servicios institucionales son independientes: pregunta qué funciones activa tu servidor en lugar de suponer que todos los capítulos están disponibles. ¿Qué hay disponible aquí? lo muestra.",
+        "MCA: Capitals desactiva el gobierno nativo de MCA: Kingdoms. En esos servidores usa el sistema de gobierno de Capitals; instalarlo no añade un segundo gobierno funcional de MCA: Kingdoms a su lado."
+      ],
+      "commands": [
+        "/kingdoms integrations"
+      ],
+      "task": "help.available"
+    },
+    {
+      "id": "command_basics",
+      "category": "basics",
+      "title": "Los comandos son opcionales",
+      "summary": "Usa Tareas del reino para elegir por nombre; los comandos quedan como referencia técnica para operadores y automatización.",
+      "body": [
+        "Pulsa {key:tasks} para el flujo de juego admitido. Tareas del reino ofrece asentamientos, reinos, jugadores, PNJ, acuerdos, oportunidades, transferencias y otros registros como opciones legibles. El servidor lleva la revisión, las condiciones y las pruebas de conciliación con cada opción revisada.",
+        "Cada tarea termina en una página de revisión. Si un registro cambia antes de aplicar, el servidor rechaza el formulario desfasado. Vuelve a abrir la tarea, lee los detalles actualizados y decide de nuevo. Si una acción informa de un fallo al guardar o de un proveedor, consulta su estado antes de repetirla.",
+        "Los comandos ofrecen una interfaz equivalente para quien prefiera el chat y para la automatización desde la consola. Usa el autocompletado con Tab y la referencia del tema. Los selectores de registros aceptan nombres legibles y usan comillas cuando un nombre contiene espacios. Las claves de solicitud estables son nombres legibles de idempotencia elegidos para una solicitud concreta.",
+        "Un nombre nuevo al final de create o rename ocupa el resto del comando y se escribe sin comillas. Renombrar requiere el nivel de permiso 2. Los argumentos avanzados de revisión y de huella de conciliación que aparecen en las referencias de comandos los lleva automáticamente la revisión de la interfaz; todas las operaciones actuales están disponibles en Tareas del reino. /kingdoms help [tema] muestra la sintaxis en el juego."
+      ],
+      "commands": [
+        "/kingdoms village info \"Old Bellmeadow\"",
+        "/kingdoms village rename \"Old Bellmeadow\" New Bellmeadow",
+        "/kingdoms kingdom list"
+      ]
+    }
+  ]
+}

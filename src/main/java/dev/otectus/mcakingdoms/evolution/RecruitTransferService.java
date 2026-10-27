@@ -52,7 +52,7 @@ public final class RecruitTransferService {
         var t = new Transfer(UUID.randomUUID(), unitId, owner.getUUID(), recipientId, group, snapshot.equipment(), family,
                 now + 1200, now + 72000, 1, Phase.OFFERED, null, "Employment transfer: equipment travels with this recruit; native wages retain their remaining timer; no payment or troop levy is invented");
         family(t); put(t);
-        dev.otectus.mcakingdoms.interaction.Notify.player(owner.getServer(), recipientId, owner.getUUID(), owner.getGameProfile().getName() + " offers you the recruit " + dev.otectus.mcakingdoms.interaction.Names.entity(owner.getServer(), unitId) + "; consent is required.");
+        dev.otectus.mcakingdoms.interaction.Notify.player(owner.getServer(), recipientId, owner.getUUID(), net.minecraft.network.chat.Component.translatableWithFallback("notice.mcakingdoms.transfer_offered", "%s offers you the recruit %s; your consent is required.", owner.getGameProfile().getName(), dev.otectus.mcakingdoms.interaction.Names.entity(owner.getServer(), unitId)), "transfer.inspect");
         return "Private transfer proposal for " + dev.otectus.mcakingdoms.interaction.Names.entity(owner.getServer(), unitId) + " to " + dev.otectus.mcakingdoms.interaction.Names.player(owner.getServer(), recipientId) + "; the recipient must consent and " + dev.otectus.mcakingdoms.interaction.Names.duration(1200) + " of notice must elapse.";
     }
     public String consent(ServerPlayer recipient, UUID id, long revision) {

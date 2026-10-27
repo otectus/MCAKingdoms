@@ -1,0 +1,120 @@
+{
+  "entries": [
+    {
+      "id": "operator_overview",
+      "category": "operators",
+      "title": "Administra un mundo con seguridad",
+      "summary": "Mantén separados la configuración, la autoridad de los jugadores y la recuperación.",
+      "body": [
+        "Los comandos de operador suelen requerir el nivel de permiso 2. Tareas del reino muestra a los operadores tareas adicionales de administración y de prestigio. Usan opciones con nombre de asentamientos, personas, regiones, migraciones y conciliaciones. Las revisiones y las huellas de conciliación viajan con la selección revisada y no se pueden escribir ni adivinar en la interfaz. Empieza por Estado del servidor: muestra los interruptores de funciones, los proveedores instalados, si los datos guardados admiten escritura, la última recarga de definiciones, la migración de Ultima de este arranque y la actividad de descubrimiento y conciliación.",
+        "Algunas tareas útiles siguen requiriendo un jugador conectado porque usan su posición, la entidad seleccionada, su conocimiento privado o su autoridad política. Ejecutarlas desde la consola del servidor no siempre es equivalente. Los comandos siguen siendo una interfaz equivalente opcional para la automatización.",
+        "Empieza por las definiciones y las integraciones; después registra o descubre asentamientos reales, establece los gobiernos necesarios, reconoce instituciones adecuadas y nombra contactos reales. Activa la evolución del mundo opcional solo cuando la quieras. Una vez activado un mundo, todo asentamiento de un reino con gobierno es una región elegible por defecto (autoEligibleRegions); pausa los que no quieras. No te asignes todos los papeles políticos solo para hacer una prueba de diagnóstico.",
+        "Antes de una migración o reparación, detén el juego normal y haz una copia de seguridad de todo el mundo a la vez: datos del nivel, archivos auxiliares de world/data, dimensiones, regiones de entidades y datos de jugadores. Las misiones nativas, los inventarios, los registros políticos y las tropas pueden repartirse entre varios archivos. Restaurar un solo libro de justificantes no es revertir el mundo.",
+        "Un fallo al guardar o de un proveedor debe conservar una operación pendiente en lugar de inventar un éxito. Lee el registro exacto del responsable e identifica si el efecto nativo ya ocurrió. Usa la tarea correspondiente de reintento, confirmación, restauración, liberación, transferencia de trabajo o conciliación administrativa. Nunca borres las pruebas solo para quitar un mensaje de error.",
+        "Da a los jugadores explicaciones breves y privadas. Los diagnósticos detallados de versiones, migraciones y esquemas son para el operador; no deben difundirse en el diálogo de los PNJ ni usarse para revelar las decisiones privadas de otro jugador."
+      ],
+      "commands": [
+        "/kingdoms health",
+        "/kingdoms help [topic]",
+        "/kingdoms integrations",
+        "/kingdoms reload",
+        "/kingdoms faction diagnostics",
+        "/kingdoms politics diagnose \"<kingdom name>\""
+      ],
+      "task": "administration.health",
+      "operator": true,
+      "player_task": "help.available"
+    },
+    {
+      "id": "configuration",
+      "category": "operators",
+      "title": "Configuración e interruptores de funciones",
+      "summary": "Antes de diagnosticar un comportamiento que falta, averigua qué ajuste controla cada parte.",
+      "body": [
+        "La configuración común básica, mcakingdoms-common.toml, controla el descubrimiento de asentamientos. Los valores predeterminados incluyen un radio de asentamiento de 64 bloques, un radio de búsqueda de puntos de interés de 48 bloques, cinco puntos de interés de aldea (con una cama o una campana entre ellos, cerca de la superficie) para reconocer un grupo fuera de una aldea generada, dos chunks en cola examinados por tick y una distancia de coincidencia de candidatos débiles de 32 bloques. Las pruebas positivas del hogar de los PNJ se comprueban cada 200 ticks por defecto.",
+        "La configuración del rótulo de entrada del cliente controla si aparecen los rótulos, si solo aparecen la primera vez que un jugador entra en cada asentamiento (por defecto) o en cada entrada, si solo los provocan los cambios de reino, la duración (80 ticks por defecto) y la posición vertical (54 por defecto). Es presentación, no descubrimiento ni soberanía. Ocultar el rótulo de entrada no borra ningún asentamiento.",
+        "La configuración común de facciones controla la sincronización de reputación y la política de migración. La configuración común de integraciones controla el contenido de complementos condicionado por reino, con las condiciones activadas y la identidad desconocida denegada por defecto. Un predicado escrito explícitamente puede fijar su propia política para lo desconocido; no trates de forma general la falta de pruebas como una cualificación superada.",
+        "La configuración cívica controla la red regional y los servicios institucionales. La configuración de guerra controla la guerra política nativa y sus funciones subordinadas. Son independientes de la activación de la evolución de cada mundo. La configuración común de evolución fija el intervalo de evaluación, el presupuesto de muestreo regional, el máximo de escenarios simultáneos y la cadencia del boletín personal; los valores predeterminados son 1200 ticks, cuatro jugadores o regiones muestreados, ocho escenarios y 24 000 ticks.",
+        "Lee los comentarios generados en los archivos de configuración reales para conocer los nombres y límites actuales; los distintos módulos usan a propósito sus propios nombres de archivo. Un archivo de configuración guardado se recarga con el servidor en marcha y la mayoría de los valores se aplican desde su siguiente uso; los interruptores del adaptador de Townstead solo se aplican tras reiniciar. Estado del servidor muestra los interruptores efectivos. Una recarga de paquetes de datos cambia las definiciones escritas, no toda la configuración de arranque ni la versión del mod que tiene instalada un jugador."
+      ],
+      "commands": [],
+      "task": "administration.health",
+      "operator": true,
+      "player_task": "help.available"
+    },
+    {
+      "id": "standing_sync",
+      "category": "operators",
+      "title": "Prestigio en los reinos y reputación de MCA",
+      "summary": "La reputación soberana es distinta del crédito gremial y del aprecio personal local.",
+      "body": [
+        "El sistema de prestigio soberano guarda la reputación de un jugador con un reino. El prestigio gremial pertenece a una organización, y la reputación local de MCA o los corazones personales pertenecen a su proveedor. Usa las tareas de prestigio correspondientes para inspeccionar o corregir la puntuación que buscas; ninguna puntuación demuestra afiliación, ciudadanía, cargo ni autoridad de mando.",
+        "El modo de sincronización de reputación predeterminado es SHADOW (solo observar): la integración observa y diagnostica los eventos admitidos sin tratarlos como escrituras corrientes de la puntuación de facción. OFF desactiva la sincronización. MCA_TO_FACTION puede sumar los cambios locales admitidos al prestigio en el reino. BIDIRECTIONAL_SEMANTIC admite los efectos semánticos de alcance explícito de la integración; no es permiso para copiar indiscriminadamente todas las puntuaciones en ambos sentidos.",
+        "Por defecto, la contribución local usa un factor de 0,50, y la caída con el tiempo y los cambios de administrador no se propagan. La contribución combinada está acotada. La integración conserva la identidad de los eventos y la jurisdicción registrada, de modo que una entrega repetida no aplica dos veces un incidente y una reasignación posterior del asentamiento no reescribe dónde ocurrieron los incidentes antiguos.",
+        "El comando get del operador inspecciona la puntuación de un jugador en un reino. Add aplica un cambio administrativo explícito de -2000 a 2000. Local_effect se dirige a una comunidad real de MCA por dimensión y número de aldea, con un cambio de -100 a 100. Es una operación local explícita, no una hazaña gremial ni una recompensa de misión.",
+        "Pending_map asigna un evento sin resolver a un reino verificado después de que el operador corrija un vínculo que faltaba. No deduzcas el vínculo solo a partir del bioma actual. Diagnostica primero el contexto registrado del evento."
+      ],
+      "commands": [
+        "/kingdoms faction diagnostics",
+        "/kingdoms faction get <player name> <kingdom definition id>",
+        "/kingdoms faction add <player name> <kingdom definition id> <delta>",
+        "/kingdoms faction local_effect <player name> <dimension> <MCA village number> <delta>",
+        "/kingdoms faction pending_map \"<event name>\" <kingdom definition id>"
+      ],
+      "task": "standing.diagnostics",
+      "operator": true
+    },
+    {
+      "id": "migration_and_backups",
+      "category": "operators",
+      "title": "Importa prestigio antiguo y protege los guardados",
+      "summary": "Previsualiza primero, resuelve los conflictos y haz después una sola importación deliberada.",
+      "body": [
+        "La migración de facciones importa la reputación local heredada admitida como base de prestigio en los reinos. Ejecuta primero migration dry_run (Previsualizar la migración de reputación heredada) y revisa la disponibilidad de las fuentes, lo que ya se importó, los grupos, las comunidades sin vincular y los conflictos con los registros existentes. La agregación predeterminada es MEAN; las alternativas configurables son MEDIAN, MAX, MIN y SUM.",
+        "Resuelve toda fuente no disponible, todo vínculo de comunidad que falte y toda base existente en conflicto antes de importar. Una marca de importación completada impide tratar los mismos datos antiguos como nuevos una y otra vez. La importación crea las bases sin fabricar una serie de incidentes históricos ni de hazañas gremiales.",
+        "Para cualquier migración, usa una copia de seguridad de todo el mundo y un periodo de mantenimiento tranquilo. Fusionar asentamientos, reasignar reinos, fusionar organizaciones y retirar un proveedor son operaciones distintas con responsables distintos. Elige la herramienta que corresponde al cambio; una operación no sustituye a las demás.",
+        "Los datos desconocidos de una versión futura o mal formados se conservan en solo lectura en los registros afectados. Restaura una versión compatible o una copia de seguridad coherente; sobrescribir ese archivo con uno vacío puede dejar huérfanos efectos nativos que ya ocurrieron. Los límites de capacidad también detienen las escrituras nuevas en lugar de borrar en silencio las pruebas conservadas.",
+        "Quitar un mod que gestiona entidades puede hacer que el juego base descarte los tipos de entidad desconocidos al cargar sus chunks. Prueba la ausencia de un proveedor opcional en una copia. Las pruebas de reinstalación que necesiten esas entidades deben usar la instantánea del mundo conservada de antes de quitarlo. MCA: Kingdoms conserva sus propios registros suspendidos; no reconstruye las criaturas nativas que haya borrado el juego base."
+      ],
+      "commands": [
+        "/kingdoms faction migration dry_run",
+        "/kingdoms faction migration import"
+      ],
+      "task": "standing.migration_preview",
+      "operator": true
+    },
+    {
+      "id": "datapack_authoring",
+      "category": "operators",
+      "title": "Personaliza definiciones y contenido",
+      "summary": "Usa las definiciones para escribir opciones; las condiciones aceptadas y guardadas no se reescriben en silencio.",
+      "body": [
+        "MCA: Kingdoms lee de los recursos las identidades de los reinos, las reglas de biomas, los estilos de estructura, las listas de nombres, las definiciones políticas, los gremios, las reglas cívicas, los lugares y rutas del mundo y las plantillas de evolución. Copia un ejemplo incluido del mismo dominio y esquema en lugar de adivinar los campos a partir de otra función.",
+        "Las definiciones básicas y políticas están en data/<namespace>/mcakingdoms/, con carpetas de dominio como kingdoms, biome_rules, governments, offices, agreements, petitions, honors e institution_charters. Las definiciones de organizaciones usan data/<namespace>/mcakingdoms_factions/factions/; las reglas de contacto cívico usan mcakingdoms_factions/civic_network/. El identificador debe coincidir con su ruta cuando el cargador lo exige.",
+        "Los escenarios de evolución usan data/<namespace>/evolution/scenarios/; las plantillas de eventos del mundo usan evolution/drama/. Los selectores de contexto del mundo usan el dominio de recursos warfare/world. Define requisitos reales admitidos y una salida pacífica; un nombre de desenlace nuevo en JSON no implementa una operación nativa nueva.",
+        "Una recarga informa de cada dominio de definiciones como aceptado o rechazado. Un dominio rechazado mantiene activas sus definiciones anteriores, y el informe nombra el archivo, el campo y lo que se esperaba; el detalle completo está en el registro del servidor. Las referencias que faltan aún pueden suspender acciones dependientes, y Estado del servidor guarda el último informe de recarga. Una misión, propuesta o escenario aceptados conservan sus condiciones fijadas en lugar de convertirse en otro trato porque cambió su plantilla.",
+        "Crea recompensas nuevas mediante el proveedor de misiones o de economía responsable. Crea crédito gremial mediante una misión admisible exacta y una definición de crédito acotada. Nunca concedas prestigio solo porque un cliente afirme haber completado un trabajo.",
+        "El propio libro usa archivos de paquete de recursos en assets/mcakingdoms/guide/<idioma>/*.json. El inglés es la reserva. Las entradas contienen id, categoría, título, resumen, párrafos del cuerpo y referencias de comandos. Los identificadores de entrada estables permiten que una traducción sustituya a su equivalente en inglés. Estos recursos del libro describen el juego; no conceden ninguna autoridad."
+      ],
+      "commands": [
+        "/kingdoms reload"
+      ],
+      "task": "definitions.reload",
+      "operator": true
+    },
+    {
+      "id": "addon_api",
+      "category": "operators",
+      "title": "Para desarrolladores de complementos",
+      "summary": "Usa la API pública del responsable y el contexto autenticado del servidor en lugar de editar archivos auxiliares.",
+      "body": [
+        "El JAR normal del mod va tanto en el cliente como en el servidor. El -api.jar aparte es una dependencia de desarrollo que solo contiene clases; el -sources.jar sirve para adjuntar el código fuente. No instales esos artefactos adicionales como mods para obtener más contenido.",
+        "McaKingdomsApi da acceso a los asentamientos y a la identidad cívica. KingdomsPoliticsApi ofrece gobiernos, instituciones, permisos, historial y transacciones políticas. KingdomsFactionsApi gestiona el prestigio soberano; OrganizationApi, las organizaciones voluntarias; ProgressionApi evalúa cualificaciones privadas opcionales. WarfareApi ofrece su vista militar definida. Sus registros describen dominios distintos.",
+        "Las operaciones que modifican datos deben ejecutarse en el contexto de servidor admitido y usar el jugador autenticado real, los permisos actuales y la revisión. Conserva identificadores de solicitud estables al reintentar una operación confirmada. Lo que muestra un cliente o un aviso de evento en vivo no prueba que se haya completado una recompensa, un traspaso de tropas o un guardado externo.",
+        "Usa resultados de capacidad tipados. Que falte una integración, que las pruebas sean desconocidas y que una cualificación sea negativa son estados distintos. Mantén las clases de proveedores opcionales fuera de los contratos públicos y de la inicialización de cliente en servidores dedicados. Nunca hagas que una consulta de presentación cargue entidades lejanas o revele conocimiento privado.",
+        "Consulta el código fuente y la documentación Javadoc incluidos para conocer las firmas y los límites actuales, y usa el artefacto de API que corresponde a la versión instalada. La guía explica el modelo de responsabilidades; no promete que una definición de recursos pueda añadir una capacidad que ningún proveedor implementa."
+      ],
+      "commands": []
+    }
+  ]
+}

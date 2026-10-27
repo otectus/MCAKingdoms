@@ -9,7 +9,7 @@
         "Charter: the agreed rules establishing a government or recognizing an institution. Institution: an officially recognized civic place. Chapter: a local branch of an organization. Contact: a specific resident who can offer its services.",
         "Standing: a score with a particular kingdom or organization. Deed: a distinct verified service recorded for progression. Rank: a membership level with defined rights. Honor: a political award, which may be discretionary or earned from verified service.",
         "Mandate: a leader's explicit permission grant. Ratify: sign for a government with authority. Sovereignty: recognized political rule. Controller: the native military owner or occupier. Interregnum: a period with no current leader. Regent: a temporary authorized substitute under an adopted rule.",
-        "Novation: transferring an accepted obligation under the supported owner-approved process. Tombstone: a retained record explaining that an old identity was merged or ended. Redirect: a stable way to resolve an old ID to its current identity without copying all its historical standing.",
+        "Novation: transferring an accepted obligation under the supported owner-approved process (Transfer accepted work in Kingdom Tasks). Tombstone: a retained record explaining that an old identity was merged or ended. Redirect: a stable way to resolve an old ID to its current identity without copying all its historical standing.",
         "Provider: the mod that actually owns a fact or action, such as MCA for marriage or Recruits for troops. Receipt: saved proof of a particular completed operation. Revision: the version of a record you inspected. Intent: a saved plan recording what operation is being attempted so interruption can be recovered safely.",
         "CAS or optimistic concurrency: refusing a write if the record changed since you read it. Epoch: the identity of a provider's receipt history generation. Reconciliation: an operator's acknowledgment of checked existing native state; it is not an automatic repair or proof that the original requested outcome happened.",
         "Mobilization lease: a temporary deployment arrangement for a recruit you already control. Ending the deployment restores its supported original orders; it does not mean firing that recruit from employment."
@@ -30,7 +30,8 @@
         "Save unavailable, acknowledgment pending, or read-only data: stop repeating reward or ownership changes. Inspect the retained operation and use its named recovery task with the original actor where required. If status is ambiguous or accounting diverged, an operator must review it. Do not delete sidecars or duplicate a contract to make the warning disappear.",
         "No response: the UI may retry safely using its retained request. Refresh and inspect before making a new consequential request; a missing reply does not prove the original action failed."
       ],
-      "commands": []
+      "commands": [],
+      "task": "help.available"
     },
     {
       "id": "privacy_and_multiplayer",
@@ -50,15 +51,16 @@
       "id": "feature_map",
       "category": "reference",
       "title": "Find the right task",
-      "summary": "Press K, search by goal, and choose named records from the parts of the world you are allowed to know.",
+      "summary": "Press {key:tasks}, search by goal, and choose named records from the parts of the world you are allowed to know.",
       "body": [
-        "Press K and search by your goal. Settlements covers nearby and known places, kingdoms, and civic residence. Government covers offices, mandates, agreements, petitions, institutions, honors, succession, houses, history, elections, and regency. Civic Service covers guild membership, eligibility, introductions, chapters, contacts, qualifications, commissions, hospitality, and workshops.",
+        "Press {key:tasks} and search by your goal. Settlements covers nearby and known places, kingdoms, and civic residence. Government covers offices, mandates, agreements, petitions, institutions, honors, succession, houses, history, elections, and regency. Guilds and service covers guild membership, eligibility, introductions, chapters, contacts, qualifications, commissions, hospitality, and workshops.",
         "Warfare and Exploration covers military-control inspection, campaigns, accords, temporary recruit orders, civilian recovery work, sites, routes, encounters, and neutral resource access. War Room buttons open the relevant server task directly; they do not draft a chat command.",
-        "Evolving World covers scenario browsing and contributions, digests, protection duties, family introductions, negotiated recruit transfers, authored drama, and recovery. Organizations covers chartered founding, merger consent, member opt-out, accepted-job novation, finalization, and dissolution. Each selector follows the same privacy rules as the owning service.",
+        "Evolution, Protection, Transfers, and World events cover scenario browsing and contributions, digests, protection duties, family introductions, negotiated recruit transfers, world events, and recovery. Organizations covers chartered founding, merger consent, member opt-out, transferring accepted work, finalization, and dissolution. Each selector follows the same privacy rules as the owning service.",
         "Players with permission level 2 also see Administration and Standing tasks. These cover settlement creation and correction, civic identity, definition reload, evolution configuration and regions, site and route authoring, diagnostics, reputation correction and migration, and guarded transfer reconciliation. Operator tasks are absent from an ordinary player's catalogue.",
-        "Type a few words into search, select named choices, review, and apply. Missing choices usually mean the place is undiscovered, a participant is offline, authority or consent is absent, a prerequisite is incomplete, or an optional provider is unavailable. Open the related read or inspect task for the current explanation."
+        "Type a few words into search, select named choices, review, and apply. Missing choices usually mean the place is undiscovered, a participant is offline, authority or consent is absent, a prerequisite is incomplete, or an optional provider is unavailable. Open the related read or inspect task for the current explanation; What is available here? shows which features this server enables."
       ],
-      "commands": []
+      "commands": [],
+      "task": "*"
     }
   ]
 }

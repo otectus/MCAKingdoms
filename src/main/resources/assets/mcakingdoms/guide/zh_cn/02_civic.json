@@ -1,0 +1,287 @@
+{
+  "schema": 2,
+  "entries": [
+    {
+      "id": "first_guild_steps",
+      "task": "civic.status",
+      "category": "civic",
+      "title": "帮助点灯人",
+      "summary": "无论加入与否，都能通过实际工作赚取服务积分。",
+      "commands": [
+        "/kingdoms guild",
+        "/kingdoms guild join mcakingdoms:lamplighters",
+        "/kingdoms guild leave mcakingdoms:lamplighters"
+      ],
+      "blocks": [
+        {
+          "id": "journey_heading",
+          "type": "heading",
+          "text": "服务之路"
+        },
+        {
+          "id": "journey",
+          "type": "diagram",
+          "alt": "合格的编写任务产生已保存的完成记录。核实功绩与声望决定你能使用哪些公会服务。",
+          "nodes": [
+            {
+              "id": "n0",
+              "label": "合格工作",
+              "item": "minecraft:lantern"
+            },
+            {
+              "id": "n1",
+              "label": "保存完成记录",
+              "item": "minecraft:writable_book"
+            },
+            {
+              "id": "n2",
+              "label": "核实功绩",
+              "item": "minecraft:paper"
+            },
+            {
+              "id": "n3",
+              "label": "公会服务",
+              "item": "minecraft:emerald"
+            }
+          ],
+          "edges": [
+            {
+              "from": "n0",
+              "to": "n1"
+            },
+            {
+              "from": "n1",
+              "to": "n2"
+            },
+            {
+              "from": "n2",
+              "to": "n3"
+            }
+          ]
+        },
+        {
+          "id": "text_0",
+          "type": "paragraph",
+          "text": "点灯人是第一个内置的和平行会。当对应的任务内容和MCA Quests集成可用时，通过平常的委托人完成一项编写好的点灯人服务工作。MCA: Kingdoms会把已保存的完成记录为一项已核实功绩，并授予配置好的行会声望。"
+        },
+        {
+          "id": "text_1",
+          "type": "paragraph",
+          "text": "打开村庄名册→行会，查看成员资格、声望、功绩、等级进展和服务说明。“加入”会让你自愿入会。“退出”会结束有效的成员资格，但不会抹去已获得的服务记录、技能、家庭、物品栏或人际关系。除非定义声明了冲突，否则你可以同时加入多个组织。"
+        },
+        {
+          "id": "text_2",
+          "type": "paragraph",
+          "text": "可重复的任务可能会继续发放其原生奖励，但同一个编写好的任务不会持续给予新的点灯人积分。已核实功绩是由本系统计入的一次不同且符合条件的完成，而不是每一次交付物品或击败敌人。"
+        },
+        {
+          "id": "text_3",
+          "type": "paragraph",
+          "text": "想走一条简单的和平路线，可以帮忙完成几项不同的工坊和救济工作，然后向附近符合条件的联系人申请引荐或精选工作。仅仅加入并不能跳过声望和功绩要求。保持独立也是受支持的选择，但服务门槛更高。"
+        },
+        {
+          "id": "text_4",
+          "type": "paragraph",
+          "text": "如果你完成了工作却没有看到积分，请刷新自己的页面，并检查该任务是否是编写好的符合条件的功绩。完成必须通过受支持的任务集成保存并交付。不要放弃后重做同一份工作，期望强行获得重复积分。"
+        }
+      ]
+    },
+    {
+      "id": "guild_requirements",
+      "task": "civic.explain",
+      "category": "civic",
+      "title": "声望、工作与等级",
+      "summary": "把服务要求看作几项独立的检查，而不是一条进度条。",
+      "keywords": [
+        "要求",
+        "声望",
+        "功绩",
+        "等级",
+        "独立",
+        "成员",
+        "为什么不能",
+        "资格"
+      ],
+      "blocks": [
+        {
+          "id": "checks",
+          "type": "paragraph",
+          "text": "每项行会服务都会分别检查几件事：你在行会中的声誉（声望）、你完成了多少项不同的服务工作（已验证功绩）、你作为成员的等级、附近有效的联系人，以及服务所需的任何建筑或配套模组。即使声望很高，如果不同的工作太少，服务仍可能不可用。"
+        },
+        {
+          "id": "routes",
+          "type": "paragraph",
+          "text": "大多数服务有两条途径。成员凭等级和成员门槛获得资格。没有加入的独立贡献者可以通过更高的门槛获得资格。你只需要满足其中一条，而不是两条都要。"
+        },
+        {
+          "id": "defaults",
+          "type": "requirements",
+          "title": "点灯人的默认门槛",
+          "rows": [
+            {
+              "label": "作为成员获得前往其他分会的引荐",
+              "state": "example",
+              "detail": "默认：20 声望、1 项不同工作、志愿者等级。"
+            },
+            {
+              "label": "作为独立贡献者获得引荐",
+              "state": "example",
+              "detail": "默认：40 声望、2 项不同工作。"
+            },
+            {
+              "label": "作为成员承接有报酬的行会工作（委托）",
+              "state": "example",
+              "detail": "默认：60 声望、3 项不同工作、点灯人等级。"
+            },
+            {
+              "label": "作为独立贡献者承接有报酬的行会工作",
+              "state": "example",
+              "detail": "默认：100 声望、5 项不同工作。"
+            }
+          ],
+          "note": "等级：志愿者从 0 声望起，点灯人从 60 起，路线守望者从 100 起。你的服务器可以更改任何数值。"
+        },
+        {
+          "id": "live",
+          "type": "callout",
+          "tone": "tip",
+          "text": "“行会”页面会显示你所在服务器的实际门槛、你对每项门槛的进度，以及适用于你的途径。"
+        },
+        {
+          "id": "ids",
+          "type": "paragraph",
+          "text": "命令使用的权限 ID 是 mcakingdoms:route_introductions 和 mcakingdoms:commission_access。资格说明不会授予功绩，也不会开启军事职务。"
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "task",
+              "target": "civic.explain",
+              "label": "检查某项服务的要求"
+            },
+            {
+              "kind": "task",
+              "target": "civic.status"
+            },
+            {
+              "kind": "guide",
+              "target": "first_guild_steps"
+            }
+          ]
+        }
+      ],
+      "commands": [
+        "/kingdoms guild explain mcakingdoms:lamplighters mcakingdoms:route_introductions",
+        "/kingdoms guild explain mcakingdoms:lamplighters mcakingdoms:commission_access"
+      ]
+    },
+    {
+      "id": "eligible_deeds",
+      "category": "civic",
+      "title": "哪些工作能获得行会积分？",
+      "summary": "内置的积分列表奖励不同的服务，而不是无休止的重复。",
+      "body": [
+        "默认的点灯人和平列表中，Fire in Poor Hands、Mesh for the Glass、Sootward Plaster、Twist the First Cord和Weather Eye各给10点积分；Charters Night、Reinforce the Ladder和Warmth at the Gate各给20点。这八项不同的工作合计提供110点声望，在同时满足功绩要求时，足以走默认的独立路线。",
+        "另有四项编写好的工作各给20点：绿色盟约奥术任务线中的Wood and Stone That Live和Source for the Seed Vault；边境守望的Rations for the Upper Stair；以及田野笔记探险任务线中的Teeth in the Lamplight。它们原生的任务前提和目标仍然适用。",
+        "准确的任务ID是：八项公民工作为ultima:civic/lamplighters/加上对应标题的snake_case形式；以及ultima:arcana/green_compact/wood_and_stone_that_live、ultima:arcana/green_compact/source_for_the_seed_vault、ultima:expeditions/border_watch/rations_for_the_upper_stair和ultima:expeditions/fieldbook/teeth_in_the_lamplight。",
+        "这些是对整合包中编写好的任务的引用。仅安装MCA: Kingdoms并不会让它们全部出现在委托人的菜单中。请完成MCA Quests描述的目标；MCA: Kingdoms不提供其他交付方式，不改变奖励，也不绕过原生的冷却时间。服务器的定义可以更改白名单和积分。"
+      ],
+      "commands": [],
+      "task": "civic.status"
+    },
+    {
+      "id": "contacts_and_introductions",
+      "task": "civic.introduction",
+      "category": "civic",
+      "title": "寻找行会联系人",
+      "summary": "联系人是正常运作的本地分会中的真实居民。",
+      "body": [
+        "分会是组织的本地分支。联系人是编写好的或被正式任命的居民，能够提供该分会的服务。普通村民不会因为职业而全部成为行会成员。",
+        "要使用引荐或精选委托，请站在一位符合条件且已加载的联系人附近。服务会检查你当前的声望和功绩、实际对话的对象、其居住地、必要时的成年状态，以及由提供方管理的工坊。损坏、改变或不可用的工坊可能会暂停服务，直到真实的建筑恢复。",
+        "引荐会在配置的搜索范围内，私下向你透露一个现有的相邻分会。它不会生成新的分会，不会公开所有村庄，也不会改变其他玩家的地图。如果没有可用的目的地，请继续探索，或询问管理员是否真的设立了相邻的分会。",
+        "精选委托会打开一组相关的现有原生任务。它是方便的入口，而不是第二个任务引擎，也不独占普通的魔法、制作和探索内容。原生委托人的限制、进度、接取和冷却时间仍然有效。",
+        "这些命令使用指定组织最近的符合条件的联系人。如果提示没有联系人，请检查距离和分会，而不要猜测某个远处NPC的身份。安装了对应集成时，受支持的MCA Conversations会提供等效的私密公民选项。"
+      ],
+      "commands": [
+        "/kingdoms guild chapters",
+        "/kingdoms guild introduction <organization definition id>",
+        "/kingdoms guild commissions <organization definition id>"
+      ]
+    },
+    {
+      "id": "workshop_commissions",
+      "category": "civic",
+      "title": "完成一项有偿工坊委托",
+      "summary": "已认可的机构工作可以正常获得报酬，并记录一项公民荣誉。",
+      "body": [
+        "这条路线需要一个正常运作的已认可机构、一个持有特许状的分会、一位被任命的联系人、对应的原生任务集成，以及服务器的机构服务设置。它比普通的行会精选工作更具体。",
+        "1. 拜访实际的联系人并选择“有偿工坊”（在王国事务中为“浏览有偿工坊工作”）。接受之前先阅读原生的委托内容。接受后，玩家、委托人、机构、建筑、任务实例、目标、奖励和荣誉条款都会固定。在内置的工坊示例中，四盏灯笼通过MCA Quests换取六颗绿宝石；不要假定所有委托都使用这一奖励。",
+        "2. 完成所述的工作。回到指定的委托人处，通过MCA Quests完成任务。任务模组会扣除所需物品并发放奖励。随后，MCA: Kingdoms会根据已保存的完成记录一项已核实的公民荣誉。该荣誉不是新的官职，也不会自动改变你在主权王国的声望。",
+        "3. 完成后刷新相关的历史和荣誉页面。重复提交的凭证无法再次支付报酬或授予该荣誉。变更行会成员资格不会悄悄改写已接受工作的条款。",
+        "如果建筑、委托方、定义或合法资格变得不可用，已接受的机构工作可能会被暂停，而不会被悄悄转给别处。请恢复真实的前提条件，或使用原生任务支持的取消方式。不要为了重新领取奖励而删除完成记录；未解决的保存问题需要管理员调查。",
+        "你必须在点灯人分会具备点灯人委托的资格，并且受支持的MCA Crime服务必须确认你有资格接受机构服务。缺少Crime集成并不能绕过这一要求。"
+      ],
+      "commands": [
+        "/kingdoms guild workshop <organization definition id>",
+        "/kingdoms guild institutions"
+      ],
+      "task": "civic.workshop"
+    },
+    {
+      "id": "hospitality_and_legal_access",
+      "task": "civic.hospitality",
+      "category": "civic",
+      "title": "接待与地方限制",
+      "summary": "外交可以开启引荐；但地方上的法律问题仍可能阻止服务。",
+      "body": [
+        "接待服务借助一项实际有效的协议和一位可用的机构联系人，提供一次私密的公民引荐。它不是传送，不是免费的床位预订，不能免除饥饿，也不是进入所有受保护区域的通行证。另一个地点必须存在并符合条件。",
+        "在联系人处申请“接待”。服务器会重新检查协议、联系人、机构、目的地以及你的资格。协议过期或终止后便无法再使用。你已私下知道的信息并不是新的条约，也不能证明该服务仍然可用。",
+        "当MCA Crime集成可用时，相关的地方案件可能会暂停机构服务。公众声望不能抹去地方法律义务，界面也不应显示他人的私密指控。仅凭占领并不能证明一名中立平民犯了罪。",
+        "请通过MCA Crime自身支持的赔偿或归还途径解决案件，然后回来刷新。MCA: Kingdoms不会追加罚款，不会捏造罪行，也不会自行结案。如果法律提供方不可用，服务可能会被暂停，而不会假装你已洗清嫌疑。"
+      ],
+      "commands": [
+        "/kingdoms guild hospitality <organization definition id>"
+      ]
+    },
+    {
+      "id": "establish_a_chapter",
+      "task": "civic.charter",
+      "category": "civic",
+      "title": "设立本地行会分会",
+      "summary": "面向官职持有者：认可建筑、为分会颁发特许状、任命一位居民。",
+      "body": [
+        "你需要在相关聚居地拥有当前的机构认可权限，或使用受支持的管理员设置途径。仅有行会成员资格是不够的。首先确认Townstead认可了实际的建筑，并且该聚居地属于正确的王国。",
+        "1. 打开“王国”之前，先站在目标建筑旁并看向它。在“操作”中选择机构认可操作及其特许状类型。使用正确的位置提交。政治负责方会验证这座原始建筑，而不会悄悄选择附近的替代建筑。",
+        "2. 在王国事务中打开“设立行会分会”。从服务器列表中选择组织和一个具名的已认可机构。分会会成为与该机构绑定的本地组织分支；不会复制任何技术身份。",
+        "3. 查看分会，然后为分会任命一位附近符合条件的成年居民。任命会检查真实的居住地和建筑情况。从另一个分会调来联系人，还需要拥有原分会的权限。",
+        "撤销会持久地取消该NPC的角色，包括基于早期编写好的联系人证据的自动重新启用。暂停政治认可会暂停该机构；重新验证会在恢复之前检查其原始证据。这些操作不会移动NPC、改变其家庭或重建工坊。",
+        "如果你只想做行会工作，就不需要自己设立分会。找一个正常运作的分会及其联系人即可。"
+      ],
+      "commands": [
+        "/kingdoms guild charter <organization definition id> \"<institution name>\"",
+        "/kingdoms guild appoint \"<chapter name>\" <entity selector>",
+        "/kingdoms guild dismiss \"<contact name>\"",
+        "/kingdoms guild chapters",
+        "/kingdoms guild institutions"
+      ]
+    },
+    {
+      "id": "personal_qualifications",
+      "category": "civic",
+      "title": "技能、信仰、种族与传说",
+      "summary": "可选检查会读取你现有的进度，但不会改变它。",
+      "body": [
+        "某些编写好的内容可能会要求某个技能等级、神祇、种族或已收集的传说书。受支持的集成会从拥有该数据的模组读取数值。它不会消耗技能经验，不会让你与神祇绑定，不会改变种族，不会改写基因，也不会授予传说收藏条目。",
+        "qualify命令是对你自身进度的私密诊断。skill_level需要提供方的技能名称（例如building）和最低等级。deity和race需要提供方的ID。lore_collected需要一个真实的RPG Lore书籍ID。即使某种非等级比较使用自己的匹配规则，该命令仍要求提供minimum参数。",
+        "AVAILABLE表示集成回答了这个问题，并不一定表示你符合资格。UNAVAILABLE表示提供方或受支持的功能无法回答。未知的证据绝不能被当作成功。",
+        "这些资格与行会等级和军事归属无关。请阅读所提供内容的实际要求；存在资格命令并不意味着所有法术、配方、种族或神祇都受行会限制。"
+      ],
+      "commands": [
+        "/kingdoms guild qualify <skill_level|deity|race|lore_collected> \"<qualification name>\" <minimum>"
+      ],
+      "task": "civic.qualify"
+    }
+  ]
+}

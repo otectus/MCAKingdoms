@@ -1,0 +1,10 @@
+{
+  "structures": [
+    {"id": "minecraft:shipwreck", "role": "ruin"},
+    {"id": "minecraft:ocean_ruin_warm", "role": "archaeological_site"},
+    {"id": "minecraft:ocean_ruin_cold", "role": "archaeological_site"}
+  ],
+  "encounters": [
+    {"id": "minecraft:drowned", "role": "site_defense", "repeat_budget": 2, "contribution_window": 600}
+  ]
+}

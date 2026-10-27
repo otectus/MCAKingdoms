@@ -1,63 +1,258 @@
 {
+  "schema": 2,
   "entries": [
     {
       "id": "political_pages",
-      "task": "politics.diagnose",
       "category": "politics",
       "title": "Read the kingdom pages",
       "summary": "Inspect first; an action changes a particular record under a particular authority.",
       "body": [
         "Open Village Ledger, select a known settlement, then choose Kingdom. Overview describes the government; Council lists offices and mandates; Agreements lists diplomacy; Petitions lists requests visible to you; Institutions lists recognized places; Honors lists awards; History lists committed political events.",
-        "Choose Actions on a Kingdom page, or press K and search Government. Each supported operation has its own task and fields. Agreements, petitions, institutions, honors, offices, succession, houses, elections, and regency use separate forms rather than one generic action selector.",
+        "Choose Actions on a Kingdom page, or press {key:tasks} and search Government. Each supported operation has its own task and fields. Agreements, petitions, institutions, honors, offices, succession, houses, elections, and regency use separate forms rather than one generic action selector.",
         "The server offers named records you are allowed to see. A petition remains private to its authorized viewers, ballots remain private, and another player may receive a different list. Selecting a choice does not grant authority; office, mandate, jurisdiction, current state, and installed definitions are checked again.",
         "Consequential tasks finish on a review page showing the chosen kingdom, people, record details, and terms. Apply reviewed action performs the operation once. If government state changes while the form is open, reopen the task and review the new state.",
         "Election and regency have dedicated tasks. Search Open a leadership election, Vote in an election, Close and count an election, Appoint a temporary regent, or End a regency. These tasks enforce the adopted constitutional rule and never infer death or incapacity from an offline or unloaded person."
       ],
-      "commands": []
+      "commands": [],
+      "task": "politics.read_overview"
     },
     {
       "id": "found_a_government",
-      "task": "politics.diagnose",
       "category": "politics",
       "title": "Establish a government",
-      "summary": "An operator chooses the first capital, constitution, and player leader.",
-      "body": [
-        "A named civic kingdom can exist without a government. Establishing one is an explicit setup action; possession of a ledger, a famous reputation, or a large Recruits army does not establish it automatically.",
-        "1. An operator opens Establish a government and chooses the named kingdom, recognized capital settlement, installed constitution, and eligible first leader. Register a missing place deliberately with settlement tasks if appropriate.",
-        "2. The server checks the capital’s saved kingdom, the definition, and the leader. Review all four named choices, then apply once. Establishment does not claim native territory or grant offices outside the constitution.",
-        "3. Open Overview and Council to verify the seat and leader. The profile freezes the constitutional terms used by the government. The leader can appoint offices and delegate suitable permissions. Existing social data, native claims, buildings, and troop ownership are not recreated by this step.",
-        "To move the capital later, use seat with current capital-setting authority and another eligible settlement. A capital's references must be settled before its identity is reassigned elsewhere. If a government profile is missing after a content change, affected government actions become dormant; restore the correct definition rather than bootstrapping a duplicate government.",
-        "MCA: Capitals disables MCA: Kingdoms native governance. Use the Capitals government system on such servers; installing it does not add a second working MCA: Kingdoms government alongside it."
-      ],
-      "commands": []
+      "summary": "An operator, or an eligible resident, founds a kingdom's first government.",
+      "commands": [],
+      "task": "politics.bootstrap",
+      "blocks": [
+        {
+          "id": "journey_heading",
+          "type": "heading",
+          "text": "Founding, at a glance"
+        },
+        {
+          "id": "journey",
+          "type": "diagram",
+          "alt": "Check who may found the government, choose the permitted capital and constitution, review, then inspect the new government.",
+          "nodes": [
+            {
+              "id": "n0",
+              "label": "Check eligibility",
+              "item": "minecraft:book"
+            },
+            {
+              "id": "n1",
+              "label": "Choose capital and terms",
+              "item": "minecraft:map"
+            },
+            {
+              "id": "n2",
+              "label": "Review the choices",
+              "item": "minecraft:writable_book"
+            },
+            {
+              "id": "n3",
+              "label": "Read the government",
+              "item": "minecraft:golden_helmet"
+            }
+          ],
+          "edges": [
+            {
+              "from": "n0",
+              "to": "n1"
+            },
+            {
+              "from": "n1",
+              "to": "n2"
+            },
+            {
+              "from": "n2",
+              "to": "n3"
+            }
+          ]
+        },
+        {
+          "id": "text_0",
+          "type": "paragraph",
+          "text": "A named civic kingdom can exist without a government. Establishing one is an explicit setup action; possession of a ledger, a famous reputation, or a large Recruits army does not establish it automatically."
+        },
+        {
+          "id": "text_1",
+          "type": "paragraph",
+          "text": "1. Open Establish a government. An operator chooses the named kingdom, a recognized capital settlement, an installed constitution, and an eligible first leader. With resident founding on (the default), a player whose recorded civic residence is in an ungoverned kingdom can found it too; their choices are limited to that kingdom, their residence as capital, and themselves as leader. Check whether you can found a government explains your own case. Register a missing place deliberately with settlement tasks if appropriate."
+        },
+        {
+          "id": "text_2",
+          "type": "paragraph",
+          "text": "2. A civic residence is a record set by an operator or an addon. Visiting, sleeping in, or trading with a settlement does not set it, and neither book creates one. The server checks the capital’s saved kingdom, the definition, the leader, and for a resident their residence again at apply time. Review all four named choices, then apply once. Establishment does not claim native territory or grant offices outside the constitution."
+        },
+        {
+          "id": "text_3",
+          "type": "paragraph",
+          "text": "3. Open Overview and Council to verify the seat and leader. The profile freezes the constitutional terms used by the government. The leader can appoint offices and delegate suitable permissions. Existing social data, native claims, buildings, and troop ownership are not recreated by this step."
+        },
+        {
+          "id": "text_4",
+          "type": "paragraph",
+          "text": "To move the capital later, use seat with current capital-setting authority and another eligible settlement. A capital's references must be settled before its identity is reassigned elsewhere. If a government profile is missing after a content change, affected government actions become dormant; restore the correct definition rather than bootstrapping a duplicate government."
+        },
+        {
+          "id": "text_5",
+          "type": "paragraph",
+          "text": "MCA: Capitals disables MCA: Kingdoms native governance. Use the Capitals government system on such servers; installing it does not add a second working MCA: Kingdoms government alongside it."
+        }
+      ]
     },
     {
       "id": "offices_and_permissions",
-      "task": "politics.diagnose",
+      "task": "politics.read_council",
       "category": "politics",
       "title": "Appoint officials and delegate powers",
       "summary": "Give a defined responsibility, not blanket control of every system.",
-      "body": [
-        "An office is a defined political role. Its holder can be an eligible player or, for supported offices, a living loaded adult NPC with confirmed civic residence. The default constitution permits two offices per person in a government. Unknown adulthood or residence blocks an NPC appointment; it does not justify changing the NPC's age or home.",
-        "Open Appoint an official and choose the government, office definition, person, and any named settlement jurisdiction. Remove an official vacates that same defined scope; it does not delete or dismiss the person from ordinary life.",
-        "A leader uses Authorize a political responsibility to grant a specific responsibility to a named player and Revoke a player’s mandates to remove those grants. Every later action checks current authority again. The server carries record versions through review.",
-        "Use Council to check who actually has authority. RATIFY means permission to sign agreements for that kingdom. RECOGNIZE concerns institutions. REVIEW concerns reviewing requests. These are different from being a guild member or commanding a Recruits faction. An operator's general privilege alone does not make them a valid treaty signatory.",
-        "Appointing an NPC does not change their personal name, profession, family, schedule, needs, clothing, or AI. A temporary absence or unloaded chunk is not a vacancy. Only a confirmed applicable death event, a lawful removal, or another explicit government transition changes those records."
+      "blocks": [
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "An office is a defined political role. Its holder can be an eligible player or, for supported offices, a living loaded adult NPC with confirmed civic residence. The default constitution permits two offices per person in a government. Unknown adulthood or residence blocks an NPC appointment; it does not justify changing the NPC's age or home."
+        },
+        {
+          "id": "p2",
+          "type": "paragraph",
+          "text": "Open Appoint an official and choose the government, office definition, person, and any named settlement jurisdiction. Remove an official vacates that same defined scope; it does not delete or dismiss the person from ordinary life."
+        },
+        {
+          "id": "p3",
+          "type": "paragraph",
+          "text": "A leader uses Authorize a political responsibility to grant a specific responsibility to a named player and Revoke a player’s mandates to remove those grants. Every later action checks current authority again. The server carries record versions through review."
+        },
+        {
+          "id": "p4",
+          "type": "paragraph",
+          "text": "Use Council to check who actually has authority. RATIFY means permission to sign agreements for that kingdom. RECOGNIZE concerns institutions. REVIEW concerns reviewing requests. These are different from being a guild member or commanding a Recruits faction. An operator's general privilege alone does not make them a valid treaty signatory."
+        },
+        {
+          "id": "p5",
+          "type": "paragraph",
+          "text": "Appointing an NPC does not change their personal name, profession, family, schedule, needs, clothing, or AI. A temporary absence or unloaded chunk is not a vacancy. Only a confirmed applicable death event, a lawful removal, or another explicit government transition changes those records."
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "task",
+              "target": "politics.read_council",
+              "label": "Read the council"
+            },
+            {
+              "kind": "task",
+              "target": "politics.appoint"
+            },
+            {
+              "kind": "task",
+              "target": "politics.delegate"
+            }
+          ]
+        }
       ],
       "commands": []
     },
     {
       "id": "agreements",
+      "task": "politics.read_agreements",
       "category": "politics",
       "title": "Propose and sign an agreement",
       "summary": "Two governments independently approve the same terms.",
-      "body": [
-        "You need permission to propose for the first government and a defined, available counterpart government. Start with diplomatic recognition. The bundled hospitality, scholarly exchange, craft/market charter, and civic aid agreements require active diplomatic recognition before their additional terms can take effect.",
-        "1. Open Propose an agreement, choose both named governments and an available agreement definition, then write clear terms. The proposal freezes its authored terms and duration. Read agreements to inspect the result.",
-        "2. The other authorized government opens Sign reviewed agreement terms and selects the visible proposal. The review includes its exact current terms. The server checks RATIFY authority, active governments, deadline, and frozen terms again.",
-        "3. Verify that the agreement is active. Ratified agreements become public; unratified proposals remain visible only to authorized parties. An agreement is political authorization for its supported opportunities, not a free item reward, troop transfer, building project, or teleport.",
-        "Decline rejects a proposal from the receiving side. Withdraw retracts an eligible uncompleted proposal. Terminate ends an agreement under its authority rules. Read the record before choosing, because future hospitality and other linked services can stop. Game-time expiry also ends time-limited terms.",
-        "The agreement review carries the exact current terms with the named proposal. If a stale-state message appears, reopen the task and review; never select a different record merely to get past it. Commands remain an optional technical path and require the complete hash shown by inspection."
+      "blocks": [
+        {
+          "id": "stages",
+          "type": "diagram",
+          "alt": "An agreement is proposed by one kingdom, signed by an authorized holder in each of the two kingdoms, in either order, and is in force once both have signed.",
+          "nodes": [
+            {
+              "id": "propose",
+              "label": "Propose",
+              "note": "The first kingdom's leader or a holder of its propose responsibility"
+            },
+            {
+              "id": "sign_first",
+              "label": "Sign",
+              "note": "One government's ratify holder signs the frozen terms"
+            },
+            {
+              "id": "sign_second",
+              "label": "Sign",
+              "note": "The other government signs the same terms"
+            },
+            {
+              "id": "active",
+              "label": "In force",
+              "note": "Until it expires or is ended"
+            }
+          ],
+          "edges": [
+            {
+              "from": "propose",
+              "to": "sign_first"
+            },
+            {
+              "from": "sign_first",
+              "to": "sign_second",
+              "label": "in either order"
+            },
+            {
+              "from": "sign_second",
+              "to": "active"
+            }
+          ]
+        },
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "You need permission to propose for the first government and a defined, available counterpart government. Start with diplomatic recognition. The bundled hospitality, scholarly exchange, craft/market charter, and civic aid agreements require active diplomatic recognition before their additional terms can take effect."
+        },
+        {
+          "id": "p2",
+          "type": "paragraph",
+          "text": "1. Open Propose an agreement, choose both named governments and an available agreement definition, then write clear terms. The proposal freezes its authored terms and duration. Read agreements to inspect the result."
+        },
+        {
+          "id": "p3",
+          "type": "paragraph",
+          "text": "2. The other authorized government opens Sign reviewed agreement terms and selects the visible proposal. The review includes its exact current terms. The server checks RATIFY authority, active governments, deadline, and frozen terms again."
+        },
+        {
+          "id": "p4",
+          "type": "paragraph",
+          "text": "3. Verify that the agreement is active. Ratified agreements become public; unratified proposals remain visible only to authorized parties. An agreement is political authorization for its supported opportunities, not a free item reward, troop transfer, building project, or teleport."
+        },
+        {
+          "id": "p5",
+          "type": "paragraph",
+          "text": "Decline rejects a proposal from the receiving side. Withdraw retracts an eligible uncompleted proposal. Terminate ends an agreement under its authority rules. Read the record before choosing, because future hospitality and other linked services can stop. Game-time expiry also ends time-limited terms."
+        },
+        {
+          "id": "p6",
+          "type": "paragraph",
+          "text": "The agreement review carries the exact current terms with the named proposal. If a stale-state message appears, reopen the task and review; never select a different record merely to get past it. Commands remain an optional technical path and require the complete hash shown by inspection."
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "task",
+              "target": "politics.propose"
+            },
+            {
+              "kind": "task",
+              "target": "politics.sign"
+            },
+            {
+              "kind": "task",
+              "target": "politics.read_agreements"
+            }
+          ]
+        }
       ],
       "commands": []
     },
@@ -67,14 +262,15 @@
       "title": "Ask through a petition",
       "summary": "A request can be reviewed without giving its author the power to approve it.",
       "body": [
-        "Open the dedicated K task: Request institution recognition, Request an honor, or Request a diplomatic introduction. Each task asks only for its real target, nominee, building, settlement, counterpart, and explanation. Named choices replace the old shared political form.",
+        "Open the matching task in Kingdom Tasks: Request institution recognition, Request an honor, or Request a diplomatic introduction. Each task asks only for its real target, nominee, building, settlement, counterpart, and explanation. Named choices replace the old shared political form.",
         "Petitions are private to the appropriate parties and review authority. A request does not immediately recognize an institution, grant an honor, transfer a kingdom, or make a treaty. It waits for review and a recorded decision.",
         "An authorized independent reviewer may review, approve, or reject with a reason. The requester and award nominee cannot approve their own petition. Approval rechecks the original evidence, including a proposed institution's actual building. If circumstances changed, repair the prerequisite or submit a properly reviewed new request; approval is not a bypass for missing evidence.",
         "An honor nomination produces a discretionary award, visibly different from proof of completed service. A family introduction creates an opportunity to submit an ordinary diplomatic request, not automatic treaty consent.",
         "Withdraw is available for eligible pending requests. Expired or decided requests retain their history. Read Petitions and History to understand the result rather than repeatedly submitting duplicates; the default government limits concurrent petitions per player and kingdom.",
         "Commission sponsorship petitions are currently disabled, even if you have completion evidence. Use the separate paid workshop and honor workflows where supported; evidence does not unlock commission petitions."
       ],
-      "commands": []
+      "commands": [],
+      "task": "politics.read_petitions"
     },
     {
       "id": "institutions_and_honors",
@@ -88,7 +284,8 @@
         "Honors record why a person was awarded something. An authorized discretionary honor includes a reason; a service-earned honor comes from the specific saved completion. Neither automatically grants an office, changes family history, or adds military command. Revoking an honor changes its political standing and retains the historical record.",
         "Inspect the relevant tab before revoking or suspending. These changes can affect downstream services, even though they do not remove the actual building, NPC, or inventory."
       ],
-      "commands": []
+      "commands": [],
+      "task": "politics.read_institutions"
     },
     {
       "id": "succession_and_houses",
@@ -100,9 +297,10 @@
         "Abdication vacates leadership. A government between rulers is in interregnum, meaning there is no current leader. The named successor or an authorized operator can explicitly confirm succession; eligibility is checked again. The capital, kingdom identity, and active treaties continue, while old delegated mandates do not automatically survive a leadership vacancy.",
         "Confirmed NPC death can vacate an office. Unloading, temporary absence, and player death/respawn do not automatically install another ruler. A vacancy without a named successor needs the supported operator repair or an explicitly adopted election rule; the mod does not guess an heir from family links.",
         "Use the House action in the current political form to record one house label, motto, and explicitly selected member for a government. This is a political record, not a surname editor or a genealogy system. Marriage never transfers the kingdom by itself.",
-        "Elections and temporary regency are explained in Evolving World. They require an adopted rule and use dedicated K tasks. During an active regency the named successor is preserved; end that regency under its rules before trying to replace the protected succession arrangement."
+        "Elections and temporary regency are explained in Evolving World. They require an adopted rule and use their own tasks in Kingdom Tasks. During an active regency the named successor is preserved; end that regency under its rules before trying to replace the protected succession arrangement."
       ],
-      "commands": []
+      "commands": [],
+      "task": "politics.read_overview"
     },
     {
       "id": "read_political_history",
@@ -118,7 +316,8 @@
       ],
       "commands": [
         "/kingdoms politics inspect \"<kingdom name>\" history"
-      ]
+      ],
+      "task": "politics.read_history"
     }
   ]
 }

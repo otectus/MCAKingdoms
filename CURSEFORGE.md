@@ -4,36 +4,33 @@ Give every village a lasting place in the world.
 
 MCA: Kingdoms recognizes settlements, assigns each one a permanent name and kingdom, and keeps that identity stable across restarts and datapack changes. Villages become part of Serenum, Lunari, Madera, Anemosia, Yew, or Shimaguni according to their biome and structure style when first discovered.
 
+## Getting started
+
+1. Put the main MCA: Kingdoms jar in the `mods` folder on both the client and the server. MCA Reborn is optional. The API and sources jars are development artifacts and are not installed.
+2. Press the **Kingdom Tasks key — K by default** (rebind it under Controls, in the MCA: Kingdoms category).
+3. Walk into a village: the first time, a title names it and its kingdom.
+4. In Kingdom Tasks, open **Getting started** and choose **Read this settlement**. **Your known settlements** and **Read a kingdom** are the other first steps; **What is available here?** shows which optional features the server enables.
+5. Craft the books when you want them:
+   - **Book of Kingdoms** — one book and one paper, shapeless. It explains every system, and its topics open the matching tasks.
+   - **Village Ledger** — paper across the top row; paper, book, paper in the middle row; a compass in the bottom middle. It lists the settlements you have discovered, by kingdom.
+
+If Read this settlement finds nothing yet, walk further into the village and try again: settlements are recognized from village structures and from clusters of beds, bells and workstations in loaded chunks.
+
 ## Features
 
+- Kingdom Tasks: search what you want to do in your own language, choose people and places by name, and review every change before applying it
 - Persistent settlement names, kingdom membership, territory, and discovery records
 - Six kingdoms with distinct name pools, biome rules, colors, and heraldry
 - Automatic detection of village structures and village point-of-interest clusters
-- Craftable Village Ledger with settlement browsing, kingdom filters, and detail pages
+- The Book of Kingdoms guide and the Village Ledger, with kingdom filters and detail pages
 - Configurable settlement-entry titles and heraldry
-- Administrator commands for discovery, creation, renaming, kingdom assignment, locking, merging, and diagnosis
-- Datapack-defined kingdoms, name pools, biome rules, and structure-style rules
-- Public API for MCA: Kingdoms addons and other integrations
+- Operator tools: Server health, reload reports that name rejected definitions, village reconciliation, and `/kingdoms help`
+- Datapack-defined kingdoms, names, biome and structure rules, politics, guilds and world content
+- Public API for addons
 - Optional Minecraft Comes Alive Reborn integration
+- English, Spanish and Simplified Chinese
 
-The core is durable village and civic identity. Kingdom standing, governments, diplomacy, warfare, world sites and world evolution are optional layers built on it; see the README and the in-game Book of Kingdoms for what each requires.
-
-## Getting started
-
-Place the main MCA: Kingdoms jar in the `mods` directory on both the client and server. The API and sources jars are development artifacts and should not be installed. Explore loaded villages normally, or use `/kingdoms village discover` as an operator to scan nearby chunks.
-
-Craft a Village Ledger with five paper (three across the top plus one at middle-left and middle-right), a book in the center, and a compass at bottom-middle. Use the ledger to browse every known settlement.
-
-Players can inspect the world with:
-
-```text
-/kingdoms kingdom list
-/kingdoms kingdom info <kingdom>
-/kingdoms village here
-/kingdoms village info [village]
-```
-
-Administrative commands require permission level 2. Common and client configuration files control discovery limits, civic-evidence checks, and the entry overlay.
+The core is durable village and civic identity. Kingdom standing, governments, guilds, warfare, world sites and an evolving world are optional layers built on it. Each depends on server settings and, for some, companion mods; the in-game Book of Kingdoms and **What is available here?** explain what applies on your server.
 
 ## Requirements
 
@@ -46,15 +43,17 @@ Administrative commands require permission level 2. Common and client configurat
 
 MCA Reborn is optional. MCA: Kingdoms works as a standalone settlement system when MCA is absent.
 
-The compatibility adapter targets exactly MCA Reborn `7.6.26+1.20.1`. The tested MCA setup uses Architectury API `9.2.14`. With that setup, MCA: Kingdoms can recognize MCA villages and record an MCA villager's civic origin and residence from positive home evidence.
+The dependency metadata accepts MCA Reborn `7.6` up to but not including `8.0`. Runtime validation used exactly MCA Reborn `7.6.26+1.20.1` with Architectury API `9.2.14`; other versions in that range have not been validated. With MCA, MCA: Kingdoms recognizes MCA villages and records an MCA villager's civic origin and residence from positive home evidence.
 
 MCA: Kingdoms civic identity is stored separately from MCA identity. The integration does not overwrite a villager's personal name, family relationships, home, genetics, personality, dialogue state, or relationship values. A resident can remain the same MCA character while their settlement is renamed or administered through MCA: Kingdoms.
 
-Different MCA versions are not supported by this release and should not be installed alongside it.
+## Other companions
+
+All optional. Townstead `0.7.6` (validated), Recruits exactly `1.15.2` for military actions (other Recruits versions run with the military integration unavailable), MCA Quests for guild jobs and commissions, MCA Reputation `0.6.1` or later for live standing synchronization, MCA: Crime for paid workshop jobs, and MCA Conversations for kingdom-gated topics. The README's compatibility table records accepted and validated versions.
 
 ## For modpack authors
 
-All geography and naming definitions are datapack resources. Packs can add or replace kingdom definitions, name pools, biome and biome-tag rules, and structure-style rules without rebuilding the mod. Existing settlements retain their saved identities after a reload unless an administrator explicitly changes them.
+All geography and naming definitions are datapack resources. Packs can add or replace kingdom definitions, name pools, biome and biome-tag rules, structure-style rules, political definitions, guild rules and world content without rebuilding the mod. A reload reports each definition domain as accepted or rejected, and a rejected domain keeps its previous definitions. Existing settlements retain their saved identities after a reload unless an operator explicitly changes them. Peaceful and warfare configuration presets are included in the documentation.
 
 The release also includes a classes-only API artifact for addons that need settlement lookup, civic identity, context values, extension registrations, or lifecycle events without depending on MCA classes.
 

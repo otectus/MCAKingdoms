@@ -21,7 +21,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 public final class NetworkHandler {
-    private static final String PROTOCOL = "5";
+    /** 6: ledger search, sort and position (LedgerRequestPacket/LedgerPagePacket) and the Book's kingdom gallery. */
+    private static final String PROTOCOL = "6";
     private static final int PAGE_SIZE_WITH_SENTINEL = 21;
     private static final int MAX_OFFSET = 1_000_000;
     private static final int REQUEST_COOLDOWN_TICKS = 4;
@@ -34,10 +35,12 @@ public final class NetworkHandler {
             .simpleChannel();
     private static final Map<UUID, Integer> LAST_LEDGER_REQUEST = new ConcurrentHashMap<>();
     private static final Map<UUID, Integer> LAST_RETRY_RESPONSE = new ConcurrentHashMap<>();
+    private static final Map<UUID, Integer> LAST_GALLERY_REQUEST = new ConcurrentHashMap<>();
 
     private static volatile Consumer<LedgerPagePacket> ledgerPageReceiver = ignored -> { };
     private static volatile Consumer<OverlayPacket> overlayReceiver = ignored -> { };
     private static volatile Runnable openLedgerReceiver = () -> { };
+    private static volatile Consumer<GuideKingdomsPacket> galleryReceiver = ignored -> { };
     private static boolean initialized;
 
     private NetworkHandler() {
@@ -61,10 +64,20 @@ public final class NetworkHandler {
                 .decoder(OpenLedgerPacket::decode)
                 .consumerMainThread((ignoredPacket, ignoredContext) -> openLedgerReceiver.run())
                 .add();
-        CHANNEL.messageBuilder(OverlayPacket.class, id, NetworkDirection.PLAY_TO_CLIENT)
+        CHANNEL.messageBuilder(OverlayPacket.class, id++, NetworkDirection.PLAY_TO_CLIENT)
                 .encoder(OverlayPacket::encode)
                 .decoder(OverlayPacket::decode)
                 .consumerMainThread((packet, ignored) -> overlayReceiver.accept(packet))
+                .add();
+        CHANNEL.messageBuilder(GuideKingdomsPacket.Request.class, id++, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(GuideKingdomsPacket.Request::encode)
+                .decoder(GuideKingdomsPacket.Request::decode)
+                .consumerMainThread((packet, context) -> handleGalleryRequest(packet, context.get().getSender()))
+                .add();
+        CHANNEL.messageBuilder(GuideKingdomsPacket.class, id, NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(GuideKingdomsPacket::encode)
+                .decoder(GuideKingdomsPacket::decode)
+                .consumerMainThread((packet, ignored) -> galleryReceiver.accept(packet))
                 .add();
         dev.otectus.mcakingdoms.politics.PoliticalNetwork.init();
         initialized = true;
@@ -78,10 +91,22 @@ public final class NetworkHandler {
         openLedgerReceiver = openLedger;
     }
 
-    public static long requestLedgerPage(Optional<ResourceLocation> kingdomId, int offset,
-                                         long expectedRegistryRevision) {
+    /** The Book's kingdom gallery receiver; set by the client bootstrap. */
+    public static void setGalleryReceiver(Consumer<GuideKingdomsPacket> receiver) {
+        galleryReceiver = receiver;
+    }
+
+    public static long requestKingdomGallery() {
         long requestId = CLIENT_REQUEST_IDS.updateAndGet(previous -> previous == Long.MAX_VALUE ? 1 : previous + 1);
-        CHANNEL.sendToServer(new LedgerRequestPacket(requestId, expectedRegistryRevision, kingdomId, offset));
+        CHANNEL.sendToServer(new GuideKingdomsPacket.Request(requestId));
+        return requestId;
+    }
+
+    public static long requestLedgerPage(Optional<ResourceLocation> kingdomId, int offset,
+                                         long expectedRegistryRevision, String query,
+                                         dev.otectus.mcakingdoms.knowledge.SettlementKnowledge.Sort sort) {
+        long requestId = CLIENT_REQUEST_IDS.updateAndGet(previous -> previous == Long.MAX_VALUE ? 1 : previous + 1);
+        CHANNEL.sendToServer(new LedgerRequestPacket(requestId, expectedRegistryRevision, kingdomId, offset, query, sort));
         return requestId;
     }
 
@@ -96,6 +121,34 @@ public final class NetworkHandler {
     public static void forgetPlayer(UUID playerId) {
         LAST_LEDGER_REQUEST.remove(playerId);
         LAST_RETRY_RESPONSE.remove(playerId);
+        LAST_GALLERY_REQUEST.remove(playerId);
+    }
+
+    /** Public kingdom definitions plus this viewer's own count of known settlements per kingdom. Read-only. */
+    public static GuideKingdomsPacket gallery(ServerPlayer player, long requestId) {
+        KingdomsService service = McaKingdomsApi.get(player.getServer());
+        var knowledge = dev.otectus.mcakingdoms.knowledge.SettlementKnowledge.get(player.getServer());
+        List<KingdomSummary> kingdoms = new java.util.ArrayList<>();
+        List<Integer> known = new java.util.ArrayList<>();
+        service.getKingdoms().stream().filter(dev.otectus.mcakingdoms.api.KingdomView::defined)
+                .sorted(Comparator.comparing(view -> view.id().toString())).limit(64).forEach(view -> {
+                    kingdoms.add(KingdomSummary.from(view));
+                    known.add((int) Math.min(Integer.MAX_VALUE, knowledge.count(player, service, view.id())));
+                });
+        return new GuideKingdomsPacket(requestId, kingdoms, known);
+    }
+
+    private static void handleGalleryRequest(GuideKingdomsPacket.Request packet, ServerPlayer player) {
+        if (player == null) return;
+        int now = player.getServer().getTickCount();
+        Integer previous = LAST_GALLERY_REQUEST.get(player.getUUID());
+        if (previous != null && now - previous < 20) return;
+        LAST_GALLERY_REQUEST.put(player.getUUID(), now);
+        try {
+            CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), gallery(player, packet.requestId()));
+        } catch (IllegalStateException unavailable) {
+            // No live Kingdoms service yet: the Book shows that the gallery is unavailable after its timeout.
+        }
     }
 
     private static void handleLedgerRequest(LedgerRequestPacket packet, ServerPlayer player) {
@@ -110,7 +163,13 @@ public final class NetworkHandler {
             return;
         }
         Optional<ResourceLocation> kingdom = packet.kingdomId();
-        if (kingdom.isPresent() && service.getKingdom(kingdom.get()).isEmpty()) return;
+        // A filter naming a kingdom the server no longer defines is answered for all kingdoms, and the screen says why.
+        String notice = "";
+        if (kingdom.isPresent() && service.getKingdom(kingdom.get()).isEmpty()) {
+            kingdom = Optional.empty();
+            notice = "kingdom_missing";
+        }
+        final Optional<ResourceLocation> filter = kingdom;
 
         Integer previous = LAST_LEDGER_REQUEST.get(player.getUUID());
         if (previous != null && now - previous < REQUEST_COOLDOWN_TICKS) {
@@ -119,8 +178,8 @@ public final class NetworkHandler {
             if (lastRetry == null || lastRetry != now) {
                 LAST_RETRY_RESPONSE.put(player.getUUID(), now);
                 CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
-                        new LedgerPagePacket(packet.requestId(), service.revision(), kingdom, offset,
-                                false, retryAfter, List.of(), List.of(), ""));
+                        new LedgerPagePacket(packet.requestId(), service.revision(), packet.kingdomId(), offset,
+                                false, retryAfter, List.of(), List.of(), "", packet.query(), packet.sort(), 0, ""));
             }
             return;
         }
@@ -133,16 +192,15 @@ public final class NetworkHandler {
         boolean revisionReset = packet.expectedRegistryRevision() != 0
                 && packet.expectedRegistryRevision() != revision;
         int actualOffset = revisionReset ? 0 : offset;
-        List<SettlementSummary> settlements = knowledge
-                .page(player, service, kingdom, actualOffset, PAGE_SIZE_WITH_SENTINEL)
-                .stream().map(SettlementSummary::from).toList();
+        var search = knowledge.search(player, service, filter, packet.query(), packet.sort(), actualOffset, PAGE_SIZE_WITH_SENTINEL);
+        List<SettlementSummary> settlements = search.settlements().stream().map(SettlementSummary::from).toList();
         List<KingdomSummary> kingdoms = service.getKingdoms().stream()
                 .sorted(Comparator.comparing(view -> view.id().toString()))
                 .limit(64)
                 .map(KingdomSummary::from)
                 .toList();
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
-                new LedgerPagePacket(packet.requestId(), revision, kingdom, actualOffset,
-                        revisionReset, 0, settlements, kingdoms, knowledge.diagnostic()));
+                new LedgerPagePacket(packet.requestId(), revision, packet.kingdomId(), actualOffset,
+                        revisionReset, 0, settlements, kingdoms, knowledge.diagnostic(), packet.query(), packet.sort(), search.total(), notice));
     }
 }

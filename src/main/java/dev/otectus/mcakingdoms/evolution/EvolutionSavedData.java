@@ -32,6 +32,7 @@ public final class EvolutionSavedData extends SavedData {
         return data;
     }
     public boolean writable() { return preserved == null; }
+    public static dev.otectus.mcakingdoms.persistence.StoreStatus status(MinecraftServer server) { var data = get(server); return dev.otectus.mcakingdoms.persistence.StoreStatus.of(NAME, data.writable(), ""); }
     /** Carries a merged settlement's region settings, scenarios and cooldowns over to the survivor. */
     public static void settlementMerged(MinecraftServer server, java.util.UUID source, java.util.UUID target) {
         var data = get(server);

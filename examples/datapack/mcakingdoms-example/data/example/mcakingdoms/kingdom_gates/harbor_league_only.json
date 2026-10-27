@@ -1,0 +1,6 @@
+{
+  "schema": 1,
+  "subject": "player_location",
+  "include": ["example:harbor_league"],
+  "when_unknown": "deny"
+}

@@ -2,7 +2,7 @@ package dev.otectus.mcakingdoms.client.townstead;
 
 import com.mojang.logging.LogUtils;
 import dev.otectus.mcakingdoms.client.HeraldryRenderer;
-import dev.otectus.mcakingdoms.client.VanillaGui;
+import dev.otectus.mcakingdoms.client.book.BookSkin;
 import dev.otectus.mcakingdoms.compat.townstead.TownsteadIntegrationConfig;
 import dev.otectus.mcakingdoms.compat.townstead.network.TownsteadCivicHeaderPacket;
 import dev.otectus.mcakingdoms.compat.townstead.network.TownsteadCivicNetwork;
@@ -113,17 +113,17 @@ public final class TownsteadBlueprintHeader {
         int x = Math.max(LEFT_CONTROL_EDGE,
                 Math.min((screen.width - width) / 2, screen.width - RIGHT_CONTROL_WIDTH - width));
         int y = 4;
-        VanillaGui.panel(graphics, x, y, width, HEADER_HEIGHT);
+        BookSkin.plaque(graphics, x, y, width, HEADER_HEIGHT, BookSkin.Binding.LEDGER);
         HeraldryRenderer.render(graphics, value.heraldryIcon(), value.uiColor(), x + 6, y + 3, 16);
         Component kingdom = Component.translatable(value.kingdomNameKey());
         int textWidth = width - 29;
         Component title = fit(minecraft,
                 Component.literal(value.settlementName()).append(" · ").append(kingdom), textWidth);
         graphics.drawString(minecraft.font,
-                title, x + 25, y + 3, VanillaGui.TEXT, false);
+                title, x + 25, y + 2, BookSkin.INK, false);
         graphics.drawString(minecraft.font,
-                fit(minecraft, Component.literal("Standing: " + display(value.standingTier())), textWidth),
-                x + 25, y + 12, VanillaGui.SECONDARY, false);
+                fit(minecraft, Component.translatable("menu.mcakingdoms.header.standing", display(value.standingTier())), textWidth),
+                x + 25, y + 11, BookSkin.MUTED, false);
     }
 
     private static Component fit(Minecraft minecraft, Component value, int maxWidth) {

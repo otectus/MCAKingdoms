@@ -44,6 +44,7 @@ final class InstitutionalCommissionData extends SavedData {
         return data;
     }
     boolean writable() { return preserved==null; }
+    public static dev.otectus.mcakingdoms.persistence.StoreStatus status(net.minecraft.server.MinecraftServer server) { var data=get(server); return dev.otectus.mcakingdoms.persistence.StoreStatus.of(NAME,data.writable(),""); }
     Optional<Contract> get(UUID id) { return Optional.ofNullable(contracts.get(id)); }
     List<Contract> own(UUID player) { return contracts.values().stream().filter(c->c.player().equals(player)).toList(); }
     List<dev.otectus.mcakingdoms.api.factions.organization.OrganizationObligation> obligations(String organization) {

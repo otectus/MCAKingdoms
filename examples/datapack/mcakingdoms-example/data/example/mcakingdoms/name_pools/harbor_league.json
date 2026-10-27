@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "id": "example:harbor_league",
+  "canonical": ["Gullhaven", "Brinewatch", "Kelp Quay", "Saltmarsh Landing", "Tidewall"],
+  "reserved": [],
+  "blacklist": [],
+  "retries": 64,
+  "templates": [
+    {"format": "{prefix}{suffix}", "weight": 3},
+    {"format": "{prefix} {noun}", "weight": 1}
+  ],
+  "tokens": {
+    "prefix": ["Gull", "Brine", "Shell", "Drift", "Pier"],
+    "suffix": ["haven", "mouth", "wick", "port"],
+    "noun": ["Landing", "Quay", "Strand"]
+  }
+}

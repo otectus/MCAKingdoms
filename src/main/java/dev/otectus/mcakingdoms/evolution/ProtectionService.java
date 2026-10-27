@@ -57,7 +57,7 @@ public final class ProtectionService {
             throw new IllegalArgumentException("Subordinate already has a protector or pending proposal");
         var p = new Pact(UUID.randomUUID(), protector, subordinate, beneficiary, duties, Map.of(), now, now + duration, notice, 0, 1, Phase.PROPOSED, terms);
         s.pacts.put(p.id(), p); commit(s);
-        for (String kingdom : List.of(protector, subordinate)) dev.otectus.mcakingdoms.interaction.Notify.government(server, kingdom, player.getUUID(), "A protectorate was proposed between " + dev.otectus.mcakingdoms.interaction.Names.kingdom(server, protector) + " and " + dev.otectus.mcakingdoms.interaction.Names.kingdom(server, subordinate) + "; both governments must sign.");
+        for (String kingdom : List.of(protector, subordinate)) dev.otectus.mcakingdoms.interaction.Notify.government(server, kingdom, player.getUUID(), net.minecraft.network.chat.Component.translatableWithFallback("notice.mcakingdoms.protectorate_proposed", "A protectorate was proposed between %s and %s; both governments must sign.", dev.otectus.mcakingdoms.interaction.Names.kingdom(server, protector), dev.otectus.mcakingdoms.interaction.Names.kingdom(server, subordinate)), "protection.inspect");
         return "Protectorate proposal from " + dev.otectus.mcakingdoms.interaction.Names.kingdom(server, protector) + " for " + dev.otectus.mcakingdoms.interaction.Names.kingdom(server, subordinate) + "; both governments must sign the frozen terms.";
     }
     public String sign(ServerPlayer player, UUID id, String kingdom, long revision) {

@@ -69,6 +69,8 @@ public final class McaKingdoms {
 
     @SubscribeEvent
     public void addReloadListeners(AddReloadListenerEvent event) {
+        // Minecraft asks for the listeners once per data reload, so this is where one reload attempt starts.
+        dev.otectus.mcakingdoms.data.ReloadReport.begin();
         event.addListener(DEFINITIONS.reloadListener());
         event.addListener(POLITICS);
         event.addListener(dev.otectus.mcakingdoms.evolution.EvolutionDefinitions.INSTANCE);
@@ -90,6 +92,7 @@ public final class McaKingdoms {
         POLITICS.commitPending();
         dev.otectus.mcakingdoms.civic.CivicDefinitions.INSTANCE.commitPending();
         dev.otectus.mcakingdoms.factions.organization.OrganizationRuntime.commitPending();
+        dev.otectus.mcakingdoms.data.ReloadReport.committed();
         PENDING_CHUNKS.computeIfAbsent(event.getServer(), ignored -> ConcurrentHashMap.newKeySet());
     }
 
@@ -157,6 +160,8 @@ public final class McaKingdoms {
             IntegrationBootstrap.commitPending(runtime.service());
             runtime.service().definitionsReloaded();
         }
+        // Only a reload whose every preparation succeeded reaches this sync, so its definitions are now the active ones.
+        dev.otectus.mcakingdoms.data.ReloadReport.committed();
     }
 
     @SubscribeEvent
@@ -242,8 +247,9 @@ public final class McaKingdoms {
             return;
         }
         player.getPersistentData().put(net.minecraft.world.entity.player.Player.PERSISTED_NBT_TAG, persisted);
+        // One line, once: the route to the start view and Getting started (both recipes are there), and where to rebind the key.
         player.sendSystemMessage(net.minecraft.network.chat.Component.translatableWithFallback("notice.mcakingdoms.welcome",
-                "MCA: Kingdoms: press %s for Kingdom Tasks, craft a Village Ledger (paper, book and compass) to browse settlements, or read the Book of Kingdoms (book and paper).",
+                "MCA: Kingdoms: press %s for Kingdom Tasks; its start view and Getting started show your first steps and both recipes. Change the key under Options › Controls › Key Binds › MCA: Kingdoms.",
                 net.minecraft.network.chat.Component.keybind("key.mcakingdoms.actions")));
     }
     @SubscribeEvent
@@ -301,6 +307,7 @@ public final class McaKingdoms {
         dev.otectus.mcakingdoms.evolution.EvolutionDefinitions.INSTANCE.clear();
         dev.otectus.mcakingdoms.civic.CivicDefinitions.INSTANCE.clear();
         dev.otectus.mcakingdoms.factions.organization.OrganizationRuntime.clear();
+        dev.otectus.mcakingdoms.data.ReloadReport.reset();
     }
 
     private record RuntimeState(KingdomsServiceImpl service, Registration mca, Registration integrations, dev.otectus.mcakingdoms.politics.GovernmentService politics) {

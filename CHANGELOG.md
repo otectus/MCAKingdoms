@@ -1,6 +1,170 @@
 # Changelog
 
-## 0.1.1 — unreleased
+## 0.2.0 — unreleased
+
+Usability, navigation, localization and GUI improvements across the Book of Kingdoms, Village Ledger, Kingdom Tasks,
+Guilds, government pages and War Room, including both usability implementation passes and the manuscript book overhaul.
+
+### GUI and accessibility
+
+- War Room, Guilds, every kingdom-management tab and Settings now use the same bounded manuscript folios, ivory paper,
+  dark ink, leather controls, white labels, selected states and gilt focus cues as the books and Kingdom Tasks. Settings
+  sliders, cycle controls and history-clear confirmation match too. The embedded Blueprint header, heraldry frames and
+  settlement arrival banner use compact parchment plaques; arrival positioning and fade timing are preserved.
+- Compact kingdom records keep mouse-wheel scrolling inside the detail pane when the pointer is over it, so reading
+  a long record does not accidentally page the record list.
+- Book, Ledger and Tasks gain quieter ivory parchment, distinct crimson/green/walnut bindings, high-contrast leather
+  controls with white text, recessed inputs, clear selected/disabled/focus states and visible scrollbar grips. Each has
+  its own framed illustration: the royal landscape, a riverside settlement or a guild workshop courtyard. Clipped button
+  labels retain full tooltips; the Book banner preserves the illustration's proportions.
+- The Ledger kingdom picker pages through every known kingdom at compact GUI sizes, and its settlement index shows
+  where the visible rows sit within the current server page.
+- Kingdom Tasks shares the Book and Ledger's parchment, leather binding, gilt dividers, ink headings and white controls.
+  Its start page separates suggestions from favourite/recent tasks on wide screens and uses one scrollable column in
+  compact windows. The catalogue, categories, record choices, text forms, edits, reviews, results, errors and Getting started
+  use the same theme. Ctrl+F focuses search or the current input; long hints are clipped with an ellipsis and a full tooltip.
+- Operational screens use vanilla Minecraft widgets, tooltips, narration, keyboard focus and scrolling. Task and record
+  layouts provide labelled fields, contextual Help, clear empty states and controls for content beyond the first page.
+  All Kingdoms-owned screens share the reusable manuscript theme while retaining native control and narration behavior.
+- Book layouts adapt to GUI scale and resolution without shrinking the Minecraft font. Tab/Shift+Tab reach controls and
+  article links, Enter/Space activate them, and mouse scrolling, scrollbar dragging and keyboard navigation remain available.
+  Recipes, diagrams, requirements and kingdom heraldry have text equivalents for narration.
+
+### Manuscript books
+
+- The Book of Kingdoms and Village Ledger share textured parchment, leather bindings, page edges, gilt corners,
+  ink typography, illustrated openings and original item sprites. Wide layouts show facing leaves; compact layouts
+  preserve normal-size Minecraft text on a single leaf.
+- The Book adds chapter ribbons, a bookmark ribbon, separate reading-page and topic controls, page-turn sounds,
+  Ctrl+F search and Alt+Left history. Following a cross-reference switches to its chapter; Back restores its origin.
+- The Ledger keeps its index beside the selected record, with illustrated field notes before a settlement is selected.
+- Guild service, government founding, world evolution and military declarations gain localized flow illustrations.
+  Live crafting grids remain server-driven, with full recipe narration and less redundant prose on the page.
+- Book input text, search placeholders and button labels use white text with Minecraft shadows.
+- Both item icons are angled closed books with visible parchment edges: a crimson chronicle with a gold crown and
+  red bookmark, and a green ledger with a brass compass and leather strap. The transparent sprites stay at Minecraft's
+  native 16-pixel item resolution.
+- Shared components, asset provenance and runtime evidence: [Book interface design](docs/Book-Interface-Design.md).
+
+### Usability
+
+Two usability passes: U1–U11 (2026-10-23/24) and the visual guidebook plan UX-01–UX-12
+([MCAKingdoms_Usability_Implementation_Plan.md](MCAKingdoms_Usability_Implementation_Plan.md), 2026-10-26). Per-package
+record and validation in [docs/Usability-Implementation-Record.md](docs/Usability-Implementation-Record.md).
+
+**Players: the Book, Kingdom Tasks and the screens (2026-10-26)**
+
+- The Book of Kingdoms draws both crafting recipes as grids from the connected server's current recipes, with
+  quantities, the station (inventory grid or crafting table), accepted alternatives and a text version for the
+  narrator. A data pack that changes or removes a recipe shows as changed, or as unavailable on this server, once
+  `/reload` finishes, even with the Book open.
+- Book topics use numbered steps with links, labelled tips, requirements and consequences, comparison columns,
+  diagrams of agreement and recruit-transfer stages, and a gallery of the connected server's kingdoms. New topics:
+  *Two books, two purposes*, *Craft the Book of Kingdoms*, *Craft the Village Ledger*, *Kingdom Tasks, step by step*
+  and *Kingdom, government and control* (70 topics in each bundled language). Text naming the Kingdom Tasks key shows
+  the key actually bound.
+- The Book has Back (to the same reading position), Home, Previous and Next topic, bookmarks and recent topics under
+  Saved, a "Topic N of M" line, search ranked by title, keywords, summary and text, command references folded on
+  player topics, links reachable with Tab and Enter, and a Contents / Article switch in narrow windows.
+- Kingdom Tasks opens on a start view: where you are, up to three suggested next steps (a consent or signature waiting
+  for you, an open vote, the settlement here, a nearby guild contact), favourite and recent tasks, and this server's
+  features. **Categories…** groups tasks as Places, Guilds and jobs, Government, Exploration, Conflict, World events
+  and Help; goal phrases such as "paid work", "make peace", "become ruler" and "where am I" find their tasks; tasks
+  this server has turned off are marked in the list.
+- Tasks list their conditions before you start — guild thresholds for members and independents, contact range,
+  the responsibility an action needs in a kingdom, a shared transfer destination, each requirement of resident
+  founding — as ✓ Ready, ✗ Needed or ? Could not check. The confirm button names the action ("Join Lamplighters",
+  "Send agreement proposal", "Confirm troop transfer"); its result says Done, Waiting, Not done (with the reason) or
+  Not confirmed, and offers Check this action, the same task again and related tasks. A read-only task simply shows what
+  it read, with Read again. Error pages can copy support details to the clipboard.
+- The Village Ledger searches known settlements by name or former name, sorts by name or distance, filters by kingdom
+  from a heraldry picker, keeps the selected settlement by identity when the list refreshes (and says so when a rename,
+  merge or filter removes it), and shows details with links to the settlement's government, guilds, War Room and tasks.
+- The Guilds screen shows membership, standing and rank progress, every service with its member and independent
+  requirements, the nearest contact, guild jobs and recent service. Joining, leaving and using a service open the
+  reviewed Kingdom Tasks steps instead of acting at once.
+- Kingdom pages open with the kingdom's state, leader, capital, regency, open elections and your responsibilities;
+  records are labelled fields with their own actions (sign, review, revalidate), history rows are dated, and each tab
+  has an empty state and a Help topic. The War Room separates control, campaigns, orders and civilian work, and marks
+  each action this server cannot run, such as military actions without Recruits, before you open it.
+- An **MCA: Kingdoms settings** screen (Kingdom Tasks → Settings, or Mods → Config) sets the entry title with a live
+  preview, what the Tasks key opens, the start view introduction and recipe animation, and clears bookmarks and history.
+- The welcome message and advancement name the Kingdom Tasks key as bound.
+
+**Players: earlier usability work (U1–U11)**
+
+- Kingdom Tasks has a **Getting started** panel: three read-only first steps (Read this settlement, Your known settlements,
+  Read a kingdom), both recipes, what MCA Reborn adds, why guild jobs need MCA Quests content, how reviews work, and a
+  Controls shortcut. The Kingdom Tasks key (K by default) has its own MCA: Kingdoms category in Controls.
+- The Village Ledger recipe appears in the recipe book once a book or compass is held, like the Book of Kingdoms.
+- Search matches every word in any order, ignores case and accents, and knows a few synonyms (village / settlement /
+  town, in three languages). The task list is searched in the player's own language, resource packs included. Empty
+  results say whether nothing matched the search or nothing is available, and offer Clear; focus and page are kept
+  across selections and refreshes.
+- Forms show bounds and units before you type (settlement radius 16–512 blocks), number their steps, keep a rejected
+  entry for correction, and keep earlier answers when you go Back. Reviews offer **Edit** for each answer; answers
+  that depend on an edited one are asked again, and the old review can no longer be applied.
+- An unavailable feature says why — turned off, a companion mod missing or unsupported, content missing, a requirement
+  not met, changed meanwhile, a participant offline, a result pending, saved data read-only — and what to do.
+  **What is available here?** lists the server's features and your own access. Chat notices name the exact task
+  that reviews them.
+- **Resident founding works**: with `politics.openFounding` on (the default), a player whose recorded civic residence
+  is in an ungoverned kingdom can found its first government from Kingdom Tasks or `/kingdoms politics bootstrap`, with
+  their residence as capital and themselves as leader. **Check whether you can found a government** explains each case.
+- Book links open tasks the reader can use; a topic about an operator task offers a related player task or says it is
+  for operators. The entry title waits while a screen or F1 hides it and is dropped after leaving the settlement or
+  changing dimension.
+- Spanish and Simplified Chinese now cover every task title, help text and field, choice and enum labels, political
+  rows and history, War Room lines, notices, capability explanations, and all 70 Book of Kingdoms topics.
+
+**Operators**
+
+- **Server health** (task and `/kingdoms health`): switches, providers and bound capabilities, saved-data writability,
+  the last reload, this start's Ultima migration (copied / skipped / failed), and reconciliation work queued and done.
+- A definition reload reports each domain as accepted or rejected, names the file, field, found value and expected form,
+  and says which domains kept their previous definitions. A rejection is no longer reported as success.
+- **Reconcile nearby village records** task; the merge review shows the kept and retired records, locks, what moves and
+  what blocks it; assignment evidence shows the structure identity. `/kingdoms help [topic]` prints command syntax.
+- `kingdomGating.unknownKingdomPolicy` now applies to MCA: Kingdoms' data pack gates and MCA Quests conditions that omit
+  `when_unknown`; it was documented but never read. `cacheBySettlementRevision` and `settlementReassignmentPolicy` are
+  documented as reserved and informational. Every config key has a comment; Forge refreshes comment text in existing
+  files on the next start, and no value changes.
+
+**Modpack creators, datapack authors and addon developers**
+
+- README: first-session route, guides by audience, one compatibility table, an upgrade runbook. New
+  [configuration reference](docs/Configuration.md) with peaceful and warfare [presets](docs/presets/README.md),
+  [datapack reference](docs/Datapack-Reference.md) with a tested [example pack](examples/datapack/README.md) and
+  invalid variants, [addon API guide](docs/Addon-API.md) with an [example](examples/addon/README.md) compiled by
+  `check`, and `KingdomsService` contracts in Javadoc.
+
+**Fixed**
+
+- The Book said a village cluster needs three points of interest (five), evolution regions had to be chosen one by one
+  (eligible automatically unless paused) and only operators could found governments, and it named tasks that had been
+  renamed. The R1 design record gave the contact range as 2–16 blocks (2–32). The CurseForge page gave the MCA range as
+  an exact version and omitted the Book recipe and Kingdom Tasks.
+- *Browse paid workshop jobs* said MCA: Crime was optional; the service requires its legality check and MCA Quests.
+- Text answers prefilled by another screen were dropped, and Back erased the previous answer.
+- Joining or leaving a guild in Kingdom Tasks was refused as "changed since your review" whenever any other player
+  joined or left a guild in the meantime; the review now depends only on your own memberships and the guilds defined.
+- Synonyms no longer match inside other words ("job" found "Request neutral resource access" through "quest").
+- Guild commission refusals shared one message for several causes; each cause now has its own.
+- More than 300 task strings, most of them political, had no language entries; agreement clauses, guild progress, campaign,
+  accord and deployment choices, and the evolving-world digest were English-only.
+
+**Compatibility**
+
+- Network protocols: main channel 6, `interactions` 4, `civic` 4, `politics` 4, `war_room` 4. Client and server must
+  run this build. The `civic` channel is read-only; guild actions go through Kingdom Tasks.
+- Book of Kingdoms resource packs in the old format (schema 1, `body` paragraphs) still load. Schema 2 adds typed
+  blocks; the [datapack reference](docs/Datapack-Reference.md#book-of-kingdoms-pages) documents both.
+- `mcakingdoms-client.toml` gains `onboarding.showIntro`, `tasks.openTo` and `guide.reducedMotion`; bookmarks,
+  favourites and recent topics and tasks are kept in `config/mcakingdoms-client-state.json` on each client.
+- Saves, data pack schema 1, server config keys and values, and public API signatures are unchanged (the API gained
+  Javadoc).
+
+## 0.1.1
 
 Implementation of the findings in [docs/MCAKingdoms-Audit.md](docs/MCAKingdoms-Audit.md), and of the
 2026-10-01 review ([REVIEW.md](REVIEW.md), [remediation plan](docs/MCAKingdoms-Review-Remediation-Plan.md)).

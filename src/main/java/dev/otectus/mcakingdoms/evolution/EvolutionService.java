@@ -23,6 +23,9 @@ public final class EvolutionService {
     private final EvolutionSavedData data;
     public EvolutionService(MinecraftServer server) { this.server = server; this.data = EvolutionSavedData.get(server); }
     public long revision() { if (!server.isSameThread()) throw new IllegalStateException("Evolution requires server thread"); return data.revision(); }
+    /** The world's opt-in state for capability reports, without a player: enabled, drama, eligible and active regions. */
+    public SettingsView worldSettings() { if (!server.isSameThread()) throw new IllegalStateException("Evolution requires server thread"); var s=data.snapshot();
+        return new SettingsView(s.revision,s.enabled,s.drama,false,Set.copyOf(s.eligible),Set.copyOf(s.activeRegions),data.writable()); }
     public SettingsView settings(ServerPlayer player) { actor(player); var s=data.snapshot(); return new SettingsView(s.revision,s.enabled,s.drama,
             s.subscriptions.contains(player.getUUID()),Set.copyOf(s.eligible),Set.copyOf(s.activeRegions),data.writable()); }
     public List<ScenarioView> scenarios(ServerPlayer player) { actor(player); var s=data.snapshot(); return s.scenarios.values().stream()
@@ -267,7 +270,9 @@ public final class EvolutionService {
         commit(s); // Save cursors before notification: a restart cannot repeat a digest.
         for (var player : deliveries) {
             long open = s.scenarios.values().stream().filter(e -> e.pending() && visible(player, e)).count();
-            if (open > 0) player.sendSystemMessage(net.minecraft.network.chat.Component.literal(open + " known political opportunities. Open Kingdom Tasks and choose \"World evolution status\"."));
+            if (open > 0) dev.otectus.mcakingdoms.interaction.Notify.player(server, player.getUUID(), null,
+                    net.minecraft.network.chat.Component.translatableWithFallback("notice.mcakingdoms.opportunity_digest", "%s known political opportunities.", open),
+                    "evolution.overview");
         }
     }
     /** Explicitly eligible, or automatically eligible when its kingdom is governed and no operator paused it. */
@@ -316,7 +321,7 @@ public final class EvolutionService {
             var event = new Scenario(id, item.getKey(), terms, settlement, terms.trigger() == Trigger.INTERREGNUM || institution == null ? null : institution.id(),
                     place.kingdomId().toString(), cause, null, now, Math.addExact(now, terms.duration()), 1, Phase.OPEN, Map.of(), null, "");
             s.scenarios.put(id, event); s.consumed.add(causeKey); s.cooldowns.put(key, Math.addExact(now, terms.cooldown()));
-            dev.otectus.mcakingdoms.interaction.Notify.government(server, place.kingdomId().toString(), null, "A new opportunity opened at " + place.displayName() + ": " + terms.title() + ".");
+            dev.otectus.mcakingdoms.interaction.Notify.government(server, place.kingdomId().toString(), null, net.minecraft.network.chat.Component.translatableWithFallback("notice.mcakingdoms.opportunity_opened", "A new opportunity opened at %s: %s.", place.displayName(), terms.title()), "evolution.inspect");
             return;
         }
     }

@@ -36,6 +36,7 @@ public final class GovernmentService implements PoliticalService {
     private final PoliticalSavedData data;
     private final boolean conflict;
     private final java.util.function.Predicate<UUID> knownPlayer;
+    private final java.util.function.BooleanSupplier openFounding;
     private final java.util.function.BooleanSupplier institutionalServices;
     private int maintenanceCursor;
     private final java.util.Deque<LivingDeathEvent> pendingDeaths = new java.util.ArrayDeque<>();
@@ -55,9 +56,16 @@ public final class GovernmentService implements PoliticalService {
     GovernmentService(MinecraftServer server, KingdomsService kingdoms, PoliticalDefinitions definitions,
                       PoliticalSavedData data, boolean conflict, java.util.function.Predicate<UUID> knownPlayer,
                       java.util.function.BooleanSupplier institutionalServices) {
+        this(server, kingdoms, definitions, data, conflict, knownPlayer, institutionalServices,
+                () -> dev.otectus.mcakingdoms.config.McaKingdomsConfig.OPEN_FOUNDING.get());
+    }
+    /** {@code openFounding} is the {@code politics.openFounding} setting; tests pass a fixed value instead of rewriting the config file. */
+    GovernmentService(MinecraftServer server, KingdomsService kingdoms, PoliticalDefinitions definitions,
+                      PoliticalSavedData data, boolean conflict, java.util.function.Predicate<UUID> knownPlayer,
+                      java.util.function.BooleanSupplier institutionalServices, java.util.function.BooleanSupplier openFounding) {
         this.server = server; this.kingdoms = kingdoms; this.definitions = definitions;
         this.data = data; this.conflict = conflict; this.knownPlayer = knownPlayer;
-        this.institutionalServices = institutionalServices;
+        this.institutionalServices = institutionalServices; this.openFounding = openFounding;
     }
     private void thread() { if (!server.isSameThread()) throw new IllegalStateException("Politics requires the server thread"); }
     @Override public long revision() { thread(); return data.records().revision; }
@@ -622,6 +630,28 @@ public final class GovernmentService implements PoliticalService {
                 Map.of(), AgreementState.PROPOSED, now(), now() + 720000, s.revision)); return id;
     }
     private boolean active(Agreement a) { return a.state() == AgreementState.ACTIVE && now() < a.expiresAt(); }
+    /** A proposed agreement waiting for a signature this viewer may give, for one of the two governments. */
+    public record AwaitingSignature(String kingdom, UUID agreement, net.minecraft.network.chat.Component title) { }
+    /**
+     * Proposals still open for signature where the viewer holds the ratify responsibility of a party that has not signed:
+     * only the viewer's own duty, never other governments' pending business.
+     */
+    public List<AwaitingSignature> awaitingSignature(ServerPlayer viewer, int limit) {
+        thread();
+        if (!data.writable() || conflict) return List.of();
+        PoliticalSavedData.Records s = data.records();
+        List<AwaitingSignature> out = new ArrayList<>();
+        for (Agreement a : s.agreements.values().stream().sorted(Comparator.comparingLong(Agreement::proposedAt).reversed()).toList()) {
+            if (out.size() >= limit) break;
+            if (a.state() != AgreementState.PROPOSED || now() >= a.expiresAt()) continue;
+            for (String kingdom : List.of(a.proposer(), a.recipient()))
+                if (!a.signatures().containsKey(kingdom) && permitted(viewer, s.governments.get(kingdom), Permission.RATIFY)) {
+                    out.add(new AwaitingSignature(kingdom, a.id(), definitionTitle(a.terms().title())));
+                    break;
+                }
+        }
+        return out;
+    }
     @Override public AgreementClauseView clause(String first, String second, Clause clause) {
         thread(); Objects.requireNonNull(clause);
         if (!data.writable() || conflict || !institutionalServices.getAsBoolean())
@@ -873,7 +903,7 @@ public final class GovernmentService implements PoliticalService {
             case "history" -> visibleHistory(viewer).filter(fact -> fact.affectedKingdoms().contains(kingdom))
                     .forEach(fact -> rows.add(new Row(fact.id().toString(), fact.summary(),
                             "Recorded on day " + (fact.gameTime() / 24000 + 1) + ". "
-                                    + (fact.actor() == null ? "Government record." : "By " + server.getProfileCache().get(fact.actor()).map(com.mojang.authlib.GameProfile::getName).orElse("a recorded participant") + ".")
+                                    + (fact.actor() == null ? "Government record." : "By " + dev.otectus.mcakingdoms.interaction.Names.player(server, fact.actor()) + ".")
                                     + " Status: " + fact.correction().name().toLowerCase(java.util.Locale.ROOT) + ".")));
             default -> throw new IllegalArgumentException("Unknown political tab");
         }
@@ -882,17 +912,299 @@ public final class GovernmentService implements PoliticalService {
         return new Page(requestId, revision(), kingdom, tab, offset, rows.size() > start + 20,
                 rows.subList(start, Math.min(start + 20, rows.size())), definitions.snapshot().entrySet().stream()
                         .sorted(Map.Entry.comparingByKey()).limit(128).map(e -> new Choice(e.getKey(), e.getValue().kind(), e.getValue().title())).toList(),
-                actionDenials(viewer, g), diagnostic);
+                actionDenials(viewer, kingdom, g), diagnostic);
+    }
+    /**
+     * A page row as players read it: translated title and detail, naming people, places and kingdoms instead of ids, and
+     * the same facts as labelled fields ("State", "Parties", "Signatures") for screens that show records as sections.
+     */
+    public record PresentedRow(net.minecraft.network.chat.Component title, net.minecraft.network.chat.Component detail, List<Field> fields) {
+        public PresentedRow { fields = List.copyOf(fields); }
+        public PresentedRow(net.minecraft.network.chat.Component title, net.minecraft.network.chat.Component detail) { this(title, detail, List.of()); }
+    }
+    /** One labelled fact of a presented row. */
+    public record Field(net.minecraft.network.chat.Component label, net.minecraft.network.chat.Component value) { }
+    private static Field f(String key, String fallback, net.minecraft.network.chat.Component value) {
+        return new Field(net.minecraft.network.chat.Component.translatableWithFallback("politics.mcakingdoms.field." + key, fallback), value);
+    }
+
+    private static net.minecraft.network.chat.Component p(String key, String fallback, Object... args) {
+        return net.minecraft.network.chat.Component.translatableWithFallback("politics.mcakingdoms.row." + key, fallback, args);
+    }
+    private net.minecraft.network.chat.Component definitionTitle(String title) {
+        return dev.otectus.mcakingdoms.interaction.PlayerWords.isKey(title)
+                ? net.minecraft.network.chat.Component.translatableWithFallback(title, dev.otectus.mcakingdoms.interaction.PlayerWords.text(title))
+                : net.minecraft.network.chat.Component.literal(title);
+    }
+    private net.minecraft.network.chat.Component kingdomName(String kingdom) {
+        return kingdoms.getKingdom(ResourceLocation.tryParse(kingdom) == null ? new ResourceLocation("minecraft", "missing") : new ResourceLocation(kingdom))
+                .map(k -> (net.minecraft.network.chat.Component) net.minecraft.network.chat.Component.translatableWithFallback(k.translationKey(), dev.otectus.mcakingdoms.interaction.PlayerWords.text(k.translationKey())))
+                .orElse(net.minecraft.network.chat.Component.literal(kingdom));
+    }
+    private static net.minecraft.network.chat.Component enumWords(Enum<?> value) {
+        return dev.otectus.mcakingdoms.interaction.ActionRegistry.enumLabel(value);
+    }
+    /** Each clause of {@code a} with its current state, in the reader's language. */
+    private net.minecraft.network.chat.Component clauseWords(Agreement a) {
+        var words = net.minecraft.network.chat.Component.empty();
+        boolean first = true;
+        for (Clause c : a.terms().clauses().stream().sorted().toList()) {
+            if (!first) words.append(", ");
+            first = false;
+            var status = active(a) ? clause(a.proposer(), a.recipient(), c).status() : AgreementClauseView.Status.NOT_AGREED;
+            words.append(p("clause", "%s (%s)", enumWords(c), enumWords(status)));
+        }
+        return words;
+    }
+    /**
+     * Presents the rows of a page this viewer was already allowed to read. Each row's record is looked up by its id, so
+     * no extra record can appear; the API's {@link Row} strings are left exactly as they were.
+     */
+    public List<PresentedRow> present(ServerPlayer viewer, Page page) {
+        thread();
+        PoliticalSavedData.Records s = data.records(); Government g = s.governments.get(page.kingdom());
+        List<PresentedRow> out = new ArrayList<>();
+        for (Row row : page.rows()) {
+            net.minecraft.network.chat.Component title = definitionTitle(row.title()), detail = net.minecraft.network.chat.Component.literal(row.detail());
+            List<Field> fields = new ArrayList<>();
+            Optional<UUID> id = parse(row.id());
+            switch (page.tab()) {
+                case "overview" -> {
+                    if (row.title().equals("UNORGANIZED")) {
+                        title = p("unorganized", "No government yet");
+                        detail = openFounding.getAsBoolean()
+                                ? p("unorganized.open", "An operator, or a player whose recorded residence is in this kingdom, can establish its first government with Establish a government.")
+                                : p("unorganized.closed", "An operator can establish this kingdom's first government with Establish a government.");
+                        fields.add(f("government", "Government", p("unorganized", "No government yet")));
+                        fields.add(f("founding", "Who can found it", openFounding.getAsBoolean() ? p("founding.open", "An operator, or a resident of this kingdom naming themselves leader")
+                                : p("founding.closed", "Only an operator")));
+                    } else if (g != null && row.id().equals(g.kingdom())) {
+                        title = definitions.available(g.profileId()) ? enumWords(g.state()) : p("dormant", "Dormant");
+                        net.minecraft.network.chat.Component constitution = definitions.available(g.profileId()) ? definitionTitle(g.constitution().title()) : net.minecraft.network.chat.Component.literal(g.profileId());
+                        detail = p("constitution", "Constitution: %s", constitution);
+                        fields.add(f("state", "State", title));
+                        fields.add(f("constitution", "Constitution", constitution));
+                    } else if (row.title().equals("Capital seat")) {
+                        title = p("capital", "Capital seat");
+                        fields.add(f("capital", "Capital", net.minecraft.network.chat.Component.literal(row.detail())));
+                    } else if (row.title().equals("Succession preview")) {
+                        title = p("succession", "Succession preview");
+                        if (g != null && g.successor() == null) {
+                            detail = p("succession.none", "No named successor; a vacant leadership stays in interregnum.");
+                            fields.add(f("successor", "Named successor", p("successor.none", "None")));
+                        } else if (g != null) {
+                            net.minecraft.network.chat.Component who = net.minecraft.network.chat.Component.literal(personLabel(g.successor()));
+                            if (elected(s, g.kingdom(), g.successor())) who = p("succession.elected", "%s (elected)", who);
+                            String pending = "";
+                            try { person(g.successor(), g.kingdom(), null); } catch (IllegalArgumentException unavailable) { pending = unavailable.getMessage(); }
+                            detail = pending.isEmpty() ? p("succession.eligible", "%s; currently eligible; a confirmed vacancy is required.", who)
+                                    : p("succession.pending", "%s; pending: %s", who, pending);
+                            fields.add(f("successor", "Named successor", who));
+                            fields.add(f("succession_status", "Status", pending.isEmpty() ? p("succession.status.eligible", "Eligible; takes office only after a confirmed vacancy")
+                                    : p("succession.status.pending", "Pending: %s", pending)));
+                        }
+                    } else if (row.title().equals("Provider status")) {
+                        title = p("providers", "Provider status");
+                        detail = providerStatusComponent();
+                        fields.add(f("providers", "Companion services", detail));
+                    } else {
+                        // A recorded house: its name and motto are player-authored and stay literal.
+                        title = net.minecraft.network.chat.Component.literal(row.title());
+                        fields.add(f("house", "Political house", title));
+                        if (!row.detail().isBlank()) fields.add(f("motto", "Motto", net.minecraft.network.chat.Component.literal(row.detail())));
+                    }
+                }
+                case "council" -> {
+                    if (row.title().equals("Mandate") && id.isPresent() && g != null) {
+                        title = p("mandate", "Mandate: %s", dev.otectus.mcakingdoms.interaction.Names.player(server, id.get()));
+                        var permissions = net.minecraft.network.chat.Component.empty(); boolean first = true;
+                        for (Permission permission : g.mandates().getOrDefault(id.get(), Set.of()).stream().sorted().toList()) {
+                            if (!first) permissions.append(", "); first = false; permissions.append(enumWords(permission));
+                        }
+                        detail = permissions;
+                        fields.add(f("player", "Player", net.minecraft.network.chat.Component.literal(dev.otectus.mcakingdoms.interaction.Names.player(server, id.get()))));
+                        fields.add(f("responsibilities", "Granted responsibilities", permissions));
+                    } else if (g != null && g.offices().containsKey(row.id())) {
+                        Office office = g.offices().get(row.id());
+                        detail = office.settlement() == null ? p("holder", "%s", personLabel(office.holder()))
+                                : p("holder.at", "%s at %s", personLabel(office.holder()), dev.otectus.mcakingdoms.interaction.Names.settlement(server, office.settlement()));
+                        fields.add(f("office", "Office", title));
+                        fields.add(f("holder", "Held by", net.minecraft.network.chat.Component.literal(personLabel(office.holder()))));
+                        fields.add(f("jurisdiction", "Where", office.settlement() == null ? p("jurisdiction.kingdom", "Kingdom-wide")
+                                : net.minecraft.network.chat.Component.literal(dev.otectus.mcakingdoms.interaction.Names.settlement(server, office.settlement()))));
+                        var responsibilities = net.minecraft.network.chat.Component.empty(); boolean first = true;
+                        for (Permission permission : office.terms().permissions().stream().sorted().toList()) {
+                            if (!first) responsibilities.append(", "); first = false; responsibilities.append(enumWords(permission));
+                        }
+                        if (!first) fields.add(f("office_responsibilities", "Responsibilities", responsibilities));
+                    }
+                }
+                case "agreements" -> {
+                    Agreement a = id.map(s.agreements::get).orElse(null);
+                    if (a != null) {
+                        boolean expired = now() >= a.expiresAt() && (a.state() == AgreementState.PROPOSED || a.state() == AgreementState.ACTIVE);
+                        var state = expired ? enumWords(AgreementState.EXPIRED) : enumWords(a.state());
+                        var parties = p("parties", "%s and %s", kingdomName(a.proposer()), kingdomName(a.recipient()));
+                        var signatures = p("signatures", "%s of 2 signatures", a.signatures().size());
+                        var timing = expired ? p("expired", "expired") : p("expires", "expires in %s", dev.otectus.mcakingdoms.interaction.Names.remainingText(server, a.expiresAt()));
+                        var clauses = a.terms().clauses().isEmpty() ? p("ceremonial", "ceremonial terms; no operational clauses") : p("clauses", "clauses: %s", clauseWords(a));
+                        var text = net.minecraft.network.chat.Component.empty().append(state).append(" · ").append(parties).append(" · ").append(signatures).append(" · ").append(timing);
+                        if (!definitions.available(a.definitionId())) text.append(" · ").append(p("definition_unavailable", "its definition is no longer loaded"));
+                        text.append(" · ").append(clauses);
+                        if (!a.explanation().isBlank()) text.append("\n").append(p("terms", "Terms: %s", a.explanation()));
+                        detail = text;
+                        fields.add(f("agreement", "Agreement", title));
+                        fields.add(f("state", "State", state));
+                        fields.add(f("parties", "Parties", parties));
+                        var signed = net.minecraft.network.chat.Component.empty(); boolean first = true;
+                        for (String kingdom : a.signatures().keySet()) { if (!first) signed.append(", "); first = false; signed.append(kingdomName(kingdom)); }
+                        fields.add(f("signatures", "Signatures", first ? signatures : p("signatures.by", "%s: %s", signatures, signed)));
+                        if (a.state() == AgreementState.PROPOSED && !expired) {
+                            var waiting = net.minecraft.network.chat.Component.empty(); boolean any = false;
+                            for (String kingdom : List.of(a.proposer(), a.recipient())) if (!a.signatures().containsKey(kingdom)) { if (any) waiting.append(", "); any = true; waiting.append(kingdomName(kingdom)); }
+                            fields.add(f("next", "Next step", p("next.sign", "Waiting for the signature of %s", waiting)));
+                        }
+                        fields.add(f("timing", "Timing", timing));
+                        fields.add(f("clauses", "What it allows", clauses));
+                        if (!a.explanation().isBlank()) fields.add(f("terms", "Terms", net.minecraft.network.chat.Component.literal(a.explanation())));
+                    }
+                }
+                case "petitions" -> {
+                    Petition petition = id.map(s.petitions::get).orElse(null);
+                    if (petition != null) {
+                        title = definitionTitle(petition.terms().title());
+                        boolean expired = open(petition) && now() >= petition.expiresAt();
+                        var state = expired ? enumWords(PetitionState.EXPIRED) : enumWords(petition.state());
+                        var requester = net.minecraft.network.chat.Component.literal(dev.otectus.mcakingdoms.interaction.Names.player(server, petition.requester()));
+                        var text = net.minecraft.network.chat.Component.empty().append(state)
+                                .append(" · ").append(p("requested_by", "requested by %s", requester));
+                        if (!petition.explanation().isBlank()) text.append("\n").append(p("reason", "Reason: %s", petition.explanation()));
+                        if (!petition.decision().isBlank()) text.append("\n").append(p("decision", "Decision: %s", petition.decision()));
+                        detail = text;
+                        fields.add(f("request", "Request", title));
+                        fields.add(f("requester", "Requested by", requester));
+                        fields.add(f("state", "State", state));
+                        if (!petition.explanation().isBlank()) fields.add(f("reason_given", "Reason given", net.minecraft.network.chat.Component.literal(petition.explanation())));
+                        if (!petition.decision().isBlank()) fields.add(f("decision", "Decision", net.minecraft.network.chat.Component.literal(petition.decision())));
+                        if (open(petition) && !expired) fields.add(f("next", "Next step", p("next.review", "Waiting for an official who holds the review responsibility")));
+                    }
+                }
+                case "institutions" -> {
+                    Recognition r = id.map(s.recognitions::get).orElse(null);
+                    if (r != null) {
+                        var status = r.active() ? p("recognized", "recognized; its building is checked again when revalidated") : p("suspended", "suspended");
+                        detail = p("institution", "%s at %s; %s", r.building().type(), r.building().x() + ", " + r.building().y() + ", " + r.building().z(), status);
+                        fields.add(f("institution", "Recognized for", title));
+                        fields.add(f("building", "Building", net.minecraft.network.chat.Component.literal(r.building().type())));
+                        fields.add(f("location", "Location", net.minecraft.network.chat.Component.literal(r.building().x() + ", " + r.building().y() + ", " + r.building().z())));
+                        fields.add(f("verification", "Status", status));
+                        fields.add(f("meaning", "What this means", p("institution.meaning", "Recognition lets civic services use this building. It does not build anything and does not guarantee a provider is available.")));
+                    }
+                }
+                case "honors" -> {
+                    Honor h = id.map(s.honors::get).orElse(null);
+                    if (h != null) {
+                        var status = h.active() ? p("awarded", "in force") : p("revoked", "revoked");
+                        detail = p("honor", "Awarded to %s; %s%s", personLabel(h.recipient()), status,
+                                h.evidence().isBlank() ? net.minecraft.network.chat.Component.empty() : p("evidence", ". Reason: %s", h.evidence()));
+                        fields.add(f("honor", "Honor", title));
+                        fields.add(f("recipient", "Awarded to", net.minecraft.network.chat.Component.literal(personLabel(h.recipient()))));
+                        fields.add(f("status", "Status", status));
+                        if (!h.evidence().isBlank()) fields.add(f("reason", "Reason", net.minecraft.network.chat.Component.literal(h.evidence())));
+                        fields.add(f("meaning", "What this means", p("honor.meaning", "An honor records the kingdom's recognition. It is not an office and grants no permissions.")));
+                    }
+                }
+                case "history" -> {
+                    PoliticalFact fact = id.flatMap(value -> s.facts.stream().filter(fa -> fa.id().equals(value)).findFirst()).map(this::corrected).orElse(null);
+                    if (fact != null) {
+                        title = net.minecraft.network.chat.Component.translatableWithFallback("politics.mcakingdoms.fact." + fact.type().name().toLowerCase(Locale.ROOT), fact.summary());
+                        var by = fact.actor() == null ? p("fact.government", "Government record.") : p("fact.by", "By %s.", dev.otectus.mcakingdoms.interaction.Names.player(server, fact.actor()));
+                        detail = p("fact", "Recorded on day %s. %s Status: %s.", fact.gameTime() / 24000 + 1, by, enumWords(fact.correction()));
+                        fields.add(f("event", "Event", title));
+                        fields.add(f("when", "When", p("day", "Day %s", fact.gameTime() / 24000 + 1)));
+                        fields.add(f("by", "Recorded by", fact.actor() == null ? p("fact.government.short", "The government")
+                                : net.minecraft.network.chat.Component.literal(dev.otectus.mcakingdoms.interaction.Names.player(server, fact.actor()))));
+                        fields.add(f("status", "Status", enumWords(fact.correction())));
+                        fields.add(f("history_note", "Note", p("history.note", "History is a record of what happened; it cannot be replayed or undone from here.")));
+                    }
+                }
+                default -> { }
+            }
+            out.add(new PresentedRow(title, detail, fields));
+        }
+        return out;
+    }
+
+    /**
+     * The Kingdom page header for this viewer: government status, leader and capital, open elections and regency, and the
+     * responsibilities the viewer holds here (their own only). Public facts and the viewer's own state; no ballots.
+     */
+    public List<net.minecraft.network.chat.Component> header(ServerPlayer viewer, String kingdom) {
+        thread();
+        List<net.minecraft.network.chat.Component> lines = new ArrayList<>();
+        if (conflict) {
+            lines.add(p("header.capitals", "MCA: Capitals governs kingdoms on this server; these pages are read-only history."));
+            return lines;
+        }
+        PoliticalSavedData.Records s = data.records(); Government g = s.governments.get(kingdom);
+        if (g == null) {
+            lines.add(p("header.none", "No government yet."));
+            lines.add(openFounding.getAsBoolean() ? p("header.none.open", "A resident of this kingdom, or an operator, can found its first government; Check whether you can found a government explains your case.")
+                    : p("header.none.closed", "Only an operator can found its first government on this server."));
+            return lines;
+        }
+        lines.add(p("header.state", "Government: %s", definitions.available(g.profileId()) ? enumWords(g.state()) : p("dormant", "Dormant")));
+        Office leader = g.offices().get(LEADER);
+        lines.add(p("header.leader", "Leader: %s", leader == null ? p("header.leader.vacant", "vacant") : net.minecraft.network.chat.Component.literal(personLabel(leader.holder()))));
+        lines.add(p("header.capital", "Capital: %s", kingdoms.getSettlement(g.capital()).map(v -> (net.minecraft.network.chat.Component) net.minecraft.network.chat.Component.literal(v.displayName()))
+                .orElse(p("header.capital.unavailable", "unavailable"))));
+        Regency regency = s.regencies.get(kingdom);
+        if (regency != null && regency.active() && now() < regency.expiresAt())
+            lines.add(p("header.regency", "Regency: %s, for %s more", personLabel(regency.regent()), dev.otectus.mcakingdoms.interaction.Names.remainingText(server, regency.expiresAt())));
+        for (var election : elections(viewer, 0, 64)) {
+            if (!election.kingdom().equals(kingdom) || election.state() != ElectionState.OPEN) continue;
+            lines.add(p("header.election", "Election open: %s of %s ballots cast; closes in %s; %s", election.ballotsCast(), election.electorateSize(),
+                    dev.otectus.mcakingdoms.interaction.Names.remainingText(server, election.deadline()),
+                    election.viewerVoted() ? p("header.election.voted", "your vote is recorded") : election.viewerEligible() ? p("header.election.not_voted", "you may vote")
+                            : p("header.election.not_eligible", "you are not in its electorate")));
+        }
+        var held = net.minecraft.network.chat.Component.empty(); boolean first = true;
+        for (Permission permission : Permission.values()) if (permitted(viewer, g, permission)) { if (!first) held.append(", "); first = false; held.append(enumWords(permission)); }
+        lines.add(first ? p("header.yours.none", "Your responsibilities here: none. You can read its public records and send petitions.")
+                : p("header.yours", "Your responsibilities here: %s", held));
+        return lines;
+    }
+    private net.minecraft.network.chat.Component providerStatusComponent() {
+        var receipts = switch (dev.otectus.mcakingdoms.compat.quests.receipts.QuestCompletionBridge.capability()) {
+            case "available" -> p("providers.quests", "MCA Quests completion receipts are available, so paid workshop commissions credit honors");
+            case "absent" -> p("providers.no_quests", "MCA Quests is not installed, so there are no completion receipts or paid commissions");
+            case "not_probed" -> p("providers.not_probed", "MCA Quests has not been checked yet");
+            default -> p("providers.unsupported", "MCA Quests is installed, but its completion receipts are unsupported");
+        };
+        return p("providers.line", "%s; building evidence %s.", receipts, townstead().capabilities().contains(TownsteadCapability.READ_BUILDING)
+                ? p("providers.available", "available") : p("providers.unavailable", "unavailable"));
     }
     private String successionPreview(Government government) {
         String label = personLabel(government.successor()) + (elected(data.records(), government.kingdom(), government.successor()) ? " (elected)" : "");
         try { person(government.successor(), government.kingdom(), null); return label + "; currently eligible; confirmed vacancy required"; }
         catch (IllegalArgumentException unavailable) { return label + "; pending: " + unavailable.getMessage(); }
     }
-    /** Open founding: the actor names themselves leader and their civic residence is the chosen capital. */
+    /**
+     * Open founding: the actor names themselves leader and their civic residence is the chosen capital. Both sides are
+     * compared as current settlement ids, so a residence recorded before a merge still names the merged settlement.
+     */
     private boolean residentFounder(ServerPlayer actor, Request r) {
-        if (!dev.otectus.mcakingdoms.config.McaKingdomsConfig.OPEN_FOUNDING.get() || r.person() == null || r.person().kind() != Kind.PLAYER || !r.person().id().equals(actor.getUUID())) return false;
-        return kingdoms.getCivicIdentity(actor).flatMap(dev.otectus.mcakingdoms.api.CivicIdentityView::residenceSettlement).map(id -> id.toString().equals(r.target())).orElse(false);
+        if (!openFounding.getAsBoolean() || r.person() == null || r.person().kind() != Kind.PLAYER || !r.person().id().equals(actor.getUUID())) return false;
+        Optional<UUID> capital;
+        try { capital = kingdoms.findSettlement(r.target()).map(SettlementView::id).map(kingdoms::resolveSettlementId); }
+        catch (IllegalArgumentException ambiguous) { return false; }
+        return capital.isPresent() && kingdoms.getCivicIdentity(actor).flatMap(dev.otectus.mcakingdoms.api.CivicIdentityView::residenceSettlement)
+                .map(kingdoms::resolveSettlementId).map(capital.get()::equals).orElse(false);
+    }
+    /** Whether the viewer's recorded residence lies in {@code kingdom}, so resident founding could apply there. */
+    private boolean residentOf(ServerPlayer viewer, String kingdom) {
+        return kingdoms.getCivicIdentity(viewer).flatMap(dev.otectus.mcakingdoms.api.CivicIdentityView::residenceSettlement)
+                .map(kingdoms::resolveSettlementId).flatMap(kingdoms::getSettlement).map(home -> home.kingdomId().toString().equals(kingdom)).orElse(false);
     }
     private String personLabel(Person person) {
         if (person.kind() == Kind.PLAYER) {
@@ -904,13 +1216,16 @@ public final class GovernmentService implements PoliticalService {
         }
         return person.kind() == Kind.PLAYER ? dev.otectus.mcakingdoms.interaction.Names.player(server, person.id()) : "an absent " + dev.otectus.mcakingdoms.interaction.Names.lower(dev.otectus.mcakingdoms.interaction.Names.words(person.kind()));
     }
-    private Map<Action, String> actionDenials(ServerPlayer viewer, Government g) {
+    private Map<Action, String> actionDenials(ServerPlayer viewer, String kingdom, Government g) {
         Map<Action, String> reasons = new EnumMap<>(Action.class);
         for (Action action : Action.values()) {
             String reason = "";
             if (!data.writable()) reason = data.diagnostic();
             else if (conflict) reason = "Native governance disabled while MCA: Capitals is installed";
-            else if (action == Action.BOOTSTRAP) reason = g != null ? "Government already constituted" : viewer.hasPermissions(2) || dev.otectus.mcakingdoms.config.McaKingdomsConfig.OPEN_FOUNDING.get() && kingdoms.getCivicIdentity(viewer).flatMap(dev.otectus.mcakingdoms.api.CivicIdentityView::residenceSettlement).isPresent() ? "" : "Founding requires an operator, or a civic resident of the capital naming themselves leader";
+            else if (action == Action.BOOTSTRAP) reason = g != null ? "Government already constituted"
+                    : viewer.hasPermissions(2) || openFounding.getAsBoolean() && residentOf(viewer, kingdom) ? ""
+                    : openFounding.getAsBoolean() ? "Founding requires an operator, or a civic resident of this kingdom naming themselves leader with their residence as capital"
+                    : "Founding requires an operator; resident founding is turned off on this server";
             else if (g == null) reason = "Government is unorganized";
             else if (!definitions.available(g.profileId())) reason = "Constitution unavailable; government dormant";
             else if (action == Action.NAME_SUCCESSOR && elected(data.records(), g.kingdom(), g.successor())) reason = "The named successor holds an elected mandate";

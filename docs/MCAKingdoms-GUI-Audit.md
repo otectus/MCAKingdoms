@@ -1,5 +1,9 @@
 # MCA: Kingdoms GUI audit — 2026-10-21
 
+Historical audit: the later user-directed manuscript redesign supersedes the visual verdicts below. All Kingdoms-owned
+screens, the embedded Kingdoms header and the settlement arrival banner now share the materials described in
+[Book interface design](Book-Interface-Design.md), which contains the current inventory and validation evidence.
+
 Scope: the Forge Minecraft 1.20.1 checkout, including passive UI integrations and HUDs.
 The comparison is vanilla Minecraft, not MCA Reborn's interface. Build declarations remain
 in `gradle.properties`; no loader, version, gameplay, saved-data or network/API changes are required.

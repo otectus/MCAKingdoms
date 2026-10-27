@@ -73,6 +73,7 @@ final class CivicSavedData extends SavedData {
     }
     State state() { return state; }
     boolean writable() { return preserved==null; }
+    public static dev.otectus.mcakingdoms.persistence.StoreStatus status(net.minecraft.server.MinecraftServer server) { var data=get(server); return dev.otectus.mcakingdoms.persistence.StoreStatus.of(NAME,data.writable(),data.diagnostic()); }
     String diagnostic() { return diagnostic; }
     State copy() { if(!writable()) throw new IllegalStateException(diagnostic); return JSON.fromJson(JSON.toJson(state),State.class); }
     boolean commit(MinecraftServer server,State candidate) {

@@ -2,17 +2,31 @@
 """R4 private history and opposing outcomes through two real clients."""
 import argparse, hashlib, json, os, pathlib, re, shutil, socket, subprocess, time, uuid
 from production_client import allowed
+
+def _mod_version():
+    """mod_version from gradle.properties, so default artifact names follow the build."""
+    for line in (pathlib.Path(__file__).resolve().parents[2] / 'gradle.properties').read_text().splitlines():
+        if line.startswith('mod_version='):
+            return line.split('=', 1)[1].strip()
+    raise SystemExit('gradle.properties has no mod_version')
+
+
+MOD_VERSION = _mod_version()
 ROOT=pathlib.Path(__file__).resolve().parents[2]
-INSTALL=pathlib.Path('/home/otectus/Documents/curseforge/minecraft/Install')
+INSTALL = pathlib.Path(os.environ.get('MCAKINGDOMS_MC_INSTALL', '/home/otectus/Documents/curseforge/minecraft/Install'))
+DEFAULT_XVFB = pathlib.Path('/tmp/kd-xvfb/usr/bin/Xvfb')
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--work-dir',type=pathlib.Path,required=True);args=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--work-dir',type=pathlib.Path,required=True)
+    p.add_argument('--xvfb',type=pathlib.Path,default=DEFAULT_XVFB,help='Headless X server binary');p.add_argument('--display',default=':97')
+    args=p.parse_args()
+    if not args.xvfb.is_file():raise SystemExit(f'Headless X server not found: {args.xvfb}')
     work=args.work_dir.resolve()
     if work.exists():raise SystemExit(f'Refusing to reuse {work}')
     work.mkdir(parents=True);server=work/'server';server.mkdir();(server/'mods').mkdir();(server/'libraries').symlink_to(ROOT/'build/forge-server/libraries',target_is_directory=True)
-    mod=ROOT/'build/libs/mcakingdoms-0.1.0.jar';harness=ROOT/'build/test-artifacts/mcakingdoms-0.1.0-client-acceptance.jar'
+    mod=ROOT/f'build/libs/mcakingdoms-{MOD_VERSION}.jar';harness=ROOT/f'build/test-artifacts/mcakingdoms-{MOD_VERSION}-client-acceptance.jar'
     native=pathlib.Path('/home/otectus/Documents/curseforge/minecraft/Instances/Ultima/mods/recruits-1.20.1-1.15.2.jar')
-    acceptance=ROOT/'build/test-artifacts/mcakingdoms-0.1.0-acceptance.jar'
+    acceptance=ROOT/f'build/test-artifacts/mcakingdoms-{MOD_VERSION}-acceptance.jar'
     for jar in [native,acceptance]:shutil.copy2(jar,server/'mods'/jar.name)
     shutil.copy2(mod,server/'mods'/mod.name);shutil.copy2('/home/otectus/Projects/MCACrime/run/eula.txt',server/'eula.txt')
     with socket.socket() as sock:sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
@@ -35,8 +49,8 @@ def main():
             time.sleep(.25)
         raise RuntimeError('Timed out; inspect '+str(work))
     displaylog=(work/'xvfb.log').open('w')
-    display=subprocess.Popen(['/tmp/jewelcraft-xvfb/usr/bin/Xvfb',':97','-screen','0','1600x1000x24','-nolisten','tcp','-ac'],stdout=displaylog,stderr=displaylog)
-    os.environ.update(DISPLAY=':97',LIBGL_ALWAYS_SOFTWARE='1')
+    display=subprocess.Popen([str(args.xvfb),args.display,'-screen','0','1600x1000x24','-nolisten','tcp','-ac'],stdout=displaylog,stderr=displaylog)
+    os.environ.update(DISPLAY=args.display,LIBGL_ALWAYS_SOFTWARE='1')
     time.sleep(1)
     try:
         slog=server/'console.log';srv=spawn(['java','-Xmx2G','-Dmcakingdoms.acceptance.r4Multiplayer=true','@libraries/net/minecraftforge/forge/1.20.1-47.4.23/unix_args.txt','nogui'],server,slog)

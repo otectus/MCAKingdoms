@@ -2,9 +2,19 @@
 """Read the current pack, replace only R1 artifacts, and open a copied old world in an isolated client."""
 import argparse, hashlib, json, os, pathlib, re, shutil, subprocess, time, uuid
 from production_client import allowed
+
+def _mod_version():
+    """mod_version from gradle.properties, so default artifact names follow the build."""
+    for line in (pathlib.Path(__file__).resolve().parents[2] / 'gradle.properties').read_text().splitlines():
+        if line.startswith('mod_version='):
+            return line.split('=', 1)[1].strip()
+    raise SystemExit('gradle.properties has no mod_version')
+
+
+MOD_VERSION = _mod_version()
 ROOT=pathlib.Path(__file__).resolve().parents[2]
 PACK=pathlib.Path('/home/otectus/Documents/curseforge/minecraft/Instances/Ultima')
-INSTALL=pathlib.Path('/home/otectus/Documents/curseforge/minecraft/Install')
+INSTALL = pathlib.Path(os.environ.get('MCAKINGDOMS_MC_INSTALL', '/home/otectus/Documents/curseforge/minecraft/Install'))
 
 def hashes(folder):
     return {str(p.relative_to(folder)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(folder.rglob('*')) if p.is_file()}
@@ -21,7 +31,7 @@ def main():
     for name in ['options.txt','optionsof.txt']:
         if (PACK/name).is_file():shutil.copy2(PACK/name,work/name)
     shutil.copytree(args.source_world,work/'saves/r1-old-world-copy')
-    replacements=[ROOT/'build/libs/mcakingdoms-0.1.0.jar',ROOT/'build/r1-provider-work/MCAQuests/build/libs/mcaquests-1.6.6.jar',ROOT/'build/r1-provider-work/MCAConversations/build/libs/mcaconversations-1.7.2.jar',ROOT/'build/test-artifacts/mcakingdoms-0.1.0-client-acceptance.jar']
+    replacements=[ROOT/f'build/libs/mcakingdoms-{MOD_VERSION}.jar',ROOT/'build/r1-provider-work/MCAQuests/build/libs/mcaquests-1.6.6.jar',ROOT/'build/r1-provider-work/MCAConversations/build/libs/mcaconversations-1.7.2.jar',ROOT/f'build/test-artifacts/mcakingdoms-{MOD_VERSION}-client-acceptance.jar']
     if args.r2 or args.r3:
         replacements=[p for p in replacements if 'MCAQuests' not in str(p)]
         replacements.extend([ROOT/'build/r2-provider-work/MCAQuests/build/libs/mcaquests-1.6.6.jar',ROOT/'build/r2-provider-work/MCACrime/build/libs/mcacrime-0.7.5.jar'])
@@ -74,7 +84,7 @@ def main():
     (work/'launch-command.json').write_text(json.dumps(command,indent=2))
     environment=os.environ.copy();environment.update(DISPLAY=':98',LIBGL_ALWAYS_SOFTWARE='1')
     with (work/'xvfb.log').open('w') as xlog,(work/'client.log').open('w') as log:
-        display=subprocess.Popen(['/tmp/jewelcraft-xvfb/usr/bin/Xvfb',':98','-screen','0','1600x1000x24','-nolisten','tcp','-ac'],stdout=xlog,stderr=xlog)
+        display=subprocess.Popen([os.environ.get('MCAKINGDOMS_XVFB','/tmp/kd-xvfb/usr/bin/Xvfb'),':98','-screen','0','1600x1000x24','-nolisten','tcp','-ac'],stdout=xlog,stderr=xlog)
         try:
             time.sleep(1)
             completed=subprocess.run(command,cwd=work,env=environment,stdout=log,stderr=subprocess.STDOUT,timeout=1100)

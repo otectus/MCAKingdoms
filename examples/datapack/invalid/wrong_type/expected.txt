@@ -1,0 +1,5 @@
+core
+example:mcakingdoms/kingdoms/harbor_league.json
+heraldry.color
+"teal"
+#RRGGBB

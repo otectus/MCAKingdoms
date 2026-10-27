@@ -1,5 +1,7 @@
 # R1 — regional civic network
 
+> **Design and delivery record.** Current operational guidance is in the [README](../README.md), the [configuration reference](Configuration.md), the [datapack reference](Datapack-Reference.md), the [addon API guide](Addon-API.md) and the in-game Book of Kingdoms; where this record differs, those win. Validation results below are dated evidence for the build named with them, not for later builds.
+
 Implementation and acceptance record for Phases 0–2 of the [integration roadmap](MCAKingdoms-Factions-Integration-Audit-and-Roadmap.md). **R1 regional civic network is implemented and validated; staged delivery is separate from live installation.** This document supersedes the earlier foundation-preview description; the older preview's hashes and runtime results are not evidence for the new receipt bridge.
 
 ## Gameplay and ownership
@@ -140,7 +142,7 @@ An introduction commits its chosen destination and cooldown before revealing it.
 |---|---:|---|
 | `enabled` | true | Turns off receipt consumption and chapter services; preserves records |
 | `introductionRadius` | 4096 | 128–32768 blocks, same dimension |
-| `contactRange` | 8 | 2–16 blocks; live line of sight required |
+| `contactRange` | 8 | 2–32 blocks; live line of sight required |
 | `introductionCooldown` | 24000 | 20–168000 server game ticks per player/guild |
 
 All writes are server-authoritative. No client packet can choose another player, grant standing, appoint arbitrary contacts, write provider reputation or claim territory. Institution operations honor current authority. Civil/guild offices grant no Recruits troop authority.

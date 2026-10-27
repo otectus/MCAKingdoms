@@ -1,5 +1,7 @@
 # MCA: Kingdoms: Creative and Technical Design Specification
 
+> **Design history.** This specification records the original design and its research. Several API shapes, folders and defaults here were provisional and differ from what shipped. For current behaviour use the [README](../README.md), the [configuration reference](Configuration.md), the [datapack reference](Datapack-Reference.md) and the [addon API guide](Addon-API.md); the API Javadoc in `dev.otectus.mcakingdoms.api` is authoritative for signatures.
+
 ## Design vision and research basis
 
 **MCA: Kingdoms** should be a server-authoritative settlement-identity layer for the Ultima modpack. Its core job is deceptively simple:

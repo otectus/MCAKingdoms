@@ -189,7 +189,7 @@ public final class McaQuestsCompat {
             JsonObject predicate = json.deepCopy();
             predicate.remove("type");
             predicate.remove("settlement_id");
-            return new GateSpec(Optional.empty(), Optional.of(KingdomPredicate.fromJson(predicate)), settlement);
+            return new GateSpec(Optional.empty(), Optional.of(KingdomPredicate.fromJson(IntegrationConfig.withUnknownPolicy(predicate))), settlement);
         }
 
         private JsonObject toJson() {

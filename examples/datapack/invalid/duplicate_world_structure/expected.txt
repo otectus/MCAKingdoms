@@ -1,0 +1,2 @@
+world_context
+structure minecraft:village_plains is listed twice

@@ -3,7 +3,6 @@ package dev.otectus.mcakingdoms.factions.organization;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import dev.otectus.mcakingdoms.api.factions.organization.OrganizationRankView;
 import dev.otectus.mcakingdoms.api.factions.organization.OrganizationDeedRule;
 import dev.otectus.mcakingdoms.api.factions.organization.OrganizationServiceRule;
@@ -13,8 +12,6 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 
-import java.io.IOException;
-import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -59,6 +56,20 @@ public final class OrganizationDefinitions {
         protected Map<ResourceLocation, OrganizationDefinition> prepare(ResourceManager resources,
                                                                          ProfilerFiller profiler) {
             pending.set(null);
+            try {
+                Map<ResourceLocation, OrganizationDefinition> prepared = parseAll(resources);
+                dev.otectus.mcakingdoms.data.ReloadReport.accepted(dev.otectus.mcakingdoms.data.ReloadReport.Domain.ORGANIZATIONS,
+                        Map.of("organizations", prepared.size()));
+                return prepared;
+            } catch (RuntimeException rejected) {
+                // The whole reload fails, so the previous organization definitions stay active.
+                dev.otectus.mcakingdoms.data.ReloadReport.rejected(dev.otectus.mcakingdoms.data.ReloadReport.Domain.ORGANIZATIONS,
+                        List.of(dev.otectus.mcakingdoms.data.DefinitionProblems.top(rejected)));
+                throw rejected;
+            }
+        }
+
+        private Map<ResourceLocation, OrganizationDefinition> parseAll(ResourceManager resources) {
             Map<ResourceLocation, OrganizationDefinition> parsed = new LinkedHashMap<>();
             resources.listResources(ROOT, location -> location.getPath().endsWith(".json")).entrySet().stream()
                     .sorted(Map.Entry.comparingByKey())
@@ -70,18 +81,14 @@ public final class OrganizationDefinitions {
                         String relative = path.substring(prefix.length(), path.length() - 5);
                         ResourceLocation id = ResourceLocation.tryParse(file.getNamespace() + ":" + relative);
                         if (id == null) throw error(file, "file path does not form an organization id");
-                        try (Reader reader = entry.getValue().openAsReader()) {
-                            JsonElement element = JsonParser.parseReader(reader);
-                            if (!element.isJsonObject()) throw error(file, "root must be an object");
-                            OrganizationDefinition definition = parseDefinition(file, id, element.getAsJsonObject());
-                            if (parsed.putIfAbsent(id, definition) != null) {
-                                throw error(file, "duplicate organization id " + id);
-                            }
-                        } catch (IOException exception) {
-                            throw error(file, "cannot read definition", exception);
+                        JsonElement element = dev.otectus.mcakingdoms.data.DefinitionProblems.parse(file, entry.getValue());
+                        if (!element.isJsonObject()) throw error(file, "root must be an object " + dev.otectus.mcakingdoms.data.DefinitionProblems.found(element));
+                        OrganizationDefinition definition = parseDefinition(file, id, element.getAsJsonObject());
+                        if (parsed.putIfAbsent(id, definition) != null) {
+                            throw error(file, "duplicate organization id " + id);
                         }
                     });
-            if(parsed.size()>128)throw new IllegalArgumentException("At most 128 organization definitions are supported");
+            if(parsed.size()>128)throw new IllegalArgumentException("At most 128 organization definitions are supported; "+parsed.size()+" were found");
             validateCrossReferences(parsed);
             return Map.copyOf(parsed);
         }
@@ -97,7 +104,8 @@ public final class OrganizationDefinitions {
                                                   JsonObject json) {
         fields(file, json, Set.of("schema", "id", "kind", "military", "name_key", "description_key",
                 "membership", "ranks", "services", "deeds"));
-        if (integer(file, json, "schema") != 1) throw error(file, "unsupported schema; expected 1");
+        int schema = integer(file, json, "schema");
+        if (schema != 1) throw error(file, "unsupported schema " + schema + "; this version reads schema 1 only");
         ResourceLocation declared = resource(file, string(file, json, "id"), "id");
         if (!expectedId.equals(declared)) throw error(file, "declared id does not match file id " + expectedId);
         String kind = string(file, json, "kind");
@@ -196,14 +204,15 @@ public final class OrganizationDefinitions {
 
     private static void fields(ResourceLocation file, JsonObject object, Set<String> allowed) {
         for (String key : object.keySet()) {
-            if (!allowed.contains(key)) throw error(file, "unknown field " + key);
+            if (!allowed.contains(key)) throw error(file, "unknown field " + key + "; allowed fields: " + new java.util.TreeSet<>(allowed));
         }
     }
 
     private static String string(ResourceLocation file, JsonObject object, String field) {
         JsonElement value = object.get(field);
         if (value == null || !value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString()) {
-            throw error(file, field + " must be a string");
+            throw error(file, (value == null ? "missing required field " : "") + field + " must be a string "
+                    + dev.otectus.mcakingdoms.data.DefinitionProblems.found(value));
         }
         String result = value.getAsString();
         if (result.isBlank()) throw error(file, field + " must not be blank");
@@ -223,14 +232,14 @@ public final class OrganizationDefinitions {
             if (value == null || !value.isJsonPrimitive() || !value.getAsJsonPrimitive().isNumber()) throw new NumberFormatException();
             return value.getAsBigDecimal().intValueExact();
         } catch (RuntimeException exception) {
-            throw error(file, field + " must be an integer");
+            throw error(file, field + " must be an integer " + dev.otectus.mcakingdoms.data.DefinitionProblems.found(value));
         }
     }
 
     private static boolean bool(ResourceLocation file, JsonObject object, String field) {
         JsonElement value = object.get(field);
         if (value == null || !value.isJsonPrimitive() || !value.getAsJsonPrimitive().isBoolean()) {
-            throw error(file, field + " must be a boolean");
+            throw error(file, field + " must be true or false " + dev.otectus.mcakingdoms.data.DefinitionProblems.found(value));
         }
         return value.getAsBoolean();
     }
@@ -241,19 +250,19 @@ public final class OrganizationDefinitions {
             if (value == null || !value.isJsonPrimitive() || !value.getAsJsonPrimitive().isNumber()) throw new NumberFormatException();
             return value.getAsBigDecimal().longValueExact();
         } catch (RuntimeException exception) {
-            throw error(file, field + " must be an integer");
+            throw error(file, field + " must be an integer " + dev.otectus.mcakingdoms.data.DefinitionProblems.found(value));
         }
     }
 
     private static JsonObject object(ResourceLocation file, JsonObject object, String field) {
         JsonElement value = object.get(field);
-        if (value == null || !value.isJsonObject()) throw error(file, field + " must be an object");
+        if (value == null || !value.isJsonObject()) throw error(file, field + " must be an object " + dev.otectus.mcakingdoms.data.DefinitionProblems.found(value));
         return value.getAsJsonObject();
     }
 
     private static JsonArray array(ResourceLocation file, JsonObject object, String field) {
         JsonElement value = object.get(field);
-        if (value == null || !value.isJsonArray()) throw error(file, field + " must be an array");
+        if (value == null || !value.isJsonArray()) throw error(file, field + " must be an array " + dev.otectus.mcakingdoms.data.DefinitionProblems.found(value));
         return value.getAsJsonArray();
     }
 

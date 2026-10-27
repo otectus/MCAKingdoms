@@ -51,6 +51,10 @@ final class FactionSavedData extends SavedData {
         return !readOnly;
     }
 
+    public static dev.otectus.mcakingdoms.persistence.StoreStatus status(net.minecraft.server.MinecraftServer server) {
+        return dev.otectus.mcakingdoms.persistence.StoreStatus.of(DATA_NAME, get(server).writable(), "");
+    }
+
     long revision() {
         return revision;
     }

@@ -3,7 +3,6 @@ package dev.otectus.mcakingdoms.data;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import dev.otectus.mcakingdoms.kingdom.BiomeRule;
 import dev.otectus.mcakingdoms.kingdom.KingdomDefinition;
 import dev.otectus.mcakingdoms.kingdom.StructureStyleRule;
@@ -17,8 +16,6 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 
-import java.io.IOException;
-import java.io.Reader;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -73,9 +70,15 @@ public final class DefinitionRegistry {
         protected DefinitionSnapshot prepare(ResourceManager resources, ProfilerFiller profiler) {
             pending.set(null);
             try {
-                return parse(resources);
+                DefinitionSnapshot snapshot = parse(resources);
+                ReloadReport.accepted(ReloadReport.Domain.CORE, java.util.Map.of("kingdoms", snapshot.kingdomCount(),
+                        "name_pools", snapshot.namePoolCount(), "biome_rules", snapshot.biomeRuleCount(),
+                        "structure_styles", snapshot.styleRuleCount()));
+                return snapshot;
             } catch (RuntimeException exception) {
                 pending.set(null);
+                // The whole reload fails on this, so nothing commits and the previous definitions stay active.
+                ReloadReport.rejected(ReloadReport.Domain.CORE, List.of(DefinitionProblems.top(exception)));
                 throw exception;
             }
         }
@@ -86,11 +89,14 @@ public final class DefinitionRegistry {
         }
     }
 
-    private static DefinitionSnapshot parse(ResourceManager resources) {
+    static DefinitionSnapshot parse(ResourceManager resources) {
         Map<ResourceLocation, KingdomDefinition> kingdoms = new LinkedHashMap<>();
         Map<ResourceLocation, NamePool> pools = new LinkedHashMap<>();
         List<BiomeRule> biomeRules = new ArrayList<>();
         List<StructureStyleRule> styles = new ArrayList<>();
+        // The file each definition came from, so a missing reference names the file to fix.
+        Map<ResourceLocation, ResourceLocation> kingdomFiles = new LinkedHashMap<>();
+        Map<ResourceLocation, ResourceLocation> ruleFiles = new LinkedHashMap<>();
 
         resources.listResources("mcakingdoms", location -> location.getPath().endsWith(".json")).entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
@@ -100,47 +106,55 @@ public final class DefinitionRegistry {
                     // Shared gates have their own transactional integration registry.
                     if (relative.startsWith(KINGDOM_GATES) || java.util.Set.of("governments", "offices", "agreements", "petitions", "honors", "institution_charters")
                             .contains(relative.split("/", 2)[0])) return;
-                    try (Reader reader = entry.getValue().openAsReader()) {
-                        JsonElement parsed = JsonParser.parseReader(reader);
-                        if (!parsed.isJsonObject()) {
-                            throw error(file, "root must be a JSON object");
-                        }
-                        JsonObject json = parsed.getAsJsonObject();
-                        if (relative.startsWith(KINGDOMS)) {
-                            ResourceLocation id = logicalId(file, relative, KINGDOMS);
-                            putUnique(kingdoms, id, parseKingdom(file, id, json));
-                        } else if (relative.startsWith(NAME_POOLS)) {
-                            ResourceLocation id = logicalId(file, relative, NAME_POOLS);
-                            putUnique(pools, id, parseNamePool(file, id, json));
-                        } else if (relative.startsWith(BIOME_RULES)) {
-                            ResourceLocation id = logicalId(file, relative, BIOME_RULES);
-                            biomeRules.add(parseBiomeRule(file, id, json));
-                        } else if (relative.startsWith(STRUCTURE_STYLES)) {
-                            ResourceLocation id = logicalId(file, relative, STRUCTURE_STYLES);
-                            styles.add(parseStyleRule(file, id, json));
-                        } else {
-                            throw error(file, "unknown definition folder");
-                        }
-                    } catch (IOException exception) {
-                        throw new IllegalArgumentException("Failed reading definition " + file, exception);
+                    JsonElement parsed;
+                    try {
+                        parsed = DefinitionProblems.parse(file, entry.getValue());
+                    } catch (IllegalArgumentException malformed) {
+                        throw error(file, malformed.getMessage().substring(file.toString().length() + 2));
+                    }
+                    if (!parsed.isJsonObject()) {
+                        throw error(file, "root must be a JSON object " + DefinitionProblems.found(parsed));
+                    }
+                    JsonObject json = parsed.getAsJsonObject();
+                    if (relative.startsWith(KINGDOMS)) {
+                        ResourceLocation id = logicalId(file, relative, KINGDOMS);
+                        putUnique(file, kingdoms, id, parseKingdom(file, id, json));
+                        kingdomFiles.put(id, file);
+                    } else if (relative.startsWith(NAME_POOLS)) {
+                        ResourceLocation id = logicalId(file, relative, NAME_POOLS);
+                        putUnique(file, pools, id, parseNamePool(file, id, json));
+                    } else if (relative.startsWith(BIOME_RULES)) {
+                        ResourceLocation id = logicalId(file, relative, BIOME_RULES);
+                        biomeRules.add(parseBiomeRule(file, id, json));
+                        ruleFiles.put(id, file);
+                    } else if (relative.startsWith(STRUCTURE_STYLES)) {
+                        ResourceLocation id = logicalId(file, relative, STRUCTURE_STYLES);
+                        styles.add(parseStyleRule(file, id, json));
+                        ruleFiles.put(id, file);
+                    } else {
+                        throw error(file, "unknown definition folder; expected kingdoms, name_pools, biome_rules, structure_styles,"
+                                + " kingdom_gates or a political folder");
                     }
                 });
 
         if (kingdoms.isEmpty()) {
-            throw new IllegalArgumentException("No MCA: Kingdoms definitions were found");
+            throw new IllegalArgumentException("No MCA: Kingdoms kingdom definitions were found under data/<namespace>/mcakingdoms/kingdoms/;"
+                    + " at least one kingdom is required");
         }
         kingdoms.values().forEach(kingdom -> {
             if (!pools.containsKey(kingdom.namePool())) {
-                throw new IllegalArgumentException("Kingdom " + kingdom.id() + " references missing name pool "
-                        + kingdom.namePool());
+                throw error(kingdomFiles.get(kingdom.id()), "name_pool references missing name pool " + kingdom.namePool()
+                        + "; add data/" + kingdom.namePool().getNamespace() + "/mcakingdoms/name_pools/"
+                        + kingdom.namePool().getPath() + ".json or name an existing pool");
             }
         });
-        biomeRules.forEach(rule -> requireKingdom(kingdoms, rule.kingdomId(), "biome rule " + rule.id()));
-        styles.forEach(rule -> requireKingdom(kingdoms, rule.kingdomId(), "structure style rule " + rule.id()));
+        biomeRules.forEach(rule -> requireKingdom(kingdoms, rule.kingdomId(), ruleFiles.get(rule.id())));
+        styles.forEach(rule -> requireKingdom(kingdoms, rule.kingdomId(), ruleFiles.get(rule.id())));
         List<ResourceLocation> fallbacks = kingdoms.values().stream().filter(KingdomDefinition::fallback)
                 .map(KingdomDefinition::id).sorted().toList();
         if (fallbacks.size() != 1) {
-            throw new IllegalArgumentException("Exactly one kingdom must declare fallback=true; found " + fallbacks);
+            throw new IllegalArgumentException("Exactly one kingdom must declare \"fallback\": true; found "
+                    + (fallbacks.isEmpty() ? "none" : fallbacks));
         }
         return new DefinitionSnapshot(kingdoms, pools, biomeRules, styles, fallbacks.get(0), 0L);
     }
@@ -245,7 +259,7 @@ public final class DefinitionRegistry {
     private static void schema(ResourceLocation file, JsonObject json) {
         int schema = integer(file, json, "schema");
         if (schema != 1) {
-            throw error(file, "unsupported schema " + schema + "; expected 1");
+            throw error(file, "unsupported schema " + schema + "; this version reads schema 1 only");
         }
     }
 
@@ -269,7 +283,7 @@ public final class DefinitionRegistry {
     private static ResourceLocation resource(ResourceLocation file, String value, String field) {
         ResourceLocation id = ResourceLocation.tryParse(value);
         if (id == null) {
-            throw error(file, field + " is not a valid resource location: " + value);
+            throw error(file, field + " must be a resource location such as mynamespace:name (found \"" + value + "\")");
         }
         return id;
     }
@@ -277,7 +291,7 @@ public final class DefinitionRegistry {
     private static JsonObject object(ResourceLocation file, JsonObject json, String field) {
         JsonElement value = json.get(field);
         if (value == null || !value.isJsonObject()) {
-            throw error(file, field + " must be an object");
+            throw error(file, field + " must be an object " + DefinitionProblems.found(value));
         }
         return value.getAsJsonObject();
     }
@@ -285,7 +299,7 @@ public final class DefinitionRegistry {
     private static JsonArray array(ResourceLocation file, JsonObject json, String field) {
         JsonElement value = json.get(field);
         if (value == null || !value.isJsonArray()) {
-            throw error(file, field + " must be an array");
+            throw error(file, field + " must be an array " + DefinitionProblems.found(value));
         }
         return value.getAsJsonArray();
     }
@@ -302,13 +316,13 @@ public final class DefinitionRegistry {
 
     private static List<String> stringArray(ResourceLocation file, JsonElement value, String field, boolean required) {
         if (!value.isJsonArray()) {
-            throw error(file, field + " must be an array");
+            throw error(file, field + " must be an array " + DefinitionProblems.found(value));
         }
         List<String> result = new ArrayList<>();
         for (JsonElement element : value.getAsJsonArray()) {
             if (!element.isJsonPrimitive() || !element.getAsJsonPrimitive().isString()
                     || element.getAsString().isBlank()) {
-                throw error(file, field + " must contain non-blank strings");
+                throw error(file, field + " must contain non-blank strings " + DefinitionProblems.found(element));
             }
             result.add(element.getAsString().strip());
         }
@@ -322,7 +336,8 @@ public final class DefinitionRegistry {
         JsonElement value = json.get(field);
         if (value == null || !value.isJsonPrimitive() || !value.getAsJsonPrimitive().isString()
                 || value.getAsString().isBlank()) {
-            throw error(file, field + " must be a non-blank string");
+            throw error(file, (value == null ? "missing required field " + field + "; it must be a non-blank string"
+                    : field + " must be a non-blank string " + DefinitionProblems.found(value)));
         }
         return value.getAsString().strip();
     }
@@ -335,7 +350,8 @@ public final class DefinitionRegistry {
             }
             return value.getAsInt();
         } catch (RuntimeException exception) {
-            throw error(file, field + " must be an integer");
+            throw error(file, (value == null ? "missing required field " + field + "; it must be an integer"
+                    : field + " must be an integer " + DefinitionProblems.found(value)));
         }
     }
 
@@ -343,14 +359,14 @@ public final class DefinitionRegistry {
         JsonElement value = json.get(field);
         if (value == null || !value.isJsonPrimitive()
                 || !(value.getAsJsonPrimitive().isBoolean())) {
-            throw error(file, field + " must be a boolean");
+            throw error(file, field + " must be true or false " + DefinitionProblems.found(value));
         }
         return value.getAsBoolean();
     }
 
     private static int color(ResourceLocation file, JsonElement value) {
         if (value == null || !value.isJsonPrimitive()) {
-            throw error(file, "heraldry.color must be an integer or #RRGGBB string");
+            throw error(file, "heraldry.color must be an RGB integer or #RRGGBB string " + DefinitionProblems.found(value));
         }
         try {
             if (value.getAsJsonPrimitive().isNumber()) {
@@ -366,7 +382,8 @@ public final class DefinitionRegistry {
             }
             return Integer.parseInt(string.substring(1), 16);
         } catch (RuntimeException exception) {
-            throw error(file, "heraldry.color must be an RGB integer or #RRGGBB string");
+            throw error(file, "heraldry.color must be an RGB integer from 0 to 16777215 or a #RRGGBB string "
+                    + DefinitionProblems.found(value));
         }
     }
 
@@ -374,7 +391,7 @@ public final class DefinitionRegistry {
         Map<String, String> result = new LinkedHashMap<>();
         object.entrySet().forEach(entry -> {
             if (!entry.getValue().isJsonPrimitive() || !entry.getValue().getAsJsonPrimitive().isString()) {
-                throw error(file, "metadata values must be strings");
+                throw error(file, "metadata." + entry.getKey() + " must be a string " + DefinitionProblems.found(entry.getValue()));
             }
             result.put(entry.getKey(), entry.getValue().getAsString());
         });
@@ -382,15 +399,15 @@ public final class DefinitionRegistry {
     }
 
     private static void requireKingdom(Map<ResourceLocation, KingdomDefinition> kingdoms, ResourceLocation id,
-                                       String owner) {
+                                       ResourceLocation file) {
         if (!kingdoms.containsKey(id)) {
-            throw new IllegalArgumentException(owner + " references undefined kingdom " + id);
+            throw error(file, "kingdom references undefined kingdom " + id + "; defined kingdoms: " + kingdoms.keySet());
         }
     }
 
-    private static <T> void putUnique(Map<ResourceLocation, T> map, ResourceLocation id, T value) {
+    private static <T> void putUnique(ResourceLocation file, Map<ResourceLocation, T> map, ResourceLocation id, T value) {
         if (map.putIfAbsent(id, value) != null) {
-            throw new IllegalArgumentException("Duplicate definition " + id);
+            throw error(file, "duplicate definition id " + id);
         }
     }
 

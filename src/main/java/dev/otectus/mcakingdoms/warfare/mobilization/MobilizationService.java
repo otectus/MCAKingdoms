@@ -145,6 +145,12 @@ public final class MobilizationService {
         next.leases.put(lease.id().toString(),current.phase(phase,detail));next.revision++;return data.commit(server,next)?detail:"Lease status save failed; inspect before retrying.";}
     private Entity findLoaded(UUID id){for(var level:server.getAllLevels()){Entity entity=level.getEntity(id);if(entity!=null)return entity;}return null;}
     public List<MobilizationSavedData.Lease> deployments(ServerPlayer viewer,int offset,int limit){thread();if(viewer.getServer()!=server||viewer.hasDisconnected()||offset<0||offset>8192||limit<1||limit>64)throw new IllegalArgumentException("Invalid deployment query.");return data.leases().stream().filter(l->viewer.hasPermissions(2)||l.actor().equals(viewer.getUUID())).sorted(Comparator.comparing(MobilizationSavedData.Lease::createdAt).reversed().thenComparing(MobilizationSavedData.Lease::id)).skip(offset).limit(limit).toList();}
+    /** The viewer's own temporary orders as translatable lines: order, stage, recruit and time left on the game clock. */
+    public List<net.minecraft.network.chat.Component> statusLines(ServerPlayer viewer){thread();return data.leases().stream().filter(l->viewer.hasPermissions(2)||l.actor().equals(viewer.getUUID()))
+            .sorted(Comparator.comparing(MobilizationSavedData.Lease::createdAt).reversed()).limit(8)
+            .map(l->(net.minecraft.network.chat.Component)net.minecraft.network.chat.Component.translatableWithFallback("warfare.mcakingdoms.room.order","%s · %s · %s · ends in %s",
+                    dev.otectus.mcakingdoms.interaction.ActionRegistry.enumLabel(l.doctrine()),dev.otectus.mcakingdoms.interaction.ActionRegistry.enumLabel(l.phase()),
+                    dev.otectus.mcakingdoms.interaction.Names.entity(server,l.unit()),dev.otectus.mcakingdoms.interaction.Names.remainingText(server,l.expiresAt()))).toList();}
     public List<String> status(ServerPlayer viewer){thread();return data.leases().stream().filter(l->viewer.hasPermissions(2)||l.actor().equals(viewer.getUUID()))
             .sorted(Comparator.comparing(MobilizationSavedData.Lease::createdAt).reversed()).limit(32)
             .map(l->dev.otectus.mcakingdoms.interaction.Names.words(l.doctrine())+" · "+dev.otectus.mcakingdoms.interaction.Names.words(l.phase())+" · "+dev.otectus.mcakingdoms.interaction.Names.entity(server,l.unit())+" · expires "+dev.otectus.mcakingdoms.interaction.Names.remaining(server,l.expiresAt())+" · "+l.detail()).toList();}

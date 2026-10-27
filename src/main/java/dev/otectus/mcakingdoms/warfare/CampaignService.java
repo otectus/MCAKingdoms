@@ -95,7 +95,7 @@ public final class CampaignService implements WarfareApi.Provider {
         next.campaigns.put(request, campaign); notice(next, settlement, "declaration_intent", actor.getUUID(), reason);
         String defenderKingdom = kingdoms().getSettlement(settlement).map(s -> s.kingdomId().toString()).orElse("");
         dev.otectus.mcakingdoms.factions.Consequences.standing(server, actor.getUUID(), defenderKingdom, dev.otectus.mcakingdoms.factions.Consequences.DECLARED_WAR, request, "Declared a campaign against " + dev.otectus.mcakingdoms.interaction.Names.settlement(server, settlement));
-        dev.otectus.mcakingdoms.interaction.Notify.government(server, defenderKingdom, actor.getUUID(), "A campaign to " + dev.otectus.mcakingdoms.interaction.Names.lower(dev.otectus.mcakingdoms.interaction.Names.words(goal)) + " was declared against " + dev.otectus.mcakingdoms.interaction.Names.settlement(server, settlement) + ".");
+        dev.otectus.mcakingdoms.interaction.Notify.government(server, defenderKingdom, actor.getUUID(), net.minecraft.network.chat.Component.translatableWithFallback("notice.mcakingdoms.campaign_declared", "A campaign (%s) was declared against %s.", dev.otectus.mcakingdoms.interaction.ActionRegistry.enumLabel(goal), dev.otectus.mcakingdoms.interaction.Names.settlement(server, settlement)), "warfare.campaigns");
         receipt(next, actor, request, fingerprint, "Campaign to " + dev.otectus.mcakingdoms.interaction.Names.lower(dev.otectus.mcakingdoms.interaction.Names.words(goal)) + " at " + dev.otectus.mcakingdoms.interaction.Names.settlement(server, settlement) + " recorded; inspect its native application status."); save(next);
         try { applyDeclaration(actor, request); }
         catch (IllegalArgumentException | IllegalStateException pending) { return "Campaign to " + dev.otectus.mcakingdoms.interaction.Names.lower(dev.otectus.mcakingdoms.interaction.Names.words(goal)) + " at " + dev.otectus.mcakingdoms.interaction.Names.settlement(server, settlement) + " is recorded, but its native declaration is still pending: " + pending.getMessage() + " Retry it from the campaign's apply task."; }
@@ -139,7 +139,7 @@ public final class CampaignService implements WarfareApi.Provider {
                 RecruitsMilitary.relation(server, first, counterpart), RecruitsMilitary.relation(server, counterpart, first), Map.of(first, actor.getUUID()),
                 TreatyPhase.PROPOSED, status, recognizedKingdom, now() + WarfareConfig.CAMPAIGN_DURATION.get(), binding.sequence(), binding.claim(), binding.owner(), terms);
         next.accords.put(request, accord); notice(next, settlement, "accord_proposed", actor.getUUID(), terms);
-        dev.otectus.mcakingdoms.interaction.Notify.government(server, kingdoms().getSettlement(settlement).map(s -> s.kingdomId().toString()).orElse(""), actor.getUUID(), "An accord was proposed at " + dev.otectus.mcakingdoms.interaction.Names.settlement(server, settlement) + "; it awaits the other native leader and political ratifier.");
+        dev.otectus.mcakingdoms.interaction.Notify.government(server, kingdoms().getSettlement(settlement).map(s -> s.kingdomId().toString()).orElse(""), actor.getUUID(), net.minecraft.network.chat.Component.translatableWithFallback("notice.mcakingdoms.accord_proposed", "An accord was proposed at %s; it awaits the other native leader and political ratifier.", dev.otectus.mcakingdoms.interaction.Names.settlement(server, settlement)), "warfare.campaign_overview");
         receipt(next, actor, request, fingerprint, "Accord at " + dev.otectus.mcakingdoms.interaction.Names.settlement(server, settlement) + " awaits the other native leader and political ratifier."); save(next);
         return next.receipts.get(request).result();
     }
@@ -327,17 +327,92 @@ public final class CampaignService implements WarfareApi.Provider {
         require(offset>=0&&offset<=4096&&limit>0&&limit<=64,"Invalid accord page.");return data.snapshot().accords.values().stream().filter(a->viewable(viewer,a.settlement())).sorted(Comparator.comparing(Accord::id)).skip(offset).limit(limit).toList();
     }
     public List<String> page(ServerPlayer viewer, UUID settlement) {
+        var shown = pageLines(viewer, settlement);
+        if (notPresent(viewer, resolve(settlement))) return shown.stream().map(net.minecraft.network.chat.Component::getString).toList();
+        var lines = new ArrayList<String>(); lines.add("Campaign revision: " + revision());
+        shown.forEach(line -> lines.add(line.getString()));
+        return List.copyOf(lines);
+    }
+    private boolean notPresent(ServerPlayer viewer, UUID current) {
+        return !viewer.hasPermissions(2) && kingdoms().getSettlementAt(viewer.serverLevel(), viewer.blockPosition()).filter(s -> s.id().equals(current)).isEmpty();
+    }
+    private static net.minecraft.network.chat.Component w(String key, String fallback, Object... args) {
+        return net.minecraft.network.chat.Component.translatableWithFallback("warfare.mcakingdoms.room." + key, fallback, args);
+    }
+    /**
+     * The War Room in sections: who holds the settlement (its kingdom, the recognized civilian government and military
+     * control, kept apart), then each campaign and control agreement with its stage, time left on the game clock and whose
+     * step is next. Reasons and terms stay as their authors wrote them. Only for a viewer standing there (or an operator).
+     */
+    public Map<String, List<net.minecraft.network.chat.Component>> roomSections(ServerPlayer viewer, UUID settlement) {
         require(viewer.getServer() == server, "Wrong server."); settlement = resolve(settlement); known(viewer, settlement);
         UUID current = settlement;
-        if (!viewer.hasPermissions(2) && kingdoms().getSettlementAt(viewer.serverLevel(), viewer.blockPosition()).filter(s -> s.id().equals(current)).isEmpty())
-            return List.of("Visit this settlement to inspect its campaigns and negotiations.");
-        var result = new ArrayList<String>(); result.add("Campaign revision: " + revision());
-        control(viewer, settlement).ifPresent(c -> result.add("Sovereignty: " + dev.otectus.mcakingdoms.interaction.Names.words(c.autonomy()) + " · " + dev.otectus.mcakingdoms.interaction.Names.kingdom(server, c.recognizedKingdom()) + " · " + c.availability()));
+        var sections = new LinkedHashMap<String, List<net.minecraft.network.chat.Component>>();
+        var control = new ArrayList<net.minecraft.network.chat.Component>();
+        sections.put("control", control);
+        var civic = kingdoms().getSettlement(current).map(s -> s.kingdomId().toString()).orElse("");
+        control.add(w("kingdom", "Settlement's kingdom: %s — who its people are; conquest does not change it.", dev.otectus.mcakingdoms.interaction.Names.kingdomName(server, civic)));
+        if (notPresent(viewer, current)) {
+            control.add(w("visit", "Visit this settlement to inspect its campaigns and negotiations."));
+            return sections;
+        }
+        var held = control(viewer, current);
+        if (held.isEmpty()) control.add(w("no_claim", "Military control: no military claim is recorded here."));
+        else {
+            var c = held.get();
+            net.minecraft.network.chat.Component autonomy;
+            try { autonomy = dev.otectus.mcakingdoms.interaction.ActionRegistry.enumLabel(Sovereignty.valueOf(c.autonomy())); }
+            catch (IllegalArgumentException unknown) { autonomy = net.minecraft.network.chat.Component.literal(dev.otectus.mcakingdoms.interaction.Names.words(c.autonomy())); }
+            control.add(w("government", "Recognized civilian government: %s (%s)", dev.otectus.mcakingdoms.interaction.Names.kingdomName(server, c.recognizedKingdom()), autonomy));
+            control.add(w("controller", "Military control: %s%s", c.nativeController(), c.contested() ? w("contested", " — under siege") : net.minecraft.network.chat.Component.empty()));
+            if (!c.availability().equals("available")) control.add(w("availability." + c.availability(), "Control records: %s", c.availability()));
+        }
+        var state = data.snapshot();
+        var campaigns = new ArrayList<net.minecraft.network.chat.Component>();
+        long now = now();
+        var here = state.campaigns.values().stream().filter(c -> resolve(c.settlement()).equals(current)).toList();
+        here.stream().skip(Math.max(0, here.size() - 6)).forEach(c -> {
+            campaigns.add(w("campaign.title", "%s campaign — %s", dev.otectus.mcakingdoms.interaction.ActionRegistry.enumLabel(c.goal()), dev.otectus.mcakingdoms.interaction.ActionRegistry.enumLabel(c.phase())));
+            campaigns.add(switch (c.phase()) {
+                case NOTICE -> w("campaign.notice", "Notice period: %s left before it can begin. The defenders are told; nothing is attacked yet.", dev.otectus.mcakingdoms.interaction.Names.remainingText(server, c.noticeUntil()));
+                case ACTIVE, OCCUPIED -> w("campaign.active", "Ends in %s unless resolved earlier. Civilian services keep their own rules; Withdraw from a campaign ends your side's part.", dev.otectus.mcakingdoms.interaction.Names.remainingText(server, c.expires()));
+                case SUSPENDED -> w("campaign.suspended", "Paused: the military provider is unavailable. It resumes when the provider returns; nothing is lost.");
+                default -> w("campaign.closed", "Finished; kept as history.");
+            });
+            if (!c.reason().isBlank()) campaigns.add(w("campaign.reason", "Stated reason: %s", c.reason()));
+        });
+        var accords = state.accords.values().stream().filter(a -> resolve(a.settlement()).equals(current)).limit(6).toList();
+        for (var a : accords) {
+            campaigns.add(w("accord.title", "Agreement on who governs: %s — %s", dev.otectus.mcakingdoms.interaction.ActionRegistry.enumLabel(a.sovereignty()), dev.otectus.mcakingdoms.interaction.ActionRegistry.enumLabel(a.phase())));
+            campaigns.add(switch (a.phase()) {
+                case PROPOSED -> w("accord.proposed", "%s of 2 signatures; expires in %s. Each side's commander signs; then it is applied.", a.signatures().size(), dev.otectus.mcakingdoms.interaction.Names.remainingText(server, a.expires()));
+                case SIGNED, PENDING -> w("accord.signed", "Signed by both; waits to be applied through Apply a control agreement.");
+                case ACTIVE -> w("accord.active", "In force for %s more. It sets who governs; families, homes and identity are unchanged.", dev.otectus.mcakingdoms.interaction.Names.remainingText(server, a.expires()));
+                default -> w("accord.closed", "No longer in force; kept as history.");
+            });
+            if (!a.reason().isBlank()) campaigns.add(w("campaign.reason", "Stated reason: %s", a.reason()));
+        }
+        if (campaigns.isEmpty()) campaigns.add(w("quiet", "No campaign, control agreement or native control record is known here."));
+        if (now >= 0) sections.put("campaigns", campaigns);
+        return sections;
+    }
+    /** The War Room's campaign lines, translated on the reader's client; reasons and terms stay as their authors wrote them. */
+    public List<net.minecraft.network.chat.Component> pageLines(ServerPlayer viewer, UUID settlement) {
+        require(viewer.getServer() == server, "Wrong server."); settlement = resolve(settlement); known(viewer, settlement);
+        UUID current = settlement;
+        if (notPresent(viewer, current))
+            return List.of(net.minecraft.network.chat.Component.translatableWithFallback("warfare.mcakingdoms.room.visit", "Visit this settlement to inspect its campaigns and negotiations."));
+        var result = new ArrayList<net.minecraft.network.chat.Component>();
+        control(viewer, settlement).ifPresent(c -> result.add(net.minecraft.network.chat.Component.translatableWithFallback("warfare.mcakingdoms.room.sovereignty", "Sovereignty: %s · %s · %s",
+                dev.otectus.mcakingdoms.interaction.Names.words(c.autonomy()), dev.otectus.mcakingdoms.interaction.Names.kingdomName(server, c.recognizedKingdom()), c.availability())));
         var state = data.snapshot();
         state.campaigns.values().stream().filter(c -> resolve(c.settlement()).equals(current)).skip(Math.max(0, state.campaigns.values().stream().filter(c -> resolve(c.settlement()).equals(current)).count() - 6))
-                .forEach(c -> result.add(dev.otectus.mcakingdoms.interaction.Names.words(c.goal()) + " campaign · " + dev.otectus.mcakingdoms.interaction.Names.words(c.phase()) + " · " + c.reason()));
+                .forEach(c -> result.add(net.minecraft.network.chat.Component.translatableWithFallback("warfare.mcakingdoms.room.campaign", "%s campaign · %s · %s",
+                        dev.otectus.mcakingdoms.interaction.ActionRegistry.enumLabel(c.goal()), dev.otectus.mcakingdoms.interaction.ActionRegistry.enumLabel(c.phase()), c.reason())));
         state.accords.values().stream().filter(a -> resolve(a.settlement()).equals(current)).limit(6)
-                .forEach(a -> result.add(dev.otectus.mcakingdoms.interaction.Names.words(a.sovereignty()) + " agreement · " + dev.otectus.mcakingdoms.interaction.Names.words(a.phase()) + " · " + a.reason()));
+                .forEach(a -> result.add(net.minecraft.network.chat.Component.translatableWithFallback("warfare.mcakingdoms.room.accord", "%s agreement · %s · %s",
+                        dev.otectus.mcakingdoms.interaction.ActionRegistry.enumLabel(a.sovereignty()), dev.otectus.mcakingdoms.interaction.ActionRegistry.enumLabel(a.phase()), a.reason())));
+        if (result.isEmpty()) result.add(net.minecraft.network.chat.Component.translatableWithFallback("warfare.mcakingdoms.room.quiet", "No campaign, control agreement or native control record is known here."));
         return List.copyOf(result);
     }
 }

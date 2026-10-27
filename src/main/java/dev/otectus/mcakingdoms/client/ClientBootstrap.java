@@ -13,10 +13,12 @@ public final class ClientBootstrap {
         InteractionClient.init();
         NetworkHandler.setClientReceivers(ClientPresentationState::receiveLedgerPage,
                 ClientPresentationState::receiveOverlay, ClientPresentationState::openLedger);
+        NetworkHandler.setGalleryReceiver(dev.otectus.mcakingdoms.client.guide.GuideKingdoms::receive);
         TownsteadBlueprintHeader.init();
         dev.otectus.mcakingdoms.civic.CivicNetwork.receiver(GuildScreen::receive);
         dev.otectus.mcakingdoms.politics.PoliticalNetwork.receiver(dev.otectus.mcakingdoms.client.politics.KingdomScreen::receive);
         dev.otectus.mcakingdoms.warfare.WarfareNetwork.receiver(WarRoomScreen::receive);
         MinecraftForge.EVENT_BUS.register(ClientPresentationState.class);
+        ClientExtensions.register();
     }
 }

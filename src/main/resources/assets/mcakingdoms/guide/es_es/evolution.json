@@ -1,0 +1,493 @@
+{
+  "schema": 2,
+  "entries": [
+    {
+      "id": "evolution_world_opt_in",
+      "category": "evolution",
+      "title": "Activa un mundo en evolución",
+      "summary": "Los operadores activan el mundo antes de que puedan aparecer oportunidades escritas; las regiones elegibles se suman solas salvo que se pausen.",
+      "commands": [
+        "/kingdoms-evolution configure <enabled:true|false> <drama:true|false>",
+        "/kingdoms-evolution region \"<settlement name>\" <enabled:true|false>"
+      ],
+      "task": "evolution.configure",
+      "operator": true,
+      "player_task": "evolution.overview",
+      "blocks": [
+        {
+          "id": "journey_heading",
+          "type": "heading",
+          "text": "Cómo despierta el mundo"
+        },
+        {
+          "id": "journey",
+          "type": "diagram",
+          "alt": "Un operador habilita la evolución. Los asentamientos válidos se activan con un visitante conectado; solo las pruebas compatibles crean oportunidades.",
+          "nodes": [
+            {
+              "id": "n0",
+              "label": "Mundo habilitado",
+              "item": "minecraft:redstone_torch"
+            },
+            {
+              "id": "n1",
+              "label": "Asentamiento válido",
+              "item": "minecraft:oak_door"
+            },
+            {
+              "id": "n2",
+              "label": "Visitante conectado",
+              "item": "minecraft:compass"
+            },
+            {
+              "id": "n3",
+              "label": "Oportunidades reales",
+              "item": "minecraft:writable_book"
+            }
+          ],
+          "edges": [
+            {
+              "from": "n0",
+              "to": "n1"
+            },
+            {
+              "from": "n1",
+              "to": "n2"
+            },
+            {
+              "from": "n2",
+              "to": "n3"
+            }
+          ]
+        },
+        {
+          "id": "text_0",
+          "type": "paragraph",
+          "text": "La evolución empieza en pausa en todos los mundos. Un operador abre Configurar la evolución del mundo para activar los escenarios corrientes y elegir por separado los eventos del mundo (drama escrito) y las transferencias negociadas de reclutas. Por defecto (autoEligibleRegions), todo asentamiento de un reino con gobierno pasa entonces a ser una región elegible; Configurar región de evolución pausa un asentamiento con nombre o hace elegible uno de forma explícita. Desactivar el mundo vacía el conjunto de muestreo actual pero conserva los escenarios guardados. Desactivar una región la retira de las elegibles y pausa el muestreo activo en lugar de borrar el historial."
+        },
+        {
+          "id": "text_1",
+          "type": "paragraph",
+          "text": "Solo un visitante conectado que esté en un asentamiento elegible activa esa región. La evaluación nunca carga chunks. Por defecto se evalúa cada 1200 ticks, se inspeccionan como mucho cuatro jugadores o regiones conectados por pasada y se permiten ocho escenarios corrientes y dramas simultáneos en todo el mundo. La configuración del servidor puede cambiar estos valores dentro de rangos acotados. Los plazos se detienen fuera de la muestra activa, así que un pueblo sin jugadores no recibe ninguna recuperación simulada."
+        },
+        {
+          "id": "text_2",
+          "type": "paragraph",
+          "text": "La opción de drama es un permiso adicional. La evolución corriente puede estar activada mientras las plantillas dramáticas y las transferencias de Recruits siguen sin estar disponibles. Los paquetes de datos instalados aportan las plantillas de escenarios y de drama; activar la evolución no garantiza que existan las pruebas reales de cada plantilla. Si faltan hechos políticos, familiares, de ocupación, de institución o de proveedor, esa oportunidad simplemente no se crea."
+        }
+      ]
+    },
+    {
+      "id": "scenario_browser_and_digest",
+      "task": "evolution.overview",
+      "category": "evolution",
+      "title": "Consulta escenarios y boletines",
+      "summary": "Ve solo las oportunidades que respalda tu conocimiento de los asentamientos y gestiona los avisos periódicos.",
+      "body": [
+        "Abre Estado de la evolución del mundo para ver los escenarios visibles a través de tu conocimiento de los asentamientos, o Inspeccionar oportunidad para un registro con nombre. La inspección muestra el título fijado, las pruebas de la causa, los desenlaces permitidos, el plazo, las contribuciones, la intención seleccionada, la fase actual y a quién le toca actuar. No se revela un escenario de un asentamiento que otra persona conoce y tú no.",
+        "La suscripción al boletín es un ajuste personal. Si está activada, el servidor informa periódicamente de los cambios visibles según el intervalo de boletín configurado, que por defecto es de 24 000 ticks. Guarda el cursor del boletín antes de enviar el aviso para que un reinicio no repita a propósito el mismo intervalo. Desactivar el boletín no retira contribuciones ni cierra escenarios.",
+        "Las plantillas de escenario instaladas por defecto incluyen presentaciones diplomáticas y familiares, sucesión designada, socorro a una ocupación, disputa comercial y ayuda voluntaria. Los paquetes de datos pueden aportar plantillas acotadas con sus propios desenlaces, duraciones, tiempos de espera y desencadenantes de pruebas. El registro fija las condiciones de la plantilla elegida al crearse; una recarga posterior de paquetes de datos no reescribe en silencio una elección existente."
+      ],
+      "commands": [
+        "/kingdoms-evolution digest <enabled:true|false>",
+        "/kingdoms-evolution list",
+        "/kingdoms-evolution list <offset multiple of 10>",
+        "/kingdoms-evolution inspect \"<opportunity name>\""
+      ]
+    },
+    {
+      "id": "scenario_contributions_and_service",
+      "task": "evolution.contribute",
+      "category": "evolution",
+      "title": "Contribuciones y servicio con ámbito",
+      "summary": "Apoya una opción escrita con las pruebas exactas o el servicio de MCA Quests con ámbito que requiere.",
+      "body": [
+        "Abre primero Inspeccionar oportunidad y después Contribuir a una oportunidad. La tarea solo ofrece los desenlaces fijados en su plantilla: ayudar, mediar, presentar, negociar o suceder, según corresponda. Las contribuciones pertenecen al jugador conectado y están limitadas por el número requerido. Las opciones cambiadas, vencidas, invisibles o no disponibles se rechazan en la revisión o al aplicar.",
+        "La ayuda, la mediación y la negociación de autonomía requieren normalmente un contrato de MCA Quests con ámbito completado. Las presentaciones familiares y la sucesión vuelven a validar sus pruebas nativas o políticas al contribuir. El comando por sí solo no concede ninguna recompensa, no nombra un sucesor ni cambia el gobierno; registra una opción admitida para resolverla más adelante.",
+        "Quien contribuye puede retirarse mientras el escenario siga siendo editable. Retirarse elimina esa opción activa, pero deja consumido cualquier justificante de servicio completado, lo que impide que una sola finalización de misión respalde otra opción futura. Un escenario que haya cambiado debe inspeccionarse de nuevo antes de otra modificación. Esta regla de revisión también resuelve de forma determinista las carreras en multijugador: solo puede ganar la operación que se hace sobre la revisión guardada actual.",
+        "Un escenario o una obligación abiertos pueden autorizar exactamente un tipo de servicio con ámbito: ayuda, mediación, autonomía o defensa. Abre la tarea Abrir servicio de oportunidad y elige la oportunidad o el deber visibles, a quien lo ofrece cerca con su nombre y el tipo permitido. Quien lo ofrece debe estar cargado, vivo, visible y reconocido en la institución correcta. El ámbito, el asentamiento, el desenlace o deber, el plazo, el jugador y la vinculación con el proveedor deben coincidir.",
+        "MCA Quests gestiona la aceptación, los objetivos, el consumo de objetos y el pago. MCA: Kingdoms registra qué instancia de misión nativa pertenece al ámbito y después consume una sola vez su época duradera del proveedor y su justificante. Un registro sin relación, un ámbito completado o cerrado, el tipo de servicio equivocado o un justificante de otra persona no pueden cumplir el requisito. Repetir la finalización no puede dar otra recompensa.",
+        "El complemento compatible MCA Quests es opcional para arrancar el núcleo y necesario para este procedimiento. Si falta, el comando se niega sin inventar una finalización. Restaura el proveedor admitido y el mundo conservado antes de continuar. Los contratos con ámbito aceptados también bloquean la fusión o disolución de una organización hasta que terminen, su propietario los cancele explícitamente o se trasladen con Transferir trabajo aceptado."
+      ],
+      "commands": [
+        "/kingdoms-evolution contribute aid \"<opportunity name>\" <revision>",
+        "/kingdoms-evolution contribute mediate \"<opportunity name>\" <revision>",
+        "/kingdoms-evolution contribute introduce \"<opportunity name>\" <revision>",
+        "/kingdoms-evolution contribute negotiate \"<opportunity name>\" <revision>",
+        "/kingdoms-evolution contribute succeed \"<opportunity name>\" <revision>",
+        "/kingdoms-evolution withdraw \"<opportunity name>\" <revision>",
+        "/kingdoms-evolution contract \"<opportunity or obligation name>\" \"<contact name>\" aid",
+        "/kingdoms-evolution contract \"<opportunity or obligation name>\" \"<contact name>\" mediation",
+        "/kingdoms-evolution contract \"<opportunity or obligation name>\" \"<contact name>\" autonomy",
+        "/kingdoms-evolution contract \"<opportunity or obligation name>\" \"<contact name>\" defense"
+      ]
+    },
+    {
+      "id": "scenario_resolution_and_recovery",
+      "task": "evolution.resolve",
+      "category": "evolution",
+      "title": "Resuelve, rechaza o recupera",
+      "summary": "Confirma un desenlace admitido a través del responsable político, o abandona la oportunidad pacíficamente.",
+      "body": [
+        "Cuando existen las contribuciones necesarias, un jugador autorizado abre Resolver oportunidad y selecciona uno de los desenlaces ofrecidos. Las presentaciones pueden exigir además la contraparte exacta con nombre que muestran las pruebas. Rechazar es una opción final pacífica cuando se ofrece, y no consume ningún servicio inventado ni impone una penalización política.",
+        "La resolución guarda una intención duradera antes de pedir al responsable político que actúe. Si sale bien, registra el justificante del responsable y cierra el escenario. Si el responsable cambió después de la vista previa, rechaza la autoridad o no puede confirmar, el registro queda explícito en lugar de fingir un éxito. Reintentar resolución pendiente reutiliza el actor fijado, la clave de solicitud estable, la revisión política y las condiciones elegidas tras una confirmación interrumpida.",
+        "Usa Liberar resolución rechazada (release_rejected) solo cuando el responsable político haya confirmado que la solicitud guardada nunca se registró. Reabre esa intención rechazada; no revierte un cambio de gobierno ya completado. Los plazos de los escenarios solo avanzan mientras la región participa en la muestra activa acotada. No hay recuperación sin jugadores, ni carga forzada de chunks, ni muertes supuestas, ni elección automática al vencer el plazo."
+      ],
+      "commands": [
+        "/kingdoms-evolution resolve aid \"<opportunity name>\" <revision>",
+        "/kingdoms-evolution resolve mediate \"<opportunity name>\" <revision>",
+        "/kingdoms-evolution resolve introduce \"<opportunity name>\" <revision> <counterpart kingdom id>",
+        "/kingdoms-evolution resolve negotiate \"<opportunity name>\" <revision> <counterpart kingdom id>",
+        "/kingdoms-evolution resolve succeed \"<opportunity name>\" <revision>",
+        "/kingdoms-evolution resolve decline \"<opportunity name>\" <revision>",
+        "/kingdoms-evolution retry \"<opportunity name>\"",
+        "/kingdoms-evolution release_rejected \"<opportunity name>\""
+      ]
+    },
+    {
+      "id": "political_history",
+      "category": "evolution",
+      "title": "Consulta el historial político",
+      "summary": "Consulta un registro acotado y atribuido cuyos hechos privados siguen limitados a quienes tienen permiso para verlos.",
+      "body": [
+        "La pestaña Historial de la pantalla del reino y su comando equivalente muestran la primera página filtrada para quien la consulta, de hasta 20 filas. Cada hecho tiene un justificante de origen estable, la atribución de quien actuó, los reinos y jugadores afectados, el orden por tick de juego y por revisión, la visibilidad y el estado de corrección. Los hechos del ciclo de vida de acuerdos o peticiones sustituidos se marcan como sustituidos, y los que han vencido como vencidos, en lugar de eliminarse en silencio.",
+        "Los hechos públicos son visibles para todos. Los hechos de las partes requieren ser un jugador afectado o tener autoridad PROPOSE o RATIFY vigente en un reino afectado. Las peticiones privadas requieren ser un jugador afectado o tener autoridad REVIEW vigente en su reino. Un voto solo es visible para quien lo emite. Quienes miran desde fuera no reciben marcadores censurados que revelen la existencia de un registro privado.",
+        "El estado político se guarda de forma duradera antes de publicar su aviso. Por eso, la muerte confirmada de un PNJ, la abdicación, la sucesión, los plazos, las elecciones y la regencia pueden dejar hechos estables. Que un PNJ se descargue, una ausencia, que un jugador reaparezca o un reinicio nunca cuentan como muerte. Townstead 0.7.6 no ofrece ningún justificante admitido de archivo de crónicas, así que este registro no fabrica una entrada de archivo de Townstead ni un enlace a ella."
+      ],
+      "commands": [
+        "/kingdoms politics inspect \"<kingdom name>\" history"
+      ],
+      "task": "politics.read_history"
+    },
+    {
+      "id": "protection_pacts_and_duties",
+      "task": "protection.overview",
+      "category": "evolution",
+      "title": "Pactos de protección y deberes",
+      "summary": "Crea un pacto entre dos reinos, atiende los deberes acordados y sal de él tras dar aviso.",
+      "body": [
+        "Una propuesta de protección nombra un reino protector y un reino subordinado distintos, un asentamiento beneficiario, uno o varios deberes, una duración, un preaviso de salida y unas condiciones escritas. Abre Proponer pacto de protección y elige los registros con nombre. Los deberes válidos son ayuda cívica, asistencia defensiva y mediación. La duración y el preaviso están acotados, y quien propone necesita autoridad PROPOSE vigente en el reino protector.",
+        "Ambos gobiernos firman las condiciones fijadas con autoridad RATIFY vigente. Las firmas deben proceder de jugadores autorizados distintos. Cuando la segunda firma activa el pacto, ambas autoridades deben estar conectadas y seguir siendo válidas. Se comprueba la jerarquía de protección, limitada a cuatro niveles, para evitar bucles y cadenas sin fin.",
+        "Abre Consultar pactos de protección o Inspeccionar pacto de protección para revisar por su nombre las firmas, el plazo, los deberes y las obligaciones abiertas. Un pacto solo concede los deberes que lleva escritos. No transfiere cargos, tropas, edificios, propiedades, prestigio ni el control de reclamaciones nativas. Si la autoridad o el estado del pacto cambian durante la revisión, vuelve a abrir la tarea.",
+        "Un jugador con autoridad REVIEW en el reino protector solo puede pedir un deber enumerado en el pacto activo. La petición crea una obligación acotada con su propia identidad y revisión guardadas. Cualquier voluntario admisible que conozca al beneficiario puede completar el contrato nativo con ámbito correspondiente y después cumplir la obligación; el servicio consume una sola vez el justificante de finalización duradero exacto de ese jugador. Se rechazan un tipo de misión, un ámbito, un asentamiento o una época del proveedor equivocados, o un justificante ya usado.",
+        "Un jugador con autoridad REVIEW en el reino subordinado puede rechazarla dejando constancia del motivo. El rechazo es un agravio documentado que puede servir más adelante como prueba para una negociación o una rebelión escritas, pero no declara la guerra, no transfiere propiedades, no cambia las relaciones nativas ni cumple el deber. Inspecciona el pacto después de cualquier petición, porque su revisión cambia.",
+        "Cualquiera de los firmantes puede anunciar la salida tras comprobarse su autoridad RATIFY vigente. El pacto entra en preaviso de salida y los deberes terminan tras el periodo de aviso configurado. Los registros existentes se conservan para la atribución. Salir no confisca tropas, cargos, bienes, edificios, afiliaciones ni prestigio. Si no hay nadie conectado, el mantenimiento que depende del tiempo no inventa un cumplimiento ni un rechazo."
+      ],
+      "commands": [
+        "/kingdoms-protection propose <protector kingdom id> <subordinate kingdom id> \"<beneficiary settlement name>\" <comma-separated duties> <duration ticks> <notice ticks> <terms...>",
+        "/kingdoms-protection sign \"<pact name>\" <kingdom id> <revision>",
+        "/kingdoms-protection list",
+        "/kingdoms-protection inspect \"<pact name>\"",
+        "/kingdoms-protection request \"<pact name>\" <civic_aid|defense_assistance|mediation> <revision>",
+        "/kingdoms-protection fulfill \"<obligation name>\" <revision>",
+        "/kingdoms-protection refuse \"<obligation name>\" <revision> <reason...>",
+        "/kingdoms-protection exit \"<pact name>\" <kingdom id> <revision>"
+      ]
+    },
+    {
+      "id": "family_introductions",
+      "task": "evolution.family",
+      "category": "evolution",
+      "title": "Haz una presentación familiar",
+      "summary": "Usa un matrimonio recíproco y verificado de MCA para una presentación diplomática privada entre reinos.",
+      "body": [
+        "El punto de entrada explícito comprueba que exista un registro de matrimonio de MCA recíproco y sin fallecidos. Tu cónyuge debe estar cargado, ambas residencias deben estar verificadas en reinos distintos, el gobierno contraparte debe ser conocido y la región de tu asentamiento actual debe estar activada. La comprobación nunca fuerza la carga de un cónyuge ni de un chunk. El matrimonio aporta pruebas para una presentación; no concede cargos, propiedades, mandatos ni reclamaciones.",
+        "Si sale bien, se crea un escenario familiar privado visible para el jugador que lo solicitó. Inspecciónalo, contribuye con presentar en la revisión actual y después resuélvelo con presentar usando el reino contraparte exacto fijado por el contexto de residencia verificado. El responsable político recibe una petición de presentación corriente, sujeta a sus reglas habituales de autoridad y privacidad.",
+        "El matrimonio se vuelve a validar al crear el escenario, al contribuir, al resolver y al recuperar. El divorcio, la muerte, un vínculo nativo no recíproco, un cónyuge sin cargar, una residencia que falta o pruebas de MCA no disponibles pausan o rechazan la operación. Nunca convierte una ausencia en muerte ni supone que la relación anterior sigue existiendo. Una instalación compatible de Minecraft Comes Alive aporta estos hechos nativos; MCA: Kingdoms solo los lee."
+      ],
+      "commands": [
+        "/kingdoms-evolution family_introduction",
+        "/kingdoms-evolution inspect \"<opportunity name>\"",
+        "/kingdoms-evolution contribute introduce \"<opportunity name>\" <revision>",
+        "/kingdoms-evolution resolve introduce \"<opportunity name>\" <revision> <counterpart kingdom id>"
+      ]
+    },
+    {
+      "id": "recruit_transfer_workflow",
+      "task": "transfer.propose",
+      "category": "evolution",
+      "title": "Transferencias bilaterales de reclutas",
+      "summary": "Fija un recluta, obtén un consentimiento informado, aplícalo mediante Recruits y recupera una confirmación interrumpida.",
+      "blocks": [
+        {
+          "id": "stages",
+          "type": "diagram",
+          "layout": "column",
+          "alt": "Un traspaso de recluta tiene cinco etapas: el destinatario comparte un destino, el propietario de origen lo propone, el destinatario da su consentimiento, pasa el periodo de aviso y el propietario de origen aplica el traspaso.",
+          "nodes": [
+            {
+              "id": "share",
+              "label": "Compartir un destino",
+              "note": "Destinatario: un grupo propio, para un remitente concreto"
+            },
+            {
+              "id": "propose",
+              "label": "Proponer",
+              "note": "Propietario de origen: recluta, destinatario, grupo, términos"
+            },
+            {
+              "id": "consent",
+              "label": "Consentir",
+              "note": "El destinatario revisa y acepta"
+            },
+            {
+              "id": "notice",
+              "label": "Aviso",
+              "note": "Debe pasar aproximadamente un minuto de tiempo del servidor"
+            },
+            {
+              "id": "apply",
+              "label": "Aplicar",
+              "note": "El propietario de origen lo aplica antes del plazo"
+            }
+          ],
+          "edges": [
+            {
+              "from": "share",
+              "to": "propose"
+            },
+            {
+              "from": "propose",
+              "to": "consent"
+            },
+            {
+              "from": "consent",
+              "to": "notice"
+            },
+            {
+              "from": "notice",
+              "to": "apply"
+            }
+          ]
+        },
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "La transferencia negociada requiere tener activado el drama del mundo y el proveedor Recruits auditado exacto listo. Es privada para el propietario de origen, el destinatario y el personal de recuperación autorizado. El menú de tareas nunca muestra los grupos nativos sin compartir ni el número de tropas de otro jugador."
+        },
+        {
+          "id": "p2",
+          "type": "paragraph",
+          "text": "El destinatario empieza con Compartir un destino de transferencia de reclutas. Elige uno de sus propios grupos nativos con nombre y a un remitente conectado con nombre. Solo ese remitente puede entonces seleccionar el grupo compartido al proponer una transferencia a ese destinatario. El grupo compartido dura mientras dure la conexión actual al servidor, el destinatario puede revocarlo y se borra cuando cualquiera de los dos participantes se desconecta o el servidor se detiene."
+        },
+        {
+          "id": "p3",
+          "type": "paragraph",
+          "text": "El propietario de origen abre Proponer transferencia de recluta y elige un recluta propio y cargado, el destinatario, el grupo de destino compartido por el destinatario y si se exigen pruebas familiares. La revisión nombra al recluta, al propietario de origen, al destinatario, el grupo de destino, el aviso, el plazo, las pruebas del equipo y las condiciones familiares. No se introduce ninguna identidad técnica ni huella."
+        },
+        {
+          "id": "p4",
+          "type": "paragraph",
+          "text": "El destinatario abre Inspeccionar transferencia de recluta y después Consentir la transferencia de recluta. El consentimiento es necesario aunque el grupo de destino se haya compartido. Revocar un grupo compartido impide propuestas nuevas, pero no cancela en silencio una propuesta duradera ya revisada; usa la vía de cancelación neutral de la propuesta mientras su fase lo permita."
+        },
+        {
+          "id": "p5",
+          "type": "paragraph",
+          "text": "Si se exige la familia, los dos jugadores necesitan un matrimonio recíproco de MCA cada vez que se usa el acuerdo. El consentimiento no cambia a ningún propietario nativo. Inicia un aviso de 1200 ticks, y toda la propuesta vence a los 72 000 ticks."
+        },
+        {
+          "id": "p6",
+          "type": "paragraph",
+          "text": "Inspeccionar muestra la fase, el aviso, el plazo, el requisito familiar, los participantes y el grupo con nombre, las pruebas de equipo conservadas y el detalle de recuperación solo a los participantes o a los operadores autorizados. El mismo recluta no puede movilizarse mientras su transferencia no haya terminado. Las entidades que faltan, los participantes desconectados, el equipo cambiado, la propiedad perdida, una revisión desfasada o un consentimiento vencido bloquean el avance sin mover al recluta."
+        },
+        {
+          "id": "p7",
+          "type": "paragraph",
+          "text": "Tras el aviso, el propietario de origen puede aplicarla antes del plazo mientras el destinatario y el recluta estén cargados. MCA: Kingdoms guarda primero el grupo de origen, el temporizador de salario restante, las órdenes originales, el equipo, el recuento de propietarios y el estado del marcador. Después pide a Recruits la liberación y la contratación, y verifica la entidad, los grupos, los recuentos, el estado del proveedor en disco y la confirmación. La residencia cívica y la identidad política no se tocan."
+        },
+        {
+          "id": "p8",
+          "type": "paragraph",
+          "text": "Si el cambio nativo ocurrió pero la confirmación final se interrumpió, Confirmar la transferencia nativa reintenta la verificación en disco sin repetir los cambios de propiedad. Restaurar la propiedad original es una solicitud de recuperación protegida que usa la instantánea original conservada y requiere que ambas partes originales estén conectadas. Solo está disponible en las fases de fallo adecuadas sin terminar y se niega cuando el estado nativo actual ya no cumple las condiciones de recuperación segura."
+        },
+        {
+          "id": "p9",
+          "type": "paragraph",
+          "text": "No reintentes la aplicación a ciegas ni borres el registro de la transferencia. La intención guardada impide liberaciones, contrataciones, reinicios de salario o cambios de recuento duplicados después de un reinicio. Una finalización conserva su justificante. Una operación restaurada o cancelada también queda en el historial en lugar de fingir que nunca hubo propuesta."
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "task",
+              "target": "transfer.share_destination"
+            },
+            {
+              "kind": "task",
+              "target": "transfer.propose"
+            },
+            {
+              "kind": "task",
+              "target": "transfer.consent"
+            },
+            {
+              "kind": "task",
+              "target": "transfer.apply"
+            }
+          ]
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "transfer_reconciliation",
+      "category": "evolution",
+      "title": "Concilia cuentas de reclutas divergentes",
+      "summary": "Confirma un estado nativo revisado por un operador cuando cambios ajenos en los reclutas hacen insegura la reparación automática.",
+      "body": [
+        "Una transferencia pendiente pasa a accountingDiverged cuando reclutamientos, muertes o recuentos nativos ajenos cambian los totales del propietario alrededor de su instantánea guardada. Aunque después los totales vuelvan a coincidir por casualidad, la confirmación y la restauración automáticas siguen bloqueadas. La transferencia conserva la intención, las pruebas de antes y después y el justificante del proveedor para que un operador pueda distinguir un traspaso real de una coincidencia de recuento.",
+        "Un operador con nivel de permiso 2 abre Revisar conciliación nativa. Informa del propietario actual, el grupo, las pruebas del equipo y ambos recuentos nativos. Tras comprobar por su cuenta el guardado de Recruits, el operador abre Confirmar conciliación nativa, selecciona por su nombre la transferencia revisada y escribe un motivo. El servidor lleva la huella y la revisión exactas revisadas como metadatos ocultos de la opción y vuelve a verificar el estado nativo en disco.",
+        "La conciliación no escribe propiedad, grupos, equipo ni recuentos. Cierra el registro con un justificante RECONCILED distinto y conserva las pruebas de la divergencia. RECONCILED no afirma que la transferencia propuesta se completara. Si el estado nativo cambia después de la vista previa, la opción revisada se rechaza; abre una revisión nueva en lugar de forzar pruebas desfasadas."
+      ],
+      "commands": [
+        "/kingdoms-transfer reconciliation_preview \"<transfer name>\"",
+        "/kingdoms-transfer reconcile \"<transfer name>\" <revision> <fingerprint> <reason...>"
+      ],
+      "task": "transfer.reconcile",
+      "operator": true,
+      "player_task": "transfer.overview"
+    },
+    {
+      "id": "organization_founding",
+      "task": "organization.found",
+      "category": "evolution",
+      "title": "Funda una organización dinámica",
+      "summary": "Crea una carta duradera a partir de una plantilla acotada instalada, con autoridad de reconocimiento vigente.",
+      "body": [
+        "Abre Fundar organización con carta. Elige una plantilla de carta instalada, un reino patrocinador con nombre y un nombre legible para la organización. El servidor crea a partir de ese nombre el identificador estable de la organización. El fundador debe tener autoridad RECOGNIZE vigente en el reino patrocinador y ser compatible con la política de afiliación de la plantilla. La fundación solo inscribe al fundador; no recluta residentes automáticamente.",
+        "La nueva definición se copia en el estado duradero del mundo. Las recargas posteriores de paquetes de datos, los cambios de la plantilla o su eliminación no modifican la carta fijada. Las plantillas de los paquetes de datos instalados determinan los rangos, las misiones, las incompatibilidades y las ventajas disponibles. El contenido predeterminado incluye a los Faroleros, pero un paquete del servidor puede instalar otras plantillas válidas.",
+        "Usa Historia y estado de las organizaciones y Examinar la historia y el estado de una organización para resolver alias y ver el estado activa, fusionada o disuelta. Fundar no reescribe la fe, la deidad, la residencia, el reino, el prestigio en otra organización ni los justificantes de misiones completadas. Las afiliaciones en conflicto y una revisión cambiada fallan antes de guardar la definición."
+      ],
+      "commands": []
+    },
+    {
+      "id": "organization_merge_and_dissolution",
+      "task": "organization.merge_propose",
+      "category": "evolution",
+      "title": "Fusiona o disuelve organizaciones",
+      "summary": "Exige autoridad bilateral, respeta las exclusiones de los miembros y resuelve las obligaciones aceptadas antes del cierre.",
+      "body": [
+        "Abre Proponer fusión de organizaciones y elige el origen y el destino con nombre. La fusión queda pendiente hasta que un representante del destino autorizado de forma independiente use Consentir la fusión de organizaciones. Los miembros activos del origen pueden elegir Excluirse de la fusión de organizaciones antes de completarla. Ningún participante introduce un identificador ni una revisión de fusión.",
+        "Antes de completarla, los encargos cívicos aceptados y los contratos civiles con ámbito aparecen como bloqueos con nombre solo para quienes tienen la autoridad real para transferirlos y los consentimientos necesarios. Complétalos o cancélalos explícitamente, o usa Transferir trabajo aceptado cuando ese trabajo aceptado admita el traslado confirmado al destino. Los miembros corrientes del origen no pueden ver el propietario ni la misión de los encargos privados de otro jugador.",
+        "Completar la fusión de organizaciones cierra las afiliaciones del origen e inscribe solo a los miembros compatibles que no se excluyeron. Nunca copia a ciegas el prestigio del origen en el destino. El origen pasa a ser una lápida fusionada con un alias estable para las consultas actuales, mientras que los identificadores históricos fijados de misiones, los justificantes, las hazañas y el prestigio anterior siguen nombrando a la organización original.",
+        "Disolver organización también se niega mientras queden obligaciones sin resolver. Si sale bien, cierra las afiliaciones y fija una lápida disuelta para que cesen las ventajas. No borra hazañas, misiones completadas ni prestigio histórico. Vuelve a abrir el ciclo de vida tras un consentimiento, una exclusión, una transferencia o un cambio en los bloqueos; una finalización desfasada se rechaza y dos intentos en competencia no pueden aplicarse a la vez."
+      ],
+      "commands": []
+    },
+    {
+      "id": "constitutional_elections",
+      "task": "politics.election_open",
+      "category": "evolution",
+      "title": "Adopta normas y celebra elecciones",
+      "summary": "Permite que un gobierno legítimo adopte de forma explícita una votación de sucesión privada y determinista.",
+      "body": [
+        "La sucesión existente no cambia hasta que el líder actual adopta una norma de transición. La norma activa por separado las elecciones y la regencia, fija las duraciones de las elecciones, del periodo de gracia y de la regencia, y enumera los permisos del regente. Las duraciones de las elecciones y de la regencia deben estar entre 1200 y 2 419 200 ticks; el periodo de gracia, entre 200 y 172 800 ticks.",
+        "Abre las tareas correspondientes en Tareas del reino: Establecer normas electorales y de regencia, Abrir elecciones al liderazgo, Votar en unas elecciones, Cerrar elecciones y contar votos, y Consultar unas elecciones. Los candidatos con nombre y las elecciones admisibles son opciones del servidor; los jugadores nunca introducen una identidad técnica de elección ni el voto de otro jugador. La página de revisión fija la versión correspondiente del gobierno antes de aplicar.",
+        "Abrir unas elecciones fija los candidatos y el electorado admisible a partir de los titulares de cargos y de mandatos que sean jugadores en ese momento, más un regente activo sin vencer. Inspeccionar muestra el estado público de la elección sin revelar cómo votaron los demás. Cada votante admisible emite un voto privado y autenticado por un candidato fijado.",
+        "Un cierre autorizado tiene éxito cuando llegan todos los votos admisibles o cuando vence el plazo de la elección. Un ganador único pasa a ser el sucesor designado mientras el gobierno siga activo, o el líder legítimo durante un interregno. Un empate abre el periodo de gracia. Cuando vence la gracia, la elección vence sin instalar a nadie, aunque su último recuento guardado parezca único. Las revisiones desfasadas y las solicitudes de aplicar duplicadas no pueden instalar dos resultados."
+      ],
+      "commands": []
+    },
+    {
+      "id": "constitutional_regency",
+      "task": "politics.appoint_regent",
+      "category": "evolution",
+      "title": "Nombra un regente con límites",
+      "summary": "Concede autoridad temporal y enumerada conservando el sucesor designado del gobierno.",
+      "body": [
+        "La norma constitucional vigente debe tener activada la regencia. Un nombramiento autorizado designa a un jugador conectado y fija el sucesor designado que ya tenía el gobierno. El regente recibe solo las responsabilidades enumeradas en esa norma y solo hasta el plazo registrado. Una lista de permisos vacía no se convierte en una autoridad amplia.",
+        "Usa las tareas de Tareas del reino Nombrar un regente temporal y Finalizar una regencia. El servidor ofrece las opciones de reino y de jugador con nombre y muestra en la revisión el conjunto de responsabilidades configurado y el vencimiento. La regencia no se envía mediante un formulario político genérico.",
+        "Un regente no puede sustituir al sucesor conservado solo por actuar como regente. Finalizar la regencia retira antes de tiempo la concesión provisional; el vencimiento automático la retira en el plazo. Ambas vías conservan al sucesor designado y dejan un hecho político duradero. Unas elecciones pueden incluir en el electorado fijado a un regente activo sin vencer, pero una regencia vencida no aporta ninguna autoridad.",
+        "La ausencia de un PNJ, la descarga de un chunk, el reinicio del servidor o la desconexión de un jugador nunca son motivos para nombrar un regente ni para abrir unas elecciones. Usa el estado confirmado del gobierno y la norma explícita. Si el perfil del gobierno está latente o no está disponible, las acciones de transición se niegan en lugar de reactivarlo por una vía secundaria."
+      ],
+      "commands": []
+    },
+    {
+      "id": "authored_drama_workflow",
+      "task": "drama.propose",
+      "category": "evolution",
+      "title": "Propón un evento del mundo",
+      "summary": "Inicia una operación acotada y voluntaria a partir de pruebas instaladas, y exige el consentimiento independiente de los participantes.",
+      "body": [
+        "El drama requiere la opción de drama del mundo. Abre Proponer un evento del mundo y elige una plantilla instalada, un asentamiento conocido y cualquier sujeto con nombre admisible. Las plantillas instaladas abarcan la campaña fronteriza, la rebelión en territorio ocupado, la invasión de la frontera y el cisma de la concordia. Los paquetes de datos gestionan este contenido escrito y acotado; se rechaza una plantilla desconocida o no disponible.",
+        "La revisión de la propuesta fija las condiciones de la plantilla, las pruebas de los requisitos, los participantes, la duración, el objetivo y el presupuesto de operaciones. El drama militar requiere una vinculación de reclamación guardada por el proveedor, una facción vinculada al mando de quien propone y un oponente con mando independiente. El otro participante usa Consentir un evento del mundo. El tiempo restante solo avanza mientras todos los participantes registrados estén conectados, y se descuentan como mucho 1200 ticks por evaluación.",
+        "Inspecciona tras cada paso. Llevar a cabo el desenlace llama a un responsable ya existente de organizaciones, campañas, acuerdos o retiradas con la autoridad comprobada; no implementa un segundo sistema oculto. Negociar ofrece una vía no violenta del proveedor, abandonar cierra sin cambiar el control ni los bienes cívicos, y recuperar solo reintenta la operación acotada guardada cuando falta la confirmación del proveedor."
+      ],
+      "commands": [
+        "/kingdoms-drama list",
+        "/kingdoms-drama list <offset>",
+        "/kingdoms-drama inspect \"<drama name>\"",
+        "/kingdoms-drama propose \"<request key>\" <global drama revision> <template definition id> \"<settlement name>\" [<organization definition id>]",
+        "/kingdoms-drama consent \"<drama name>\" <record revision>",
+        "/kingdoms-drama execute \"<drama name>\" <record revision>",
+        "/kingdoms-drama negotiate \"<drama name>\" <record revision>",
+        "/kingdoms-drama exit \"<drama name>\" <record revision>",
+        "/kingdoms-drama recover \"<drama name>\" <record revision>"
+      ]
+    },
+    {
+      "id": "campaign_rebellion_and_invasion",
+      "category": "evolution",
+      "title": "Drama de campaña, rebelión e invasión",
+      "summary": "Usa liderazgo nativo real, agravios por ocupación y consentimiento bilateral para las historias militares.",
+      "body": [
+        "La campaña fronteriza usa el objetivo de campaña DEFEND y una duración de drama de 144 000 ticks. La rebelión en territorio ocupado usa AUTONOMY durante 216 000 ticks y además requiere un agravio de ocupación guardado vigente, como una obligación escrita rechazada respaldada por los registros de protección y de control. La invasión de la frontera usa TRANSFER durante 144 000 ticks y requiere la aceptación explícita de los dos líderes nativos implicados en torno a su objetivo escrito.",
+        "La ejecución delega en la declaración de campaña de guerra existente y hereda sus comprobaciones actuales de mandato, vinculación, aviso, reclamación, líder, capital, defensor y proveedor. El consentimiento del drama por sí solo no puede saltarse la autoridad política. El combate nativo de Recruits sigue siendo la única fuente del avance del asedio, de la victoria y del control. Ninguna plantilla borra el pueblo, traslada civiles, destruye edificios, reescribe la cultura ni transfiere la propiedad cívica.",
+        "La negociación llama a la vía de acuerdo existente cuando la operación guardada lo permite. Abandonar es siempre no violento y conserva el control nativo, la identidad cívica, los residentes, las instituciones, los bienes y el prestigio. Una negativa del proveedor o la falta de confirmación dejan un registro suspendido y recuperable. Restablece el proveedor y recupera la misma solicitud; no propongas claves de solicitud estables repetidas para conseguir campañas duplicadas."
+      ],
+      "commands": [
+        "/kingdoms-drama propose \"<request key>\" <global drama revision> mcakingdoms:border_campaign \"<settlement name>\"",
+        "/kingdoms-drama propose \"<request key>\" <global drama revision> mcakingdoms:occupied_rebellion \"<settlement name>\"",
+        "/kingdoms-drama propose \"<request key>\" <global drama revision> mcakingdoms:frontier_invasion \"<settlement name>\"",
+        "/kingdoms-drama consent \"<drama name>\" <record revision>",
+        "/kingdoms-drama execute \"<drama name>\" <record revision>",
+        "/kingdoms-drama negotiate \"<drama name>\" <record revision>",
+        "/kingdoms-drama exit \"<drama name>\" <record revision>"
+      ],
+      "task": "drama.overview"
+    },
+    {
+      "id": "peaceful_organization_schism",
+      "category": "evolution",
+      "title": "Resuelve un cisma pacífico de la carta",
+      "summary": "Funda una organización aparte con el consentimiento de los miembros, sin reescrituras militares ni religiosas.",
+      "body": [
+        "En concord_schism, el sujeto de la propuesta es el identificador de recurso de la organización de origen. Quien propone debe ser un miembro activo, estar dentro de un asentamiento cívico conocido y tener autoridad RECOGNIZE vigente sobre cartas. Otro miembro activo del origen da su consentimiento independiente. Este procedimiento organizativo pacífico no requiere reclamación militar nativa, mando de facción ni pruebas de asedio.",
+        "La ejecución usa al responsable del ciclo de vida de las organizaciones para fundar la carta Concord Fellowship instalada, basada en los Faroleros, con un nuevo identificador estable. Respeta la disponibilidad de la plantilla, la autoridad del patrocinador, la compatibilidad de afiliaciones, la revisión y las comprobaciones de guardado duradero. Si la plantilla configurada no está en el contenido de los paquetes de datos instalados, el cisma no puede inventar una definición sustituta.",
+        "Nadie se traslada automáticamente. La afiliación y el prestigio en el origen se mantienen, y cada participante elige cualquier nueva afiliación mediante las reglas normales de las organizaciones. La operación no reescribe la deidad, la fe, el matrimonio, la residencia, el reino, las propiedades, las misiones ni la identidad cívica. Abandonar deja intacta la organización de origen, mientras que un fallo guardado del proveedor o del responsable solo sigue disponible mediante su vía de recuperación acotada."
+      ],
+      "commands": [
+        "/kingdoms-drama propose \"<request key>\" <global drama revision> mcakingdoms:concord_schism \"<settlement name>\" <organization definition id>",
+        "/kingdoms-drama consent \"<drama name>\" <record revision>",
+        "/kingdoms-drama execute \"<drama name>\" <record revision>",
+        "/kingdoms-drama exit \"<drama name>\" <record revision>",
+        "/kingdoms-drama recover \"<drama name>\" <record revision>"
+      ],
+      "task": "drama.overview"
+    },
+    {
+      "id": "evolution_saved_data_recovery",
+      "category": "evolution",
+      "title": "Recupera los registros del mundo en evolución",
+      "summary": "Conserva los archivos auxiliares y restaura los proveedores compatibles antes de usar los comandos de recuperación explícitos.",
+      "body": [
+        "La evolución, la protección, las transferencias, el drama, las organizaciones, la política y los contratos civiles guardan cada uno datos acotados en la carpeta de datos del mundo. Los esquemas futuros, no admitidos o parciales se conservan en solo lectura. El estado previo a una llamada externa se guarda primero de forma duradera, de modo que un fallo puede dejar una operación pendiente veraz para reintentarla en lugar de un duplicado sin rastrear.",
+        "No borres un archivo auxiliar para desbloquear un registro. Haz una copia de seguridad del mundo, inspecciona el registro con nombre y el estado actual del proveedor, restaura la versión correspondiente del proveedor y elige después la tarea aplicable de reintento, confirmación, restauración, liberación, salida, recuperación, conciliación o transferencia de trabajo. Un guardado fallido rechaza la acción. La recuperación nunca amplía la autoridad ni cambia los participantes fijados.",
+        "Los contratos nativos actuales son MCA 7.6.26 para los hechos recíprocos de familia y residencia, MCA Quests 1.7.1 para objetivos, justificantes y encargos (1.6.5 solo aporta la condición de misión por reino), MCA Crime 0.7.5 para la legalidad de los talleres y la jurisdicción, MCA Reputation 0.6.1 para la sincronización de facciones en vivo (0.6.0 da prestigio local de solo lectura), Townstead 0.7.6 para las pruebas políticas de etapa vital y de edificios, y Recruits 1.15.2 para las operaciones de guerra y de transferencia. No hay adaptador de archivo de crónicas de Townstead. Prueba la ausencia de un proveedor solo en una copia aislada; el juego base puede eliminar entidades de mods desconocidas, así que la recuperación tras reinstalar debe partir de la instantánea intacta del mundo con el proveedor."
+      ],
+      "commands": [
+        "/kingdoms-evolution inspect \"<opportunity name>\"",
+        "/kingdoms-evolution retry \"<opportunity name>\"",
+        "/kingdoms-evolution release_rejected \"<opportunity name>\"",
+        "/kingdoms-transfer inspect \"<transfer name>\"",
+        "/kingdoms-transfer confirm \"<transfer name>\"",
+        "/kingdoms-transfer restore \"<transfer name>\"",
+        "/kingdoms-drama inspect \"<drama name>\"",
+        "/kingdoms-drama recover \"<drama name>\" <record revision>",
+        "/kingdoms guild lifecycle status <organization definition id>"
+      ],
+      "task": "evolution.overview"
+    }
+  ]
+}

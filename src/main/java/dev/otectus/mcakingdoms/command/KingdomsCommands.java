@@ -325,14 +325,24 @@ public final class KingdomsCommands {
 
     private static int reload(CommandContext<CommandSourceStack> context) {
         MinecraftServer server = context.getSource().getServer();
-        server.reloadResources(server.getPackRepository().getSelectedIds()).whenComplete((ignored, error) ->
-                server.execute(() -> {
-                    if (error == null) context.getSource().sendSuccess(() -> Component.translatable(
-                            "command.mcakingdoms.reload.success"), true);
-                    else context.getSource().sendFailure(Component.translatable(
-                            "command.mcakingdoms.reload.failure", error.getMessage()));
-                }));
         context.getSource().sendSuccess(() -> Component.translatable("command.mcakingdoms.reload.started"), false);
+        // The outcome comes from this attempt's report: a domain that rejected content is not reported as reloaded.
+        dev.otectus.mcakingdoms.data.DefinitionReloads.start(server).thenAccept(result -> {
+            var lines = result.lines();
+            switch (result.state()) {
+                case ACCEPTED -> context.getSource().sendSuccess(() -> Component.translatable(
+                        "command.mcakingdoms.reload.success", dev.otectus.mcakingdoms.data.ReloadReport.inUse(result.attempt().orElseThrow())), true);
+                case PARTIAL -> {
+                    context.getSource().sendSuccess(() -> Component.translatable("command.mcakingdoms.reload.partial"), true);
+                    lines.forEach(line -> context.getSource().sendFailure(line));
+                }
+                case FAILED -> {
+                    context.getSource().sendFailure(Component.translatable("command.mcakingdoms.reload.failure", lines.get(0)));
+                    lines.stream().skip(1).forEach(line -> context.getSource().sendFailure(line));
+                }
+                case IN_PROGRESS -> lines.forEach(line -> context.getSource().sendSuccess(() -> line, false));
+            }
+        });
         return 1;
     }
 

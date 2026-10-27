@@ -20,7 +20,9 @@ public final class TownsteadIntegrationConfig {
     static {
         ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
         builder.push("townstead");
-        ENABLED = builder.define("enabled", true);
+        ENABLED = builder.comment("Use Townstead, when installed, for building evidence, NPC life stages, calendar, needs, schedule, spirit and reactions.",
+                        "Read when the server starts; restart after changing it.")
+                .define("enabled", true);
         ALLOW_INTERNAL_FALLBACK = builder
                 .comment("Permit isolated reflection for Townstead spirit and reaction surfaces missing from its public API.")
                 .define("allowInternalFallback", true);
@@ -28,9 +30,10 @@ public final class TownsteadIntegrationConfig {
                 .comment("Ticks between bounded building fingerprint checks for settlements with nearby players.")
                 .defineInRange("buildingReconcileIntervalTicks", 200, 20, 24_000);
         MAX_ACTIVE_SETTLEMENTS = builder
+                .comment("Most settlements near online players whose buildings are rechecked per interval.")
                 .defineInRange("maxActiveSettlements", 32, 1, 256);
-        ENABLE_REACTIONS = builder.define("enablePoliticalReactions", true);
-        ENABLE_BLUEPRINT_HEADER = builder.define("enableBlueprintCivicHeader", true);
+        ENABLE_REACTIONS = builder.comment("Let nearby Townstead villagers react when a player's kingdom standing changes.").define("enablePoliticalReactions", true);
+        ENABLE_BLUEPRINT_HEADER = builder.comment("Show the settlement's name, kingdom and civic status above Townstead's Blueprint screen.").define("enableBlueprintCivicHeader", true);
         BLUEPRINT_REQUEST_RANGE = builder
                 .comment("Maximum distance from a settlement anchor for Blueprint civic-header requests.")
                 .defineInRange("blueprintRequestRange", 192, 32, 1_024);

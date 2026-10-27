@@ -1,0 +1,493 @@
+{
+  "schema": 2,
+  "entries": [
+    {
+      "id": "evolution_world_opt_in",
+      "category": "evolution",
+      "title": "开启演变中的世界",
+      "summary": "管理员必须先为世界开启演变，编写好的机会才会出现；符合条件的区域会自动加入，除非被暂停。",
+      "commands": [
+        "/kingdoms-evolution configure <enabled:true|false> <drama:true|false>",
+        "/kingdoms-evolution region \"<settlement name>\" <enabled:true|false>"
+      ],
+      "task": "evolution.configure",
+      "operator": true,
+      "player_task": "evolution.overview",
+      "blocks": [
+        {
+          "id": "journey_heading",
+          "type": "heading",
+          "text": "世界如何苏醒"
+        },
+        {
+          "id": "journey",
+          "type": "diagram",
+          "alt": "管理员启用世界演变。在线访客进入符合条件的聚落后才会激活该地区；机遇必须有真实且受支持的依据。",
+          "nodes": [
+            {
+              "id": "n0",
+              "label": "启用世界演变",
+              "item": "minecraft:redstone_torch"
+            },
+            {
+              "id": "n1",
+              "label": "符合条件的聚落",
+              "item": "minecraft:oak_door"
+            },
+            {
+              "id": "n2",
+              "label": "在线访客到来",
+              "item": "minecraft:compass"
+            },
+            {
+              "id": "n3",
+              "label": "实际机遇",
+              "item": "minecraft:writable_book"
+            }
+          ],
+          "edges": [
+            {
+              "from": "n0",
+              "to": "n1"
+            },
+            {
+              "from": "n1",
+              "to": "n2"
+            },
+            {
+              "from": "n2",
+              "to": "n3"
+            }
+          ]
+        },
+        {
+          "id": "text_0",
+          "type": "paragraph",
+          "text": "每个世界的演变默认处于暂停状态。管理员打开“配置世界演变”来启用普通情景，并分别选择世界事件（编写好的戏剧）和协商的新兵移交。默认情况下（autoEligibleRegions），拥有政府的王国的每个聚居地随后都会成为符合条件的区域；“配置演变地区”可以暂停某个具名聚居地，或明确把某个聚居地设为符合条件。关闭世界会清空当前的抽样集合，但保留已保存的情景。关闭某个区域会取消其资格并暂停活跃抽样，而不会删除历史。"
+        },
+        {
+          "id": "text_1",
+          "type": "paragraph",
+          "text": "只有站在符合条件的聚居地中的在线访客，才会让该区域变为活跃。评估绝不会加载区块。默认每1200刻评估一次，每轮最多检查四名在线玩家或四个区域，整个世界最多同时存在八个普通情景和戏剧。服务器配置可以在有限范围内更改这些数值。期限在活跃样本之外会暂停，因此没有玩家的城镇不会得到模拟的补偿进度。"
+        },
+        {
+          "id": "text_2",
+          "type": "paragraph",
+          "text": "戏剧开关是一道额外的同意门槛。普通演变可以开启，而戏剧模板和Recruits移交仍保持不可用。已安装的数据包提供情景和戏剧模板；开启演变并不保证每个模板所需的真实证据都存在。缺少政治、家庭、占领、机构或提供方的事实时，那项机会就不会被创建。"
+        }
+      ]
+    },
+    {
+      "id": "scenario_browser_and_digest",
+      "task": "evolution.overview",
+      "category": "evolution",
+      "title": "浏览情景与简报",
+      "summary": "只查看由你对聚居地的了解所支持的机会，并管理定期通知。",
+      "body": [
+        "打开“世界演变状态”查看通过你对聚居地的了解而可见的情景，或用“查看机会”查看某条具名记录。查看会显示已固定的标题、起因证据、允许的结果、期限、贡献、已选的意图、当前阶段以及下一位该行动的人。属于别人知道而你不知道的聚居地的情景不会被透露。",
+        "简报订阅是个人设置。开启后，服务器会按照配置的简报间隔（默认24000刻）定期报告可见的变化。它会在发送通知之前保存简报游标，因此重启不会有意重复同一时段。关闭简报不会撤回贡献，也不会关闭情景。",
+        "默认安装的情景模板包括外交引荐和家庭引荐、指定继承、占领救援、贸易争端和自愿援助。数据包可以提供有限的模板，带有各自的结果、持续时间、冷却时间和证据触发条件。记录在创建时会固定所选模板的条款；之后重新加载数据包不会悄悄改写已有的选择。"
+      ],
+      "commands": [
+        "/kingdoms-evolution digest <enabled:true|false>",
+        "/kingdoms-evolution list",
+        "/kingdoms-evolution list <offset multiple of 10>",
+        "/kingdoms-evolution inspect \"<opportunity name>\""
+      ]
+    },
+    {
+      "id": "scenario_contributions_and_service",
+      "task": "evolution.contribute",
+      "category": "evolution",
+      "title": "贡献与限定范围的服务",
+      "summary": "用所需的确切证据或限定范围的MCA Quests服务来支持一个编写好的选项。",
+      "body": [
+        "先打开“查看机会”，再打开“为机会作出贡献”。该事务只提供其模板中固定的结果：视情况为援助、调解、引荐、谈判或继承。贡献属于在线的玩家，并受所需数量的限制。已改变、已过期、不可见或不可用的选项会在核对或执行时被拒绝。",
+        "援助、调解和自治谈判通常需要一份已完成的限定范围MCA Quests契约。家庭引荐和继承会在贡献时重新验证其原生或政治证据。该命令本身不会发放奖励、任命继承人或改变政府；它只是为之后的结果记录一个受支持的选择。",
+        "只要情景仍可编辑，贡献者就可以撤回。撤回会移除该有效选择，但任何已完成服务的凭证仍算作已使用，以免一次任务完成去支持将来另一个选择。情景发生变化后，必须重新查看才能进行下一次修改。这条修订规则也能确定地解决多人之间的竞争：只有针对当前已保存修订的操作才能成功。",
+        "一个开放的情景或义务恰好可以授权一种限定范围的服务：援助、调解、自治或防御。打开“开启机会服务”事务，选择可见的机会或职责、附近的具名委托人以及允许的类型。委托人必须已加载、在世、可见，并在正确的机构中得到认可。范围、聚居地、结果或职责、期限、玩家以及提供方绑定都必须一致。",
+        "MCA Quests负责接取、目标、物品消耗和报酬。MCA: Kingdoms记录哪个原生任务实例属于该范围，之后只使用一次其持久的提供方纪元和凭证。无关的记录、已完成或已关闭的范围、错误的服务类型或他人的凭证都无法满足要求。重复完成也无法再次获得奖励。",
+        "兼容的MCA Quests配套模组对核心启动是可选的，但这一流程需要它。如果缺少它，命令会拒绝执行，而不会凭空认定完成。继续之前，请恢复受支持的提供方和保留的世界。已接受的限定范围契约也会阻止组织合并或解散，直到它们完成、被其所有者明确取消，或通过“转交已接受的工作”转移。"
+      ],
+      "commands": [
+        "/kingdoms-evolution contribute aid \"<opportunity name>\" <revision>",
+        "/kingdoms-evolution contribute mediate \"<opportunity name>\" <revision>",
+        "/kingdoms-evolution contribute introduce \"<opportunity name>\" <revision>",
+        "/kingdoms-evolution contribute negotiate \"<opportunity name>\" <revision>",
+        "/kingdoms-evolution contribute succeed \"<opportunity name>\" <revision>",
+        "/kingdoms-evolution withdraw \"<opportunity name>\" <revision>",
+        "/kingdoms-evolution contract \"<opportunity or obligation name>\" \"<contact name>\" aid",
+        "/kingdoms-evolution contract \"<opportunity or obligation name>\" \"<contact name>\" mediation",
+        "/kingdoms-evolution contract \"<opportunity or obligation name>\" \"<contact name>\" autonomy",
+        "/kingdoms-evolution contract \"<opportunity or obligation name>\" \"<contact name>\" defense"
+      ]
+    },
+    {
+      "id": "scenario_resolution_and_recovery",
+      "task": "evolution.resolve",
+      "category": "evolution",
+      "title": "解决、拒绝或恢复",
+      "summary": "通过政治负责方提交一个受支持的结果，或和平地放弃该机会。",
+      "body": [
+        "当所需的贡献都已具备后，获得授权的玩家打开“解决机会”，并从提供的结果中选择一个。引荐还可能要求证据中显示的确切具名对方。当提供“拒绝”时，它是一个和平的最终选择，不会消耗任何凭空的服务，也不会带来政治惩罚。",
+        "解决会先保存一份持久的意图，再请求政治负责方行动。成功时，会记录负责方的凭证并关闭情景。如果负责方在预览之后发生了变化、拒绝了权限或无法确认，记录会保持明确的状态，而不会假装成功。确认中断后，“重试待处理的结果”会重用固定的执行者、稳定的请求键、政治修订和所选条款。",
+        "只有当政治负责方确认已保存的请求从未被提交时，才使用“解除被拒绝结果的锁定”（release_rejected）。它会重新开放那份被拒绝的意图；它不会撤销已经完成的政府变更。只有当区域参与有限的活跃样本时，情景期限才会推进。没有离线补偿、强制加载区块、推定死亡，也不会在到期时自动做出选择。"
+      ],
+      "commands": [
+        "/kingdoms-evolution resolve aid \"<opportunity name>\" <revision>",
+        "/kingdoms-evolution resolve mediate \"<opportunity name>\" <revision>",
+        "/kingdoms-evolution resolve introduce \"<opportunity name>\" <revision> <counterpart kingdom id>",
+        "/kingdoms-evolution resolve negotiate \"<opportunity name>\" <revision> <counterpart kingdom id>",
+        "/kingdoms-evolution resolve succeed \"<opportunity name>\" <revision>",
+        "/kingdoms-evolution resolve decline \"<opportunity name>\" <revision>",
+        "/kingdoms-evolution retry \"<opportunity name>\"",
+        "/kingdoms-evolution release_rejected \"<opportunity name>\""
+      ]
+    },
+    {
+      "id": "political_history",
+      "category": "evolution",
+      "title": "查看政治历史",
+      "summary": "查阅一份有上限、注明归属的记录，其中的私密事实只对有权查看的人可见。",
+      "body": [
+        "王国页面的“历史”标签页及其等效命令会显示按查看者筛选后的第一页，最多20行。每条事实都有稳定的来源凭证、执行者归属、受影响的王国和玩家、按游戏刻和修订排列的顺序、可见性以及更正状态。被取代的协议或请愿生命周期事实会标记为“已被取代”，已结束的事实会标记为“已过期”，而不会被悄悄删除。",
+        "公开的事实对所有人可见。各方事实要求查看者是受影响的玩家，或在受影响的王国拥有当前有效的PROPOSE或RATIFY权限。私密请愿要求查看者是受影响的玩家，或在其王国拥有当前有效的REVIEW权限。选票只有投票者本人可见。外部查看者不会收到可能暴露私密记录存在的遮蔽占位内容。",
+        "政治状态会在发布通知之前被持久保存。因此，已确认的NPC死亡、退位、继承、期限、选举和摄政都能留下稳定的事实。NPC卸载、缺席、玩家重生和服务器重启都绝不会被算作死亡。Townstead 0.7.6没有提供受支持的编年史档案凭证，因此本记录不会捏造Townstead档案条目或链接。"
+      ],
+      "commands": [
+        "/kingdoms politics inspect \"<kingdom name>\" history"
+      ],
+      "task": "politics.read_history"
+    },
+    {
+      "id": "protection_pacts_and_duties",
+      "task": "protection.overview",
+      "category": "evolution",
+      "title": "保护协定与职责",
+      "summary": "在两个王国之间建立协定，处理约定的职责，并在发出通知后退出。",
+      "body": [
+        "保护提议需要指定不同的保护方王国和从属方王国、一个受益聚居地、一项或多项职责、持续时间、退出通知期以及书面条款。打开“提议保护协定”并选择具名的记录。有效的职责为公民援助、防御协助和调解。持续时间和通知期都有上限，提议者需要在保护方王国拥有当前有效的PROPOSE权限。",
+        "双方政府都要以当前有效的RATIFY权限签署固定的条款。签名必须来自不同的获授权玩家。第二个签名使协定生效时，双方的权限持有者都必须在线且仍然有效。系统会检查保护层级，并限制在四层以内，以防止循环和无限的链条。",
+        "打开“浏览保护协定”或“查看保护协定”，按名称核对签名、期限、职责和未完成的义务。协定只授予其书面写明的职责。它不会转移官职、部队、建筑、财产、声望或原生领地的控制权。如果在核对期间权限或协定状态发生变化，请重新打开该事务。",
+        "在保护方拥有REVIEW权限的玩家，只能请求现行协定中列明的职责。请求会产生一项有上限的义务，拥有自己已保存的身份和修订。任何认识受益方且符合条件的志愿者，都可以完成对应的限定范围原生契约，然后履行该义务；服务只会使用一次该玩家确切的持久完成凭证。错误的任务类型、范围、聚居地、提供方纪元或已使用过的凭证都会被拒绝。",
+        "在从属方拥有REVIEW权限的玩家可以拒绝，并记录理由。拒绝是一项有据可查的不满，可以作为之后编写好的谈判或叛乱的证据，但它不会宣战、转移财产、改变原生关系，也不会履行职责。每次请求之后都请查看协定，因为它的修订会改变。",
+        "任一签署方都可以在核实当前有效的RATIFY权限后宣布退出。协定进入退出通知期，职责在配置的通知期结束后终止。现有记录会保留以便追溯。退出不会没收部队、官职、资产、建筑、成员资格或声望。如果没有人在线，依赖时间的维护不会凭空认定履行或拒绝。"
+      ],
+      "commands": [
+        "/kingdoms-protection propose <protector kingdom id> <subordinate kingdom id> \"<beneficiary settlement name>\" <comma-separated duties> <duration ticks> <notice ticks> <terms...>",
+        "/kingdoms-protection sign \"<pact name>\" <kingdom id> <revision>",
+        "/kingdoms-protection list",
+        "/kingdoms-protection inspect \"<pact name>\"",
+        "/kingdoms-protection request \"<pact name>\" <civic_aid|defense_assistance|mediation> <revision>",
+        "/kingdoms-protection fulfill \"<obligation name>\" <revision>",
+        "/kingdoms-protection refuse \"<obligation name>\" <revision> <reason...>",
+        "/kingdoms-protection exit \"<pact name>\" <kingdom id> <revision>"
+      ]
+    },
+    {
+      "id": "family_introductions",
+      "task": "evolution.family",
+      "category": "evolution",
+      "title": "进行家庭引荐",
+      "summary": "利用一段已核实的双向MCA婚姻，在王国之间进行一次私密的外交引荐。",
+      "body": [
+        "明确的入口会检查是否存在一条双向且双方都在世的MCA婚姻记录。你的配偶必须已加载，双方的居住地都必须核实位于不同的王国，对方政府必须是已知的，你当前所在聚居地的区域也必须已启用。该检查绝不会强制加载配偶或区块。婚姻为引荐提供证据；它不授予官职、所有权、授权或领地。",
+        "成功后，会创建一个只对申请玩家可见的私密家庭情景。查看它，按当前修订贡献“引荐”，然后使用已核实居住背景所固定的确切对方王国，以“引荐”来解决它。政治负责方会收到一份普通的引荐请愿，受其一般的权限和隐私规则约束。",
+        "婚姻会在创建情景、贡献、解决和恢复时重新验证。离婚、死亡、单向的原生关系、配偶未加载、居住地缺失或MCA证据不可用，都会暂停或拒绝该操作。它绝不会把缺席当作死亡，也不会假定原来的关系仍然存在。这些原生事实由兼容的Minecraft Comes Alive安装提供；MCA: Kingdoms只读取它们。"
+      ],
+      "commands": [
+        "/kingdoms-evolution family_introduction",
+        "/kingdoms-evolution inspect \"<opportunity name>\"",
+        "/kingdoms-evolution contribute introduce \"<opportunity name>\" <revision>",
+        "/kingdoms-evolution resolve introduce \"<opportunity name>\" <revision> <counterpart kingdom id>"
+      ]
+    },
+    {
+      "id": "recruit_transfer_workflow",
+      "task": "transfer.propose",
+      "category": "evolution",
+      "title": "双方协商的新兵移交",
+      "summary": "固定一名新兵，获得知情同意，通过Recruits执行，并恢复中断的确认。",
+      "blocks": [
+        {
+          "id": "stages",
+          "type": "diagram",
+          "layout": "column",
+          "alt": "新兵移交分为五个阶段：接收方共享一个目的地，原主提出移交，接收方同意，通知期过去，然后原主执行移交。",
+          "nodes": [
+            {
+              "id": "share",
+              "label": "共享目的地",
+              "note": "接收方：一个自己的队伍，只对一位指定发送者"
+            },
+            {
+              "id": "propose",
+              "label": "提出",
+              "note": "原主：新兵、接收方、队伍、条款"
+            },
+            {
+              "id": "consent",
+              "label": "同意",
+              "note": "接收方核对并同意"
+            },
+            {
+              "id": "notice",
+              "label": "通知期",
+              "note": "需要经过大约一分钟的服务器时间"
+            },
+            {
+              "id": "apply",
+              "label": "执行",
+              "note": "原主在截止时间前执行"
+            }
+          ],
+          "edges": [
+            {
+              "from": "share",
+              "to": "propose"
+            },
+            {
+              "from": "propose",
+              "to": "consent"
+            },
+            {
+              "from": "consent",
+              "to": "notice"
+            },
+            {
+              "from": "notice",
+              "to": "apply"
+            }
+          ]
+        },
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "协商移交需要开启世界戏剧，并且经过审核的确切Recruits提供方已就绪。它仅对原所有者、接收者和获得授权的恢复人员可见。事务菜单绝不会列出其他玩家未共享的原生队伍或部队数量。"
+        },
+        {
+          "id": "p2",
+          "type": "paragraph",
+          "text": "接收者先使用“共享新兵移交目标”。他选择自己的一个具名原生队伍，以及一位在线的具名发送者。随后，只有这位发送者能在向该接收者提议移交时选择这个共享队伍。共享在当前服务器连接期间有效，接收者可以撤销，并在任一参与者下线或服务器停止时清除。"
+        },
+        {
+          "id": "p3",
+          "type": "paragraph",
+          "text": "原所有者打开“提议移交新兵”，选择一名自己拥有且已加载的新兵、接收者、接收者共享的目标队伍，以及是否需要家庭证据。核对页会列出新兵、原所有者、接收者、目标队伍、通知期、期限、装备证据和家庭条款。无需输入任何技术身份或指纹。"
+        },
+        {
+          "id": "p4",
+          "type": "paragraph",
+          "text": "接收者打开“查看新兵移交”，然后选择“同意移交新兵”。即使目标队伍已经共享，仍需要同意。撤销队伍共享会阻止新的提议，但不会悄悄取消一份已经核对过的持久提议；请在其阶段允许时使用提议的中立取消途径。"
+        },
+        {
+          "id": "p5",
+          "type": "paragraph",
+          "text": "如果要求家庭证据，两名玩家每次使用该协议时都需要一段双向的MCA婚姻。同意不会改变任何原生所有者。它会开始一个1200刻的通知期，整个提议在72000刻后过期。"
+        },
+        {
+          "id": "p6",
+          "type": "paragraph",
+          "text": "“查看”只向参与者或获得授权的管理员显示阶段、通知期、期限、家庭要求、具名的参与者和队伍、保留的装备证据以及恢复详情。同一名新兵在其移交尚未结束时不能被动员。实体缺失、参与者离线、装备改变、所有权丢失、核对过时或同意过期，都会阻止进展，而不会移动新兵。"
+        },
+        {
+          "id": "p7",
+          "type": "paragraph",
+          "text": "通知期结束后，原所有者可以在期限之前、接收者和新兵都已加载时执行。MCA: Kingdoms会先保存原队伍、剩余的工资计时、原始命令、装备、所有者数量和计分板状态。然后它通过Recruits请求解雇和雇佣，并核实实体、队伍、数量、提供方的磁盘状态和确认。公民居住地和政治身份不受影响。"
+        },
+        {
+          "id": "p8",
+          "type": "paragraph",
+          "text": "如果原生变更已经发生，但最终确认被中断，“确认原生移交”会重试磁盘核实，而不会重复所有权变更。“恢复原所有权”是一项受保护的恢复请求，它使用保留的原始快照，并要求原来的双方都在线。它只在适当的、尚未结束的失败阶段可用，并且当当前原生状态不再符合安全恢复条件时会拒绝执行。"
+        },
+        {
+          "id": "p9",
+          "type": "paragraph",
+          "text": "不要盲目重试执行，也不要删除移交记录。已保存的意图可以防止重启后重复解雇、雇佣、重置工资或改变数量。最终完成会保留其凭证。已恢复或已取消的操作也会作为历史保留，而不会假装从未有过提议。"
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "task",
+              "target": "transfer.share_destination"
+            },
+            {
+              "kind": "task",
+              "target": "transfer.propose"
+            },
+            {
+              "kind": "task",
+              "target": "transfer.consent"
+            },
+            {
+              "kind": "task",
+              "target": "transfer.apply"
+            }
+          ]
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "transfer_reconciliation",
+      "category": "evolution",
+      "title": "核对不一致的新兵账目",
+      "summary": "当无关的新兵变化使自动修复变得不安全时，确认一个经管理员审查的原生状态。",
+      "body": [
+        "当无关的招募、死亡或原生重新计数改变了所有者在已保存快照前后的总数时，待处理的移交会变为accountingDiverged。即使之后总数恰好又一致了，自动确认和恢复仍会被阻止。移交会保留意图、前后证据和提供方凭证，以便管理员区分真实的移交和数量上的巧合。",
+        "拥有2级权限的管理员打开“核对原生数据”。它会报告当前所有者、队伍、装备证据和两边的原生数量。在独立检查Recruits的存档之后，管理员打开“确认原生数据核对”，按名称选择已核对的移交并写下理由。服务器会把核对过的确切指纹和修订作为隐藏的选项元数据携带，并再次核实磁盘上的原生状态。",
+        "核对不会写入任何所有权、队伍、装备或数量。它会用一个独立的RECONCILED凭证关闭记录，并保留不一致的证据。RECONCILED并不表示所提议的移交已经完成。如果原生状态在预览之后发生变化，已核对的选项会被拒绝；请重新开始核对，而不要强行使用过时的证据。"
+      ],
+      "commands": [
+        "/kingdoms-transfer reconciliation_preview \"<transfer name>\"",
+        "/kingdoms-transfer reconcile \"<transfer name>\" <revision> <fingerprint> <reason...>"
+      ],
+      "task": "transfer.reconcile",
+      "operator": true,
+      "player_task": "transfer.overview"
+    },
+    {
+      "id": "organization_founding",
+      "task": "organization.found",
+      "category": "evolution",
+      "title": "成立动态组织",
+      "summary": "在拥有当前认可权限的前提下，根据一个已安装的有限模板创建持久的特许状。",
+      "body": [
+        "打开“成立特许组织”。选择一个已安装的特许状模板、一个具名的赞助王国和一个易读的组织名称。服务器会根据该名称生成稳定的组织ID。创立者必须在赞助王国拥有当前有效的RECOGNIZE权限，并符合模板的成员政策。成立只会让创立者入会；它不会自动招募居民。",
+        "新的定义会被复制到持久的世界状态中。之后重新加载数据包、编辑或移除模板，都不会改变已固定的特许状。已安装数据包中的模板决定可用的等级、任务、互斥关系和福利。默认内容包含点灯人，但服务器的整合包也可以安装其他有效的模板。",
+        "使用“组织历史与状态”和“查看组织的历史与状态”来解析别名，并查看活跃、已合并或已解散的状态。成立组织不会改写信仰、神祇、居住地、王国、在其他组织中的声望或已完成任务的凭证。相互冲突的成员资格和已改变的核对会在保存定义之前失败。"
+      ],
+      "commands": []
+    },
+    {
+      "id": "organization_merge_and_dissolution",
+      "task": "organization.merge_propose",
+      "category": "evolution",
+      "title": "合并或解散组织",
+      "summary": "需要双方授权，尊重成员的退出选择，并在关闭之前处理已接受的义务。",
+      "body": [
+        "打开“提议组织合并”，选择具名的来源组织和目标组织。合并会保持待定，直到目标组织中独立获得授权的代表使用“同意组织合并”。来源组织的活跃成员可以在完成合并之前选择“退出组织合并”。参与者都不需要输入合并ID或修订号。",
+        "完成合并之前，已接受的公民委托和限定范围的民事契约会作为具名的阻碍项出现，但只对拥有实际转交权限并具备所需同意的人可见。请完成或明确取消它们，或者在已接受的工作支持确认转交给目标组织时，使用“转交已接受的工作”。来源组织的普通成员无法浏览其他玩家私密委托的所有者或任务。",
+        "“完成组织合并”会关闭来源组织的成员资格，并只让没有选择退出且兼容的成员入会。它绝不会盲目地把来源组织的声望复制到目标组织。来源组织会变成一个带有稳定别名的“已合并”墓碑记录，供当前查询使用，而已固定的历史任务ID、凭证、功绩和先前的声望仍会指向原来的组织。",
+        "“解散组织”同样会在仍有未处理的义务时拒绝执行。成功后会关闭成员资格，并固定一个“已解散”墓碑记录，使福利停止。它不会抹去功绩、已完成的任务或历史声望。在同意、退出、转交或阻碍项发生变化后，请重新打开组织生命周期；过时的完成操作会被拒绝，相互竞争的尝试也不可能同时生效。"
+      ],
+      "commands": []
+    },
+    {
+      "id": "constitutional_elections",
+      "task": "politics.election_open",
+      "category": "evolution",
+      "title": "采纳规则并举行选举",
+      "summary": "让合法政府明确选择一种私密且结果确定的继承投票。",
+      "body": [
+        "在现任领袖采纳过渡规则之前，现有的继承安排保持不变。该规则分别启用选举和摄政，设定选举、宽限期和摄政的时长，并列出摄政的权限。选举和摄政的时长必须在1200到2419200刻之间；宽限期必须在200到172800刻之间。",
+        "在王国事务中打开对应的事务：“设置选举与摄政规则”“发起领袖选举”“参与选举投票”“结束选举并计票”和“查看选举”。具名的候选人和符合条件的选举都由服务器提供选项；玩家绝不会输入技术性的选举身份或其他玩家的选票。核对页会在执行之前固定相关的政府版本。",
+        "发起选举时，会根据当前担任官职和持有授权的玩家，再加上一位尚未到期的现任摄政，固定候选人和符合条件的选民。“查看”会显示选举的公开状态，但不会透露其他人如何投票。每位符合条件的选民为一位固定的候选人投出一张经过认证的私密选票。",
+        "当所有符合条件的选票都已投出或选举截止时间已过，获得授权的结束操作即可成功。唯一的获胜者会在政府仍正常运作时成为指定继承人，或在空位期成为合法领袖。平票会进入宽限期。宽限期结束后，选举会过期且不会让任何人就任，即使最后保存的计票看起来是唯一结果。过时的核对和重复的执行请求不可能产生两个结果。"
+      ],
+      "commands": []
+    },
+    {
+      "id": "constitutional_regency",
+      "task": "politics.appoint_regent",
+      "category": "evolution",
+      "title": "任命有限的摄政",
+      "summary": "授予临时且明确列举的权限，同时保留政府的指定继承人。",
+      "body": [
+        "当前的宪制规则必须已启用摄政。经授权的任命会指定一名在线玩家，并固定政府现有的指定继承人。摄政只获得该规则中列举的职责，且只到其记录的截止时间为止。空的权限列表不会变成宽泛的权力。",
+        "使用王国事务中的“任命临时摄政”和“结束摄政”。服务器会提供具名的王国和玩家选项，并在核对页显示配置的职责范围和到期时间。摄政不会通过通用的政治表单提交。",
+        "摄政不能仅凭担任摄政就取代被保留的继承人。结束摄政会提前收回临时授权；自动到期会在截止时间收回它。两种途径都会保留指定继承人，并留下一条持久的政治事实。选举可以把一位现任且未到期的摄政纳入固定的选民中，但已到期的摄政不提供任何权限。",
+        "NPC缺席、区块卸载、服务器重启和玩家下线，绝不是任命摄政或发起选举的理由。请依据已确认的政府状态和明确的规则。如果政府档案处于休眠或不可用状态，过渡操作会拒绝执行，而不会通过旁路将其恢复。"
+      ],
+      "commands": []
+    },
+    {
+      "id": "authored_drama_workflow",
+      "task": "drama.propose",
+      "category": "evolution",
+      "title": "提议世界事件",
+      "summary": "根据已安装的证据启动一项有限且需主动加入的行动，然后要求参与者各自独立同意。",
+      "body": [
+        "戏剧需要世界的戏剧开关。打开“提议世界事件”，选择一个已安装的模板、一个已知的聚居地以及任何符合条件的具名对象。已安装的模板包括边境战役、占领区叛乱、边疆入侵和和谐分裂。这些有限的编写内容由数据包管理；未知或不可用的模板会被拒绝。",
+        "提议的核对会固定模板条款、前提证据、参与者、持续时间、目标和操作预算。军事戏剧需要提供方已保存的领地绑定、一个由提议者指挥的已映射阵营，以及一个由他人独立指挥的对手。另一位参与者使用“同意世界事件”。剩余时间只在所有记录在案的参与者都在线时推进，每次评估最多扣除1200刻。",
+        "每一步之后都要查看。“执行世界事件的结果”会调用一个现有的、经过权限检查的组织、战役、协议或撤回负责方；它不会实现第二个隐藏系统。“谈判”提供提供方的非暴力途径，“退出”会在不改变控制权或公民资产的情况下结束，“恢复”只会在缺少提供方确认时重试已保存的有限操作。"
+      ],
+      "commands": [
+        "/kingdoms-drama list",
+        "/kingdoms-drama list <offset>",
+        "/kingdoms-drama inspect \"<drama name>\"",
+        "/kingdoms-drama propose \"<request key>\" <global drama revision> <template definition id> \"<settlement name>\" [<organization definition id>]",
+        "/kingdoms-drama consent \"<drama name>\" <record revision>",
+        "/kingdoms-drama execute \"<drama name>\" <record revision>",
+        "/kingdoms-drama negotiate \"<drama name>\" <record revision>",
+        "/kingdoms-drama exit \"<drama name>\" <record revision>",
+        "/kingdoms-drama recover \"<drama name>\" <record revision>"
+      ]
+    },
+    {
+      "id": "campaign_rebellion_and_invasion",
+      "category": "evolution",
+      "title": "战役、叛乱与入侵戏剧",
+      "summary": "军事故事需要使用真实的原生领导权、占领造成的不满以及双方的同意。",
+      "body": [
+        "边境战役使用DEFEND战役目标，戏剧持续144000刻。占领区叛乱使用AUTONOMY，持续216000刻，并且还需要一项当前已保存的占领不满，例如一项被拒绝的、有保护和控制记录支持的编写义务。边疆入侵使用TRANSFER，持续144000刻，并需要两位相关原生领袖围绕其编写目标明确同意参与。",
+        "执行会委托给现有的战争战役宣告，并继承其当前的授权、映射、通知期、领地、领袖、首都、防守方和提供方检查。仅有戏剧同意并不能绕过政治权限。原生的Recruits战斗仍是围攻进度、胜利和控制权的唯一来源。任何模板都不会抹去城镇、迁移平民、摧毁建筑、改写文化或转移公民财产。",
+        "在已保存的操作允许时，谈判会调用现有的协议途径。退出始终是非暴力的，会保留原生控制权、公民身份、居民、机构、资产和声望。提供方拒绝或缺少确认时，会留下一条已暂停且可恢复的记录。恢复提供方后再恢复同一个请求；不要反复提议相同的稳定请求键来获得重复的战役。"
+      ],
+      "commands": [
+        "/kingdoms-drama propose \"<request key>\" <global drama revision> mcakingdoms:border_campaign \"<settlement name>\"",
+        "/kingdoms-drama propose \"<request key>\" <global drama revision> mcakingdoms:occupied_rebellion \"<settlement name>\"",
+        "/kingdoms-drama propose \"<request key>\" <global drama revision> mcakingdoms:frontier_invasion \"<settlement name>\"",
+        "/kingdoms-drama consent \"<drama name>\" <record revision>",
+        "/kingdoms-drama execute \"<drama name>\" <record revision>",
+        "/kingdoms-drama negotiate \"<drama name>\" <record revision>",
+        "/kingdoms-drama exit \"<drama name>\" <record revision>"
+      ],
+      "task": "drama.overview"
+    },
+    {
+      "id": "peaceful_organization_schism",
+      "category": "evolution",
+      "title": "化解和平的特许状分裂",
+      "summary": "在成员同意下成立一个独立的组织，不涉及军事或宗教上的改写。",
+      "body": [
+        "对于concord_schism，提议的对象是来源组织的资源ID。提议者必须是活跃成员，身处一个已知的公民聚居地内，并拥有当前有效的特许状RECOGNIZE权限。另一位来源组织的活跃成员提供独立的同意。这一和平的组织流程不需要原生军事领地、阵营指挥权或围攻证据。",
+        "执行会使用组织生命周期负责方，以一个新的稳定ID成立已安装的、基于点灯人的和谐兄弟会特许状。它遵循模板可用性、赞助方权限、成员兼容性、修订和持久保存检查。如果配置的模板不在已安装的数据包内容中，分裂无法凭空生成替代定义。",
+        "不会有任何人被自动转移。来源组织的成员资格和声望会保留，每位参与者都按照正常的组织规则自行选择是否加入新组织。该操作不会改写神祇、信仰、婚姻、居住地、王国、财产、任务或公民身份。退出会让来源组织保持原样，而已保存的提供方或负责方失败只能通过其有限的恢复途径处理。"
+      ],
+      "commands": [
+        "/kingdoms-drama propose \"<request key>\" <global drama revision> mcakingdoms:concord_schism \"<settlement name>\" <organization definition id>",
+        "/kingdoms-drama consent \"<drama name>\" <record revision>",
+        "/kingdoms-drama execute \"<drama name>\" <record revision>",
+        "/kingdoms-drama exit \"<drama name>\" <record revision>",
+        "/kingdoms-drama recover \"<drama name>\" <record revision>"
+      ],
+      "task": "drama.overview"
+    },
+    {
+      "id": "evolution_saved_data_recovery",
+      "category": "evolution",
+      "title": "恢复演变世界的记录",
+      "summary": "在使用明确的恢复命令之前，保留附属文件并恢复兼容的提供方。",
+      "body": [
+        "演变、保护、移交、戏剧、组织、政治和民事契约都会在世界数据目录下各自保存有上限的数据。未来的、不受支持的或不完整的结构会以只读方式保留。在调用外部之前的状态会先被持久保存，因此崩溃留下的是一项真实的、可重试的待处理操作，而不是一份无从追踪的重复记录。",
+        "不要为了清除被阻止的记录而删除附属文件。请备份世界，检查具名的记录和当前的提供方状态，恢复对应的提供方版本，然后选择适用的重试、确认、恢复、解除、退出、恢复操作、核对或转交工作事务。保存失败会拒绝该操作。恢复绝不会扩大权限或更改已固定的参与者。",
+        "当前的原生契约为：MCA 7.6.26提供双向的家庭和居住地事实；MCA Quests 1.7.1提供目标、凭证和委托（1.6.5只提供王国任务条件）；MCA Crime 0.7.5提供工坊合法性和辖区；MCA Reputation 0.6.1提供实时阵营同步（0.6.0只提供只读的本地声望）；Townstead 0.7.6提供政治所需的人生阶段和建筑证据；Recruits 1.15.2提供战争和移交操作。没有Townstead编年史档案适配器。只在隔离的副本上测试缺少提供方的情况；原版可能会删除未知的模组实体，因此重新安装后的恢复必须从未经改动的提供方世界快照开始。"
+      ],
+      "commands": [
+        "/kingdoms-evolution inspect \"<opportunity name>\"",
+        "/kingdoms-evolution retry \"<opportunity name>\"",
+        "/kingdoms-evolution release_rejected \"<opportunity name>\"",
+        "/kingdoms-transfer inspect \"<transfer name>\"",
+        "/kingdoms-transfer confirm \"<transfer name>\"",
+        "/kingdoms-transfer restore \"<transfer name>\"",
+        "/kingdoms-drama inspect \"<drama name>\"",
+        "/kingdoms-drama recover \"<drama name>\" <record revision>",
+        "/kingdoms guild lifecycle status <organization definition id>"
+      ],
+      "task": "evolution.overview"
+    }
+  ]
+}

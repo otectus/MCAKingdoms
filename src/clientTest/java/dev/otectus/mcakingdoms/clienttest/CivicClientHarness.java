@@ -59,6 +59,7 @@ public final class CivicClientHarness {
             // turn a valid click into a silently rate-limited request.
             if (mc.player == null || ticks - entered < 20) return;
 
+            if (reviewing != null) { review(); return; }
             switch (stage) {
                 case 0 -> {
                     if (!Files.exists(shared.resolve("READY"))) return;
@@ -152,7 +153,7 @@ public final class CivicClientHarness {
                     checkReadableOutcome("unavailable workshop");
                     check(view().active(), "workshop refusal preserves requester membership");
                     Files.writeString(shared.resolve(role + "-PASS.txt"),
-                            "PASS GuildScreen/network join-leave-rejoin profile isolation, R2 hospitality/workshop refusal, readable qualification reasons, normal and compact screenshots\n");
+                            "PASS GuildScreen with reviewed Kingdom Tasks join-leave-rejoin profile isolation, R2 hospitality/workshop refusal reported as refused, readable qualification reasons, normal and compact screenshots\n");
                     finished = true;
                     mc.stop();
                 }
@@ -186,11 +187,49 @@ public final class CivicClientHarness {
                 "qualification reasons are localized, not raw keys: " + lines);
     }
 
+    /** The last reviewed action's result, read on the Tasks result page before returning to the Guilds screen. */
+    private String lastOutcome = "", lastStatus = "";
+    /** The action being reviewed in Kingdom Tasks (join, leave or a service), or null. */
+    private String reviewing;
+
     private void checkReadableOutcome(String operation) {
-        String outcome = String.valueOf(field("outcome"));
-        check(!outcome.isBlank(), operation + " has a visible outcome");
-        check(!outcome.contains("organization.") && !outcome.contains("civic."),
-                operation + " outcome is localized: " + outcome);
+        check(!lastOutcome.isBlank(), operation + " has a visible outcome");
+        check(!lastOutcome.contains("organization.") && !lastOutcome.contains("civic."), operation + " outcome is localized: " + lastOutcome);
+        if (operation.startsWith("unavailable")) check(lastStatus.equals("refused"), operation + " is reported as refused, not done: " + lastStatus);
+        else check(lastStatus.equals("done"), operation + " is reported as done: " + lastStatus);
+    }
+
+    /** Joining, leaving and services are reviewed in Kingdom Tasks: confirm the named action, read the result, return. */
+    private void review() {
+        if (!(mc.screen instanceof dev.otectus.mcakingdoms.client.KingdomActionsScreen tasks)) return;
+        Object pending = taskField(tasks, "pending");
+        var reply = (dev.otectus.mcakingdoms.interaction.InteractionNetwork.Reply) taskField(tasks, "reply");
+        if (pending != null || reply == null) return;
+        if (reply.mode().equals("review")) {
+            String action = reply.actionComponent().getString();
+            check(!action.isBlank(), reviewing + " review names its action");
+            Button apply = mc.screen.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
+                    .filter(b -> b.getMessage().getString().equals(action)).findFirst().orElseThrow(() -> new AssertionError("No confirm button " + action));
+            check(mc.screen.mouseClicked(apply.getX() + apply.getWidth() / 2.0, apply.getY() + apply.getHeight() / 2.0, 0), "confirmed " + reviewing);
+            return;
+        }
+        if (reply.mode().equals("result") || reply.mode().equals("error") || reply.mode().equals("unavailable")) {
+            lastOutcome = reply.detailText();
+            lastStatus = reply.mode().equals("result") ? reply.statusOrEmpty() : "refused";
+            System.out.println("CIVIC_CLIENT " + reviewing + " -> " + lastStatus + ": " + lastOutcome);
+            reviewing = null;
+            ((net.minecraft.client.gui.screens.Screen) mc.screen).onClose();
+        }
+    }
+
+    private Object taskField(Object screen, String name) {
+        try {
+            Field field = dev.otectus.mcakingdoms.client.KingdomActionsScreen.class.getDeclaredField(name);
+            field.setAccessible(true);
+            return field.get(screen);
+        } catch (ReflectiveOperationException failure) {
+            throw new RuntimeException(failure);
+        }
     }
 
     private void compactScreenshot() {
@@ -206,11 +245,31 @@ public final class CivicClientHarness {
         shot("02-" + role + "-guild-compact.png");
     }
 
+    /** join, leave, refresh, hospitality or workshop, through the Guilds screen as a player would. */
     private void click(String name) {
-        Button button = (Button) field(name);
+        if (name.equals("hospitality") || name.equals("workshop")) {
+            var record = (dev.otectus.mcakingdoms.client.rich.RichPanel) field("record");
+            var view = view().guild();
+            int index = -1;
+            for (int i = 0; i < view.services().size(); i++) if (view.services().get(i).permission().endsWith(":" + name)) index = i + 1;
+            check(index > 0, name + " service is listed on the Guilds screen");
+            String key = "use_" + index;
+            var target = record.targets().stream().filter(t -> t.key().equals(key)).findFirst().orElseThrow(() -> new AssertionError("No " + name + " action"));
+            reviewing = name;
+            target.activate();
+            return;
+        }
+        String label = switch (name) {
+            case "refresh" -> net.minecraft.network.chat.Component.translatable("civic.mcakingdoms.refresh").getString();
+            default -> null;
+        };
+        Button button = mc.screen.children().stream().filter(Button.class::isInstance).map(Button.class::cast)
+                .filter(b -> label != null ? b.getMessage().getString().equals(label)
+                        : b.getMessage().getString().startsWith(name.equals("join") ? "Join " : "Leave ")).findFirst()
+                .orElseThrow(() -> new AssertionError("No " + name + " button"));
         check(button.active, name + " button enabled");
-        check(mc.screen.mouseClicked(button.getX() + button.getWidth() / 2.0,
-                button.getY() + button.getHeight() / 2.0, 0), "clicked " + name);
+        if (label == null) reviewing = name;
+        check(mc.screen.mouseClicked(button.getX() + button.getWidth() / 2.0, button.getY() + button.getHeight() / 2.0, 0), "clicked " + name);
     }
 
     private Object field(String name) {

@@ -120,7 +120,13 @@ Run `check_mod.py` for a full consistency check (missing models, lang keys, text
 
 ## Current focus
 
-_What you are working on right now. One or two lines._
+Two usability passes, both uncommitted for review: U1–U11 (2026-10-24) and the visual guidebook plan now in
+`MCAKingdoms_Usability_Implementation_Plan.md` (UX-01–UX-12, 2026-10-26). `docs/Usability-Implementation-Record.md` lists
+what changed, where, and how it was validated, with a dated section for each pass.
+
+The subsequent manuscript overhaul of the Book and Ledger is recorded in `docs/Book-Interface-Design.md`, including
+the shared components, asset sources and packaged-client evidence. Kingdom Tasks now reuses the same manuscript
+materials and controls. War Room, Guilds, government and Settings now share this system too; embedded headers and arrival banners use compact parchment plaques.
 
 ## Roadmap
 
@@ -147,6 +153,47 @@ _What you are working on right now. One or two lines._
 - **Petition honors** come from kingdom metadata `petition_honor` (default `mcakingdoms:open_bell`).
 - **Village identity is the structure start; reconciliation merges fragments** into the record holding it (D1–D6 in
   `docs/MCAKingdoms-Village-Identity-Diagnosis-and-Plan.md`); compare stored settlement ids through `resolveSettlementId`.
+- **Reload outcomes belong to one attempt** (`data/ReloadReport`). Six domains validate while the reload prepares, so a
+  rejection there fails the whole reload; civic rules and world-context selectors reject domain-locally at apply and keep
+  their previous snapshot. `/kingdoms reload`, Reload server definitions and Server health all read the same attempt.
+- **Kingdom Tasks protocol 4** (`interaction/InteractionNetwork`): the authorized task index (`INDEX`, now with group and
+  availability) is searched on the client in the player's language; record choices (`FILTER`) on the server in the three
+  bundled languages. `START` returns the start view (`interaction/Suggestions`); replies carry the confirm label, a status
+  (`done`, `waiting`, `refused`, `unknown`, or `read` for read-only tasks) and a Book topic. Other channels on 2026-10-26:
+  main 6 (ledger search and sort, kingdom gallery), `civic` 4 (read-only structured guild view), `politics` 4 (record
+  fields, header), `war_room` 4 (sections, per-link availability). Design note: `docs/Localized-Search-Design.md`.
+- **Feature checks before forms.** `interaction/TaskMeta` maps each task to the server features it needs (config switches,
+  companion mods, capability probes); an unavailable task is listed and explained, never opened as a form. The War Room
+  marks its links the same way. Owning services still decide every request.
+- **Requirement rows are projections.** `ActionRegistry.requirements`, `interaction/Requirements` and
+  `civic/CivicRequirements` read each owning service's rule for display (`MET`, `UNMET`, `UNKNOWN`, or `NOTE` for
+  information such as which route applies); they never decide anything.
+- **Book resources are schema 2** (`guide/KingdomGuide`): typed blocks, legacy schema 1 adapted, lenient reading in game and
+  strict reading in tests. Recipe blocks name a recipe id; `guide/GuideRecipe` builds the display from whichever
+  `RecipeManager` it is given (the client's synchronized one in game, isolated managers in GameTests). Text may contain
+  `{key:tasks}` only. Format: `docs/Datapack-Reference.md#book-of-kingdoms-pages`.
+- **Manuscript interfaces (2026-10-26).** All Kingdoms-owned screens reuse `client/book` (materials, layout,
+  buttons, search, native cycle/slider presentation, confirmation and illumination). `RichPanel.manuscript()` and `MenuTextPanel.manuscript()` opt into dark ink;
+  operational pages use bounded folios. Wide books show facing leaves; Tasks uses a folio with two start
+  columns. Narrow screens retain normal text size in one column. Guide page turns retain a line of overlap.
+  `BookIllustrations` routes separate cached frontispieces to the Book, Ledger and Tasks. The material atlas contains crimson/green/
+  walnut bindings and high-contrast leather control states. Ledger kingdom-picker pages and draggable local settlement
+  rows are client-only; server result pagination and filter authority remain separate.
+  `docs/Book-Interface-Design.md` records the interface inventory, asset provenance and acceptance evidence.
+- **Rich panels** (`client/rich/RichPanel`, `Pieces`) render the Book, Guilds, Kingdom and War Room content with focusable
+  link targets and a narration text for every piece. Client-only state (bookmarks, recents, favourites, last topic) lives
+  in `config/mcakingdoms-client-state.json` (`client/ClientState`), never on the server.
+- **Dedicated-server safety of client hooks.** Lambdas that mention client classes live in `client/ClientExtensions`, not
+  in classes the dist check loads on a dedicated server (a GameTest server crashed on `Screen` once).
+- **Resident founding** is decided by `GovernmentService.residentFounder`; Tasks and the command only constrain the
+  choices. The `openFounding` setting is a `BooleanSupplier` in the package-private constructor so tests pass a fixed
+  value: `ConfigValue.set` rewrites the file and Forge's watcher reloads it on another thread (the same race as the r3
+  known issue below).
+- **Translations are guarded by tests**, not by review: `TranslationCoverageTest` (task catalogue, enum labels, fact types,
+  unavailability causes in en/es/zh), `LangCoverageTest`, `KingdomsHelpCommandsTest`, and `GuideTranslationTest`. A Book
+  translation replaces the English entry whole by id, so it must keep the same links and commands.
+- **Examples are executable.** `examples/datapack` (and its `invalid/` variants with `expected.txt`) is loaded by the
+  `ExamplePack*Test` unit tests through the real loaders; `examples/addon` is compiled against the API jar by `check`.
 
 ## Known issues
 

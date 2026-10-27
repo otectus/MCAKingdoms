@@ -66,6 +66,7 @@ public final class RecruitTransferData extends SavedData {
         return data;
     }
     public boolean writable() { return preserved == null; }
+    public static dev.otectus.mcakingdoms.persistence.StoreStatus status(MinecraftServer server) { var data = get(server); return dev.otectus.mcakingdoms.persistence.StoreStatus.of(NAME, data.writable(), ""); }
     public boolean accountingSafe(UUID unit) { return writable() && transfers.values().stream().noneMatch(t -> t.unit().equals(unit) && !t.terminal() && t.accountingDiverged()); }
     /** Called before native accounting changes, including unrelated deaths and administrative recounts. */
     public void accountingChanging(MinecraftServer server, UUID owner, UUID expectedUnit) {

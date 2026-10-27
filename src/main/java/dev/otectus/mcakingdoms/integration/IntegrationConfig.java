@@ -1,5 +1,6 @@
 package dev.otectus.mcakingdoms.integration;
 
+import com.google.gson.JsonObject;
 import dev.otectus.mcakingdoms.api.gating.UnknownKingdomPolicy;
 import net.minecraftforge.common.ForgeConfigSpec;
 
@@ -18,13 +19,28 @@ public final class IntegrationConfig {
                 .comment("Enable server-owned kingdom gates for optional addon content.")
                 .define("enabled", true);
         DEFAULT_UNKNOWN_POLICY = builder
-                .comment("Fallback used by integrations which omit when_unknown. Authored predicates remain authoritative.")
+                .comment("What a kingdom gate answers when the kingdom cannot be determined, for MCA: Kingdoms datapack gates and MCA Quests",
+                        "conditions that omit when_unknown. A predicate that states when_unknown keeps it. Gates parsed by an addon through",
+                        "KingdomGateApi keep that API's documented DENY default. Read when gates are parsed: a change applies at the next data pack reload.")
                 .defineEnum("unknownKingdomPolicy", UnknownKingdomPolicy.DENY);
         CACHE_BY_SETTLEMENT_REVISION = builder
-                .comment("Allow integration adapters to cache contexts until their settlement revision changes.")
+                .comment("Reserved: no current integration adapter caches settlement contexts, so this has no effect; every check reads current records.")
                 .define("cacheBySettlementRevision", true);
         builder.pop();
         SPEC = builder.build();
+    }
+
+    /** The configured answer for predicates without {@code when_unknown}; DENY before the config has loaded (unit tests, early start). */
+    public static UnknownKingdomPolicy unknownKingdomPolicy() {
+        return SPEC.isLoaded() ? DEFAULT_UNKNOWN_POLICY.get() : UnknownKingdomPolicy.DENY;
+    }
+
+    /** {@code predicate} with the configured {@code when_unknown} filled in when its author omitted it; the argument is not modified. */
+    public static JsonObject withUnknownPolicy(JsonObject predicate) {
+        if (predicate.has("when_unknown")) return predicate;
+        JsonObject completed = predicate.deepCopy();
+        completed.addProperty("when_unknown", unknownKingdomPolicy().serializedName());
+        return completed;
     }
 
     private IntegrationConfig() {

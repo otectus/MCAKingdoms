@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
@@ -31,7 +32,11 @@ class LangCoverageTest {
             "\"((?:organization|progression|condition|civic|warfare|politics|evolution|interaction|task|menu|screen|gui"
                     + "|command|notice|message|text|kingdom)\\.[a-z0-9_./]+)\"");
     /** Keys Minecraft itself translates. */
-    private static final Set<String> VANILLA = Set.of("gui.back");
+    private static final Set<String> VANILLA = Set.of("gui.back", "gui.yes", "gui.no");
+    /** Prefixes that local helpers put before a short key, such as {@code e("organization.line", ...)} in the evolution tasks. */
+    private static final List<String> HELPER_PREFIXES = List.of("interaction.mcakingdoms.", "interaction.mcakingdoms.evolution.",
+            "interaction.mcakingdoms.warfare.", "interaction.mcakingdoms.settlement.", "facts.mcakingdoms.", "politics.mcakingdoms.row.",
+            "screen.mcakingdoms.ledger.");
 
     private static JsonObject lang() throws IOException {
         return JsonParser.parseString(Files.readString(Path.of("src/main/resources/assets/mcakingdoms/lang/en_us.json")))
@@ -49,7 +54,7 @@ class LangCoverageTest {
                     String literal = matcher.group(1);
                     if (lang.has(literal) || VANILLA.contains(literal) || literal.endsWith(".") || literal.endsWith("_")
                             || lang.has("task.mcakingdoms." + literal + ".title")
-                            || lang.has("interaction.mcakingdoms." + literal)) continue;
+                            || HELPER_PREFIXES.stream().anyMatch(prefix -> lang.has(prefix + literal))) continue;
                     missing.add(literal + " (" + file.getFileName() + ")");
                 }
             }

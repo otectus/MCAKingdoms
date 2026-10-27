@@ -1,5 +1,7 @@
 # R3 warfare, territory and world integration
 
+> **Design and delivery record.** Current operational guidance is in the [README](../README.md), the [configuration reference](Configuration.md), the [datapack reference](Datapack-Reference.md), the [addon API guide](Addon-API.md) and the in-game Book of Kingdoms; where this record differs, those win. Validation results below are dated evidence for the build named with them, not for later builds.
+
 Press **K** for the current **Kingdom Tasks** interface. In-mod player and operator actions have a GUI path with named choices and a review step. Saved-record command selectors also accept readable names; legacy UUID examples remain compatible but are optional. See [the current player interface guide](Player-Experience-Review.md) and the in-game Book of Kingdoms.
 
 R3 implements political campaigns around native Recruits warfare, negotiated settlement decisions, temporary mobilization, civilian recovery contracts, local Crime jurisdiction, discovered world sites, institution routes, encounter receipts and atlas/ledger views. All R3 feature switches default to **enabled**. The matching configuration overlay is `pack/r3/config/mcakingdoms-warfare-common.toml`.

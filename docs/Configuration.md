@@ -1,0 +1,156 @@
+# Configuration reference
+
+MCA: Kingdoms writes eight TOML files to the instance's `config/` folder the first time it starts. Every key keeps its shipped default until you change it; nothing in this mod rewrites a value you set. Seven files are **common** (read by the server, and by a single-player world's integrated server); `mcakingdoms-client.toml` is **client** only.
+
+**When a change applies.** Forge watches these files and reloads one when it is saved. Most values are read each time they are used, so a saved edit applies from the next use without a restart; the tables mark the exceptions:
+
+- **start** — read once when the server starts. Restart the server after changing it.
+- **reload** — read when definitions are parsed. It applies at the next data pack reload (`/kingdoms reload`, or Reload server definitions in Kingdom Tasks).
+- **start-up pass** — only affects the one-time start-up reconciliation described under `reconcileOnStartup`.
+
+**Inspecting the effective state.** Operators open **Server health** in Kingdom Tasks (K by default) or run `/kingdoms health`. It lists the feature switches, installed providers and which capabilities bound, saved-data writability, the last definition reload, this start's Ultima migration, and discovery/reconciliation activity. Players see the public part through **What is available here?**. `/kingdoms faction diagnostics` reports the standing synchronization in detail.
+
+**Units.** Durations are in *game ticks*: 20 ticks are one second while the server keeps up, so the conversions given below are nominal. Ticks do not advance while a server is stopped or a single-player world is paused, and a lagging server advances them more slowly than the clock. Distances are in blocks unless a key says chunks (16 blocks).
+
+Presets for a peaceful and a warfare-focused pack are in [docs/presets](presets/README.md). They are examples to copy by hand; nothing applies them automatically.
+
+## `mcakingdoms-common.toml` — discovery, identity, founding and civic evidence
+
+Owner: `config/McaKingdomsConfig`. 18 keys.
+
+| Key | Default | Allowed | Applies | Meaning |
+| --- | --- | --- | --- | --- |
+| `settlementDiscovery.defaultSettlementRadius` | 64 | 16–512 | live | Horizontal radius given to a newly detected settlement. Observation and merges never grow a settlement wider than eight times this radius. |
+| `settlementDiscovery.poiSearchRadius` | 48 | 16–256 | live | Radius searched for village points of interest (beds, bells, workstations) when a loaded chunk is examined. |
+| `settlementDiscovery.poiMinimumCount` | 5 | 1–64 | live | Points of interest a cluster needs to be recognized as a settlement. |
+| `settlementDiscovery.chunkScansPerTick` | 2 | 1–64 | live | Queued loaded chunks examined per server tick. Every loaded chunk joins this queue, so discovery after a large area loads takes a while; it never loads chunks itself. |
+| `settlementDiscovery.candidateMergeDistance` | 32 | 0–256 | live | Spatial fallback only: anchor distance at which a candidate matches an existing settlement when no village record or shared identity decides. |
+| `settlementDiscovery.villageIdentity` | `STRUCTURE` | `STRUCTURE`, `SPATIAL` | live | `STRUCTURE`: everything inside a generated village's footprint is that one village, and split records are merged. `SPATIAL`: distance and overlap matching only, no merging — for troubleshooting. |
+| `settlementDiscovery.structureMergeMargin` | 48 | 0–128 | live | Blocks beyond a generated village's structure box that still belong to it. |
+| `settlementDiscovery.autoReconcile` | `true` | — | live | Merge records that turn out to be pieces of one generated village as their chunks are examined. |
+| `settlementDiscovery.reconcileOnStartup` | `true` | — | start | Also reconcile every record once at server start. The pass runs once per world: when it finishes, the world records reconciliation version 1 and later starts skip it. Server health shows whether it ran. |
+| `settlementDiscovery.reconcileStartupChunkBudget` | 64 | 0–4096 | start-up pass | Unloaded chunks the start-up pass may read for structure references; records beyond the budget reconcile when their chunks load. |
+| `settlementDiscovery.reconcileChunkReadsPerTick` | 4 | 1–64 | start-up pass | Chunk reads the start-up pass spends per tick. |
+| `settlementDiscovery.villageStructureTags` | `["minecraft:village"]` | structure tags or ids; leading `#` optional | live | Structures treated as generated villages. |
+| `settlementDiscovery.poiLinkDistance` | 40 | 8–128 | live | Points of interest closer than this, horizontally, form one cluster. |
+| `settlementDiscovery.poiRequireHomeOrMeeting` | `true` | — | live | A cluster needs at least one bed or bell. |
+| `settlementDiscovery.poiSurfaceOnly` | `true` | — | live | Ignore clusters whose mean height is more than 24 blocks below the surface. |
+| `settlementDiscovery.candidateOverlapFraction` | 0.5 | 0.1–1.0 | live | Spatial fallback only: share of the smaller area two bounds must overlap for a candidate to match. |
+| `civicIdentity.evidenceInterval` | 200 | 20–24000 | live | Ticks between home-evidence checks for each loaded NPC (default 10 seconds). |
+| `politics.openFounding` | `true` | — | live | A player whose recorded civic residence is in a kingdom may found that kingdom's first government, with the residence as capital and themselves as leader. Operators can always found. Residence is a civic record set by an operator (`/kingdoms citizen setresidence`, Set civic residence) or an addon; visiting, sleeping and trading do not set it. |
+
+With the defaults, a point-of-interest cluster counts only with at least five points, a bed or bell among them, and near the surface. Generated villages are recognized from their structure regardless of those three rules.
+
+## `mcakingdoms-client.toml` — entry title, Kingdom Tasks and the Book (client)
+
+Owner: `presentation/PresentationConfig`. 8 keys in four sections. Each player sets these for their own client, either in this file or in the **MCA: Kingdoms settings** screen (Kingdom Tasks → Settings, or Mods → MCA: Kingdoms → Config). The screen saves on Apply; Cancel leaves the file unchanged.
+
+Section `entryOverlay`:
+
+| Key | Default | Allowed | Meaning |
+| --- | --- | --- | --- |
+| `enabled` | `true` | — | Show the settlement name, kingdom and heraldry when entering a recognized settlement. |
+| `firstVisitOnly` | `true` | — | Show it only the first time you enter each settlement. The server remembers visits with the world. |
+| `kingdomBordersOnly` | `false` | — | Show it only when the kingdom differs from the last settlement entered. |
+| `durationTicks` | 80 | 20–400 | How long the title stays, in client ticks (default 4 seconds). The time does not run while another screen hides the title. |
+| `y` | 54 | 0–1000 | Vertical position in pixels from the top of the screen. |
+
+Sections `onboarding`, `tasks` and `guide`:
+
+| Key | Default | Allowed | Meaning |
+| --- | --- | --- | --- |
+| `onboarding.showIntro` | `true` | — | Show the short introduction at the top of Kingdom Tasks' start view. Getting started stays available either way. |
+| `tasks.openTo` | `START` | `START`, `ALL_TASKS` | What the Kingdom Tasks key opens: the start view (where you are, suggested next steps, favourites, recent tasks and features), or the full task list. |
+| `guide.reducedMotion` | `false` | — | Show the first accepted item of a recipe ingredient instead of cycling through the alternatives every two seconds. |
+
+Bookmarks, recent topics and tasks, favourite tasks and the last topic read are not settings: they are kept in `config/mcakingdoms-client-state.json` on the player's own computer (at most 32 bookmarks, 16 favourites and 8 recent entries of each kind). Deleting the file, or **Clear history** in the settings screen, forgets them; nothing about them is sent to a server.
+
+## `mcakingdoms-civic-common.toml` — guilds and institutional services
+
+Owner: `civic/CivicConfig`. 5 keys, section `regional_civic_network`.
+
+| Key | Default | Allowed | Meaning |
+| --- | --- | --- | --- |
+| `enabled` | `true` | — | Guild chapter services. Off refuses new services and keeps memberships, appointments and history. |
+| `institutionalServices` | `true` | — | Paid workshop commissions and the civilian effects of agreements. They also need their providers (MCA Quests receipts; MCA: Crime's workshop-legality check for workshop jobs). Off keeps accepted records. |
+| `introductionRadius` | 4096 | 128–32768 | Largest distance between neighbouring chapters for introductions. No chunks are loaded to find a destination. |
+| `contactRange` | 8 | 2–32 | How close, with a clear line of sight, a player must be to a guild or contract contact. Kingdom Tasks lists contacts within it. MCA: Crime's workshop legality check keeps its own 8-block rule. |
+| `introductionCooldown` | 24000 | 20–168000 | Ticks between new introductions per player and guild (default 20 minutes). Asking again returns the same destination. |
+
+## `mcakingdoms-factions-common.toml` — kingdom standing and MCA Reputation
+
+Owner: `factions/config/FactionConfig`. 9 keys.
+
+| Key | Default | Allowed | Meaning |
+| --- | --- | --- | --- |
+| `reputationSync.mode` | `SHADOW` | `OFF`, `SHADOW`, `MCA_TO_FACTION`, `BIDIRECTIONAL_SEMANTIC` | `OFF`: MCA Reputation is not read. `SHADOW` (observe only): changes are read and the standing they would cause is recorded, but standing does not change. `MCA_TO_FACTION`: eligible MCA reputation changes in a settlement also change standing with its kingdom. `BIDIRECTIONAL_SEMANTIC`: additionally delivers scoped kingdom-side effects to MCA communities. Live modes need MCA Reputation 0.6.1 or later; with 0.6.0 local standing is read but no changes arrive. Start in `SHADOW` and review `/kingdoms faction diagnostics` before switching. |
+| `reputationSync.localDeltaContribution` | 0.5 | 0.0–4.0 | Share of an eligible MCA reputation change that becomes kingdom standing, rounded. 0 ignores every change. |
+| `reputationSync.propagateDecay` | `false` | — | Also count MCA reputation decay. Deeds, resolutions and superseded records always count. |
+| `reputationSync.propagateAdminChanges` | `false` | — | Also count changes made by operators or commands. |
+| `reputationSync.factionOverlayMax` | 50 | 0–1000 | Largest amount, up or down, that kingdom standing adds to local MCA standing when both are combined. |
+| `reputationSync.receiptRetentionTicks` | 12096000 | 1 or more | How long a processed change is remembered so it is never applied twice (default 168 hours). |
+| `reputationSync.missingMappingCapacity` | 2048 | 1–100000 | Most changes held for review when their settlement has no kingdom yet. Operators assign them with Assign an unmapped standing event. |
+| `reputationSync.settlementReassignmentPolicy` | `FREEZE_HISTORY` | `FREEZE_HISTORY` | Informational; this is the only policy. Standing already earned stays with the kingdom it was earned under when a settlement changes kingdom. |
+| `migration.legacyAggregation` | `MEAN` | `MEAN`, `MEDIAN`, `MAX`, `MIN`, `SUM` | How several legacy standing values for one kingdom combine when imported. Preview with Preview legacy reputation migration first. |
+
+This legacy *standing import* is separate from the Ultima Kingdoms *namespace migration* described in the [README](../README.md#upgrading-from-ultima-kingdoms).
+
+## `mcakingdoms-warfare-common.toml` — warfare, contracts and world context
+
+Owner: `warfare/WarfareConfig`. 13 keys, section `political_warfare`. Every switch keeps existing records readable when off.
+
+| Key | Default | Allowed | Meaning |
+| --- | --- | --- | --- |
+| `enabled` | `true` | — | Master switch for everything in this file. |
+| `militaryActions` | `true` | — | Campaigns, settlement control agreements and temporary recruit deployments. They also need Recruits exactly 1.15.2; another Recruits version leaves them unavailable. |
+| `civilianContracts` | `true` | — | Civilian recovery contracts offered by settlement contacts. Contracts that belong to an evolving-world opportunity or protection obligation follow that system instead. |
+| `targetProtection` | `true` | — | Limits what recruits and mapped native armies may attack: not their own faction or allies; villagers, players under safe conduct and neutral companions only under local enforcement rules. |
+| `worldContext` | `true` | — | World sites, institution routes, route travel and encounters. |
+| `protectCapitals` | `true` | — | Refuse campaigns and control changes against a kingdom's capital seat. |
+| `requireDefenderOnline` | `true` | — | A siege of a bound settlement needs the native defending leader online. |
+| `campaignNoticeTicks` | 1200 | 20–168000 | Ticks between declaring a campaign and its start (default 1 minute). |
+| `campaignDurationTicks` | 168000 | 1200–2400000 | Ticks a campaign, or a proposed control agreement, stays open (default 2 hours 20 minutes). |
+| `mobilizationTicks` | 6000 | 100–24000 | Ticks a temporary deployment lasts before the recruit's original orders return (default 5 minutes). |
+| `unitsPerCommander` | 16 | 1–64 | Most recruits one player may have deployed at once. |
+| `reconcileInterval` | 100 | 20–1200 | Ticks between bounded reconciliation batches against Recruits' saved state. |
+| `claimsPerBatch` | 8 | 1–32 | Control records and campaigns examined per batch. |
+
+## `mcakingdoms-evolution-common.toml` — evolving world budgets
+
+Owner: `evolution/EvolutionConfig`. 5 keys, no section.
+
+World evolution is **off for every world** until an operator opts that world in with Configure world evolution in Kingdom Tasks (or `/kingdoms evolution`); world events (dramatic scenarios) are a second, separate opt-in on the same form. This file only bounds the work once a world has opted in.
+
+| Key | Default | Allowed | Meaning |
+| --- | --- | --- | --- |
+| `interval` | 1200 | 200–24000 | Ticks between evaluations of active regions (default 1 minute). |
+| `regionBudget` | 4 | 1–16 | Most online players and regions examined per evaluation. No chunks are loaded. |
+| `concurrentScenarios` | 8 | 1–64 | Most opportunities and world events open at once in one world. |
+| `digestInterval` | 24000 | 1200–240000 | Ticks between opportunity digests for subscribed players (default 20 minutes, one Minecraft day). |
+| `autoEligibleRegions` | `true` | — | Treat every settlement of a kingdom with a government as an eligible region unless an operator pauses it. It does not opt a world in. |
+
+## `mcakingdoms-integrations-common.toml` — kingdom gates for addon content
+
+Owner: `integration/IntegrationConfig`. 3 keys, section `kingdomGating`.
+
+| Key | Default | Allowed | Applies | Meaning |
+| --- | --- | --- | --- | --- |
+| `enabled` | `true` | — | live | Kingdom gates for addon content: the `mcakingdoms:kingdom` MCA Quests condition and conversation `kingdom_gate` topics. Off makes every gate answer no. |
+| `unknownKingdomPolicy` | `DENY` | `DENY`, `ALLOW` | reload | What a gate answers when the kingdom cannot be determined, for MCA: Kingdoms datapack gates (`kingdom_gates/`) and MCA Quests conditions that omit `when_unknown`. A predicate that states `when_unknown` keeps it. Predicates an addon parses itself through `KingdomGateApi` keep that API's `DENY` default. |
+| `cacheBySettlementRevision` | `true` | — | — | Reserved. No current adapter caches settlement contexts, so it has no effect; every check reads current records. |
+
+## `mcakingdoms-townstead-common.toml` — Townstead adapter
+
+Owner: `compat/townstead/TownsteadIntegrationConfig`. 7 keys, section `townstead`. Used only when Townstead is installed.
+
+| Key | Default | Allowed | Applies | Meaning |
+| --- | --- | --- | --- | --- |
+| `enabled` | `true` | — | start | Use Townstead for building evidence, NPC life stages, calendar, needs, schedule, spirit and reactions. Without it, building evidence comes from MCA's own village buildings. |
+| `allowInternalFallback` | `true` | — | start | Permit isolated reflection for Townstead spirit and reaction data missing from its public API. |
+| `buildingReconcileIntervalTicks` | 200 | 20–24000 | live | Ticks between building fingerprint checks for settlements near players. |
+| `maxActiveSettlements` | 32 | 1–256 | live | Most settlements rechecked per interval. |
+| `enablePoliticalReactions` | `true` | — | live | Let nearby Townstead villagers react when a player's kingdom standing changes. |
+| `enableBlueprintCivicHeader` | `true` | — | live | Show the settlement's civic header above Townstead's Blueprint screen. |
+| `blueprintRequestRange` | 192 | 32–1024 | live | Largest distance from a settlement anchor for Blueprint header requests. |
+
+Townstead bindings are probed member by member at start. Server health lists the capabilities that bound; an installed version other than the validated one is reported, and a capability whose members moved fails closed on its own.

@@ -50,6 +50,17 @@ public final class McaCompat {
         });return List.copyOf(result);
     }
 
+    /** MCA integration state for capability reports: the installed version and which capabilities bound. */
+    public record Status(Optional<String> installed, boolean detection, boolean evidence) {
+    }
+
+    public static Status status() {
+        Optional<String> installed = ModList.get().getModContainerById("mca")
+                .map(container -> container.getModInfo().getVersion().toString());
+        return new Status(installed, installed.isPresent() && McaAccess.detectorAvailable(),
+                installed.isPresent() && McaAccess.evidenceAvailable());
+    }
+
     public static Registration attach(MinecraftServer server, KingdomsService service) {
         Objects.requireNonNull(server, "server");
         Objects.requireNonNull(service, "service");

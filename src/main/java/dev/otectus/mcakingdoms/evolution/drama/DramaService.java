@@ -83,7 +83,7 @@ public final class DramaService {
                 subject, dynamic, participants, Set.of(source), evidence, now(), template.durationTicks(), now(), 1, 0, DramaState.Phase.PROPOSED,
                 DramaState.Operation.NONE, DramaState.operationId(request, "provider"), "Awaiting an independent participant's consent");
         current.dramas.put(request, frozen); current.receipts.put(request, fingerprint); save(current);
-        dev.otectus.mcakingdoms.interaction.Notify.players(server, frozen.participants().values(), actor.getUUID(), "A drama \"" + frozen.terms().title() + "\" was proposed at " + dev.otectus.mcakingdoms.interaction.Names.settlement(server, settlement) + "; your consent is requested.");
+        dev.otectus.mcakingdoms.interaction.Notify.players(server, frozen.participants().values(), actor.getUUID(), net.minecraft.network.chat.Component.translatableWithFallback("notice.mcakingdoms.world_event_proposed", "The world event \"%s\" was proposed at %s; your consent is requested.", frozen.terms().title(), dev.otectus.mcakingdoms.interaction.Names.settlement(server, settlement)), "drama.inspect");
         return "Drama \"" + frozen.terms().title() + "\" proposed from frozen authored terms; the other participant must consent.";
     }
 

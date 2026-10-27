@@ -127,6 +127,7 @@ final class CivilianContractData extends SavedData {
     }
 
     boolean writable() { return preserved == null; }
+    public static dev.otectus.mcakingdoms.persistence.StoreStatus status(MinecraftServer server) { var data = get(server); return dev.otectus.mcakingdoms.persistence.StoreStatus.of(NAME, data.writable(), ""); }
     Optional<Contract> get(UUID id) { return Optional.ofNullable(contracts.get(id)); }
 
     Optional<Contract> active(UUID player, UUID settlement, CivilianContractKind kind, long now) {

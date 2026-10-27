@@ -1,0 +1,511 @@
+{
+  "schema": 2,
+  "entries": [
+    {
+      "id": "start_here",
+      "task": "*",
+      "category": "basics",
+      "title": "从这里开始",
+      "summary": "一次平和的初次游玩，不需要官职、军队或行会。",
+      "keywords": [
+        "开始",
+        "第一步",
+        "新玩家",
+        "教程",
+        "帮助"
+      ],
+      "blocks": [
+        {
+          "id": "intro",
+          "type": "paragraph",
+          "text": "MCA：王国为聚居地赋予持久的名称和王国身份，还提供自愿的行会服务、政府、外交以及可选的军事和世界事件。你可以探索、交易、建造和帮助他人，而无需统治任何地方或加入军队。"
+        },
+        {
+          "id": "first_steps_heading",
+          "type": "heading",
+          "text": "你的第一步"
+        },
+        {
+          "id": "first_steps",
+          "type": "steps",
+          "items": [
+            {
+              "text": "了解两本书的用途：本书负责讲解，村庄名册列出你知道的地点。",
+              "link": {
+                "kind": "guide",
+                "target": "two_books",
+                "label": "两本书，两种用途"
+              }
+            },
+            {
+              "text": "用纸、书和指南针制作村庄名册。它的主题中有配方。",
+              "link": {
+                "kind": "guide",
+                "target": "ledger_recipe",
+                "label": "制作村庄名册"
+              }
+            },
+            "走进一个村庄。第一次进入已识别的聚居地时，横幅会显示它的名称和王国，并将它加入你的名册。",
+            {
+              "text": "按 {key:tasks} 打开王国事务，然后选择“查看此聚居地”了解你在哪里。",
+              "link": {
+                "kind": "task",
+                "target": "settlement.here"
+              }
+            },
+            {
+              "text": "如果愿意，可以寻找本地的行会工作。加入行会是可选的。",
+              "link": {
+                "kind": "guide",
+                "target": "first_guild_steps",
+                "label": "帮助点灯人"
+              }
+            }
+          ]
+        },
+        {
+          "id": "review",
+          "type": "callout",
+          "tone": "tip",
+          "text": "会更改记录的事务以一个核对页面结束，页面会列出相关的人、地点和后果。在你选择写有该操作名称的最后一个按钮之前，什么都不会发生；返回不会改变任何东西。"
+        },
+        {
+          "id": "roles",
+          "type": "paragraph",
+          "text": "聚居地的王国说明其居民是谁。这并不表示某支军队拥有周围的土地，持有任何一本书也不会赋予政治权限。"
+        },
+        {
+          "id": "government",
+          "type": "callout",
+          "tone": "note",
+          "text": "统治是可选的。管理员可以为尚未组织的王国建立第一个政府；如果服务器允许居民建国，记录的居住地在该王国的玩家也可以。"
+        },
+        {
+          "id": "more",
+          "type": "links",
+          "links": [
+            {
+              "kind": "guide",
+              "target": "tasks_workflow"
+            },
+            {
+              "kind": "guide",
+              "target": "found_a_government"
+            },
+            {
+              "kind": "task",
+              "target": "*",
+              "label": "打开王国事务"
+            }
+          ]
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "two_books",
+      "category": "basics",
+      "title": "两本书，两种用途",
+      "summary": "王国之书用于学习；村庄名册用于你知道的地点。",
+      "keywords": [
+        "书",
+        "名册",
+        "区别",
+        "哪本书",
+        "物品"
+      ],
+      "blocks": [
+        {
+          "id": "comparison",
+          "type": "comparison",
+          "alt": "王国之书解释一切如何运作，从不改变世界。村庄名册列出你知道的聚居地，并打开它们的王国、行会和作战室页面。",
+          "columns": [
+            {
+              "title": "王国之书",
+              "item": "mcakingdoms:book_of_kingdoms",
+              "points": [
+                "解释每个系统需要什么、会改变什么。",
+                "可搜索，带有书签和实时配方。",
+                "阅读它永远不会改变世界。"
+              ]
+            },
+            {
+              "title": "村庄名册",
+              "item": "mcakingdoms:village_ledger",
+              "points": [
+                "列出你已发现的聚居地以及公开的聚居地。",
+                "显示每个聚居地的王国和位置。",
+                "打开它的政府、行会服务和作战室。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "no_book_needed",
+          "type": "paragraph",
+          "text": "使用王国事务不需要任何一本书：随时按 {key:tasks} 即可。它的起始视图也可以通过“指南”按钮打开本书。"
+        },
+        {
+          "id": "recipes",
+          "type": "links",
+          "links": [
+            {
+              "kind": "guide",
+              "target": "book_recipe"
+            },
+            {
+              "kind": "guide",
+              "target": "ledger_recipe"
+            }
+          ]
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "book_recipe",
+      "category": "basics",
+      "title": "制作王国之书",
+      "summary": "一本书和一张纸，任意摆放。",
+      "keywords": [
+        "制作",
+        "配方",
+        "书",
+        "纸",
+        "指南"
+      ],
+      "blocks": [
+        {
+          "id": "recipe",
+          "type": "recipe",
+          "recipe": "mcakingdoms:book_of_kingdoms",
+          "output": "mcakingdoms:book_of_kingdoms"
+        },
+        {
+          "id": "use",
+          "type": "steps",
+          "items": [
+            "把材料放在合成格的任意位置；物品栏里的小合成格就足够。",
+            "手持王国之书并使用它，打开这个阅读器。",
+            "搜索一个目标，或打开“章节”查看目录。"
+          ]
+        },
+        {
+          "id": "unlock",
+          "type": "callout",
+          "tone": "tip",
+          "text": "持有书即可在配方书中解锁此配方。"
+        },
+        {
+          "id": "next",
+          "type": "links",
+          "links": [
+            {
+              "kind": "guide",
+              "target": "ledger_recipe"
+            },
+            {
+              "kind": "guide",
+              "target": "using_the_book"
+            }
+          ]
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "ledger_recipe",
+      "task": "settlement.inspect",
+      "category": "basics",
+      "title": "制作村庄名册",
+      "summary": "用名册浏览你知道的聚居地。",
+      "keywords": [
+        "制作",
+        "配方",
+        "纸",
+        "书",
+        "指南针",
+        "名册",
+        "地图"
+      ],
+      "blocks": [
+        {
+          "id": "recipe",
+          "type": "recipe",
+          "recipe": "mcakingdoms:village_ledger",
+          "output": "mcakingdoms:village_ledger"
+        },
+        {
+          "id": "use",
+          "type": "steps",
+          "items": [
+            "在工作台上制作名册。",
+            "用它浏览你已发现的聚居地。",
+            "选择一个聚居地查看详情。"
+          ]
+        },
+        {
+          "id": "unlock",
+          "type": "callout",
+          "tone": "tip",
+          "text": "持有书或指南针即可在配方书中解锁此配方。"
+        },
+        {
+          "id": "discovery_help",
+          "type": "links",
+          "links": [
+            {
+              "kind": "guide",
+              "target": "ledger_and_discovery",
+              "label": "发现是如何运作的"
+            },
+            {
+              "kind": "task",
+              "target": "settlement.inspect",
+              "label": "查看已知聚居地"
+            }
+          ]
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "tasks_workflow",
+      "task": "*",
+      "category": "basics",
+      "title": "王国事务，一步一步",
+      "summary": "一个事务从选择到得到确认结果的过程。",
+      "keywords": [
+        "事务",
+        "菜单",
+        "核对",
+        "执行",
+        "确认",
+        "怎么做",
+        "起始视图",
+        "分类"
+      ],
+      "blocks": [
+        {
+          "id": "flow",
+          "type": "diagram",
+          "alt": "一个事务从选择开始，回答其中的问题，进入核对页面，经你确认，最后由服务器报告结果。",
+          "nodes": [
+            {
+              "id": "choose",
+              "label": "选择事务",
+              "note": "搜索目标或选择分类"
+            },
+            {
+              "id": "answer",
+              "label": "回答",
+              "note": "每页一个问题"
+            },
+            {
+              "id": "review",
+              "label": "核对",
+              "note": "谁、改变什么、同意"
+            },
+            {
+              "id": "confirm",
+              "label": "确认",
+              "note": "按钮写明操作名称"
+            },
+            {
+              "id": "result",
+              "label": "结果",
+              "note": "完成、等待或被拒绝"
+            }
+          ],
+          "edges": [
+            {
+              "from": "choose",
+              "to": "answer"
+            },
+            {
+              "from": "answer",
+              "to": "review"
+            },
+            {
+              "from": "review",
+              "to": "confirm"
+            },
+            {
+              "from": "confirm",
+              "to": "result"
+            }
+          ]
+        },
+        {
+          "id": "steps",
+          "type": "steps",
+          "items": [
+            "按 {key:tasks}。起始视图会显示你所在的聚居地、最多三个建议的下一步、你最近使用和收藏的事务，以及“所有事务”“指南”“行会”和“设置”按钮。",
+            "按目标搜索，例如“有报酬的工作”“讲和”或“我在哪里”，或者选择“地点”“行会与工作”等分类。",
+            "每页回答一个问题。选项都是服务器知道你可以看到的具名记录。“返回”会保留你之前的回答。",
+            "阅读核对页面：相关的人和地点、会改变什么、任何费用、时间以及需要谁同意。如有需要可以修改某个回答；核对页面会重新生成。",
+            "结果会说明操作是已完成、正在等待其他参与者，还是被拒绝，并提供合理的下一步。"
+          ]
+        },
+        {
+          "id": "unavailable",
+          "type": "callout",
+          "tone": "requirement",
+          "text": "不可用的事务会说明原因：此服务器关闭了它、缺少配套模组，或者你还没有满足某项要求。这些情况各不相同，只有最后一种与你有关。"
+        },
+        {
+          "id": "timeout",
+          "type": "callout",
+          "tone": "tip",
+          "text": "如果一直没有回复，请先选择“检查此操作”再重试。服务器绝不会将核对过的操作执行两次。"
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "task",
+              "target": "*",
+              "label": "打开王国事务"
+            },
+            {
+              "kind": "guide",
+              "target": "ledger_and_discovery"
+            },
+            {
+              "kind": "task",
+              "target": "help.available"
+            }
+          ]
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "using_the_book",
+      "category": "basics",
+      "title": "使用本书",
+      "summary": "按目标搜索、浏览章节，阅读不会改变世界。",
+      "keywords": [
+        "controls",
+        "keyboard",
+        "bookmark",
+        "back",
+        "navigation"
+      ],
+      "blocks": [
+        {
+          "id": "search",
+          "type": "paragraph",
+          "text": "搜索一个目标，或打开“章节”查看目录。标题匹配的主题排在最前，然后是关键词、摘要和正文。常用词会找到它们的同义词：委托会找到工作主题，分部会找到分会，条约会找到协议。"
+        },
+        {
+          "id": "moving_heading",
+          "type": "heading",
+          "text": "如何浏览"
+        },
+        {
+          "id": "moving",
+          "type": "steps",
+          "items": [
+            "主页打开入门主题与章节列表。双页视图中的数字皮革书签可直接打开对应章节。",
+            "返回会恢复上个主题的搜索、章节、目录页码与阅读位置。也可按 Alt + 左方向键返回。",
+            "单箭头在当前主题内翻页；双箭头切换上一个或下一个主题。目录下的箭头切换目录页。",
+            "带 ☆ 的缎带将主题加入已保存列表，与最近阅读的主题一起显示。实心 ★ 表示已收藏。",
+            "关闭会返回打开本书之前的界面。"
+          ]
+        },
+        {
+          "id": "keyboard_heading",
+          "type": "heading",
+          "text": "使用键盘阅读"
+        },
+        {
+          "id": "keyboard",
+          "type": "paragraph",
+          "text": "Tab 可在控件与文章链接之间移动焦点；Enter 或空格激活当前控件。Page Up 和 Page Down 翻页；文章获得焦点时，方向键、Home 和 End 可滚动内容。Ctrl + F 聚焦搜索。Escape 关闭本书。窄窗口使用目录／文章切换书页，不会缩小文字。"
+        },
+        {
+          "id": "commands",
+          "type": "paragraph",
+          "text": "命令只出现在“命令和高级详情”中。它们是可选的参考，绝不会从本书运行。"
+        },
+        {
+          "id": "live",
+          "type": "callout",
+          "tone": "note",
+          "text": "这是一本模组指南，不是实时状态页面。配方和王国图鉴来自你所在的服务器；其他数值是默认值。请使用王国事务查看实时状态。"
+        },
+        {
+          "id": "packs",
+          "type": "paragraph",
+          "text": "资源包可以翻译或替换本书；缺少的翻译会回退到英文。阅读器不会暂停游戏；遇到危险前请先关闭它。"
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "guide",
+              "target": "start_here"
+            },
+            {
+              "kind": "guide",
+              "target": "tasks_workflow"
+            }
+          ]
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "roles_are_separate",
+      "category": "basics",
+      "title": "区分你的不同身份",
+      "summary": "家园、行会成员资格、声望、官职和军事归属回答的是不同的问题。",
+      "body": [
+        "聚居地是一个有名称、有已保存身份的地点。它的公民王国是它在MCA: Kingdoms记录中所属的社会。NPC的出身是其最早已知的公民家园；居住地是其当前已确认的家。路过一个村庄并不等于搬到那里。",
+        "组织（例如点灯人）是自愿结成的团体。成员资格、行会声望、已完成的事迹和等级都属于该组织。它们与你在某个主权王国的声望不同，也与村民对你的好感不同。",
+        "官职是一个政治职位，例如领袖或地方管事。它只提供为该官职及其辖区定义的权限。授权是领袖明确授予某位玩家的权限。一位有名的行会成员并不会自动拥有其中任何一种。",
+        "Recruits阵营掌控自己的队伍、部队、外交、领地和战斗。友好关系不是保护协定，保护协定也不会让其统治者指挥另一名玩家的部队。在占领期间，军事控制与受认可的民事主权可能不一致。",
+        "种族、神祇、技能、家庭关系、住所和个人好感度仍由提供它们的模组管理。MCA: Kingdoms可以读取受支持的资格，但加入行会或签署条约不会改写这些个人选择。"
+      ],
+      "commands": []
+    },
+    {
+      "id": "optional_features",
+      "category": "basics",
+      "title": "你的安装支持哪些功能",
+      "summary": "基础的聚居地玩法可以单独运行；部分服务需要配套的模组和内容。",
+      "body": [
+        "服务器和客户端都需要安装适用于Minecraft 1.20.1 Forge的MCA: Kingdoms。基础的聚居地身份、村庄名册、王国定义和政府记录不需要任何外部指南书模组。本书已包含在MCA: Kingdoms中。",
+        "MCA Reborn提供人物、家庭关系和住所证据。Townstead为受支持的机构提供已认可建筑和人生阶段的证据。MCA Quests提供真实的目标、接取、物品交付、奖励和已保存的完成证据。受支持的MCA Conversations集成提供私密的公民对话选项。仅仅安装了某个模组，并不能证明所需的集成可用。",
+        "点灯人的任务目录还需要整合包中编写好的内容。MCA: Kingdoms中的行会定义可以引用现有任务，但并不提供完整的任务本身。对应的整合包覆盖内容和配套模组的版本都很重要。如果没有出现合适的工作，请先请管理员检查内容和集成，不要反复做无关的工作。",
+        "Recruits提供军事行动和协商后的部队移交。MCA Crime提供它自己的案件、执法和赔偿。Runic Skills、Runic Gods、Runic Races和RPG Lore可能提供私密的资格条件。缺少这些模组时，不会进行任何模拟。",
+        "世界演变默认关闭，管理员需要为每个世界明确开启；开启后，拥有政府的王国的聚居地都是符合条件的区域，除非管理员将其暂停。戏剧性情景需要另行开启。战争和机构服务的开关彼此独立：请询问你的服务器开启了哪些功能，不要假定每个章节都可用。“这里有哪些可用功能？”会显示这些信息。",
+        "MCA: Capitals会禁用MCA: Kingdoms的原生政府功能。在这类服务器上请使用Capitals的政府系统；安装它并不会在旁边再增加一个可用的MCA: Kingdoms政府。"
+      ],
+      "commands": [
+        "/kingdoms integrations"
+      ],
+      "task": "help.available"
+    },
+    {
+      "id": "command_basics",
+      "category": "basics",
+      "title": "命令是可选的",
+      "summary": "用王国事务按名称进行选择；命令保留为管理员和自动化使用的技术参考。",
+      "body": [
+        "按 {key:tasks} 使用受支持的玩家流程。王国事务以易读选项的形式提供聚居地、王国、玩家、NPC、协议、机会、移交和其他记录。服务器会为每个经核对的选项携带修订、条款和核对证据。",
+        "每个事务都以核对页结束。如果记录在执行前发生变化，服务器会拒绝过时的表单。请重新打开该事务，阅读更新后的详情并重新决定。如果某个操作报告保存失败或提供方失败，请先查看其状态，再决定是否重复。",
+        "命令为喜欢聊天输入的玩家和控制台自动化提供等效的界面。请使用Tab自动补全和主题中的参考。记录选择器接受易读的名称，名称含空格时要加引号。稳定请求键是为某个特定请求选定的、易读的幂等名称。",
+        "create或rename末尾的新名称会占用命令的其余部分，输入时不加引号。重命名需要2级权限。命令参考中出现的高级修订和核对指纹参数，会由界面中的核对步骤自动携带；当前所有操作都可以在王国事务中完成。/kingdoms help [主题] 会在游戏中显示命令语法。"
+      ],
+      "commands": [
+        "/kingdoms village info \"Old Bellmeadow\"",
+        "/kingdoms village rename \"Old Bellmeadow\" New Bellmeadow",
+        "/kingdoms kingdom list"
+      ]
+    }
+  ]
+}

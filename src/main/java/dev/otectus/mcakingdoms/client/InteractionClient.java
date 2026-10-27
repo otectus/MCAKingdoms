@@ -12,7 +12,8 @@ import org.lwjgl.glfw.GLFW;
 
 @Mod.EventBusSubscriber(modid="mcakingdoms",value=Dist.CLIENT,bus=Mod.EventBusSubscriber.Bus.MOD)
 public final class InteractionClient {
-    private static final KeyMapping OPEN=new KeyMapping("key.mcakingdoms.actions",GLFW.GLFW_KEY_K,"key.categories.misc");
+    /** The Kingdom Tasks key, K by default, in its own MCA: Kingdoms section of Controls (bindings are saved by name, not category). */
+    private static final KeyMapping OPEN=new KeyMapping("key.mcakingdoms.actions",GLFW.GLFW_KEY_K,"key.categories.mcakingdoms");
     @SubscribeEvent public static void keys(RegisterKeyMappingsEvent event){event.register(OPEN);}
     public static void init(){InteractionNetwork.receive(KingdomActionsScreen::receive);}
     public static void open(Screen parent,String task,String search){open(parent,task,search,"");}

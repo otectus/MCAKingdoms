@@ -1,0 +1,4 @@
+core
+example:mcakingdoms/kingdoms/harbor_league.json
+missing name pool example:harbour
+name_pools/harbour.json

@@ -1,0 +1,66 @@
+{
+  "entries": [
+    {
+      "id": "glossary",
+      "category": "reference",
+      "title": "Glosario en lenguaje claro",
+      "summary": "Traduce las palabras técnicas que aún usan algunas pantallas y comandos.",
+      "body": [
+        "Carta: las normas acordadas que establecen un gobierno o reconocen una institución. Institución: un lugar cívico reconocido oficialmente. Sede: una rama local de una organización. Contacto: un residente concreto que puede ofrecer sus servicios.",
+        "Prestigio: una puntuación con un reino o una organización concretos. Hazaña: un servicio distinto y verificado que se registra para el progreso. Rango: un nivel de afiliación con derechos definidos. Distinción: un galardón político, que puede ser discrecional o ganado mediante un servicio verificado.",
+        "Mandato: la concesión explícita de un permiso por parte de un líder. Ratificar: firmar en nombre de un gobierno con autoridad para ello. Soberanía: el gobierno político reconocido. Controlador: el propietario u ocupante militar nativo. Interregno: un periodo sin líder actual. Regente: un sustituto temporal autorizado según una norma adoptada.",
+        "Novación: transferir una obligación aceptada mediante el procedimiento admitido y aprobado por el responsable (Transferir trabajo aceptado en Tareas del reino). Lápida: un registro conservado que explica que una identidad antigua se fusionó o terminó. Redirección: una forma estable de resolver un identificador antiguo a su identidad actual sin copiar todo su prestigio histórico.",
+        "Proveedor: el mod que realmente gestiona un hecho o una acción, como MCA para el matrimonio o Recruits para las tropas. Justificante: prueba guardada de una operación concreta completada. Revisión: la versión de un registro que inspeccionaste. Intención: un plan guardado que registra qué operación se está intentando, para poder recuperarla con seguridad si se interrumpe.",
+        "CAS o concurrencia optimista: rechazar una escritura si el registro cambió desde que lo leíste. Época: la identidad de una generación del historial de justificantes de un proveedor. Conciliación: la confirmación por parte de un operador de un estado nativo existente ya comprobado; no es una reparación automática ni prueba de que ocurriera el resultado solicitado originalmente.",
+        "Arrendamiento de movilización: un despliegue temporal de un recluta que ya controlas. Terminar el despliegue restaura sus órdenes originales admitidas; no significa despedir a ese recluta."
+      ],
+      "commands": []
+    },
+    {
+      "id": "when_something_is_blocked",
+      "category": "reference",
+      "title": "Cuando una acción está bloqueada",
+      "summary": "Relaciona el mensaje con el siguiente paso útil.",
+      "body": [
+        "Registro cambiado o revisión desfasada: vuelve a abrir la tarea de consulta o inspección, lee las nuevas condiciones y el estado, y decide entonces si actuar. Se espera que el servidor rechace un formulario obsoleto en lugar de adivinar tu intención.",
+        "Falta autoridad: comprueba el reino, el cargo o mandato, el ámbito del asentamiento y quién actúa realmente. Pídeselo al líder o al titular del cargo que corresponda. El rango gremial no es mando militar, y ser operador no da automáticamente autoridad para firmar acuerdos diplomáticos.",
+        "Contacto o edificio no disponible: visita al contacto real cercano, comprueba que está vivo y cumple los requisitos, y pide al responsable que restaure el taller o la institución reconocida reales. Seleccionar a una persona que ya no está cargada no la carga por ti. Un nombramiento válido no sustituye las pruebas de edificio que faltan.",
+        "No tienes suficiente prestigio o hazañas: lee las rutas de miembro e independiente de ese servicio concreto. Haz trabajos admisibles distintos. Repetir un trabajo ya acreditado puede pagar con normalidad, pero no fabrica más hazañas gremiales distintas.",
+        "Proveedor no disponible o definición que falta: pide al operador que revise versiones, parches de los mods complementarios, contenido, configuración y diagnósticos. Tu trabajo aceptado puede seguir suspendido. Esto es distinto de no cumplir tú los requisitos; cambiar de raza, de deidad o de reputación no es una solución general.",
+        "Guardado no disponible, confirmación pendiente o datos de solo lectura: deja de repetir cambios de recompensas o de propiedad. Inspecciona la operación conservada y usa su tarea de recuperación con el actor original cuando se requiera. Si el estado es ambiguo o las cuentas no cuadran, un operador debe revisarlo. No borres archivos auxiliares ni dupliques un contrato para que desaparezca el aviso.",
+        "Sin respuesta: la interfaz puede reintentar con seguridad usando su solicitud conservada. Actualiza e inspecciona antes de hacer una nueva solicitud con consecuencias; que falte una respuesta no prueba que la acción original fallara."
+      ],
+      "commands": [],
+      "task": "help.available"
+    },
+    {
+      "id": "privacy_and_multiplayer",
+      "category": "reference",
+      "title": "Multijugador, consentimiento y privacidad",
+      "summary": "Lo que ves y lo que puedes hacer se comprueban para tu jugador, cada vez.",
+      "body": [
+        "Tu página del gremio describe tu propio prestigio, tus hazañas y tu historial de servicio privado. Las páginas políticas filtran las peticiones, las propuestas y los votos. El descubrimiento filtra las ubicaciones. Una captura de pantalla, un identificador copiado o un comando guardado de otro jugador no transfieren sus permisos.",
+        "Cuando dos jugadores eligen desenlaces opuestos, el servidor usa la versión registrada y la resolución guardada para aceptar como mucho un resultado final compartido. El trabajo nativo completado y la recompensa de cada participante siguen en manos del proveedor de misiones. Las decisiones compartidas sobre el mundo y el pago individual por un servicio no son la misma transacción.",
+        "Algunas acciones requieren consentimientos independientes: dos gobiernos que firman un pacto de protección, dos autoridades de organizaciones que aceptan una fusión, ambas partes que acuerdan una transferencia de recluta o los participantes que aceptan un escenario dramático escrito. No supongas que la cercanía, el matrimonio, una alianza o pertenecer al mismo gremio cumplen esos pasos.",
+        "Un operador del servidor tiene poderes de mantenimiento, pero debe usar las herramientas de reparación explícitas y dejar constancia de los motivos. La conciliación de una transferencia por parte de un operador confirma un estado nativo revisado; no confisca en secreto las tropas de otro jugador ni sobrescribe el número de unidades.",
+        "La identidad corriente de un reino y un hecho público del gobierno pueden ser visibles mientras una petición personal, una oportunidad familiar, un asunto legal o un destino sin descubrir siguen siendo privados. Usa las páginas autorizadas en lugar de pedir volcados globales de registros ocultos."
+      ],
+      "commands": []
+    },
+    {
+      "id": "feature_map",
+      "category": "reference",
+      "title": "Encuentra la tarea adecuada",
+      "summary": "Pulsa {key:tasks}, busca por objetivo y elige registros con nombre de las partes del mundo que se te permite conocer.",
+      "body": [
+        "Pulsa {key:tasks} y busca por tu objetivo. Asentamientos abarca los lugares cercanos y conocidos, los reinos y la residencia cívica. Gobierno abarca cargos, mandatos, acuerdos, peticiones, instituciones, distinciones, sucesión, casas, historial, elecciones y regencia. Gremios y servicio abarca la afiliación gremial, los requisitos, las presentaciones, las sedes, los contactos, las cualificaciones, los encargos, la hospitalidad y los talleres.",
+        "Guerra y Exploración abarcan la inspección del control militar, las campañas, los acuerdos de control, las órdenes temporales de reclutas, el trabajo de recuperación civil, los lugares, las rutas, los encuentros y el acceso neutral a recursos. Los botones de la Sala de guerra abren directamente la tarea correspondiente del servidor; no preparan ningún comando de chat.",
+        "Evolución, Protección, Transferencias y Eventos del mundo abarcan la consulta de escenarios y las contribuciones, los boletines, los deberes de protección, las presentaciones familiares, las transferencias negociadas de reclutas, los eventos del mundo y la recuperación. Organizaciones abarca la fundación con carta, el consentimiento a fusiones, la exclusión de miembros, la transferencia de trabajo aceptado, la finalización y la disolución. Cada selector sigue las mismas reglas de privacidad que el servicio responsable.",
+        "Los jugadores con nivel de permiso 2 ven también las tareas de Administración y de prestigio. Abarcan la creación y corrección de asentamientos, la identidad cívica, la recarga de definiciones, la configuración y las regiones de la evolución, la creación de lugares y rutas, los diagnósticos, la corrección y migración de reputación y la conciliación protegida de transferencias. Las tareas de operador no aparecen en el catálogo de un jugador corriente.",
+        "Escribe unas pocas palabras en la búsqueda, selecciona opciones con nombre, revisa y aplica. Que falten opciones suele significar que el lugar no está descubierto, que un participante está desconectado, que falta autoridad o consentimiento, que un requisito está incompleto o que un proveedor opcional no está disponible. Abre la tarea de consulta o inspección correspondiente para ver la explicación actual; ¿Qué hay disponible aquí? muestra qué funciones activa este servidor."
+      ],
+      "commands": [],
+      "task": "*"
+    }
+  ]
+}

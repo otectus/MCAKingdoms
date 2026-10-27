@@ -1,0 +1,287 @@
+{
+  "schema": 2,
+  "entries": [
+    {
+      "id": "first_guild_steps",
+      "task": "civic.status",
+      "category": "civic",
+      "title": "Ayuda a los Faroleros",
+      "summary": "Gana crédito de servicio con trabajo real, tanto si te unes como si sigues por libre.",
+      "commands": [
+        "/kingdoms guild",
+        "/kingdoms guild join mcakingdoms:lamplighters",
+        "/kingdoms guild leave mcakingdoms:lamplighters"
+      ],
+      "blocks": [
+        {
+          "id": "journey_heading",
+          "type": "heading",
+          "text": "Un camino de servicio"
+        },
+        {
+          "id": "journey",
+          "type": "diagram",
+          "alt": "El trabajo válido genera una finalización guardada. Las hazañas verificadas y el prestigio permiten acceder a los servicios del gremio.",
+          "nodes": [
+            {
+              "id": "n0",
+              "label": "Trabajo válido",
+              "item": "minecraft:lantern"
+            },
+            {
+              "id": "n1",
+              "label": "Finalización guardada",
+              "item": "minecraft:writable_book"
+            },
+            {
+              "id": "n2",
+              "label": "Hazaña verificada",
+              "item": "minecraft:paper"
+            },
+            {
+              "id": "n3",
+              "label": "Servicios del gremio",
+              "item": "minecraft:emerald"
+            }
+          ],
+          "edges": [
+            {
+              "from": "n0",
+              "to": "n1"
+            },
+            {
+              "from": "n1",
+              "to": "n2"
+            },
+            {
+              "from": "n2",
+              "to": "n3"
+            }
+          ]
+        },
+        {
+          "id": "text_0",
+          "type": "paragraph",
+          "text": "Los Faroleros son el primer gremio pacífico incluido. Cuando estén disponibles el contenido de misiones correspondiente y la integración con MCA Quests, completa un trabajo de servicio de los Faroleros con quien lo ofrece normalmente. MCA: Kingdoms registra la finalización guardada como una hazaña verificada y concede el prestigio gremial configurado."
+        },
+        {
+          "id": "text_1",
+          "type": "paragraph",
+          "text": "Abre Registro de aldeas → Gremios y consulta afiliación, prestigio, hazañas, progreso de rango y explicaciones de los servicios. Unirse te inscribe voluntariamente. Abandonar pone fin a la afiliación activa sin borrar el historial de servicio ganado, las habilidades, la familia, el inventario ni las relaciones personales. Puedes pertenecer a varias organizaciones salvo que sus definiciones declaren un conflicto."
+        },
+        {
+          "id": "text_2",
+          "type": "paragraph",
+          "text": "Una misión repetible puede seguir pagando su recompensa nativa habitual, pero la misma misión no sigue concediendo nuevo crédito de los Faroleros. Una hazaña verificada es una finalización distinta y admisible acreditada por este sistema, no cada objeto entregado ni cada enemigo derrotado."
+        },
+        {
+          "id": "text_3",
+          "type": "paragraph",
+          "text": "Para una ruta pacífica sencilla, ayuda en varios trabajos distintos de taller y de socorro, y luego pide a un contacto cercano admisible una presentación o trabajo seleccionado. Unirse no permite saltarse los requisitos de prestigio y de hazañas. Seguir por libre es una alternativa admitida, con umbrales de servicio más altos."
+        },
+        {
+          "id": "text_4",
+          "type": "paragraph",
+          "text": "Si completaste un trabajo pero no ves crédito, actualiza tu página y comprueba si esa misión es una hazaña admisible escrita para ello. La finalización debe guardarse y entregarse mediante la integración de misiones admitida. No abandones ni repitas el mismo trabajo con la esperanza de forzar crédito duplicado."
+        }
+      ]
+    },
+    {
+      "id": "guild_requirements",
+      "task": "civic.explain",
+      "category": "civic",
+      "title": "Prestigio, trabajos y rango",
+      "summary": "Lee un requisito de servicio como varias comprobaciones, no como una sola barra de progreso.",
+      "keywords": [
+        "requisitos",
+        "prestigio",
+        "hazañas",
+        "rango",
+        "independiente",
+        "miembro",
+        "por qué no puedo",
+        "cumplir"
+      ],
+      "blocks": [
+        {
+          "id": "checks",
+          "type": "paragraph",
+          "text": "Cada servicio de gremio comprueba varias cosas por separado: tu reputación en el gremio (prestigio), cuántos trabajos de servicio distintos has completado (hazañas verificadas), tu rango si eres miembro, un contacto válido cercano y cualquier edificio o mod complementario que el servicio necesite. Un prestigio alto con muy pocos trabajos distintos aún puede dejar un servicio no disponible."
+        },
+        {
+          "id": "routes",
+          "type": "paragraph",
+          "text": "La mayoría de los servicios tienen dos vías. Los miembros cumplen con su rango y los umbrales de miembro. Quienes colaboran de forma independiente, sin unirse, pueden cumplir con umbrales más altos. Necesitas una vía, no las dos."
+        },
+        {
+          "id": "defaults",
+          "type": "requirements",
+          "title": "Umbrales predeterminados de los Faroleros",
+          "rows": [
+            {
+              "label": "Presentaciones a otra sección, como miembro",
+              "state": "example",
+              "detail": "Predeterminado: 20 de prestigio, 1 trabajo distinto, rango de Voluntario."
+            },
+            {
+              "label": "Presentaciones, como colaborador independiente",
+              "state": "example",
+              "detail": "Predeterminado: 40 de prestigio, 2 trabajos distintos."
+            },
+            {
+              "label": "Trabajos de gremio pagados (encargos), como miembro",
+              "state": "example",
+              "detail": "Predeterminado: 60 de prestigio, 3 trabajos distintos, rango de Farolero."
+            },
+            {
+              "label": "Trabajos de gremio pagados, como colaborador independiente",
+              "state": "example",
+              "detail": "Predeterminado: 100 de prestigio, 5 trabajos distintos."
+            }
+          ],
+          "note": "Rangos: Voluntario desde 0 de prestigio, Farolero desde 60, Guardián de rutas desde 100. Tu servidor puede cambiar cualquier valor."
+        },
+        {
+          "id": "live",
+          "type": "callout",
+          "tone": "tip",
+          "text": "La pantalla Gremios muestra los umbrales reales de tu servidor, tu progreso hacia cada uno y qué vía se aplica a ti."
+        },
+        {
+          "id": "ids",
+          "type": "paragraph",
+          "text": "Los ID de permiso que usan los comandos son mcakingdoms:route_introductions y mcakingdoms:commission_access. Una explicación de requisitos no otorga ninguna hazaña ni abre un papel militar."
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "task",
+              "target": "civic.explain",
+              "label": "Comprobar los requisitos de un servicio"
+            },
+            {
+              "kind": "task",
+              "target": "civic.status"
+            },
+            {
+              "kind": "guide",
+              "target": "first_guild_steps"
+            }
+          ]
+        }
+      ],
+      "commands": [
+        "/kingdoms guild explain mcakingdoms:lamplighters mcakingdoms:route_introductions",
+        "/kingdoms guild explain mcakingdoms:lamplighters mcakingdoms:commission_access"
+      ]
+    },
+    {
+      "id": "eligible_deeds",
+      "category": "civic",
+      "title": "¿Qué trabajos dan crédito gremial?",
+      "summary": "La lista de crédito incluida premia servicios distintos, no la repetición sin fin.",
+      "body": [
+        "La lista pacífica predeterminada de los Faroleros da 10 de crédito por cada uno de estos trabajos: Fire in Poor Hands, Mesh for the Glass, Sootward Plaster, Twist the First Cord y Weather Eye; y 20 por cada uno de estos: Charters Night, Reinforce the Ladder y Warmth at the Gate. En conjunto, estos ocho trabajos distintos dan 110 de prestigio, suficiente para la ruta independiente predeterminada cuando también se cumple el requisito de hazañas.",
+        "Otros cuatro trabajos escritos dan 20 cada uno: Wood and Stone That Live y Source for the Seed Vault, de la cadena arcana del Green Compact; Rations for the Upper Stair, de Border Watch; y Teeth in the Lamplight, de la cadena de expedición Fieldbook. Sus requisitos y objetivos nativos de misión siguen aplicándose.",
+        "Los identificadores exactos de las misiones son ultima:civic/lamplighters/ seguido del título correspondiente en snake_case para los ocho trabajos cívicos; ultima:arcana/green_compact/wood_and_stone_that_live; ultima:arcana/green_compact/source_for_the_seed_vault; ultima:expeditions/border_watch/rations_for_the_upper_stair; y ultima:expeditions/fieldbook/teeth_in_the_lamplight.",
+        "Son referencias a misiones escritas para el modpack. Una instalación de MCA: Kingdoms sola no hace aparecer todas ellas en el menú de quien las ofrece. Cumple los objetivos que describe MCA Quests; MCA: Kingdoms no ofrece otra forma de entregarlas, no cambia la recompensa ni salta el tiempo de espera nativo. Las definiciones del servidor pueden cambiar la lista admitida y el crédito."
+      ],
+      "commands": [],
+      "task": "civic.status"
+    },
+    {
+      "id": "contacts_and_introductions",
+      "task": "civic.introduction",
+      "category": "civic",
+      "title": "Encuentra un contacto del gremio",
+      "summary": "Un contacto es un residente real de una sede local en funcionamiento.",
+      "body": [
+        "Una sede es una rama local de una organización. Un contacto es un residente escrito o nombrado oficialmente que puede prestar los servicios de esa sede. Los aldeanos corrientes no se vuelven miembros del gremio por su profesión.",
+        "Para usar una presentación o los encargos seleccionados, colócate cerca de un contacto admisible y cargado. El servicio comprueba tu prestigio y tus hazañas actuales, quién te atiende, su residencia, su edad adulta cuando se requiere y el taller que gestiona el proveedor. Un taller roto, cambiado o no disponible puede suspender el servicio hasta que se restaure el edificio real.",
+        "Una presentación te revela en privado una sede vecina existente, dentro del alcance de búsqueda configurado. No genera una sede nueva, no revela todas las aldeas ni altera el mapa de otro jugador. Si no hay ningún destino disponible, explora más o pregunta al operador si de verdad se ha establecido una sede vecina.",
+        "Los encargos seleccionados abren una selección pertinente de misiones nativas existentes. Son un acceso cómodo, no un segundo motor de misiones ni un control exclusivo sobre el contenido corriente de magia, fabricación y exploración. Las restricciones nativas de quien ofrece la misión, el progreso, la aceptación y los tiempos de espera siguen vigentes.",
+        "Los comandos usan el contacto admisible más cercano de la organización indicada. Si informan de que no hay contacto, comprueba la distancia y la sede en lugar de adivinar la identidad de un PNJ lejano. Si está instalada la integración correspondiente de MCA Conversations, ofrece opciones cívicas privadas equivalentes."
+      ],
+      "commands": [
+        "/kingdoms guild chapters",
+        "/kingdoms guild introduction <organization definition id>",
+        "/kingdoms guild commissions <organization definition id>"
+      ]
+    },
+    {
+      "id": "workshop_commissions",
+      "category": "civic",
+      "title": "Completa un encargo de taller remunerado",
+      "summary": "El trabajo institucional reconocido puede pagarse con normalidad y registrar una distinción cívica.",
+      "body": [
+        "Esta ruta necesita una institución reconocida en funcionamiento, una sede con carta, un contacto nombrado, la integración de misiones nativa correspondiente y la opción de servicios institucionales del servidor. Es más específica que el trabajo gremial seleccionado corriente.",
+        "1. Visita al contacto real y elige Taller remunerado (en Tareas del reino, Ver trabajos de taller remunerados). Lee la oferta nativa antes de aceptarla. La aceptación fija el jugador, quien ofrece el trabajo, la institución, el edificio, la instancia de la misión, los objetivos, las recompensas y las condiciones de la distinción. En el ejemplo de taller incluido, cuatro faroles se pagan con seis esmeraldas mediante MCA Quests; no supongas que todos los encargos usan esa recompensa.",
+        "2. Haz el trabajo indicado. Vuelve con quien te lo encargó y complétalo mediante MCA Quests. El mod de misiones consume los objetos requeridos y paga la recompensa. Después, MCA: Kingdoms registra la distinción cívica verificada a partir de la finalización guardada. La distinción no es un cargo nuevo y no cambia automáticamente la reputación soberana.",
+        "3. Tras completarlo, actualiza el historial y las distinciones correspondientes. Un justificante repetido no puede pagar ni conceder otra vez esa distinción. Cambiar de afiliación gremial no reescribe en silencio las condiciones del trabajo aceptado.",
+        "Si el edificio, quien lo ofrece, la definición o la legalidad dejan de estar disponibles, el trabajo institucional aceptado puede quedar suspendido en lugar de redirigirse en silencio. Restaura el requisito real o usa la cancelación admitida de la misión nativa. No borres un registro de finalización para volver a intentar una recompensa; los guardados sin resolver requieren que un operador investigue.",
+        "Debes cumplir los requisitos para los encargos de los Faroleros en una sede de los Faroleros, y el servicio admitido de MCA Crime debe confirmar que puedes recibir servicios institucionales. Que falte la integración con Crime no anula este requisito."
+      ],
+      "commands": [
+        "/kingdoms guild workshop <organization definition id>",
+        "/kingdoms guild institutions"
+      ],
+      "task": "civic.workshop"
+    },
+    {
+      "id": "hospitality_and_legal_access",
+      "task": "civic.hospitality",
+      "category": "civic",
+      "title": "Hospitalidad y restricciones locales",
+      "summary": "La diplomacia puede abrir presentaciones; un problema legal local aún puede bloquear el servicio.",
+      "body": [
+        "La hospitalidad usa un acuerdo realmente activo y un contacto institucional disponible para ofrecer una presentación cívica privada. No es un teletransporte, una cama reservada gratis, inmunidad contra el hambre ni permiso general para entrar en toda zona protegida. El otro lugar debe existir y cumplir los requisitos.",
+        "En el contacto, pide Hospitalidad. El servidor vuelve a comprobar el acuerdo, el contacto, la institución, el destino y tu idoneidad. Un acuerdo vencido o terminado impide usarla en el futuro. Lo que ya sepas en privado no es un nuevo tratado ni prueba de que el servicio siga disponible.",
+        "Cuando la integración con MCA Crime está disponible, los casos locales pertinentes pueden suspender el servicio institucional. La reputación pública no borra una obligación legal local, y una pantalla no debe mostrar las acusaciones privadas de otra persona. La ocupación por sí sola no prueba que un civil neutral haya cometido un delito.",
+        "Resuelve el caso con el procedimiento de reparación o restitución admitido por MCA Crime y después vuelve y actualiza. MCA: Kingdoms no impone una segunda multa, no inventa delitos ni cierra por su cuenta el caso nativo. Si el proveedor legal no está disponible, el servicio puede quedar suspendido en lugar de dar por hecho que estás libre de cargos."
+      ],
+      "commands": [
+        "/kingdoms guild hospitality <organization definition id>"
+      ]
+    },
+    {
+      "id": "establish_a_chapter",
+      "task": "civic.charter",
+      "category": "civic",
+      "title": "Establece una sede local del gremio",
+      "summary": "Para titulares de cargos: reconoce el edificio, concede la carta a la rama y nombra a un residente.",
+      "body": [
+        "Necesitas autoridad actual de reconocimiento institucional en el asentamiento correspondiente, o un procedimiento de configuración de operador admitido. La afiliación al gremio por sí sola no basta. Primero asegúrate de que Townstead reconoce el edificio real y de que el asentamiento está en el reino correcto.",
+        "1. Colócate junto al edificio elegido y míralo antes de abrir Reino. En Acciones, elige la acción de reconocimiento de institución y su tipo de carta. Envíala con la ubicación correcta. El responsable político valida ese edificio original; no elige en silencio uno cercano en su lugar.",
+        "2. Abre Establecer una sede gremial en Tareas del reino. Elige la organización y una institución reconocida con nombre de la lista del servidor. La sede pasa a ser una rama local de la organización vinculada a esa institución; no se copia ninguna identidad técnica.",
+        "3. Consulta las sedes y luego nombra para la sede a un residente adulto cercano que cumpla los requisitos. El nombramiento comprueba la residencia real y el contexto del edificio. Trasladar un contacto desde otra sede también requiere autoridad sobre la sede anterior.",
+        "Destituir revoca de forma duradera el papel de ese PNJ, incluida la reactivación automática a partir de pruebas de contacto anteriores. Suspender el reconocimiento político suspende la institución; revalidar comprueba sus pruebas originales antes de restaurarla. Estas operaciones no mueven al PNJ, no cambian su familia ni reconstruyen un taller.",
+        "Si solo quieres hacer trabajo gremial, no necesitas establecer una sede por tu cuenta. Busca una sede en funcionamiento y su contacto."
+      ],
+      "commands": [
+        "/kingdoms guild charter <organization definition id> \"<institution name>\"",
+        "/kingdoms guild appoint \"<chapter name>\" <entity selector>",
+        "/kingdoms guild dismiss \"<contact name>\"",
+        "/kingdoms guild chapters",
+        "/kingdoms guild institutions"
+      ]
+    },
+    {
+      "id": "personal_qualifications",
+      "category": "civic",
+      "title": "Habilidades, fe, raza y saber",
+      "summary": "Las comprobaciones opcionales leen tu progreso sin cambiarlo.",
+      "body": [
+        "Algún contenido escrito puede pedir un nivel de habilidad, una deidad, una raza o un libro de saber recopilado. La integración admitida lee el valor del mod que lo gestiona. No consume experiencia de habilidad, no te liga a una deidad, no cambia tu raza, no reescribe la genética ni concede una entrada de colección de saber.",
+        "El comando qualify es un diagnóstico privado de tu propio progreso. Para skill_level, indica el nombre de la habilidad del proveedor, como building, y un nivel mínimo. Para deity y race, indica el identificador del proveedor. Para lore_collected, usa un identificador real de libro de RPG Lore. El comando exige el argumento mínimo incluso cuando una comparación que no es de nivel usa su propia regla de coincidencia.",
+        "AVAILABLE significa que la integración respondió a la pregunta; no significa necesariamente que cumplas el requisito. UNAVAILABLE significa que el proveedor o la capacidad admitida no pudieron responder. Una prueba desconocida nunca debe tratarse como un éxito.",
+        "Estas cualificaciones son independientes del rango gremial y de la lealtad militar. Lee el requisito real del contenido ofrecido; que exista un comando de cualificación no significa que todos los hechizos, recetas, razas o dioses estén restringidos por gremios."
+      ],
+      "commands": [
+        "/kingdoms guild qualify <skill_level|deity|race|lore_collected> \"<qualification name>\" <minimum>"
+      ],
+      "task": "civic.qualify"
+    }
+  ]
+}

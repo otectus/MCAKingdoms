@@ -2,7 +2,6 @@ package dev.otectus.mcakingdoms.integration.gating;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.mojang.logging.LogUtils;
 import dev.otectus.mcakingdoms.api.KingdomView;
 import dev.otectus.mcakingdoms.api.KingdomsService;
@@ -15,8 +14,6 @@ import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 import org.slf4j.Logger;
 
-import java.io.IOException;
-import java.io.Reader;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -86,9 +83,14 @@ public final class KingdomGateRegistry {
         protected Map<ResourceLocation, KingdomPredicate> prepare(ResourceManager resources, ProfilerFiller profiler) {
             pending.set(null);
             try {
-                return parse(resources);
+                Map<ResourceLocation, KingdomPredicate> prepared = parse(resources);
+                dev.otectus.mcakingdoms.data.ReloadReport.accepted(dev.otectus.mcakingdoms.data.ReloadReport.Domain.GATES,
+                        Map.of("kingdom_gates", prepared.size()));
+                return prepared;
             } catch (RuntimeException exception) {
                 pending.set(null);
+                dev.otectus.mcakingdoms.data.ReloadReport.rejected(dev.otectus.mcakingdoms.data.ReloadReport.Domain.GATES,
+                        java.util.List.of(dev.otectus.mcakingdoms.data.DefinitionProblems.top(exception)));
                 throw exception;
             }
         }
@@ -100,7 +102,8 @@ public final class KingdomGateRegistry {
         }
     }
 
-    private static Map<ResourceLocation, KingdomPredicate> parse(ResourceManager resources) {
+    /** Every gate under {@code data/<namespace>/mcakingdoms/kingdom_gates/}; package-private for the example-pack check. */
+    static Map<ResourceLocation, KingdomPredicate> parse(ResourceManager resources) {
         Map<ResourceLocation, KingdomPredicate> gates = new LinkedHashMap<>();
         resources.listResources(ROOT, location -> location.getPath().endsWith(".json")).entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
@@ -111,12 +114,12 @@ public final class KingdomGateRegistry {
     private static void parse(ResourceLocation file, Resource resource,
                               Map<ResourceLocation, KingdomPredicate> gates) {
         ResourceLocation id = logicalId(file);
-        try (Reader reader = resource.openAsReader()) {
-            JsonElement parsed = JsonParser.parseReader(reader);
+        try {
+            JsonElement parsed = dev.otectus.mcakingdoms.data.DefinitionProblems.parse(file, resource);
             if (!parsed.isJsonObject()) throw error(file, "root must be a JSON object");
             JsonObject json = parsed.getAsJsonObject();
             for (String field : json.keySet()) {
-                if (!DEFINITION_FIELDS.contains(field)) throw error(file, "unknown field: " + field);
+                if (!DEFINITION_FIELDS.contains(field)) throw error(file, "unknown field: " + field + "; allowed fields: " + new java.util.TreeSet<>(DEFINITION_FIELDS));
             }
             if (json.has("schema") && (!json.get("schema").isJsonPrimitive()
                     || !json.getAsJsonPrimitive("schema").isNumber())) {
@@ -127,13 +130,11 @@ public final class KingdomGateRegistry {
                 throw error(file, "schema must be an integer");
             }
             int schema = (int) schemaNumber;
-            if (schema != 1) throw error(file, "unsupported schema " + schema);
+            if (schema != 1) throw error(file, "unsupported schema " + schema + "; this version reads schema 1 only");
             JsonObject predicateJson = json.deepCopy();
             predicateJson.remove("schema");
-            KingdomPredicate previous = gates.putIfAbsent(id, KingdomPredicate.fromJson(predicateJson));
+            KingdomPredicate previous = gates.putIfAbsent(id, KingdomPredicate.fromJson(dev.otectus.mcakingdoms.integration.IntegrationConfig.withUnknownPolicy(predicateJson)));
             if (previous != null) throw error(file, "duplicate logical gate id " + id);
-        } catch (IOException exception) {
-            throw new IllegalArgumentException("Failed reading kingdom gate " + file, exception);
         } catch (RuntimeException exception) {
             if (exception instanceof IllegalArgumentException
                     && exception.getMessage() != null

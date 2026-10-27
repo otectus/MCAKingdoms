@@ -13,6 +13,13 @@ public final class Names {
     public static String settlement(MinecraftServer server,UUID id){return id==null?"an unknown settlement":McaKingdomsApi.get(server).getSettlement(id).map(SettlementView::displayName).orElse("an unknown settlement");}
     /** The settlement's name only when the viewer has discovered it; otherwise a neutral placeholder. */
     public static String settlement(MinecraftServer server,ServerPlayer viewer,UUID id){return id!=null&&SettlementKnowledge.get(server).visible(viewer,id)?settlement(server,id):"an undiscovered settlement";}
+    /** A kingdom's name in each reader's own language: the client translates it, with the server's English as fallback. */
+    public static net.minecraft.network.chat.Component kingdomName(MinecraftServer server,String id){
+        if(id==null||id.isBlank())return net.minecraft.network.chat.Component.translatableWithFallback("interaction.mcakingdoms.kingdom.none","no kingdom");
+        return McaKingdomsApi.get(server).getKingdoms().stream().filter(k->k.id().toString().equals(id)).findFirst()
+                .<net.minecraft.network.chat.Component>map(k->net.minecraft.network.chat.Component.translatableWithFallback(k.translationKey(),PlayerWords.text(k.translationKey())))
+                .orElse(net.minecraft.network.chat.Component.literal(id));
+    }
     public static String kingdom(MinecraftServer server,String id){if(id==null||id.isBlank())return "no kingdom";return McaKingdomsApi.get(server).getKingdoms().stream().filter(k->k.id().toString().equals(id)).findFirst().map(k->PlayerWords.text(k.translationKey())).orElse(id);}
     public static String player(MinecraftServer server,UUID id){if(id==null)return "nobody";var player=server.getPlayerList().getPlayer(id);if(player!=null)return player.getGameProfile().getName();var cache=server.getProfileCache();return cache==null?"an offline player":cache.get(id).map(com.mojang.authlib.GameProfile::getName).orElse("an offline player");}
     public static String entity(MinecraftServer server,UUID id){if(id==null)return "an unknown unit";for(var level:server.getAllLevels()){var entity=level.getEntity(id);if(entity!=null)return entity.getName().getString();}return "an unloaded unit";}
@@ -27,6 +34,16 @@ public final class Names {
         long hours=minutes/60;if(hours<48)return "about "+hours+(hours==1?" hour":" hours");
         long days=hours/24;return "about "+days+" days";
     }
+    /** {@link #duration(long)} as a component, read in the player's language. Game time, not wall time. */
+    public static net.minecraft.network.chat.Component durationText(long ticks){
+        long seconds=Math.max(0,ticks)/20;
+        if(seconds<60)return ActionRegistry.tr("interaction.mcakingdoms.time.under_minute","under a minute");
+        long minutes=seconds/60;if(minutes<60)return ActionRegistry.tr("interaction.mcakingdoms.time.minutes","about %s minute(s)",minutes);
+        long hours=minutes/60;if(hours<48)return ActionRegistry.tr("interaction.mcakingdoms.time.hours","about %s hour(s)",hours);
+        return ActionRegistry.tr("interaction.mcakingdoms.time.days","about %s day(s)",hours/24);
+    }
+    /** {@link #remaining(MinecraftServer,long)} as a component. */
+    public static net.minecraft.network.chat.Component remainingText(MinecraftServer server,long at){long left=at-server.overworld().getGameTime();return left<=0?ActionRegistry.tr("interaction.mcakingdoms.time.expired","expired"):durationText(left);}
     /** Time left until an overworld game time, or "expired". */
     public static String remaining(MinecraftServer server,long at){long left=at-server.overworld().getGameTime();return left<=0?"expired":duration(left);}
     /** "day 12" reading of a game time. */

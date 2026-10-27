@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "kingdom": "example:harbor_league",
+  "priority": 120,
+  "include": ["minecraft:beach", "minecraft:snowy_beach", "minecraft:stony_shore"],
+  "exclude": []
+}

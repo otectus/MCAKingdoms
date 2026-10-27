@@ -1,4 +1,5 @@
 {
+  "schema": 2,
   "entries": [
     {
       "id": "first_guild_steps",
@@ -6,29 +7,170 @@
       "category": "civic",
       "title": "Help the Lamplighters",
       "summary": "Earn service credit through real work, whether you join or stay independent.",
-      "body": [
-        "The Lamplighters are the first shipped peaceful guild. When the matching quest content and MCA Quests integration are available, complete an authored Lamplighters service job through its normal giver. MCA: Kingdoms records the saved completion as a verified deed and awards the configured guild standing.",
-        "Open Village Ledger → Guilds and read membership, standing, deeds, rank progress, and service explanations. Join enrolls you voluntarily. Leave ends active membership without erasing earned service history, skills, family, inventory, or personal relationships. Multiple organizational memberships are possible unless their definitions declare a conflict.",
-        "A repeatable quest may keep paying its ordinary native reward, but the same authored quest does not keep granting new Lamplighters credit. A verified deed is a distinct eligible completion credited by this system, not every item delivered or enemy defeated.",
-        "For a simple peaceful route, help with several different workshop and relief jobs, then ask a nearby eligible contact for an introduction or curated work. Joining alone does not skip standing and deed requirements. Staying independent is a supported alternative with higher service thresholds.",
-        "If you completed work but see no credit, refresh your own page and check whether that quest is an authored eligible deed. The completion must be saved and delivered through the supported quest integration. Do not abandon and replay the same job hoping to force duplicate credit."
-      ],
       "commands": [
         "/kingdoms guild",
         "/kingdoms guild join mcakingdoms:lamplighters",
         "/kingdoms guild leave mcakingdoms:lamplighters"
+      ],
+      "blocks": [
+        {
+          "id": "journey_heading",
+          "type": "heading",
+          "text": "A path of service"
+        },
+        {
+          "id": "journey",
+          "type": "diagram",
+          "alt": "Eligible authored work produces a saved completion. Verified deeds and standing qualify you for guild services.",
+          "nodes": [
+            {
+              "id": "n0",
+              "label": "Eligible work",
+              "item": "minecraft:lantern"
+            },
+            {
+              "id": "n1",
+              "label": "Saved completion",
+              "item": "minecraft:writable_book"
+            },
+            {
+              "id": "n2",
+              "label": "Verified deed",
+              "item": "minecraft:paper"
+            },
+            {
+              "id": "n3",
+              "label": "Guild services",
+              "item": "minecraft:emerald"
+            }
+          ],
+          "edges": [
+            {
+              "from": "n0",
+              "to": "n1"
+            },
+            {
+              "from": "n1",
+              "to": "n2"
+            },
+            {
+              "from": "n2",
+              "to": "n3"
+            }
+          ]
+        },
+        {
+          "id": "text_0",
+          "type": "paragraph",
+          "text": "The Lamplighters are the first shipped peaceful guild. When the matching quest content and MCA Quests integration are available, complete an authored Lamplighters service job through its normal giver. MCA: Kingdoms records the saved completion as a verified deed and awards the configured guild standing."
+        },
+        {
+          "id": "text_1",
+          "type": "paragraph",
+          "text": "Open Village Ledger → Guilds and read membership, standing, deeds, rank progress, and service explanations. Join enrolls you voluntarily. Leave ends active membership without erasing earned service history, skills, family, inventory, or personal relationships. Multiple organizational memberships are possible unless their definitions declare a conflict."
+        },
+        {
+          "id": "text_2",
+          "type": "paragraph",
+          "text": "A repeatable quest may keep paying its ordinary native reward, but the same authored quest does not keep granting new Lamplighters credit. A verified deed is a distinct eligible completion credited by this system, not every item delivered or enemy defeated."
+        },
+        {
+          "id": "text_3",
+          "type": "paragraph",
+          "text": "For a simple peaceful route, help with several different workshop and relief jobs, then ask a nearby eligible contact for an introduction or curated work. Joining alone does not skip standing and deed requirements. Staying independent is a supported alternative with higher service thresholds."
+        },
+        {
+          "id": "text_4",
+          "type": "paragraph",
+          "text": "If you completed work but see no credit, refresh your own page and check whether that quest is an authored eligible deed. The completion must be saved and delivered through the supported quest integration. Do not abandon and replay the same job hoping to force duplicate credit."
+        }
       ]
     },
     {
       "id": "guild_requirements",
+      "task": "civic.explain",
       "category": "civic",
-      "title": "Standing, deeds, and rank",
+      "title": "Standing, jobs and rank",
       "summary": "Read a service requirement as several checks, not one progress bar.",
-      "body": [
-        "Under the bundled Lamplighters rules, active members are volunteers at 0 standing, Lamplighters at 60, and route wardens at 100. Independent contributors retain standing and deeds but do not gain an organizational rank just by reaching those numbers.",
-        "A regional introduction requires an active member to have at least 20 standing, one verified deed, and volunteer rank. An independent contributor instead needs 40 standing and two verified deeds. Curated commissions require an active member to have 60 standing, three deeds, and Lamplighter rank; an independent contributor needs 100 standing and five deeds.",
-        "These are separate checks. A high standing score from too few distinct deeds can still leave a service unavailable. Rank may supply a permission while the service also checks its own standing and deed thresholds. A valid contact and building are further requirements, not extra hidden standing.",
-        "The server can change these authored values. Use the Guilds explanation or explain command for the current decision. The permission IDs are mcakingdoms:route_introductions and mcakingdoms:commission_access. A qualification explanation does not award a deed or open a military role."
+      "keywords": [
+        "requirements",
+        "standing",
+        "deeds",
+        "rank",
+        "independent",
+        "member",
+        "why can't i",
+        "qualify"
+      ],
+      "blocks": [
+        {
+          "id": "checks",
+          "type": "paragraph",
+          "text": "Each guild service checks several things separately: your guild reputation (standing), how many different service jobs you have completed (verified deeds), your rank if you are a member, a valid nearby contact, and any building or companion mod the service needs. A high standing from too few different jobs can still leave a service unavailable."
+        },
+        {
+          "id": "routes",
+          "type": "paragraph",
+          "text": "Most services have two routes. Members qualify with their rank and the member thresholds. Independent contributors, who have not joined, can qualify through higher thresholds instead. You need one route, not both."
+        },
+        {
+          "id": "defaults",
+          "type": "requirements",
+          "title": "Default Lamplighters thresholds",
+          "rows": [
+            {
+              "label": "Introductions to another branch, as a member",
+              "state": "example",
+              "detail": "Default: 20 standing, 1 different job, Volunteer rank."
+            },
+            {
+              "label": "Introductions, as an independent contributor",
+              "state": "example",
+              "detail": "Default: 40 standing, 2 different jobs."
+            },
+            {
+              "label": "Paid guild jobs (commissions), as a member",
+              "state": "example",
+              "detail": "Default: 60 standing, 3 different jobs, Lamplighter rank."
+            },
+            {
+              "label": "Paid guild jobs, as an independent contributor",
+              "state": "example",
+              "detail": "Default: 100 standing, 5 different jobs."
+            }
+          ],
+          "note": "Ranks: Volunteer from 0 standing, Lamplighter from 60, Route warden from 100. Your server can change every value."
+        },
+        {
+          "id": "live",
+          "type": "callout",
+          "tone": "tip",
+          "text": "The Guilds screen shows your server's actual thresholds, your progress toward each, and which route applies to you."
+        },
+        {
+          "id": "ids",
+          "type": "paragraph",
+          "text": "The permission IDs used by commands are mcakingdoms:route_introductions and mcakingdoms:commission_access. A qualification explanation does not award a deed or open a military role."
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "task",
+              "target": "civic.explain",
+              "label": "Check a service's requirements"
+            },
+            {
+              "kind": "task",
+              "target": "civic.status"
+            },
+            {
+              "kind": "guide",
+              "target": "first_guild_steps"
+            }
+          ]
+        }
       ],
       "commands": [
         "/kingdoms guild explain mcakingdoms:lamplighters mcakingdoms:route_introductions",
@@ -46,7 +188,8 @@
         "The exact quest IDs are ultima:civic/lamplighters/ followed by the corresponding snake_case title for the eight civic jobs; ultima:arcana/green_compact/wood_and_stone_that_live; ultima:arcana/green_compact/source_for_the_seed_vault; ultima:expeditions/border_watch/rations_for_the_upper_stair; and ultima:expeditions/fieldbook/teeth_in_the_lamplight.",
         "These are references to authored pack quests. A bare MCA: Kingdoms installation does not conjure all of them into a giver's menu. Do the objectives described by MCA Quests; MCA: Kingdoms does not supply an alternative turn-in, change the reward, or bypass the native cooldown. Server definitions can change the whitelist and credit."
       ],
-      "commands": []
+      "commands": [],
+      "task": "civic.status"
     },
     {
       "id": "contacts_and_introductions",
@@ -69,13 +212,12 @@
     },
     {
       "id": "workshop_commissions",
-      "task": "civic.commissions",
       "category": "civic",
       "title": "Complete a paid workshop commission",
       "summary": "Recognized institutional work can pay normally and record a civic honor.",
       "body": [
         "This route needs an operational recognized institution, a chartered chapter, an appointed contact, the matching native quest integration, and the server's institutional services setting. It is more specific than ordinary curated guild work.",
-        "1. Visit the actual contact and choose Workshop commissions. Read the native offer before accepting. Acceptance fixes the player, giver, institution, building, quest instance, objectives, rewards, and honor terms. In the bundled R2 workshop example, four lanterns pay six emeralds through MCA Quests; do not assume every commission uses that reward.",
+        "1. Visit the actual contact and choose Paid workshop (in Kingdom Tasks, Browse paid workshop jobs). Read the native offer before accepting. Acceptance fixes the player, giver, institution, building, quest instance, objectives, rewards, and honor terms. In the bundled workshop example, four lanterns pay six emeralds through MCA Quests; do not assume every commission uses that reward.",
         "2. Do the stated work. Return to the required giver and complete it through MCA Quests. The quest mod consumes the required items and pays the reward. MCA: Kingdoms then records the verified civic honor from the saved completion. The honor is not a new office and does not automatically change sovereign reputation.",
         "3. Refresh the relevant history and honors after completion. A replayed receipt cannot pay or grant that honor again. Changing guild membership does not silently rewrite the accepted work's terms.",
         "If the building, issuer, definition, or legal eligibility becomes unavailable, accepted institutional work may be suspended instead of silently redirected. Restore the genuine prerequisite or use the native quest's supported cancellation. Do not delete a completion record to retry a reward; unresolved saves need operator investigation.",
@@ -84,7 +226,8 @@
       "commands": [
         "/kingdoms guild workshop <organization definition id>",
         "/kingdoms guild institutions"
-      ]
+      ],
+      "task": "civic.workshop"
     },
     {
       "id": "hospitality_and_legal_access",
@@ -137,7 +280,8 @@
       ],
       "commands": [
         "/kingdoms guild qualify <skill_level|deity|race|lore_collected> \"<qualification name>\" <minimum>"
-      ]
+      ],
+      "task": "civic.qualify"
     }
   ]
 }

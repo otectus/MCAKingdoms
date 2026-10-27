@@ -1,4 +1,5 @@
 {
+  "schema": 2,
   "entries": [
     {
       "id": "start_here",
@@ -6,15 +7,377 @@
       "category": "basics",
       "title": "Start here",
       "summary": "A peaceful first session, with no office, army, or guild required.",
-      "body": [
-        "MCA: Kingdoms gives settlements lasting names and kingdom identities. It also supports voluntary guild service, governments, diplomacy, and optional military and world events. You can explore, trade, build, and help people without becoming a ruler or joining an army.",
-        "1. Craft a Village Ledger: paper in all three top slots and both sides of a book in the middle row, with a compass below the book. Use the ledger to browse settlements you know. The Book of Kingdoms you are reading uses a separate shapeless recipe: one ordinary book and one paper.",
-        "2. Visit an existing village. An entry banner names a recognized settlement and its kingdom. Open the ledger, select that settlement, and read its details. A kingdom label describes civic identity; it does not mean an army owns all land in that biome.",
-        "3. Press K while playing to open Kingdom Tasks. Search for what you want to do, such as read a settlement, join a guild, hold an election, transfer a recruit, or browse routes. The server shows named choices that are known and available to you. You select readable names while the server carries revision and evidence details.",
-        "4. A task walks through one choice at a time and ends on a review page. Read the people, places, terms, deadlines, and consequences, then choose Apply reviewed action. Backing out changes nothing. If the record changes before you apply, the server refuses the stale form and asks you to review again.",
-        "5. If your pack supplies Lamplighters quests, do a service job you like. Search Guild in Kingdom Tasks to check your own credit. Joining is optional; an independent contributor can qualify for services through additional work.",
-        "6. Open Kingdom from a selected settlement when you want to understand its government. An unorganized kingdom needs an operator to establish its first government. Owning either book grants no political permission.",
-        "Read Chapters for the complete table of contents, or search a goal such as treaty, workshop, leave, election, or recovery. This book explains systems and prerequisites; Kingdom Tasks is the live interface. You can also open it from the Village Ledger, Kingdom pages, and War Room."
+      "keywords": [
+        "begin",
+        "first steps",
+        "new player",
+        "tutorial",
+        "help"
+      ],
+      "blocks": [
+        {
+          "id": "intro",
+          "type": "paragraph",
+          "text": "MCA: Kingdoms gives settlements lasting names and kingdom identities. It also offers voluntary guild service, governments, diplomacy, and optional military and world events. You can explore, trade, build, and help people without ruling anything or joining an army."
+        },
+        {
+          "id": "first_steps_heading",
+          "type": "heading",
+          "text": "Your first steps"
+        },
+        {
+          "id": "first_steps",
+          "type": "steps",
+          "items": [
+            {
+              "text": "Learn what the two books are for: this Book explains, the Village Ledger lists the places you know.",
+              "link": {
+                "kind": "guide",
+                "target": "two_books",
+                "label": "Two books, two purposes"
+              }
+            },
+            {
+              "text": "Craft a Village Ledger from paper, a book and a compass. Its topic shows the recipe.",
+              "link": {
+                "kind": "guide",
+                "target": "ledger_recipe",
+                "label": "Craft the Village Ledger"
+              }
+            },
+            "Walk into a village. The first time you enter a recognized settlement, a banner names it and its kingdom, and it is added to your ledger.",
+            {
+              "text": "Press {key:tasks} for Kingdom Tasks and choose Read this settlement to see where you are.",
+              "link": {
+                "kind": "task",
+                "target": "settlement.here"
+              }
+            },
+            {
+              "text": "If you like, look for local guild jobs. Joining a guild is optional.",
+              "link": {
+                "kind": "guide",
+                "target": "first_guild_steps",
+                "label": "Help the Lamplighters"
+              }
+            }
+          ]
+        },
+        {
+          "id": "review",
+          "type": "callout",
+          "tone": "tip",
+          "text": "Tasks that change records end on a review page that names the people, places and consequences. Nothing happens until you choose the final button, which names the action; backing out changes nothing."
+        },
+        {
+          "id": "roles",
+          "type": "paragraph",
+          "text": "A settlement's kingdom describes who its people are. It is not a claim that an army owns the land around it, and owning either book grants no political permission."
+        },
+        {
+          "id": "government",
+          "type": "callout",
+          "tone": "note",
+          "text": "Governing is optional. An operator can found an unorganized kingdom's first government; where the server allows resident founding, so can a player whose recorded residence is in that kingdom."
+        },
+        {
+          "id": "more",
+          "type": "links",
+          "links": [
+            {
+              "kind": "guide",
+              "target": "tasks_workflow"
+            },
+            {
+              "kind": "guide",
+              "target": "found_a_government"
+            },
+            {
+              "kind": "task",
+              "target": "*",
+              "label": "Open Kingdom Tasks"
+            }
+          ]
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "two_books",
+      "category": "basics",
+      "title": "Two books, two purposes",
+      "summary": "The Book of Kingdoms is for learning; the Village Ledger is for the places you know.",
+      "keywords": [
+        "book",
+        "ledger",
+        "difference",
+        "which book",
+        "items"
+      ],
+      "blocks": [
+        {
+          "id": "comparison",
+          "type": "comparison",
+          "alt": "The Book of Kingdoms explains how everything works and never changes the world. The Village Ledger lists the settlements you know and opens their kingdom, guild and War Room pages.",
+          "columns": [
+            {
+              "title": "Book of Kingdoms",
+              "item": "mcakingdoms:book_of_kingdoms",
+              "points": [
+                "Explains each system, what it needs and what it changes.",
+                "Searchable, with bookmarks and live recipes.",
+                "Reading it never changes the world."
+              ]
+            },
+            {
+              "title": "Village Ledger",
+              "item": "mcakingdoms:village_ledger",
+              "points": [
+                "Lists the settlements you have discovered, plus public ones.",
+                "Shows each one's kingdom and where it is.",
+                "Opens its government, guild services and War Room."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "no_book_needed",
+          "type": "paragraph",
+          "text": "Neither book is required for Kingdom Tasks: press {key:tasks} at any time. Its start view also opens this Book with the Guide button."
+        },
+        {
+          "id": "recipes",
+          "type": "links",
+          "links": [
+            {
+              "kind": "guide",
+              "target": "book_recipe"
+            },
+            {
+              "kind": "guide",
+              "target": "ledger_recipe"
+            }
+          ]
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "book_recipe",
+      "category": "basics",
+      "title": "Craft the Book of Kingdoms",
+      "summary": "One book and one paper, in any arrangement.",
+      "keywords": [
+        "craft",
+        "recipe",
+        "book",
+        "paper",
+        "guide"
+      ],
+      "blocks": [
+        {
+          "id": "recipe",
+          "type": "recipe",
+          "recipe": "mcakingdoms:book_of_kingdoms",
+          "output": "mcakingdoms:book_of_kingdoms"
+        },
+        {
+          "id": "use",
+          "type": "steps",
+          "items": [
+            "Put the ingredients anywhere in a crafting grid; the small grid in your inventory is enough.",
+            "Hold the Book of Kingdoms and use it to open this reader.",
+            "Search for a goal, or open Chapters for the table of contents."
+          ]
+        },
+        {
+          "id": "unlock",
+          "type": "callout",
+          "tone": "tip",
+          "text": "Holding a book unlocks this recipe in your recipe book."
+        },
+        {
+          "id": "next",
+          "type": "links",
+          "links": [
+            {
+              "kind": "guide",
+              "target": "ledger_recipe"
+            },
+            {
+              "kind": "guide",
+              "target": "using_the_book"
+            }
+          ]
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "ledger_recipe",
+      "task": "settlement.inspect",
+      "category": "basics",
+      "title": "Craft the Village Ledger",
+      "summary": "Use the ledger to browse settlements you know.",
+      "keywords": [
+        "craft",
+        "recipe",
+        "paper",
+        "book",
+        "compass",
+        "ledger",
+        "map"
+      ],
+      "blocks": [
+        {
+          "id": "recipe",
+          "type": "recipe",
+          "recipe": "mcakingdoms:village_ledger",
+          "output": "mcakingdoms:village_ledger"
+        },
+        {
+          "id": "use",
+          "type": "steps",
+          "items": [
+            "Craft the ledger at a crafting table.",
+            "Use it to browse settlements you have discovered.",
+            "Select a settlement to see its details."
+          ]
+        },
+        {
+          "id": "unlock",
+          "type": "callout",
+          "tone": "tip",
+          "text": "Holding a book or a compass unlocks this recipe in your recipe book."
+        },
+        {
+          "id": "discovery_help",
+          "type": "links",
+          "links": [
+            {
+              "kind": "guide",
+              "target": "ledger_and_discovery",
+              "label": "How discovery works"
+            },
+            {
+              "kind": "task",
+              "target": "settlement.inspect",
+              "label": "Inspect a known settlement"
+            }
+          ]
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "tasks_workflow",
+      "task": "*",
+      "category": "basics",
+      "title": "Kingdom Tasks, step by step",
+      "summary": "How a task goes from choosing it to a confirmed result.",
+      "keywords": [
+        "tasks",
+        "menu",
+        "review",
+        "apply",
+        "confirm",
+        "how to",
+        "start view",
+        "categories"
+      ],
+      "blocks": [
+        {
+          "id": "flow",
+          "type": "diagram",
+          "alt": "A task goes from choosing it, to answering its questions, to a review page, to your confirmation, to a result the server reports.",
+          "nodes": [
+            {
+              "id": "choose",
+              "label": "Choose a task",
+              "note": "Search a goal or pick a category"
+            },
+            {
+              "id": "answer",
+              "label": "Answer",
+              "note": "One question per page"
+            },
+            {
+              "id": "review",
+              "label": "Review",
+              "note": "Who, what changes, consent"
+            },
+            {
+              "id": "confirm",
+              "label": "Confirm",
+              "note": "The button names the action"
+            },
+            {
+              "id": "result",
+              "label": "Result",
+              "note": "Done, waiting or refused"
+            }
+          ],
+          "edges": [
+            {
+              "from": "choose",
+              "to": "answer"
+            },
+            {
+              "from": "answer",
+              "to": "review"
+            },
+            {
+              "from": "review",
+              "to": "confirm"
+            },
+            {
+              "from": "confirm",
+              "to": "result"
+            }
+          ]
+        },
+        {
+          "id": "steps",
+          "type": "steps",
+          "items": [
+            "Press {key:tasks}. The start view shows the settlement you are in, up to three suggested next steps, your recent and favourite tasks, and buttons for All tasks, the Guide, Guilds and Settings.",
+            "Search by goal, such as \"paid work\", \"make peace\" or \"where am I\", or choose a category such as Places or Guilds and jobs.",
+            "Answer one question per page. Choices are named records the server knows you may see. Back keeps your earlier answers.",
+            "Read the review: the people and places, what changes, any cost, timing and whose consent is needed. Edit an answer if you need to; the review is rebuilt.",
+            "The result says whether the action finished, is waiting for another participant, or was refused, and offers a sensible next step."
+          ]
+        },
+        {
+          "id": "unavailable",
+          "type": "callout",
+          "tone": "requirement",
+          "text": "An unavailable task says why: turned off on this server, a companion mod that is not installed, or a requirement you have not met yet. These are different, and only the last one is about you."
+        },
+        {
+          "id": "timeout",
+          "type": "callout",
+          "tone": "tip",
+          "text": "If no reply arrives, choose Check this action before trying again. The server never applies a reviewed action twice."
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "task",
+              "target": "*",
+              "label": "Open Kingdom Tasks"
+            },
+            {
+              "kind": "guide",
+              "target": "ledger_and_discovery"
+            },
+            {
+              "kind": "task",
+              "target": "help.available"
+            }
+          ]
+        }
       ],
       "commands": []
     },
@@ -23,13 +386,75 @@
       "category": "basics",
       "title": "Using this book",
       "summary": "Search by a goal, browse chapters, and read without changing the world.",
-      "body": [
-        "Chapters opens the subject list. Choose a subject, then a topic. The small arrows below the contents list show more topics; Previous and Next below the article move between topics. Search checks titles, descriptions, explanations, and optional command examples. Several search words must all occur in a topic.",
-        "Long articles scroll independently from the topic list. Put the pointer over the article and use the mouse wheel. You can click the article, then use Up, Down, Page Up, Page Down, Home, or End. Tab moves between controls; Enter or Space activates a focused button. Escape closes the book.",
-        "The Book explains behavior and never changes the world. Press K for Kingdom Tasks when you want to act. Search by goal, follow the server’s named choices, review the final page, and apply. No chat command or technical record value is needed for the supported task workflow.",
-        "Commands appear only as optional equivalent references. They never run from the Book. Their record selectors use readable names, while the task menu carries advanced revision and reconciliation evidence automatically.",
-        "This is a static guide to the shipped mod, not a live status screen. Your server can change definitions, requirements, and configuration. Use the relevant read or inspect task for current status. Resource packs can translate or replace the book; unavailable translations fall back to English.",
-        "The reader and task menu do not pause the world. Close them before fighting, travelling through danger, or responding to a time-sensitive event."
+      "keywords": [
+        "controls",
+        "keyboard",
+        "bookmark",
+        "back",
+        "navigation"
+      ],
+      "blocks": [
+        {
+          "id": "search",
+          "type": "paragraph",
+          "text": "Search for a goal, or open Chapters for the table of contents. Topics whose title matches come first, then keywords, the summary and the text. Common words find their synonyms: job finds commission topics, branch finds chapters, treaty finds agreements."
+        },
+        {
+          "id": "moving_heading",
+          "type": "heading",
+          "text": "Moving around"
+        },
+        {
+          "id": "moving",
+          "type": "steps",
+          "items": [
+            "Home opens Start here and the chapter list. On a spread, the numbered leather tabs jump directly to a chapter.",
+            "Back returns to the previous topic with its search, chapter, contents page and reading position. Alt + Left also goes back.",
+            "The single arrows turn pages within this topic; the double arrows move to the previous or next topic. The arrows below the contents turn its index pages.",
+            "The ribbon marked ☆ keeps a topic under Saved, together with your recently read topics. A filled ★ means it is already bookmarked.",
+            "Close returns to wherever you opened the book."
+          ]
+        },
+        {
+          "id": "keyboard_heading",
+          "type": "heading",
+          "text": "Reading with the keyboard"
+        },
+        {
+          "id": "keyboard",
+          "type": "paragraph",
+          "text": "Tab moves between controls and the links inside an article; Enter or Space activates the focused one. Page Up and Page Down turn pages; with the article focused, arrows, Home and End scroll. Ctrl + F focuses search. Escape closes the book. Narrow windows use Contents / Article to switch leaves without shrinking the text."
+        },
+        {
+          "id": "commands",
+          "type": "paragraph",
+          "text": "Commands appear only under Commands and advanced details. They are optional references and never run from the Book."
+        },
+        {
+          "id": "live",
+          "type": "callout",
+          "tone": "note",
+          "text": "This is a guide to the mod, not a live status screen. Recipes and the kingdom gallery come from the server you are on; other values are the shipped defaults. Use Kingdom Tasks for live status."
+        },
+        {
+          "id": "packs",
+          "type": "paragraph",
+          "text": "Resource packs can translate or replace the Book; missing translations fall back to English. The reader does not pause the game; close it before danger."
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "guide",
+              "target": "start_here"
+            },
+            {
+              "kind": "guide",
+              "target": "tasks_workflow"
+            }
+          ]
+        }
       ],
       "commands": []
     },
@@ -57,12 +482,13 @@
         "MCA Reborn supplies people, family links, and home evidence. Townstead supplies recognized building and life-stage evidence for supported institutions. MCA Quests supplies real objectives, acceptance, item delivery, rewards, and saved completion evidence. A supported MCA Conversations integration offers private civic conversation choices. A mod merely being installed does not prove its required integration is available.",
         "The Lamplighters quest catalog also needs its authored pack content. MCA: Kingdoms' guild definition can name an existing quest without supplying that entire quest. The matching pack overlays and companion builds matter. If no suitable jobs appear, ask the operator to check content and integrations before repeating unrelated jobs.",
         "Recruits supplies military operations and negotiated troop handoff. MCA Crime supplies its own cases, enforcement, and amends. Runic Skills, Runic Gods, Runic Races, and RPG Lore may supply private qualifications. None is simulated when absent.",
-        "World evolution starts off and needs explicit operator opt-in per world and eligible region. Dramatic scenarios need a separate opt-in. Warfare and institutional service switches are separate: ask which features your server enables rather than assuming every chapter is currently available.",
+        "World evolution starts off and needs an explicit operator opt-in for each world; after that, settlements of kingdoms with a government are eligible regions unless an operator pauses them. Dramatic scenarios need a separate opt-in. Warfare and institutional service switches are separate: ask which features your server enables rather than assuming every chapter is currently available. What is available here? shows them.",
         "MCA: Capitals disables MCA: Kingdoms native governance. Use the Capitals government system on such servers; installing it does not add a second working MCA: Kingdoms government alongside it."
       ],
       "commands": [
         "/kingdoms integrations"
-      ]
+      ],
+      "task": "help.available"
     },
     {
       "id": "command_basics",
@@ -70,10 +496,10 @@
       "title": "Commands are optional",
       "summary": "Use Kingdom Tasks for named choices; commands remain a technical reference for operators and automation.",
       "body": [
-        "Press K for the supported player workflow. Kingdom Tasks supplies settlements, kingdoms, players, NPCs, agreements, opportunities, transfers, and other records as readable choices. The server carries revision, terms, and reconciliation evidence with each reviewed choice.",
+        "Press {key:tasks} for the supported player workflow. Kingdom Tasks supplies settlements, kingdoms, players, NPCs, agreements, opportunities, transfers, and other records as readable choices. The server carries revision, terms, and reconciliation evidence with each reviewed choice.",
         "Each task ends on a review page. If a record changes before Apply, the server refuses the stale form. Open the task again, read the updated details, and decide again. If an action reports a save or provider failure, inspect its status before repeating it.",
         "Commands provide an equivalent interface for chat preference and console automation. Use tab completion and the focused reference. Record selectors accept readable names and use quotes when a name contains spaces. Stable request keys are readable idempotency names chosen for an authored request.",
-        "A new name at the end of create or rename consumes the rest of the command and is entered without quotes. Permission level 2 is required for rename. Advanced revision and reconciliation fingerprint arguments shown in command references are carried automatically by the GUI review; every current operation is available from Kingdom Tasks."
+        "A new name at the end of create or rename consumes the rest of the command and is entered without quotes. Permission level 2 is required for rename. Advanced revision and reconciliation fingerprint arguments shown in command references are carried automatically by the GUI review; every current operation is available from Kingdom Tasks. /kingdoms help [topic] prints the syntax in game."
       ],
       "commands": [
         "/kingdoms village info \"Old Bellmeadow\"",

@@ -1,0 +1,297 @@
+{
+  "entries": [
+    {
+      "id": "warfare_ownership_and_setup",
+      "category": "warfare",
+      "title": "Responsabilidades y preparación de la guerra",
+      "summary": "Antes de iniciar una campaña, aprende qué sistemas gestionan batallas, asentamientos, contratos, leyes y mapas.",
+      "body": [
+        "MCA: Kingdoms coordina la autoridad política alrededor de otros mods sin sustituirlos. Recruits 1.15.2 gestiona las facciones, los soldados, el equipo, las reclamaciones, el progreso de los asedios y los resultados de los combates. MCA: Kingdoms gestiona la correspondencia entre esos hechos y los asentamientos cívicos, la intención pública de campaña, los plazos de aviso, los mandatos políticos, los acuerdos de soberanía y los justificantes duraderos. Una captura nativa crea una ocupación; no renombra un pueblo, no borra residentes, no cambia la cultura, no mueve edificios ni limpia la reputación ni los antecedentes legales.",
+        "El juego militar necesita el proveedor Recruits correspondiente. Los contratos civiles necesitan una instalación compatible de MCA Quests, y la jurisdicción de Crime necesita el proveedor MCA Crime correspondiente. Map Atlases sigue siendo quien dibuja el mapa cuando está instalado. El registro de asentamientos, los registros de descubrimiento, las rutas y los justificantes de encuentros siguen perteneciendo a MCA: Kingdoms y siguen siendo útiles aunque falte un complemento opcional. Las operaciones ligadas a una versión fallan de forma segura en lugar de adivinar el estado del proveedor.",
+        "Todos los interruptores de guerra están activados por defecto. La configuración común puede desactivar por separado las acciones militares, los contratos civiles, la protección de objetivos o el contexto del mundo. La política predeterminada protege las capitales, exige que el líder defensor esté conectado para el daño de asedio vinculado, da 1200 ticks de aviso de campaña, dura 168 000 ticks tras el aviso, permite como mucho 16 unidades temporales por comandante y da 6000 ticks a las movilizaciones. Los operadores pueden ajustar estos valores acotados antes de jugar."
+      ],
+      "commands": [],
+      "task": "warfare.here"
+    },
+    {
+      "id": "claim_mapping_and_binding",
+      "task": "warfare.bind_here",
+      "category": "warfare",
+      "title": "Vincula reclamaciones con asentamientos",
+      "summary": "Los operadores conectan reclamaciones reales de Recruits con reinos y asentamientos cívicos sin asignar a nadie a una facción.",
+      "body": [
+        "La vinculación inicial es una tarea de operador. Colócate en una reclamación participante de Recruits, abre Vincular la facción nativa de este lugar y elige la facción con nombre y el reino cívico. Después colócate donde esa misma reclamación cargada se solape con el asentamiento reconocido y abre Vincular la reclamación territorial nativa actual. Una reclamación solo puede vincularse a un asentamiento. Estas tareas registran una asociación; nunca colocan a un jugador ni a un PNJ en un equipo nativo y nunca crean una reclamación.",
+        "Usa Inspeccionar el control militar de este lugar después de cada paso. Muestra el asentamiento, la reclamación, el controlador, la vinculación, las campañas y las rutas pertinentes conocidas en esa posición. La inspección remota está restringida a propósito para los jugadores corrientes: necesitan haberlo descubierto antes y estar presentes en el lugar. Los operadores pueden diagnosticar a distancia. Retirar una vinculación de reclamación territorial nativa presenta la vinculación actual con nombre para revisarla y rechaza un registro que haya cambiado.",
+        "Una vinculación es un requisito previo, no un permiso para luchar. Una declaración militar sigue requiriendo al líder real de la facción nativa y un mandato político PROPOSE o RATIFY vigente. Ser operador no aporta ese mandato. Si no se puede verificar la reclamación, el controlador, el líder o el guardado del proveedor esperados, el comando se niega y conserva el estado cívico y nativo existente."
+      ],
+      "commands": [
+        "/kingdoms warfare here",
+        "/kingdoms warfare inspect \"<settlement name>\"",
+        "/kingdoms warfare map_here <kingdom definition id>",
+        "/kingdoms warfare bind_here \"<settlement name>\"",
+        "/kingdoms warfare retire \"<settlement name>\" <revision>"
+      ]
+    },
+    {
+      "id": "campaign_declaration",
+      "task": "warfare.declare",
+      "category": "warfare",
+      "title": "Declara una campaña acotada",
+      "summary": "Publica un objetivo militar autorizado con aviso, un plazo y una reclamación nativa real.",
+      "commands": [
+        "/kingdoms warfare campaigns \"<settlement name>\"",
+        "/kingdoms warfare declare defend \"<settlement name>\" <revision> <public reason...>",
+        "/kingdoms warfare declare relief_access \"<settlement name>\" <revision> <public reason...>",
+        "/kingdoms warfare declare withdrawal \"<settlement name>\" <revision> <public reason...>",
+        "/kingdoms warfare declare autonomy \"<settlement name>\" <revision> <public reason...>",
+        "/kingdoms warfare declare transfer \"<settlement name>\" <revision> <public reason...>"
+      ],
+      "blocks": [
+        {
+          "id": "journey_heading",
+          "type": "heading",
+          "text": "De la declaración a la batalla"
+        },
+        {
+          "id": "journey",
+          "type": "diagram",
+          "alt": "Una declaración autorizada nombra un territorio real vinculado, se revisa, publica un aviso y sigue las reglas del proveedor militar. Un plazo por sí solo no concede la victoria.",
+          "nodes": [
+            {
+              "id": "n0",
+              "label": "Elegir territorio vinculado",
+              "item": "minecraft:map"
+            },
+            {
+              "id": "n1",
+              "label": "Revisar autoridad y objetivo",
+              "item": "minecraft:writable_book"
+            },
+            {
+              "id": "n2",
+              "label": "Aviso público",
+              "item": "minecraft:bell"
+            },
+            {
+              "id": "n3",
+              "label": "Reglas militares nativas",
+              "item": "minecraft:iron_sword"
+            }
+          ],
+          "edges": [
+            {
+              "from": "n0",
+              "to": "n1"
+            },
+            {
+              "from": "n1",
+              "to": "n2"
+            },
+            {
+              "from": "n2",
+              "to": "n3"
+            }
+          ]
+        },
+        {
+          "id": "text_0",
+          "type": "paragraph",
+          "text": "Abre Consultar campañas locales o Inspeccionar el control militar de este lugar y después elige Declarar una campaña militar. Selecciona el asentamiento conocido, un objetivo escrito y redacta un motivo público que los demás participantes puedan entender. La revisión lleva la versión actual del asentamiento. Antes de guardar, el servidor comprueba el descubrimiento, la vinculación de la reclamación, el liderazgo de la facción nativa, la autoridad política, la política de objetivos, la secuencia de control actual y las acciones en conflicto."
+        },
+        {
+          "id": "text_1",
+          "type": "paragraph",
+          "text": "Una declaración aceptada entra en periodo de aviso antes de activarse en el sistema nativo. Por defecto, el aviso dura 1200 ticks de juego y después la campaña dispone de 168 000 ticks. La regla de defensor conectado pausa el daño de asedio vinculado permitido cuando el líder defensor está desconectado. La detección nativa de tropas, el daño nativo y las propias reglas de asedio del proveedor deciden el resultado. MCA: Kingdoms no inventa una victoria a partir de un plazo ni de la respuesta de un comando."
+        },
+        {
+          "id": "text_2",
+          "type": "paragraph",
+          "text": "Las comprobaciones de versión del registro protegen las decisiones en multijugador. Si alguien cambia el asentamiento después de la revisión, vuelve a abrir la tarea y decide a partir del nuevo estado. La protección de la capital o la falta de liderazgo son negativas de la política, no una campaña oculta. El registro conservado distingue las fases de aviso, activa, ocupada, resuelta, vencida y suspendida para que jugadores y operadores puedan ver qué ocurrió."
+        }
+      ]
+    },
+    {
+      "id": "campaign_withdrawal_and_recovery",
+      "task": "warfare.withdraw",
+      "category": "warfare",
+      "title": "Retira o recupera una campaña",
+      "summary": "Usa salidas y reintentos explícitos cuando una declaración nativa se cancela, se interrumpe o espera confirmación.",
+      "body": [
+        "El comandante que la declaró puede retirar su propia campaña mientras la fase guardada lo permita. Retirarse pide al responsable nativo que cancele la acción correspondiente y registra el resultado; no puede crear un asedio oculto ni forzar a los civiles a un estado especial. Después, inspecciona el asentamiento para confirmar la fase final y el controlador actual en lugar de suponer que una línea del chat cambió el control nativo.",
+        "Si MCA: Kingdoms guardó la intención de campaña pero el proveedor no la confirmó, Reanudar una declaración de campaña pendiente (retry_campaign) repite la misma declaración nativa acotada. No crea una segunda identidad de campaña. Úsalo después de restaurar el proveedor Recruits admitido exacto o tras un guardado interrumpido. Una negativa del proveedor deja el registro suspendido o recuperable de otro modo, con las pruebas originales conservadas para inspeccionarlas.",
+        "No borres archivos auxiliares del mundo para limpiar una campaña pendiente. Eso elimina las pruebas necesarias para saber si Recruits ya cambió algo. Haz una copia de seguridad del mundo, restablece el proveedor, inspecciona la campaña guardada y el estado de la facción nativa, y después usa el reintento o la retirada según corresponda. Si el estado nativo se apartó de la reclamación y la secuencia de control fijadas, negocia una acción nueva en lugar de forzar una antigua."
+      ],
+      "commands": [
+        "/kingdoms warfare retry_campaign \"<campaign name>\"",
+        "/kingdoms warfare withdraw \"<campaign name>\"",
+        "/kingdoms warfare inspect \"<settlement name>\""
+      ]
+    },
+    {
+      "id": "sovereignty_accords",
+      "task": "warfare.accord",
+      "category": "warfare",
+      "title": "Negocia acuerdos de soberanía",
+      "summary": "Alcanza un estatus bilateral reconocido, autónomo o independiente sin reescribir la identidad cívica.",
+      "body": [
+        "Un acuerdo de control registra una relación negociada entre dos facciones nativas reales en torno a un asentamiento conocido. Abre Proponer un acuerdo de control del asentamiento y elige el estatus reconocido, autónomo o independiente, la facción contraparte con nombre, el reino cívico reconocido, el asentamiento y unas condiciones claras. La revisión fija las relaciones nativas, los gobiernos firmantes, la reclamación física y el controlador, y las pruebas del asentamiento usadas para la decisión.",
+        "La otra parte autorizada abre Firmar un acuerdo de control y selecciona la propuesta visible. Ambos líderes actuales deben estar conectados y conservar la autoridad RATIFY cuando el acuerdo entre en vigor. Aplicar escribe en ambos sentidos mediante el proveedor nativo admitido y verifica su confirmación guardada. Un resultado parcial queda pendiente para volver a aplicarlo explícitamente. El rechazo es un final neutral duradero.",
+        "El estatus de soberanía es distinto del control nativo y de la identidad cívica. El reconocimiento de independencia no transfiere automáticamente una reclamación, no renombra el asentamiento, no traslada residentes ni cambia familias ni edificios. Los visitantes neutrales pacíficos pueden recibir salvoconducto mientras lo permitan un acuerdo válido y las relaciones nativas. Un incumplimiento posterior pone fin al salvoconducto en vigor, pero conserva la ratificación histórica en lugar de fingir que el acuerdo nunca existió."
+      ],
+      "commands": [
+        "/kingdoms warfare accord recognized \"<settlement name>\" <native faction id> <kingdom definition id> <revision> <terms...>",
+        "/kingdoms warfare accord autonomous \"<settlement name>\" <native faction id> <kingdom definition id> <revision> <terms...>",
+        "/kingdoms warfare accord independent \"<settlement name>\" <native faction id> <kingdom definition id> <revision> <terms...>",
+        "/kingdoms warfare accord sign \"<control agreement name>\" <revision>",
+        "/kingdoms warfare accord reject \"<control agreement name>\" <revision>",
+        "/kingdoms warfare accord apply \"<control agreement name>\""
+      ]
+    },
+    {
+      "id": "occupation_and_civilian_safety",
+      "category": "warfare",
+      "title": "Ocupación y seguridad de los civiles",
+      "summary": "Entiende qué cambia una captura nativa y qué hechos cívicos permanecen intactos.",
+      "body": [
+        "Un cambio de control confirmado por Recruits puede crear un registro de ocupación para el asentamiento vinculado. Ese registro conserva la secuencia de control anterior y posterior y sirve como prueba para socorro, autonomía, protección o rebelión posteriores. No borra el asentamiento. El reino cívico, la cultura, las residencias, las instituciones, los edificios, los bienes, los lazos familiares, el prestigio en las organizaciones, la reputación y los casos legales siguen en manos de sus respectivos sistemas.",
+        "La política de objetivos de MCA: Kingdoms protege las capitales por defecto y comprueba que haya defensores conectados antes de permitir el daño de asedio vinculado. Los defensores desconectados no quedan derrotados por su ausencia. Los soldados sin cargar, los PNJ ausentes, la desconexión de un jugador, un reinicio y el paso del tiempo no son pruebas de victoria. Recruits sigue siendo responsable de la detección de tropas y del avance del combate, y el estado confirmado del proveedor es la única fuente del control nativo.",
+        "La jurisdicción de MCA Crime sigue los hechos cívicos y de ocupación reconocidos actuales mediante su proveedor correspondiente. Una ocupación no indulta casos en silencio ni confisca bienes civiles. Un acuerdo posterior puede reconocer autonomía o independencia, pero sigue siendo un estatus político hasta que el responsable nativo confirme cualquier operación de control aparte. Consulta el registro del asentamiento y el historial de campañas siempre que la historia cívica y el mapa territorial nativo parezcan no coincidir."
+      ],
+      "commands": [
+        "/kingdoms warfare here",
+        "/kingdoms warfare inspect \"<settlement name>\"",
+        "/kingdoms warfare campaigns \"<settlement name>\""
+      ],
+      "task": "warfare.campaign_overview"
+    },
+    {
+      "id": "temporary_mobilization",
+      "task": "warfare.muster",
+      "category": "warfare",
+      "title": "Da órdenes temporales a los reclutas",
+      "summary": "Reúne reclutas propios y cargados con doctrina de defensa, escolta o exploración durante un arrendamiento acotado.",
+      "body": [
+        "La movilización cambia temporalmente las órdenes de un recluta que realmente posees. Abre Desplegar un recluta temporalmente o Desplegar reclutas cercanos temporalmente y selecciona, cuando se te pida, el recluta propio y cargado con nombre. Elige defensa, escolta o exploración. Con la configuración predeterminada, un comandante puede tener como mucho 16 arrendamientos y cada uno dura 6000 ticks. El sistema nunca fuerza la carga de un recluta ni accede a un chunk sin cargar.",
+        "Antes de cambiar las órdenes, MCA: Kingdoms registra la identidad del recluta, su propietario, su grupo y sus órdenes originales, la sesión del proveedor y el vencimiento. Después pide a Recruits que aplique la doctrina temporal y verifica el resultado. Un recluta implicado en una transferencia de recluta sin terminar no puede movilizarse, porque dos operaciones guardadas no deben competir por la misma entidad nativa.",
+        "Usa Inspeccionar un despliegue activo o conservado (o status) para ver los arrendamientos actuales y su estado de recuperación. Terminar un despliegue temporal acaba antes un arrendamiento vivo y restaura la instantánea. El vencimiento natural también pide la restauración. Si el proveedor no estaba disponible o su guardado no se confirmó, recuperar reintenta la restauración protegida. Una propiedad ausente o cambiada bloquea una reparación insegura; no adivina qué órdenes debería tener ahora el recluta."
+      ],
+      "commands": [
+        "/kingdoms-mobilization muster nearby <defense|escort|scout>",
+        "/kingdoms-mobilization muster \"<recruit name>\" <defense|escort|scout>",
+        "/kingdoms-mobilization status",
+        "/kingdoms-mobilization dismiss \"<deployment name>\"",
+        "/kingdoms-mobilization recover \"<deployment name>\""
+      ]
+    },
+    {
+      "id": "civilian_contracts",
+      "task": "warfare.contract",
+      "category": "warfare",
+      "title": "Acepta contratos civiles",
+      "summary": "Abre una de las seis misiones nativas de servicio escritas desde un contacto civil reconocido cercano.",
+      "body": [
+        "La recuperación civil ofrece contratos de socorro, reconocimiento, mediación, autonomía, defensa y escolta. Colócate cerca de un contacto reconocido, cargado, vivo y visible, abre Elegir trabajos de recuperación civil y selecciona ese contacto con nombre y el tipo de trabajo. El servidor verifica a quien lo ofrece, la institución, el asentamiento, el control cívico, el tipo de misión y el jugador antes de pedir a MCA Quests que abra la misión nativa. Un aldeano sin cargar o sin relación no puede actuar como dispensador remoto de misiones.",
+        "MCA Quests gestiona la aceptación, los objetivos, el consumo del inventario, las recompensas y su justificante de finalización. MCA: Kingdoms vincula la instancia de misión nativa aceptada con quien la ofreció y con su contexto político, y después consume la prueba duradera de finalización solo cuando una consecuencia escrita lo exige. Repetir un justificante no puede pagar dos veces ni cumplir un deber distinto. Cada uno de estos contratos civiles sin ámbito está escrito como una oportunidad de servicio de una sola vez.",
+        "El rango de proveedor MCA Quests correspondiente es opcional para arrancar el núcleo, pero necesario para que estos comandos funcionen. Si falta o es incompatible, no se crea ningún objetivo ni recompensa sintéticos. Restaura el proveedor compatible y el estado conservado del mundo antes de reintentar. El trabajo de oportunidades y de protección usa un contrato distinto y con ámbito (Abrir servicio de oportunidad y Abrir servicio de obligación), descrito en los capítulos de evolución; no sustituyas una obligación con nombre por un contrato sin ámbito."
+      ],
+      "commands": [
+        "/kingdoms-contract relief \"<contact name>\"",
+        "/kingdoms-contract reconnaissance \"<contact name>\"",
+        "/kingdoms-contract mediation \"<contact name>\"",
+        "/kingdoms-contract autonomy \"<contact name>\"",
+        "/kingdoms-contract defense \"<contact name>\"",
+        "/kingdoms-contract escort \"<contact name>\""
+      ]
+    },
+    {
+      "id": "discover_world_sites",
+      "task": "world.sites",
+      "category": "warfare",
+      "title": "Descubre lugares del mundo",
+      "summary": "Construye un registro privado respaldado por pruebas visitando estructuras configuradas y lugares escritos.",
+      "body": [
+        "El contexto del mundo descubre los inicios de estructuras configurados y cargados mientras viajas. Los valores instalados reconocen aldeas, puestos de saqueadores, mansiones del bosque, fortalezas, ciudades antiguas, pirámides del desierto y de la jungla, monumentos, fortalezas del Nether, bastiones, portales en ruinas y ruinas de senderos, y les asignan papeles como asentamiento, fortaleza hostil, ruina o yacimiento arqueológico. Los paquetes de datos pueden sustituir o ampliar estas definiciones; un papel es un dato de contenido, no una estructura generada nueva.",
+        "Tu página de lugares muestra solo los sitios que has descubierto, mientras que los operadores con nivel de permiso 2 pueden revisar todos los registros. El descubrimiento usa pruebas reales de dimensión y posición. Un lugar creado por un operador empieza oculto y solo puede usarlo un jugador después de que ese jugador llegue físicamente a menos de ocho bloques de su posición cargada. Por tanto, crearlo no puede revelar un lugar lejano a todo el mundo.",
+        "La lista se pagina en grupos de 16. Un lugar puede mostrar un controlador o una marca de disputa cuando los hechos de guerra verificados lo respaldan. Si el contexto del mundo está desactivado, el descubrimiento y el avance en las rutas se detienen sin borrar el registro guardado. Las definiciones de los paquetes de datos instalados determinan qué estructuras y tipos de encuentro participan; los complementos de mapas opcionales no crean pruebas de estructuras que nadie cargó ni visitó."
+      ],
+      "commands": [
+        "/kingdoms-world sites",
+        "/kingdoms-world sites <page>",
+        "/kingdoms-world author site <role>"
+      ]
+    },
+    {
+      "id": "institution_routes",
+      "task": "world.routes",
+      "category": "warfare",
+      "title": "Recorre rutas entre instituciones",
+      "summary": "Sigue rutas escritas con puntos de control entre instituciones conocidas en funcionamiento, con salvoconducto vigente.",
+      "body": [
+        "Un operador solo puede crear una ruta entre dos instituciones distintas en funcionamiento de la misma dimensión. Ambos extremos deben tener cerca lugares que el operador haya descubierto en persona. La ruta guardada contiene puntos de control de salida, intermedio y llegada. No teletransporta a nadie, no construye caminos, no carga chunks ni garantiza que el terreno entre los puntos sea fácil de atravesar.",
+        "Los jugadores solo ven una ruta después de conocer ambas instituciones. Antes de empezar un viaje y antes de avanzar cada punto de control, el servidor comprueba que ambas instituciones sigan en funcionamiento y que el estado actual de la guerra y de los acuerdos conceda salvoconducto en ambos asentamientos. Una ruta denegada indica por qué no está disponible en lugar de saltarse un control hostil. Llega en orden a menos de ocho bloques de cada punto de control cargado; el progreso y la finalización se guardan.",
+        "Abre Consultar rutas conocidas para ver los extremos con nombre y el siguiente punto de control, y después Iniciar una ruta guiada. Empezar de nuevo reinicia el viaje de ese jugador en esa ruta. Los viajes completados quedan como prueba en el registro. Los registros de rutas están acotados y las comprobaciones de progreso usan un pequeño presupuesto por jugador, así que muchas rutas guardadas no provocan exploraciones amplias del mundo."
+      ],
+      "commands": [
+        "/kingdoms-world routes",
+        "/kingdoms-world routes <page>",
+        "/kingdoms-world route start \"<route name>\"",
+        "/kingdoms-world author route \"<starting institution name>\" \"<destination institution name>\""
+      ]
+    },
+    {
+      "id": "neutral_resource_access",
+      "task": "world.resource",
+      "category": "warfare",
+      "title": "Solicita acceso neutral a recursos",
+      "summary": "Usa una política de recursos escrita fuera de los asentamientos, con un camino de regreso independiente conocido.",
+      "body": [
+        "El acceso neutral a recursos es una política de viaje limitada, no una propiedad. Un operador abre Configurar acceso neutral a recursos y elige dos lugares con nombre que haya descubierto en persona, además de los productos permitidos y excluidos. El lugar del recurso debe estar fuera de cualquier asentamiento y el lugar de regreso debe ser distinto. La tarea rechaza un lugar desconocido, situado en un asentamiento o no disponible.",
+        "Un jugador solicita un producto en un lugar. Tanto el lugar del recurso como el lugar de regreso independiente deben ser conocidos por ese jugador. El recurso solicitado debe estar en el conjunto permitido y no en las exclusiones. Si se concede, se indica un acceso neutral con un camino de regreso; no da objetos, no extrae bloques automáticamente, no cambia una reclamación, no crea un intercambio ni anula las reglas nativas de otro mod.",
+        "Los paquetes de datos y los operadores definen los productos usando los identificadores de recursos del modpack instalado. Si más adelante se elimina ese contenido, la política guardada sigue siendo una prueba, pero no puede hacer aparecer el objeto que falta. El salvoconducto de guerra actual y los sistemas de rutas siguen siendo comprobaciones independientes para viajar por asentamientos controlados."
+      ],
+      "commands": [
+        "/kingdoms-world resource request \"<site name>\" <commodity item id>",
+        "/kingdoms-world author resource \"<site name>\" \"<return site name>\" <commodity item id> <excluded commodity item id>"
+      ]
+    },
+    {
+      "id": "encounter_receipts",
+      "task": "world.encounters",
+      "category": "warfare",
+      "title": "Registra contribuciones en encuentros",
+      "summary": "Revisa el crédito acotado por encuentros hostiles configurados cerca de lugares que ya conoces.",
+      "body": [
+        "Los encuentros configurados pueden registrar una contribución cuando se derrota a una entidad admisible cerca de un lugar que descubriste. Los valores instalados reconocen a los guardianes ancianos para la defensa de lugares y a los evocadores para la defensa de asentamientos. El servidor usa la contribución real en el combate, la identidad de la entidad, las pruebas del lugar cercano y el momento de la finalización. Estar conectado o cerca de la zona no genera crédito.",
+        "Cada entidad acreditada se consume una sola vez. Por defecto se permiten tres repeticiones acreditadas para el mismo jugador, lugar y tipo de encuentro dentro de un periodo de siete días de juego, con la contribución reunida durante el periodo configurado de 1200 ticks. Los paquetes de datos pueden definir otros tipos de encuentro, límites de repetición y papeles. Esas definiciones clasifican hechos reales; no generan enemigos ni conceden botín arbitrario.",
+        "El registro de encuentros es privado para el jugador acreditado, aunque los operadores pueden revisarlo para diagnosticar problemas. Cada fila incluye el tipo de encuentro, la contribución, el número de repetición y una identidad de justificante estable. Usa páginas de 16 para consultar las entradas antiguas. Los complementos opcionales de misiones o de atlas pueden mostrar contexto relacionado, pero el justificante duradero de MCA: Kingdoms sigue siendo la fuente para cualquier consecuencia escrita posterior."
+      ],
+      "commands": [
+        "/kingdoms-world encounters",
+        "/kingdoms-world encounters <page>"
+      ]
+    },
+    {
+      "id": "atlas_and_recovery",
+      "category": "warfare",
+      "title": "Vistas de atlas y recuperación por el operador",
+      "summary": "Entiende la publicación opcional en mapas y recupera registros de guerra conservados sin inventar el estado del proveedor.",
+      "body": [
+        "MCA: Kingdoms publica los lugares descubiertos y el siguiente punto de control accesible de una ruta en su fuente de mapa de contexto del mundo. Un atlas externo compatible puede dibujar esa fuente; Map Atlases sigue siendo quien dibuja el mapa. Recruits conserva su propio mapa territorial. Sin un complemento de atlas, las tareas de consulta de lugares, rutas, encuentros y guerra siguen siendo la referencia. La publicación nunca revela lugares sin descubrir a un jugador corriente.",
+        "La guerra, la movilización, los contratos civiles y el contexto del mundo guardan datos separados en la carpeta de datos del mundo. Conservan en solo lectura los esquemas futuros o no admitidos en lugar de reescribir contenidos desconocidos. Un fallo al guardar rechaza la acción antes de informar de un éxito. Las confirmaciones de los proveedores se conservan para que un reinicio pueda distinguir un reintento pendiente de una operación completada.",
+        "Para recuperar, haz una copia de seguridad del mundo, inspecciona la operación con nombre y el estado del proveedor, restaura el complemento compatible exacto y elige después su tarea de reintento, recuperación, aplicación, retirada o fin del despliegue. Los comandos ofrecen las mismas operaciones con nombre para la automatización. No borres un archivo auxiliar ni edites los archivos de facciones nativas solo para quitar un error. Prueba la ausencia de un proveedor en una copia y reinicia la recuperación desde la instantánea intacta del mundo con el proveedor."
+      ],
+      "commands": [
+        "/kingdoms warfare here",
+        "/kingdoms warfare retry_campaign \"<campaign name>\"",
+        "/kingdoms warfare accord apply \"<control agreement name>\"",
+        "/kingdoms-mobilization status",
+        "/kingdoms-mobilization recover \"<deployment name>\"",
+        "/kingdoms-world sites",
+        "/kingdoms-world routes",
+        "/kingdoms-world encounters"
+      ],
+      "task": "world.sites"
+    }
+  ],
+  "schema": 2
+}

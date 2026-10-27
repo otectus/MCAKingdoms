@@ -270,8 +270,15 @@ public final class CivicService implements dev.otectus.mcakingdoms.api.civic.Ins
         if(context.isEmpty())return Result.deny("civic.contact_unavailable");
         if(!context.get().servicesAvailable())return Result.deny("civic.institution_unavailable");
         if(!context.get().commissionQualified())return Result.deny("civic.commission_not_qualified");
+        // Each refusal names a cause the owning service or provider establishes; none is guessed.
         var rules=CivicDefinitions.INSTANCE.get(new ResourceLocation(context.get().organization()));
-        if(rules.isEmpty()||!dev.otectus.mcakingdoms.compat.quests.receipts.QuestCompletionBridge.openCommissions(player,npc,rules.get().commissions()))return Result.deny("civic.commissions_unavailable");
+        if(rules.isEmpty())return Result.deny("civic.commissions_no_rules");
+        if(rules.get().commissions().isEmpty())return Result.deny("civic.commissions_none_defined");
+        String quests=dev.otectus.mcakingdoms.compat.quests.receipts.QuestCompletionBridge.capability();
+        if(quests.equals("absent"))return Result.deny("civic.commissions_quests_absent");
+        if(!quests.equals("available"))return Result.deny("civic.commissions_quests_unsupported");
+        if(dev.otectus.mcakingdoms.compat.quests.QuestContent.installed(server,rules.get().commissions())==0)return Result.deny("civic.commissions_content_missing");
+        if(!dev.otectus.mcakingdoms.compat.quests.receipts.QuestCompletionBridge.openCommissions(player,npc,rules.get().commissions()))return Result.deny("civic.commissions_menu_refused");
         return Result.ok("civic.commissions_opened");
     }
     private String buildingFingerprint(InstitutionView place) {
@@ -288,7 +295,7 @@ public final class CivicService implements dev.otectus.mcakingdoms.api.civic.Ins
         if(context.isEmpty()||!context.get().servicesAvailable())return Result.deny("civic.institution_unavailable");
         if(!context.get().commissionQualified())return Result.deny("civic.commission_not_qualified");
         var contact=data.state().contacts.get(npc.getUUID());var chapter=data.state().chapters.get(contact.chapter());
-        if(!chapter.organization().equals("mcakingdoms:lamplighters"))return Result.deny("civic.commissions_unavailable");
+        if(!chapter.organization().equals("mcakingdoms:lamplighters"))return Result.deny("civic.workshop_lamplighters_only");
         if(chapter.institution()==null)return Result.deny("civic.recognized_workshop_required");
         var place=place(chapter).orElseThrow();String building=buildingFingerprint(place);
         if(building.isEmpty())return Result.deny("civic.recognized_workshop_required");
@@ -305,7 +312,8 @@ public final class CivicService implements dev.otectus.mcakingdoms.api.civic.Ins
                 building,legal.fingerprint(),server.overworld().getGameTime()+1200,null,honor,terms);
         if(!contracts().put(server,contract))return Result.deny("civic.save_failed");
         if(!dev.otectus.mcakingdoms.compat.quests.receipts.QuestCompletionBridge.openInstitutionalCommissions(player,npc,Set.of(WORKSHOP_QUEST),contract.id().toString()))
-            return Result.deny("civic.commissions_unavailable");
+            return Result.deny(dev.otectus.mcakingdoms.compat.quests.receipts.QuestCompletionBridge.capability().equals("available")
+                    ?"civic.commissions_menu_refused":"civic.commissions_quests_unsupported");
         return Result.ok("civic.workshop_terms");
     }
     @Override public String validate(ServerPlayer player,Entity giver,ResourceLocation quest,String binding,boolean completing) {

@@ -29,7 +29,11 @@ public final class PoliticalCommands {
         var root = Commands.literal("politics");
         root.then(Commands.literal("diagnose").requires(source -> source.hasPermission(2)).then(word("kingdom").executes(c -> inspect(c,"overview"))));
         root.then(Commands.literal("inspect").then(word("kingdom").executes(c -> inspect(c, "overview")).then(word("tab").executes(c -> inspect(c, arg(c,"tab"))))));
-        root.then(Commands.literal("bootstrap").requires(s -> s.hasPermission(2)).then(word("kingdom").then(word("settlement").then(word("profile")
+        // Operators found any kingdom's first government; with politics.openFounding a recorded resident may found their own,
+        // naming themselves (omit the leader). GovernmentService decides; this gate only lets eligible players reach it.
+        root.then(Commands.literal("bootstrap").requires(s -> s.hasPermission(2) || dev.otectus.mcakingdoms.config.McaKingdomsConfig.OPEN_FOUNDING.get())
+                .then(word("kingdom").then(word("settlement").then(word("profile")
+                .executes(c -> run(c, Action.BOOTSTRAP, arg(c,"profile"), arg(c,"settlement"), new Person(c.getSource().getPlayerOrException().getUUID(), Kind.PLAYER), "", "", ""))
                 .then(Commands.argument("leader", EntityArgument.player()).executes(c -> run(c, Action.BOOTSTRAP, arg(c,"profile"), arg(c,"settlement"),
                         new Person(EntityArgument.getPlayer(c,"leader").getUUID(), Kind.PLAYER), "", "", "")))))));
         root.then(Commands.literal("seat").then(word("kingdom").then(word("settlement").executes(c -> run(c,Action.SEAT,"",arg(c,"settlement"),null,"","","")))));

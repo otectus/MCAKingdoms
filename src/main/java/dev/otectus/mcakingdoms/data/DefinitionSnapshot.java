@@ -67,6 +67,12 @@ public final class DefinitionSnapshot {
         return new DefinitionSnapshot(kingdoms, namePools, biomeRules, styleRules, fallbackKingdom, revision);
     }
 
+    /** Definition counts for reload reports and server health. */
+    public int kingdomCount() { return kingdoms.size(); }
+    public int namePoolCount() { return namePools.size(); }
+    public int biomeRuleCount() { return biomeRules.size(); }
+    public int styleRuleCount() { return styleRules.size(); }
+
     public Optional<KingdomView> kingdom(ResourceLocation id) {
         return Optional.ofNullable(kingdoms.get(id)).map(definition -> definition);
     }

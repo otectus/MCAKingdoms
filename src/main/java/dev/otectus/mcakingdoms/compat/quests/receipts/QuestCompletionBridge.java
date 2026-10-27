@@ -17,6 +17,9 @@ import java.util.*;
 
 /** Optional public API binding. No completed-event inference and no provider state writes except public acknowledgment. */
 public final class QuestCompletionBridge {
+    /** Store health for server diagnostics. */
+    public static dev.otectus.mcakingdoms.persistence.StoreStatus storeStatus(net.minecraft.server.MinecraftServer server){return QuestReceiptData.status(server);}
+
     /**
      * Used when MCA: Quests predates {@code McaQuestsApi.institutionalCompletionConsumer()} (1.7.1 and
      * earlier). Newer Quests names the consumer itself, so the id this bridge polls and acknowledges as

@@ -1,4 +1,5 @@
 {
+  "schema": 2,
   "entries": [
     {
       "id": "ledger_and_discovery",
@@ -8,9 +9,9 @@
       "summary": "The Village Ledger is your starting point for places, guilds, and government.",
       "body": [
         "The mod examines loaded chunks for village structures and clusters of village points of interest, such as homes and job sites. Supported MCA village records can also supply settlement evidence. An operator can register a place manually. Discovering a place does not generate a town or paste buildings into the world.",
-        "Use the Village Ledger to browse known settlements. Filter by kingdom and move through result pages. Select a settlement to inspect its name, kingdom, dimension, location, and related details. Kingdom opens that settlement's political pages; Guilds opens your own civic membership and service view. Military and world-context views require their relevant context and integrations.",
+        "Use the Village Ledger to browse the settlements you have discovered, plus any the server made public. Search by name (aliases count), choose a kingdom with the kingdom button, and sort by name or by distance in your dimension. Select a settlement to see its kingdom, dimension and location; More details shows how it was recognized. Kingdom opens its political pages, Guilds opens your own guild service view, and War Room shows its control and civilian options.",
         "Discovery is personal. An ordinary player does not receive all remote coordinates merely because the server knows them. Visiting and supported introductions can expand what you know. A private introduction is not a global map reveal, and external map mods still own their own explored terrain.",
-        "If the ledger is empty, visit a recognized settlement and refresh. If the entry overlay appeared but a page seems stale, refresh before trying an administrative repair. If village here reports no recognized settlement, you may be outside its saved bounds or the settlement may not yet be recognized. An operator can investigate; creating a second identity blindly can make duplicates."
+        "If the ledger is empty, you have not discovered a settlement yet: walk into a village (opening the ledger inside one also records it) and refresh. With a kingdom filter or a search, an empty list only means nothing you know matches; choose All kingdoms or clear the search. If the entry banner appeared but a page seems stale, refresh before trying an administrative repair. If Read this settlement reports no recognized settlement, you may be outside its saved bounds or the settlement may not yet be recognized. An operator can investigate; creating a second identity blindly can make duplicates."
       ],
       "commands": [
         "/kingdoms village here",
@@ -22,14 +23,50 @@
       "id": "kingdoms",
       "task": "kingdom.list",
       "category": "settlements",
-      "title": "The six starting kingdoms",
+      "title": "Kingdoms and their heraldry",
       "summary": "Kingdom identity is persistent and can be extended by a datapack.",
-      "body": [
-        "The bundled kingdoms are Serenum, Lunari, Madera, Anemosia, Yew, and Shimaguni. Their command IDs use mcakingdoms: followed by the lowercase name. Names, heraldry, biome preferences, structure associations, and naming pools come from definitions.",
-        "Biome and structure evidence help choose an initial kingdom for a newly recognized settlement. Existing settlements keep their saved assignments when definitions or nearby terrain change. A jungle biome is not a live military border, and recoloring a banner does not transfer sovereignty.",
-        "Shimaguni draws on the pack's island-empire history, Island Covenant, and Tide Archive. New jungle, sparse-jungle, and bamboo-jungle settlements use its supplied biome preference. Akatsura is reserved from random naming so a deliberate capital can use it; the mod does not automatically create that city, capital, or historical alliance.",
-        "A kingdom's cultural name is not a constituted government. A government is founded separately with a capital, charter, and leader. Likewise, military control is recorded from its owning provider, not inferred from a cultural settlement name.",
-        "Use kingdom list to see the server's definitions, including any additions. Server datapacks may extend or replace the shipped defaults; the current ledger is the authoritative description of a saved settlement."
+      "keywords": [
+        "kingdom",
+        "heraldry",
+        "banner",
+        "Serenum",
+        "Lunari",
+        "Madera",
+        "Anemosia",
+        "Yew",
+        "Shimaguni"
+      ],
+      "blocks": [
+        {
+          "id": "gallery",
+          "type": "kingdoms",
+          "caption": "Every kingdom this server defines, with its heraldry and how many of its settlements you know."
+        },
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "The bundled kingdoms are Serenum, Lunari, Madera, Anemosia, Yew, and Shimaguni. Their command IDs use mcakingdoms: followed by the lowercase name. Names, heraldry, biome preferences, structure associations, and naming pools come from definitions."
+        },
+        {
+          "id": "p2",
+          "type": "paragraph",
+          "text": "Biome and structure evidence help choose an initial kingdom for a newly recognized settlement. Existing settlements keep their saved assignments when definitions or nearby terrain change. A jungle biome is not a live military border, and recoloring a banner does not transfer sovereignty."
+        },
+        {
+          "id": "p3",
+          "type": "paragraph",
+          "text": "Shimaguni draws on the pack's island-empire history, Island Covenant, and Tide Archive. New jungle, sparse-jungle, and bamboo-jungle settlements use its supplied biome preference. Akatsura is reserved from random naming so a deliberate capital can use it; the mod does not automatically create that city, capital, or historical alliance."
+        },
+        {
+          "id": "p4",
+          "type": "paragraph",
+          "text": "A kingdom's cultural name is not a constituted government. A government is founded separately with a capital, charter, and leader. Likewise, military control is recorded from its owning provider, not inferred from a cultural settlement name."
+        },
+        {
+          "id": "p5",
+          "type": "paragraph",
+          "text": "Use kingdom list to see the server's definitions, including any additions. Server datapacks may extend or replace the shipped defaults; the current ledger is the authoritative description of a saved settlement."
+        }
       ],
       "commands": [
         "/kingdoms kingdom list",
@@ -37,8 +74,81 @@
       ]
     },
     {
+      "id": "identity_government_control",
+      "task": "warfare.here",
+      "category": "settlements",
+      "title": "Kingdom, government and control",
+      "summary": "Three different questions about one settlement: who its people are, who leads, and who holds it now.",
+      "keywords": [
+        "occupation",
+        "conquest",
+        "owner",
+        "who controls",
+        "allegiance",
+        "sovereignty",
+        "identity"
+      ],
+      "blocks": [
+        {
+          "id": "comparison",
+          "type": "comparison",
+          "alt": "A settlement's kingdom says who its people are. A government is who leads that kingdom. Military control is who holds the settlement's claim right now. Each can change separately.",
+          "columns": [
+            {
+              "title": "Settlement's kingdom",
+              "points": [
+                "Who its people are; shown on the banner and in the Ledger.",
+                "Set when the settlement is recognized; operators can reclassify it.",
+                "Conquest does not change it."
+              ]
+            },
+            {
+              "title": "Government",
+              "points": [
+                "Who leads the kingdom: leader, offices, agreements.",
+                "Optional; founded once per kingdom.",
+                "Read it on the Kingdom page."
+              ]
+            },
+            {
+              "title": "Military control",
+              "points": [
+                "Who holds the settlement's claim now, from Recruits.",
+                "Changes through sieges and campaigns.",
+                "Never rewrites families, homes, reputation or identity."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "occupation",
+          "type": "paragraph",
+          "text": "During an occupation the controlling side and the recognized civilian government can differ. Civilian guild services and recovery contracts keep their own rules, and an agreement on who governs the settlement (a sovereignty accord) is negotiated separately."
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "task",
+              "target": "warfare.here",
+              "label": "See who controls where you stand"
+            },
+            {
+              "kind": "guide",
+              "target": "political_pages"
+            },
+            {
+              "kind": "guide",
+              "target": "occupation_and_civilian_safety"
+            }
+          ]
+        }
+      ],
+      "commands": []
+    },
+    {
       "id": "npc_identity",
-      "task": "citizen.inspect",
       "category": "settlements",
       "title": "Residents, origins, and visitors",
       "summary": "Civic identity records a home without taking over a person’s life.",
@@ -52,19 +162,20 @@
         "/kingdoms citizen info <entity selector>",
         "/kingdoms citizen setorigin <entity selector> \"<settlement name>\"",
         "/kingdoms citizen setresidence <entity selector> \"<settlement name>\""
-      ]
+      ],
+      "task": "citizen.inspect",
+      "operator": true
     },
     {
       "id": "settlement_changes",
-      "task": "settlement.rename",
       "category": "settlements",
       "title": "Rename, reassign, or merge places",
       "summary": "Operator tools change saved identity; they do not rebuild the settlement.",
       "body": [
         "These commands require operator permission level 2. Start by inspecting the existing record and backing up the world before a consequential merge or reassignment. Use the actual settlement selector; the new name may contain spaces without quotes.",
         "Create registers an identity at your current location, with a radius from 16 to 512 blocks (default 64). Rename changes its civic display name. Setkingdom explicitly assigns a kingdom. Reclassify asks current classification rules to reconsider an eligible record. Lock and unlock control the settlement's automatic identity locks; inspect debug output before relying on a reclassification.",
-        "Discover scans a bounded nearby chunk area, with radius 1–32 chunks (default 8). It is a recognition tool, not a command to build towns. Use ordinary travel and discovery for everyday play.",
-        "Merge directs the source identity into the target and keeps canonical references rather than treating a renamed place as new. This is different from merging guilds or annexing a military claim. Capital and institution references are checked: move a seat before reassignment, resolve conflicting local office holders, and explicitly suspend conflicting institution charters before retrying a blocked merge.",
+        "Discover scans a bounded nearby chunk area, with radius 1–32 chunks (default 8). It is a recognition tool, not a command to build towns. Use ordinary travel and discovery for everyday play. Reconcile nearby village records merges records that turn out to be pieces of one generated village, for records in loaded chunks around you; its review shows how many records are in scope.",
+        "Merge directs the source identity into the target and keeps canonical references rather than treating a renamed place as new. Merge duplicate settlement records shows, before Apply, which record is kept and which is retired, any locks, what moves to the kept record, what is not rewritten, and any reference that blocks the merge. This is different from merging guilds or annexing a military claim. Capital and institution references are checked: move a seat before reassignment, resolve conflicting local office holders, and explicitly suspend conflicting institution charters before retrying a blocked merge.",
         "Changing an assignment does not transfer all historical standing or deeds into the new kingdom. Historical evidence keeps its original context. Do not use repeated reassignment as a reward-reset mechanism.",
         "To name a newly created settlement in the command, supply its radius first, then its name."
       ],
@@ -78,7 +189,10 @@
         "/kingdoms village discover [radiusChunks]",
         "/kingdoms village merge \"<source settlement name>\" \"<target settlement name>\"",
         "/kingdoms village debug [village]"
-      ]
+      ],
+      "task": "settlement.rename",
+      "operator": true,
+      "player_task": "settlement.inspect"
     }
   ]
 }

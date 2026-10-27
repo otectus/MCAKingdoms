@@ -41,7 +41,7 @@ public final class BlueprintAcceptanceHarness {
         ticks++;
         try {
             if (System.currentTimeMillis()-started > 300000) throw new AssertionError("Timeout stage="+stage+" screen="+mc.screen);
-            if (!creating && mc.screen instanceof TitleScreen) {
+            if (!creating && (mc.screen instanceof TitleScreen || mc.screen instanceof net.minecraft.client.gui.screens.AccessibilityOnboardingScreen)) {
                 creating=true; mc.options.pauseOnLostFocus=false; mc.options.renderDistance().set(3); mc.options.guiScale().set(1); mc.resizeDisplay();
                 mc.getTutorial().setStep(net.minecraft.client.tutorial.TutorialSteps.NONE);
                 mc.createWorldOpenFlows().createFreshLevel("blueprint-acceptance-"+started,

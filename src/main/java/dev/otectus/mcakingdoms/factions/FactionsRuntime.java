@@ -17,6 +17,9 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 public final class FactionsRuntime {
+    /** Store health for server diagnostics. */
+    public static dev.otectus.mcakingdoms.persistence.StoreStatus storeStatus(net.minecraft.server.MinecraftServer server) { return FactionSavedData.status(server); }
+
     private static final AtomicBoolean GLOBAL_HOOKS=new AtomicBoolean();
     private static final Map<MinecraftServer,FactionServiceImpl> SERVICES=
             java.util.Collections.synchronizedMap(new WeakHashMap<>());

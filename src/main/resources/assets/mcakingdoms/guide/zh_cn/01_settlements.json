@@ -1,0 +1,198 @@
+{
+  "schema": 2,
+  "entries": [
+    {
+      "id": "ledger_and_discovery",
+      "task": "settlement.inspect",
+      "category": "settlements",
+      "title": "寻找和使用聚居地",
+      "summary": "村庄名册是你了解地点、行会和政府的起点。",
+      "body": [
+        "本模组会检查已加载的区块，寻找村庄结构以及村庄兴趣点群（例如住所和工作站点）。受支持的MCA村庄记录也可以提供聚居地证据。管理员可以手动登记地点。发现一个地点不会生成城镇，也不会在世界中放置建筑。",
+        "使用村庄名册浏览你已发现的聚居地，以及服务器公开的聚居地。可以按名称搜索（别名也算），用王国按钮选择王国，并按名称或你所在维度中的距离排序。选择一个聚居地即可查看它的王国、维度和位置；“更多详情”会显示它是如何被识别的。“王国”打开它的政治页面，“行会”打开你自己的行会服务页面，“作战室”显示它的控制情况和平民选项。",
+        "发现是个人的。普通玩家不会仅仅因为服务器知道某些远处坐标就获得这些坐标。拜访和受支持的引荐会扩展你所知道的范围。私人引荐不会向所有人公开地图，外部地图模组仍各自管理其已探索的地形。",
+        "如果名册为空，说明你还没有发现任何聚居地：走进一个村庄（在村庄内打开名册也会记录它）然后刷新。使用王国筛选或搜索时，空列表只表示你知道的地点都不匹配；请选择“所有王国”或清除搜索。如果出现了入口横幅但页面似乎过时，请先刷新，再考虑管理修复。如果“查看此聚居地”报告没有已识别的聚居地，你可能在其已保存的边界之外，或者该聚居地尚未被识别。管理员可以进行调查；盲目创建第二个身份可能会产生重复记录。"
+      ],
+      "commands": [
+        "/kingdoms village here",
+        "/kingdoms village info [village]",
+        "/kingdoms kingdom info mcakingdoms:serenum"
+      ]
+    },
+    {
+      "id": "kingdoms",
+      "task": "kingdom.list",
+      "category": "settlements",
+      "title": "王国及其纹章",
+      "summary": "王国身份会持久保存，并可通过数据包扩展。",
+      "keywords": [
+        "王国",
+        "纹章",
+        "旗帜",
+        "塞雷努姆",
+        "卢纳里",
+        "马德拉",
+        "阿内莫西亚",
+        "紫杉",
+        "岛国"
+      ],
+      "blocks": [
+        {
+          "id": "gallery",
+          "type": "kingdoms",
+          "caption": "此服务器定义的所有王国，以及它们的纹章和你知道的聚居地数量。"
+        },
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "内置的王国有Serenum、Lunari、Madera、Anemosia、Yew和Shimaguni。它们的命令ID使用mcakingdoms:加上小写名称。名称、纹章、生物群系偏好、结构关联和命名池都来自定义。"
+        },
+        {
+          "id": "p2",
+          "type": "paragraph",
+          "text": "生物群系和结构证据有助于为新识别的聚居地选择初始王国。即使定义或附近地形发生变化，现有聚居地也会保留其已保存的归属。丛林生物群系不是实际的军事边界，更换旗帜颜色也不会转移主权。"
+        },
+        {
+          "id": "p3",
+          "type": "paragraph",
+          "text": "Shimaguni取材于整合包中岛屿帝国的历史、岛屿盟约和潮汐档案馆。新的丛林、稀疏丛林和竹林聚居地使用它提供的生物群系偏好。Akatsura不会被随机命名使用，以便留作有意设立的首都；本模组不会自动创建该城市、首都或历史联盟。"
+        },
+        {
+          "id": "p4",
+          "type": "paragraph",
+          "text": "王国的文化名称并不是已组建的政府。政府需要单独建立，包括首都、宪章和领袖。同样，军事控制权由负责它的提供方记录，而不是从聚居地的文化名称推断出来。"
+        },
+        {
+          "id": "p5",
+          "type": "paragraph",
+          "text": "使用“浏览王国”查看服务器的定义，包括新增的王国。服务器的数据包可以扩展或替换内置的默认内容；当前的名册才是已保存聚居地的权威描述。"
+        }
+      ],
+      "commands": [
+        "/kingdoms kingdom list",
+        "/kingdoms kingdom info mcakingdoms:serenum"
+      ]
+    },
+    {
+      "id": "identity_government_control",
+      "task": "warfare.here",
+      "category": "settlements",
+      "title": "王国、政府与控制",
+      "summary": "关于同一个聚居地的三个不同问题：居民是谁、由谁领导、现在由谁控制。",
+      "keywords": [
+        "占领",
+        "征服",
+        "拥有者",
+        "谁控制",
+        "效忠",
+        "主权",
+        "身份"
+      ],
+      "blocks": [
+        {
+          "id": "comparison",
+          "type": "comparison",
+          "alt": "聚居地的王国说明其居民是谁。政府是领导这个王国的人。军事控制是现在持有该聚居地领地声明的一方。三者可以各自变化。",
+          "columns": [
+            {
+              "title": "聚居地的王国",
+              "points": [
+                "居民是谁；显示在横幅和名册中。",
+                "在聚居地被识别时确定；管理员可以重新分类。",
+                "征服不会改变它。"
+              ]
+            },
+            {
+              "title": "政府",
+              "points": [
+                "由谁领导王国：领袖、官职、协议。",
+                "可选；每个王国建立一次。",
+                "在王国页面查看。"
+              ]
+            },
+            {
+              "title": "军事控制",
+              "points": [
+                "现在由谁持有该聚居地的领地声明，来自 Recruits。",
+                "随围攻和战役变化。",
+                "绝不会改写家庭、住所、声誉或身份。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "occupation",
+          "type": "paragraph",
+          "text": "占领期间，控制方与被承认的民政政府可能不同。平民行会服务和恢复契约遵循各自的规则，而关于由谁治理该聚居地的协议（主权协定）需要另行谈判。"
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "task",
+              "target": "warfare.here",
+              "label": "查看你所在地点由谁控制"
+            },
+            {
+              "kind": "guide",
+              "target": "political_pages"
+            },
+            {
+              "kind": "guide",
+              "target": "occupation_and_civilian_safety"
+            }
+          ]
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "npc_identity",
+      "category": "settlements",
+      "title": "居民、出身与访客",
+      "summary": "公民身份只记录家园，不会接管任何人的生活。",
+      "body": [
+        "MCA: Kingdoms会为符合条件的实体添加独立的出身和居住地记录。当前住所的正面证据可以更新公民居住地。最早已知的家可以确定出身；在已识别聚居地出生的新生儿也可以把该聚居地作为初始出身。",
+        "居民搬家后，出身作为历史保留。当前居住地必须有证据支持；看到某个NPC穿过集市，并不足以认定他搬到了那里。住所证据未知，不等于无家可归、死亡或敌对。",
+        "安装MCA后，个人姓名、基因、好感度、家庭、性格和MCA住所仍是MCA的数据。重命名MCA: Kingdoms的聚居地只会更改其公民标签，不会重命名居民或改写家族历史。任命官职不会取代职业，也不会开启新的AI作息。",
+        "某些角色需要一位已加载、在世且居住地已确认的成年人。人生阶段未知或NPC未加载都可能阻止任命，但这并不意味着该NPC已经死亡。管理员可以检查身份并有意更正出身或居住地，但这些命令不是让玩家搬家的工具。"
+      ],
+      "commands": [
+        "/kingdoms citizen info <entity selector>",
+        "/kingdoms citizen setorigin <entity selector> \"<settlement name>\"",
+        "/kingdoms citizen setresidence <entity selector> \"<settlement name>\""
+      ],
+      "task": "citizen.inspect",
+      "operator": true
+    },
+    {
+      "id": "settlement_changes",
+      "category": "settlements",
+      "title": "重命名、重新分配或合并地点",
+      "summary": "管理员工具会更改已保存的身份，但不会重建聚居地。",
+      "body": [
+        "这些命令需要2级管理员权限。在进行重要的合并或重新分配之前，先检查现有记录并备份世界。请使用实际的聚居地选择器；新名称可以包含空格，无需加引号。",
+        "create会在你当前位置登记一个身份，半径为16到512格（默认64）。rename更改其显示的公民名称。setkingdom明确指定王国。reclassify让当前的分类规则重新评估一条符合条件的记录。lock和unlock控制聚居地的自动身份锁定；在依赖重新分类之前，请先查看debug的输出。",
+        "discover会扫描附近一定范围内的区块，半径为1到32个区块（默认8）。它是识别工具，而不是建造城镇的命令。日常游玩请正常旅行和探索。“合并附近村庄记录”会合并那些原本属于同一个生成村庄各部分的记录，范围是你周围已加载区块中的记录；其核对页会显示有多少条记录在范围内。",
+        "merge会把来源身份指向目标身份，并保留规范引用，而不是把重命名的地点当作新地点。“合并重复的聚居地记录”会在执行前显示保留哪条记录、撤下哪条记录、各自的锁定、哪些内容会转到保留的记录、哪些内容不会被改写，以及任何阻止合并的引用。这与合并行会或吞并军事领地不同。系统会检查首都和机构的引用：在重新分配之前先迁移首都，处理冲突的地方官职持有者，并在重试被阻止的合并之前明确暂停冲突的机构特许状。",
+        "更改归属不会把所有历史声望或事迹转到新的王国。历史证据保留其原始背景。不要把反复重新分配当作重置奖励的手段。",
+        "要在命令中为新建的聚居地命名，请先提供半径，再提供名称。"
+      ],
+      "commands": [
+        "/kingdoms village create [radius [name...]]",
+        "/kingdoms village rename \"<settlement name>\" <new name...>",
+        "/kingdoms village setkingdom \"<settlement name>\" <kingdom definition id>",
+        "/kingdoms village reclassify \"<settlement name>\"",
+        "/kingdoms village lock \"<settlement name>\"",
+        "/kingdoms village unlock \"<settlement name>\"",
+        "/kingdoms village discover [radiusChunks]",
+        "/kingdoms village merge \"<source settlement name>\" \"<target settlement name>\"",
+        "/kingdoms village debug [village]"
+      ],
+      "task": "settlement.rename",
+      "operator": true,
+      "player_task": "settlement.inspect"
+    }
+  ]
+}

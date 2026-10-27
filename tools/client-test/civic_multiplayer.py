@@ -14,9 +14,19 @@ import uuid
 
 from production_client import allowed
 
+def _mod_version():
+    """mod_version from gradle.properties, so default artifact names follow the build."""
+    for line in (pathlib.Path(__file__).resolve().parents[2] / 'gradle.properties').read_text().splitlines():
+        if line.startswith('mod_version='):
+            return line.split('=', 1)[1].strip()
+    raise SystemExit('gradle.properties has no mod_version')
+
+
+MOD_VERSION = _mod_version()
+
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-INSTALL = pathlib.Path('/home/otectus/Documents/curseforge/minecraft/Install')
-DEFAULT_XVFB = pathlib.Path('/tmp/jewelcraft-xvfb/usr/bin/Xvfb')
+INSTALL = pathlib.Path(os.environ.get('MCAKINGDOMS_MC_INSTALL', '/home/otectus/Documents/curseforge/minecraft/Install'))
+DEFAULT_XVFB = pathlib.Path('/tmp/kd-xvfb/usr/bin/Xvfb')
 
 
 def main():
@@ -40,8 +50,8 @@ def main():
         raise SystemExit(f'Packaged Forge server libraries are missing: {libraries}')
     (server / 'libraries').symlink_to(libraries, target_is_directory=True)
 
-    mod = ROOT / 'build/libs/mcakingdoms-0.1.0.jar'
-    harness = ROOT / 'build/test-artifacts/mcakingdoms-0.1.0-client-acceptance.jar'
+    mod = ROOT / f'build/libs/mcakingdoms-{MOD_VERSION}.jar'
+    harness = ROOT / f'build/test-artifacts/mcakingdoms-{MOD_VERSION}-client-acceptance.jar'
     for artifact in (mod, harness):
         if not artifact.is_file():
             raise SystemExit(f'Missing packaged artifact: {artifact}')

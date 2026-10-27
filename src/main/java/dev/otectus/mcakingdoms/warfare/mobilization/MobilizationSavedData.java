@@ -33,6 +33,7 @@ public final class MobilizationSavedData extends SavedData {
         if(!tag.contains("Schema",Tag.TAG_INT)||tag.getInt("Schema")!=SCHEMA||!tag.contains("Payload",Tag.TAG_STRING)||tag.getString("Payload").length()>16_000_000)bad();
         JsonObject root=JsonParser.parseString(tag.getString("Payload")).getAsJsonObject();if(!root.has("revision")||!root.has("leases"))bad();
         result.state=JSON.fromJson(root,State.class);result.state.validate();}catch(RuntimeException failure){result.state=new State();result.preserved=tag.copy();result.diagnostic=failure.getMessage();}return result;}
+    public static dev.otectus.mcakingdoms.persistence.StoreStatus status(MinecraftServer server){var data=get(server);return dev.otectus.mcakingdoms.persistence.StoreStatus.of(NAME,data.writable(),data.diagnostic());}
     public boolean writable(){return preserved==null;}public String diagnostic(){return diagnostic;}public long revision(){return state.revision;}
     State snapshot(){return JSON.fromJson(JSON.toJson(state),State.class);}Collection<Lease> leases(){return state.leases.values();}
     Optional<Lease> lease(UUID id){return Optional.ofNullable(state.leases.get(id.toString()));}

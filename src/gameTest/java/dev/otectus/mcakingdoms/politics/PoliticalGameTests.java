@@ -218,6 +218,23 @@ public class PoliticalGameTests {
             helper.succeed();
         } finally { MinecraftForge.EVENT_BUS.unregister(politics); }
     }
+    /** politics.openFounding off refuses a resident's founding in the service itself, whatever reaches it; on, the same request founds. */
+    @GameTest(template="empty",timeoutTicks=100)
+    public static void residentFoundingFollowsTheSetting(GameTestHelper helper) {
+        var server=helper.getLevel().getServer(); var identity=McaKingdomsApi.get(server);
+        var resident=FakePlayerFactory.get(helper.getLevel(),new GameProfile(UUID.randomUUID(),"SettingResident"));
+        var home=settlement(helper,identity,"politics-setting",144,SERENUM);
+        identity.setResidence(resident,home.id());
+        java.util.function.Predicate<UUID> known=id->id.equals(resident.getUUID());
+        var closed=new GovernmentService(server,identity,McaKingdoms.POLITICS,new PoliticalSavedData(),false,known,()->true,()->false);
+        Result refused=closed.execute(resident,req(closed,Action.BOOTSTRAP,SERENUM,SERENUM+"_charter",home.id().toString(),resident,"","",""));
+        check(!refused.success()&&closed.government(SERENUM).isEmpty(),"A resident founded a government with resident founding off");
+        var open=new GovernmentService(server,identity,McaKingdoms.POLITICS,new PoliticalSavedData(),false,known,()->true,()->true);
+        Result founded=open.execute(resident,req(open,Action.BOOTSTRAP,SERENUM,SERENUM+"_charter",home.id().toString(),resident,"","",""));
+        check(founded.success(),"An eligible resident could not found with the setting on: "+founded.message());
+        check(open.government(SERENUM).map(g->g.capital().equals(home.id())).orElse(false),"The founded capital is not the residence");
+        helper.succeed();
+    }
     private static SettlementView settlement(GameTestHelper helper,KingdomsService service,String key,int dx,String kingdom) {
         BlockPos position=helper.absolutePos(new BlockPos(dx,2,2));
         var result=service.registerCandidate(helper.getLevel(),SettlementCandidate.structure(helper.getLevel().dimension(),position,4,new ResourceLocation("mcakingdoms:political_test"),key+position,null));

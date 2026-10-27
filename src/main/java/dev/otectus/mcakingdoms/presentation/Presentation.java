@@ -25,6 +25,7 @@ public final class Presentation {
         dev.otectus.mcakingdoms.civic.CivicNetwork.init();
         MinecraftForge.EVENT_BUS.register(dev.otectus.mcakingdoms.civic.CivicCommands.class);
         MinecraftForge.EVENT_BUS.register(KingdomsCommands.class);
+        MinecraftForge.EVENT_BUS.register(dev.otectus.mcakingdoms.command.KingdomsHelpCommands.class);
         MinecraftForge.EVENT_BUS.register(ServerPresentationEvents.class);
         ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, PresentationConfig.SPEC,
                 "mcakingdoms-client.toml");

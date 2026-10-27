@@ -142,8 +142,11 @@ public class KingdomGameTests {
         check(api.findSettlement(a.slug().toString()).orElseThrow().id().equals(b.id()),"Old machine slug lost on merge");h.succeed();
     }
 
-    /** The scan waits its turn behind every chunk loaded at start (500+ at two per tick), on an unthrottled server. */
-    @GameTest(template="empty",timeoutTicks=2400)
+    /**
+     * The scan waits its turn behind every chunk loaded at start (500+ at two per tick) and every chunk the concurrent tests
+     * load or generate, on an unthrottled server; the timeout bounds that queue, not the detector.
+     */
+    @GameTest(template="empty",timeoutTicks=6000)
     public static void loadedPoiClusterDiscoveredLazily(GameTestHelper h) {
         var level=h.getLevel();var center=h.absolutePos(new BlockPos(500,2,0)).atY(level.getSeaLevel());level.getChunkAt(center);level.setChunkForced(center.getX()>>4,center.getZ()>>4,true);
         level.setBlockAndUpdate(center.below(),net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());

@@ -46,6 +46,7 @@ final class QuestReceiptData extends SavedData {
         }catch(RuntimeException failure){data.intents.clear();data.preserved=tag.copy();com.mojang.logging.LogUtils.getLogger().error("Quest effect ledger is read-only; preserving payload",failure);}return data;
     }
     boolean writable(){return preserved==null;}
+    public static dev.otectus.mcakingdoms.persistence.StoreStatus status(net.minecraft.server.MinecraftServer server){var data=get(server);return dev.otectus.mcakingdoms.persistence.StoreStatus.of(NAME,data.writable(),"");}
     Optional<Intent> get(String key){return Optional.ofNullable(intents.get(key));}
     Collection<Intent> forPlayer(UUID player){return intents.values().stream().filter(i->i.player().equals(player)).limit(8).toList();}
     boolean put(MinecraftServer server,Intent intent){intent.validate();if(!writable()||!intents.containsKey(intent.key())&&intents.size()>=16384)return false;var next=new LinkedHashMap<>(intents);next.put(intent.key(),intent);return commit(server,next);}

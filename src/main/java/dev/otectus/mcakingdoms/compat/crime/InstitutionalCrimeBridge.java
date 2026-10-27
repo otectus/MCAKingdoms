@@ -10,6 +10,11 @@ public final class InstitutionalCrimeBridge {
         public View { restitution=List.copyOf(restitution); }
     }
     private InstitutionalCrimeBridge() { }
+    /** Whether the installed MCA: Crime exposes the workshop-legality provider (a class probe; nothing is invoked). */
+    public static boolean providerPresent() {
+        try { Class.forName("dev.otectus.mcacrime.api.InstitutionalServiceApi",false,InstitutionalCrimeBridge.class.getClassLoader()); return true; }
+        catch(ClassNotFoundException|LinkageError absent) { return false; }
+    }
     public static View workshop(ServerPlayer player,Entity giver) {
         if(!player.getServer().isSameThread())throw new IllegalStateException("Legal queries require server thread");
         try {

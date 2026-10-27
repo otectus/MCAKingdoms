@@ -2,24 +2,28 @@
   "entries": [
     {
       "id": "operator_overview",
-      "task": "administration.integrations",
       "category": "operators",
       "title": "Run a world safely",
       "summary": "Keep setup, player authority, and recovery as separate jobs.",
       "body": [
-        "Operator commands typically require permission level 2. The K menu shows operators additional administration and standing tasks. These use named settlement, person, region, migration, and reconciliation choices. Revisions and reconciliation fingerprints travel with the reviewed selection and cannot be typed or guessed in the GUI.",
+        "Operator commands typically require permission level 2. Kingdom Tasks shows operators additional administration and standing tasks. These use named settlement, person, region, migration, and reconciliation choices. Revisions and reconciliation fingerprints travel with the reviewed selection and cannot be typed or guessed in the GUI. Start with Server health: it shows the feature switches, installed providers, saved-data writability, the last definition reload, this start's Ultima migration, and discovery and reconciliation activity.",
         "Some useful tasks still require a connected player because they use that player’s location, selected entity, private knowledge, or political authority. Running from the server console is not always equivalent. Commands remain an optional equivalent interface for automation.",
-        "Start with definitions and integrations, then register or discover actual settlements, establish needed governments, recognize suitable institutions, and appoint real contacts. Enable optional world evolution only when you want it, and select eligible regions deliberately. Do not give yourself every political role merely to make a diagnostic pass.",
+        "Start with definitions and integrations, then register or discover actual settlements, establish needed governments, recognize suitable institutions, and appoint real contacts. Enable optional world evolution only when you want it. Once a world is opted in, every settlement of a kingdom with a government is an eligible region by default (autoEligibleRegions); pause the ones you do not want. Do not give yourself every political role merely to make a diagnostic pass.",
         "Before migration or repair, stop normal play and back up the entire world together: level data, world/data sidecars, dimensions, entity regions, and playerdata. Native quests, inventories, political records, and troops can span several files. Restoring only one receipt ledger is not a world rollback.",
         "A save or provider failure should preserve a pending operation rather than invent success. Read the exact owner record and identify whether the native effect already happened. Use the relevant retry, confirm, restore, release, novation, or administrative reconciliation task. Never delete the evidence just to remove an error message.",
         "Keep player explanations short and private. Detailed version, migration, and schema diagnostics belong with the operator; they should not be broadcast into NPC dialogue or used to reveal another player's private choices."
       ],
       "commands": [
+        "/kingdoms health",
+        "/kingdoms help [topic]",
         "/kingdoms integrations",
         "/kingdoms reload",
         "/kingdoms faction diagnostics",
         "/kingdoms politics diagnose \"<kingdom name>\""
-      ]
+      ],
+      "task": "administration.health",
+      "operator": true,
+      "player_task": "help.available"
     },
     {
       "id": "configuration",
@@ -27,17 +31,19 @@
       "title": "Configuration and feature switches",
       "summary": "Know which setting controls each part before diagnosing missing behavior.",
       "body": [
-        "The base common config, mcakingdoms-common.toml, controls settlement discovery. Defaults include a 64-block settlement radius, 48-block point-of-interest search radius, three village points of interest to recognize a cluster, two queued chunk scans per tick, and a 32-block weak-candidate matching distance. Positive NPC home evidence is checked at a default interval of 200 ticks.",
+        "The base common config, mcakingdoms-common.toml, controls settlement discovery. Defaults include a 64-block settlement radius, 48-block point-of-interest search radius, five village points of interest (with a bed or bell among them, near the surface) to recognize a cluster outside a generated village, two queued chunk scans per tick, and a 32-block weak-candidate matching distance. Positive NPC home evidence is checked at a default interval of 200 ticks.",
         "The client entry-overlay config controls whether entry titles appear, whether they appear only on a player's first visit to each settlement (the default) or on every entry, whether only kingdom changes trigger them, duration (default 80 ticks), and vertical position (default 54). This is presentation, not discovery or sovereignty. A hidden entry title does not delete a settlement.",
         "The faction common config controls reputation synchronization and migration policy. The integrations common config controls kingdom-gated addon content, with gating enabled and unknown identity denied by default. An explicitly authored predicate can state its own unknown policy; do not globally treat missing evidence as a successful qualification.",
         "Civic configuration controls the regional network and institutional services. Warfare configuration controls native political warfare and its subordinate features. These are independent of the per-world evolution opt-in. Evolution's common config sets evaluation interval, regional sampling budget, maximum concurrent scenarios, and personal digest cadence; the default values are 1,200 ticks, four sampled players/regions, eight scenarios, and 24,000 ticks.",
-        "Read the generated comments in the actual config files for current names and limits; different modules intentionally use their registered filenames. Stop and restart when required by the setting. A datapack reload changes authored definitions, not every startup config or a player's installed mod version."
+        "Read the generated comments in the actual config files for current names and limits; different modules intentionally use their registered filenames. A saved config file is reloaded while the server runs and most values apply from their next use; the Townstead adapter switches apply only after a restart. Server health shows the effective switches. A datapack reload changes authored definitions, not every startup config or a player's installed mod version."
       ],
-      "commands": []
+      "commands": [],
+      "task": "administration.health",
+      "operator": true,
+      "player_task": "help.available"
     },
     {
       "id": "standing_sync",
-      "task": "standing.diagnostics",
       "category": "operators",
       "title": "Kingdom standing and MCA reputation",
       "summary": "Sovereign reputation is separate from guild credit and local personal affection.",
@@ -54,7 +60,9 @@
         "/kingdoms faction add <player name> <kingdom definition id> <delta>",
         "/kingdoms faction local_effect <player name> <dimension> <MCA village number> <delta>",
         "/kingdoms faction pending_map \"<event name>\" <kingdom definition id>"
-      ]
+      ],
+      "task": "standing.diagnostics",
+      "operator": true
     },
     {
       "id": "migration_and_backups",
@@ -71,7 +79,9 @@
       "commands": [
         "/kingdoms faction migration dry_run",
         "/kingdoms faction migration import"
-      ]
+      ],
+      "task": "standing.migration_preview",
+      "operator": true
     },
     {
       "id": "datapack_authoring",
@@ -81,14 +91,16 @@
       "body": [
         "MCA: Kingdoms reads kingdom identities, biome rules, structure styles, naming pools, political definitions, guilds, civic rules, world sites/routes, and evolution templates from resources. Copy a shipped example of the same domain and schema rather than guessing fields from a different feature.",
         "Core and political definitions live under data/<namespace>/mcakingdoms/ with domain folders such as kingdoms, biome_rules, governments, offices, agreements, petitions, honors, and institution_charters. Organizational definitions use data/<namespace>/mcakingdoms_factions/factions/; civic contact rules use mcakingdoms_factions/civic_network/. The ID must agree with its path where that loader requires it.",
-        "Evolution scenarios use data/<namespace>/evolution/scenarios/; authored drama uses evolution/drama/. World-context selectors use the warfare/world resource domain. Define real supported prerequisites and a peaceful exit; a new JSON outcome name does not implement a new native operation.",
-        "Reload validates the relevant domain before publishing its new snapshot. Invalid definitions retain the last valid set where supported, while missing references can suspend dependent actions. Check reload diagnostics. An accepted quest, proposal, or scenario retains frozen terms rather than becoming a different bargain because its template changed.",
+        "Evolution scenarios use data/<namespace>/evolution/scenarios/; world event templates use evolution/drama/. World-context selectors use the warfare/world resource domain. Define real supported prerequisites and a peaceful exit; a new JSON outcome name does not implement a new native operation.",
+        "A reload reports every definition domain as accepted or rejected. A rejected domain keeps its previous definitions active, and the report names the file, the field and what was expected; the full detail is in the server log. Missing references can still suspend dependent actions, and Server health keeps the last reload report. An accepted quest, proposal, or scenario retains frozen terms rather than becoming a different bargain because its template changed.",
         "Author new rewards through the owning quest/economy provider. Author guild credit through an exact eligible quest and bounded credit definition. Never grant standing simply because a client claims that it completed a job.",
         "The book itself uses resource-pack files at assets/mcakingdoms/guide/<language>/*.json. English is the fallback. Entries contain id, category, title, summary, body paragraphs, and command references. Stable entry IDs let a translation replace its English counterpart. These book resources describe play; they grant no game authority."
       ],
       "commands": [
         "/kingdoms reload"
-      ]
+      ],
+      "task": "definitions.reload",
+      "operator": true
     },
     {
       "id": "addon_api",

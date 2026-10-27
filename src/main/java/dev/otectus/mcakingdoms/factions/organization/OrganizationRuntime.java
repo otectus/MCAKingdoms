@@ -15,6 +15,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /** Lifecycle boundary intentionally separate from the legacy sovereign standing runtime. */
 public final class OrganizationRuntime {
+    /** Store health for server diagnostics. */
+    public static dev.otectus.mcakingdoms.persistence.StoreStatus storeStatus(net.minecraft.server.MinecraftServer server) { return OrganizationSavedData.status(server); }
+
     private static final OrganizationDefinitions DEFINITIONS = new OrganizationDefinitions();
     private static final Map<MinecraftServer, OrganizationServiceImpl> SERVICES =
             Collections.synchronizedMap(new WeakHashMap<>());

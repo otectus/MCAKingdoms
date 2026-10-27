@@ -77,6 +77,7 @@ public final class SettlementKnowledge extends SavedData {
     }
 
     public boolean writable() { return preserved == null; }
+    public static dev.otectus.mcakingdoms.persistence.StoreStatus status(MinecraftServer server) { var data = get(server); return dev.otectus.mcakingdoms.persistence.StoreStatus.of(NAME, data.writable(), data.diagnostic()); }
     public String diagnostic() { return diagnostic; }
     public long revision() { return revision; }
     public boolean knows(UUID player, UUID settlement) {
@@ -131,6 +132,50 @@ public final class SettlementKnowledge extends SavedData {
             throw new IllegalArgumentException("Invalid discovery page");
         if (viewer.hasPermissions(2)) return kingdoms.getSettlementPage(kingdom, offset, limit);
         return known(viewer, kingdoms, kingdom).skip(offset).limit(limit).toList();
+    }
+
+    /** Ledger order: by name, or by distance from the viewer with other dimensions after, by name. */
+    public enum Sort { NAME, DISTANCE }
+
+    /** One ledger page and how many settlements the viewer may see match the search (never more than the viewer may know). */
+    public record SearchPage(List<SettlementView> settlements, int total) { }
+
+    /** The most settlements one ledger search considers; a larger operator world shows the first matches in order. */
+    static final int SEARCH_CAP = 20_000;
+
+    /**
+     * The ledger's search: the viewer's visible settlements (discovered or public; every one for operators), filtered by
+     * kingdom and by words of the name or its former names, sorted, then paged. Hidden records never reach the page or
+     * the count. Reads saved records only; no chunk is loaded.
+     */
+    public SearchPage search(ServerPlayer viewer, KingdomsService kingdoms, Optional<ResourceLocation> kingdom, String query,
+                             Sort sort, int offset, int limit) {
+        if (offset < 0 || offset > 1_000_000 || limit < 1 || limit > 64) throw new IllegalArgumentException("Invalid discovery page");
+        var tokens = dev.otectus.mcakingdoms.interaction.SearchText.tokens(query == null ? "" : query);
+        java.util.stream.Stream<SettlementView> visible;
+        if (viewer.hasPermissions(2)) {
+            var all = new ArrayList<SettlementView>();
+            for (int from = 0; from < SEARCH_CAP; from += 64) {
+                var page = kingdoms.getSettlementPage(kingdom, from, 64);
+                all.addAll(page);
+                if (page.size() < 64) break;
+            }
+            visible = all.stream();
+        } else visible = known(viewer, kingdoms, kingdom);
+        var matching = visible.limit(SEARCH_CAP).filter(s -> tokens.isEmpty() || dev.otectus.mcakingdoms.interaction.SearchText.matches(tokens,
+                dev.otectus.mcakingdoms.interaction.SearchText.normalize(s.displayName() + " | " + String.join(" | ", s.aliases()) + " | " + s.slug().getPath().replace('_', ' '))));
+        Comparator<SettlementView> byName = Comparator.comparing((SettlementView s) -> s.displayName().toLowerCase(Locale.ROOT)).thenComparing(s -> s.id().toString());
+        Comparator<SettlementView> order = byName;
+        if (sort == Sort.DISTANCE) {
+            var here = viewer.level().dimension();
+            var position = viewer.blockPosition();
+            order = Comparator.comparing((SettlementView s) -> !s.dimension().equals(here))
+                    .thenComparingDouble(s -> s.dimension().equals(here) ? s.anchor().distSqr(position) : 0)
+                    .thenComparing(byName);
+        }
+        var sorted = matching.sorted(order).toList();
+        int from = Math.min(offset, sorted.size());
+        return new SearchPage(sorted.subList(from, Math.min(sorted.size(), from + limit)), sorted.size());
     }
 
     public long count(ServerPlayer viewer, KingdomsService kingdoms, ResourceLocation kingdom) {

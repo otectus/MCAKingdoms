@@ -95,6 +95,9 @@ public final class KingdomsServiceImpl implements KingdomsService {
     private final Map<String, Function<ServerLevel, Optional<Set<String>>>> liveReferences = new LinkedHashMap<>();
     private final SettlementReconciler reconciler;
     private SettlementReconciler.Startup startup;
+    /** The finished start-up pass of this server run, for health reports; zero when none ran. */
+    private int lastStartupExamined, lastStartupMerged, lastStartupReads;
+    private long lastStartupElapsed, startupBegan;
     private final Deque<QueuedChunk> chunkQueue = new ArrayDeque<>();
     private final Set<QueuedChunk> queuedChunks = new LinkedHashSet<>();
 
@@ -461,6 +464,74 @@ public final class KingdomsServiceImpl implements KingdomsService {
         return merged;
     }
 
+    /**
+     * What merging {@code sourceId} into {@code targetId} would do, decided by the same checks the merge runs (dimension,
+     * external references, provider preflight), without changing anything. Blockers are the preflight's own reasons.
+     */
+    public record MergePreview(SettlementView source, SettlementView target, ResourceLocation kingdom, List<String> blockers) {
+        public MergePreview { blockers = List.copyOf(blockers); }
+    }
+
+    public MergePreview previewMerge(UUID sourceId, UUID targetId) {
+        requireServerThread();
+        SettlementRecord source = requireSettlement(data.resolveId(Objects.requireNonNull(sourceId, "sourceId")));
+        SettlementRecord target = requireSettlement(data.resolveId(Objects.requireNonNull(targetId, "targetId")));
+        List<String> blockers = new ArrayList<>();
+        if (source.id.equals(target.id)) blockers.add("Both choices are already the same settlement record");
+        else if (!source.dimension.equals(target.dimension)) blockers.add("Cannot merge settlements in different dimensions");
+        else {
+            try { data.validateMergeExternalRefs(source, target); } catch (IllegalArgumentException refused) { blockers.add(refused.getMessage()); }
+            if (blockers.isEmpty()) {
+                try { preflight(source, target, target.kingdomId); } catch (IllegalArgumentException refused) { blockers.add(refused.getMessage()); }
+            }
+        }
+        return new MergePreview(source.snapshot(), target.snapshot(), target.kingdomId, blockers);
+    }
+
+    /** Why changing the settlement's kingdom would be refused now (lock or provider preflight), or empty. */
+    public Optional<String> previewKingdomChange(UUID settlementId, ResourceLocation kingdomId) {
+        requireServerThread();
+        if (definitions.snapshot().kingdom(kingdomId).isEmpty()) return Optional.of("Unknown kingdom: " + kingdomId);
+        SettlementRecord record = requireSettlement(settlementId);
+        if (record.kingdomLocked) return Optional.of("Settlement kingdom is locked: " + record.displayName);
+        if (record.kingdomId.equals(kingdomId)) return Optional.empty();
+        try { preflight(record, null, kingdomId); return Optional.empty(); }
+        catch (IllegalArgumentException refused) { return Optional.ofNullable(refused.getMessage()); }
+    }
+
+    /** Settlement records anchored in loaded chunks within the radius that reconciliation would examine now. */
+    public int reconcileScope(ServerLevel level, BlockPos center, int radiusChunks) {
+        requireServerThread();
+        int reach = radiusChunks * 16 + 15;
+        return (int) data.records().stream()
+                .filter(record -> record.dimension.equals(level.dimension()) && !record.hasStrongStructureIdentities())
+                .filter(record -> Math.abs(record.anchor.getX() - center.getX()) <= reach && Math.abs(record.anchor.getZ() - center.getZ()) <= reach)
+                .filter(record -> level.hasChunk(record.anchor.getX() >> 4, record.anchor.getZ() >> 4))
+                .count();
+    }
+
+    /**
+     * Discovery and reconciliation activity for server health: work actually queued and done, never a progress estimate.
+     * {@code startupRemaining} is -1 when no start-up pass is running.
+     */
+    public record ReconcileStatus(boolean structureIdentity, boolean autoReconcile, boolean onStartup, int savedVersion,
+                                  int currentVersion, int startupRemaining, int startupExamined, int startupMerged,
+                                  int startupChunkReads, long startupElapsedMillis, int queuedChunks, int refusals,
+                                  int settlements) { }
+
+    public ReconcileStatus reconcileStatus() {
+        requireServerThread();
+        int queued;
+        synchronized (chunkQueue) { queued = chunkQueue.size(); }
+        var running = startup;
+        return new ReconcileStatus(structureIdentity(), McaKingdomsConfig.AUTO_RECONCILE.get(), McaKingdomsConfig.RECONCILE_ON_STARTUP.get(),
+                data.reconciled(), SettlementSavedData.RECONCILIATION_VERSION,
+                running == null ? -1 : running.remaining(), running == null ? lastStartupExamined : running.report().examined(),
+                running == null ? lastStartupMerged : running.report().merged(), running == null ? lastStartupReads : running.report().chunkReads(),
+                running == null ? lastStartupElapsed : System.currentTimeMillis() - startupBegan, queued, reconciler.refusalCount(),
+                data.records().size());
+    }
+
     @Override
     public Collection<SettlementView> discover(ServerLevel level, BlockPos center, int radiusChunks) {
         requireServerThread();
@@ -590,6 +661,7 @@ public final class KingdomsServiceImpl implements KingdomsService {
         if (!reconciling() || !McaKingdomsConfig.RECONCILE_ON_STARTUP.get()
                 || data.reconciled() >= SettlementSavedData.RECONCILIATION_VERSION) return false;
         startup = reconciler.startup();
+        startupBegan = System.currentTimeMillis();
         return true;
     }
 
@@ -616,6 +688,10 @@ public final class KingdomsServiceImpl implements KingdomsService {
         if (!done) return;
         data.markReconciled();
         LOGGER.info(startup.report().summary("startup"));
+        lastStartupExamined = startup.report().examined();
+        lastStartupMerged = startup.report().merged();
+        lastStartupReads = startup.report().chunkReads();
+        lastStartupElapsed = System.currentTimeMillis() - startupBegan;
         startup = null;
     }
 

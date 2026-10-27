@@ -1,0 +1,37 @@
+# MCA: Kingdoms peaceful preset for config/mcakingdoms-factions-common.toml.
+# Synchronization starts in SHADOW (observe only). Review /kingdoms faction diagnostics before choosing a live mode.
+
+[reputationSync]
+	#How MCA Reputation and kingdom standing interact. Needs MCA Reputation; live modes need 0.6.1 or later.
+	#OFF: MCA Reputation changes are not read.
+	#SHADOW (observe only, the default): changes are read and the standing they would cause is recorded; standing does not change.
+	#MCA_TO_FACTION: eligible MCA reputation changes in a settlement also change the player's standing with its kingdom.
+	#BIDIRECTIONAL_SEMANTIC: as MCA_TO_FACTION, and scoped kingdom-side effects are also delivered to MCA communities.
+	#Allowed Values: OFF, SHADOW, MCA_TO_FACTION, BIDIRECTIONAL_SEMANTIC
+	mode = "SHADOW"
+	#Share of an eligible MCA reputation change that becomes kingdom standing (0.5 = half, rounded). 0 ignores every change.
+	#Range: 0.0 ~ 4.0
+	localDeltaContribution = 0.5
+	#Also count MCA reputation decay. Deeds, resolutions and superseded records always count.
+	propagateDecay = false
+	#Also count MCA reputation changes made by operators or commands.
+	propagateAdminChanges = false
+	#Largest amount, up or down, that kingdom standing adds to a player's local MCA standing when the two are combined.
+	#Range: 0 ~ 1000
+	factionOverlayMax = 50
+	#Game ticks a processed reputation change is remembered so it is never applied twice (default 12096000 = 168 hours at 20 ticks per second).
+	#Range: 1 ~ 9223372036854775807
+	receiptRetentionTicks = 12096000
+	#Most reputation changes held for review when their settlement has no kingdom mapping yet; operators assign them with Assign an unmapped standing event.
+	#Range: 1 ~ 100000
+	missingMappingCapacity = 2048
+	#Informational: FREEZE_HISTORY is the only policy. Standing already earned stays with the kingdom it was earned under when a settlement changes kingdom.
+	#Allowed Values: FREEZE_HISTORY
+	settlementReassignmentPolicy = "FREEZE_HISTORY"
+
+[migration]
+	#How a player's several legacy standing values for one kingdom are combined when they are imported: MEAN, MEDIAN, MAX, MIN or SUM.
+	#Preview the import with Preview legacy reputation migration before applying it.
+	#Allowed Values: MEAN, MEDIAN, MAX, MIN, SUM
+	legacyAggregation = "MEAN"
+

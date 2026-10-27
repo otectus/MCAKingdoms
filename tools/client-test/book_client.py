@@ -13,18 +13,27 @@ import uuid
 
 from production_client import allowed
 
+def _mod_version():
+    """mod_version from gradle.properties, so default artifact names follow the build."""
+    for line in (pathlib.Path(__file__).resolve().parents[2] / 'gradle.properties').read_text().splitlines():
+        if line.startswith('mod_version='):
+            return line.split('=', 1)[1].strip()
+    raise SystemExit('gradle.properties has no mod_version')
+
+
+MOD_VERSION = _mod_version()
+
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-INSTALL = pathlib.Path('/home/otectus/Documents/curseforge/minecraft/Install')
-DEFAULT_MOD = ROOT / 'build/libs/mcakingdoms-0.1.0.jar'
-DEFAULT_HARNESS = ROOT / 'build/test-artifacts/mcakingdoms-0.1.0-client-acceptance.jar'
-DEFAULT_XVFB = pathlib.Path('/tmp/jewelcraft-xvfb/usr/bin/Xvfb')
+INSTALL = pathlib.Path(os.environ.get('MCAKINGDOMS_MC_INSTALL', '/home/otectus/Documents/curseforge/minecraft/Install'))
+DEFAULT_MOD = ROOT / f'build/libs/mcakingdoms-{MOD_VERSION}.jar'
+DEFAULT_HARNESS = ROOT / f'build/test-artifacts/mcakingdoms-{MOD_VERSION}-client-acceptance.jar'
+DEFAULT_XVFB = pathlib.Path('/tmp/kd-xvfb/usr/bin/Xvfb')
 SCREENSHOTS = [
-    '01-book-open.png',
-    '02-warfare-chapter.png',
-    '03-search-result.png',
-    '04-book-compact.png',
-    '05-book-compact-scrolled.png',
-    '06-book-reopened.png',
+    '01-book-start.png', '02-recipe-ledger.png', '03-recipe-replaced.png', '04-recipe-removed.png', '05-recipe-book.png',
+    '06-saved.png', '07-search-synonym.png', '08-kingdom-gallery.png', '09-commands.png', '10-book-compact.png',
+    '11-book-narrow-contents.png', '12-book-narrow-article.png', '13-book-reopened.png',
+    '14-manuscript-spread.png', '15-ledger-spread.png', '16-ledger-record.png', '17-book-scale-one.png',
+    '18-book-spanish.png', '19-book-chinese.png', '20-book-small-window.png', '21-ledger-compact.png', '22-ledger-live-record.png',
 ]
 
 
@@ -50,11 +59,16 @@ def expand(arguments, values):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--work-dir', required=True, type=pathlib.Path)
+    parser.add_argument('--install', type=pathlib.Path, default=None,
+                        help='Minecraft launcher install with versions/, libraries/ and assets/ (default: $MCAKINGDOMS_MC_INSTALL or the maintainer path)')
     parser.add_argument('--mod', type=pathlib.Path, default=DEFAULT_MOD)
     parser.add_argument('--harness', type=pathlib.Path, default=DEFAULT_HARNESS)
     parser.add_argument('--xvfb', type=pathlib.Path, default=DEFAULT_XVFB)
     parser.add_argument('--display', default=':96')
     args = parser.parse_args()
+    global INSTALL
+    if args.install is not None:
+        INSTALL = args.install.resolve()
 
     work = args.work_dir.resolve()
     mod = args.mod.resolve()

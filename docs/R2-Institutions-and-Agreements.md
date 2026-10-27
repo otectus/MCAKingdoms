@@ -1,5 +1,7 @@
 # R2 — institutions and agreements
 
+> **Design and delivery record.** Current operational guidance is in the [README](../README.md), the [configuration reference](Configuration.md), the [datapack reference](Datapack-Reference.md), the [addon API guide](Addon-API.md) and the in-game Book of Kingdoms; where this record differs, those win. Validation results below are dated evidence for the build named with them, not for later builds.
+
 R2 implements the agreed Phase 3 slice: a paid recognized-workshop commission, a receipt-backed civic honor, private local Crime service suspension and recovery, and an operational hospitality introduction. Warfare, taxes, currency conversion, extradition and vassalage are outside this release cut.
 
 ## Gameplay

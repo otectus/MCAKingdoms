@@ -2,15 +2,25 @@
 """Two real offline clients against an isolated packaged Forge dedicated server."""
 import argparse, hashlib, json, os, pathlib, re, shutil, socket, subprocess, time, uuid
 from production_client import allowed
+
+def _mod_version():
+    """mod_version from gradle.properties, so default artifact names follow the build."""
+    for line in (pathlib.Path(__file__).resolve().parents[2] / 'gradle.properties').read_text().splitlines():
+        if line.startswith('mod_version='):
+            return line.split('=', 1)[1].strip()
+    raise SystemExit('gradle.properties has no mod_version')
+
+
+MOD_VERSION = _mod_version()
 ROOT=pathlib.Path(__file__).resolve().parents[2]
-INSTALL=pathlib.Path('/home/otectus/Documents/curseforge/minecraft/Install')
+INSTALL = pathlib.Path(os.environ.get('MCAKINGDOMS_MC_INSTALL', '/home/otectus/Documents/curseforge/minecraft/Install'))
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--work-dir',type=pathlib.Path,required=True);args=p.parse_args()
     work=args.work_dir.resolve()
     if work.exists():raise SystemExit(f'Refusing to reuse {work}')
     work.mkdir(parents=True);server=work/'server';server.mkdir();(server/'mods').mkdir();(server/'libraries').symlink_to(ROOT/'build/forge-server/libraries',target_is_directory=True)
-    mod=ROOT/'build/libs/mcakingdoms-0.1.0.jar';harness=ROOT/'build/test-artifacts/mcakingdoms-0.1.0-client-acceptance.jar'
+    mod=ROOT/f'build/libs/mcakingdoms-{MOD_VERSION}.jar';harness=ROOT/f'build/test-artifacts/mcakingdoms-{MOD_VERSION}-client-acceptance.jar'
     shutil.copy2(mod,server/'mods'/mod.name);shutil.copy2('/home/otectus/Projects/MCACrime/run/eula.txt',server/'eula.txt')
     with socket.socket() as sock:sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
     (server/'server.properties').write_text(f'online-mode=false\nenforce-secure-profile=false\nserver-ip=127.0.0.1\nserver-port={port}\nlevel-type=minecraft:flat\ngenerate-structures=false\nview-distance=2\nsimulation-distance=2\nspawn-protection=0\n')

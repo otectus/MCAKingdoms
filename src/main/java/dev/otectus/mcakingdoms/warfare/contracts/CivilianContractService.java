@@ -16,6 +16,9 @@ import java.util.*;
 
 /** Owner side of R3 civilian native contracts. MCA Quests owns objectives, payment and item delivery. */
 public final class CivilianContractService {
+    /** Store health for server diagnostics. */
+    public static dev.otectus.mcakingdoms.persistence.StoreStatus storeStatus(net.minecraft.server.MinecraftServer server) { return CivilianContractData.status(server); }
+
     public static final String TOKEN_PREFIX = "r3:";
     private static final long OFFER_LIFETIME = 1_200L;
 

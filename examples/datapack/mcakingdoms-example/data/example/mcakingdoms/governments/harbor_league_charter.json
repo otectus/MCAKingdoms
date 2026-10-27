@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "kind": "government",
+  "title": "politics.example.harbor_league_charter",
+  "offices": ["mcakingdoms:leader", "mcakingdoms:envoy", "mcakingdoms:local_steward"],
+  "permissions": [],
+  "requires": [],
+  "buildingTypes": [],
+  "durationTicks": 720000,
+  "maxOffices": 2,
+  "independentApproval": true,
+  "commissionPool": ""
+}

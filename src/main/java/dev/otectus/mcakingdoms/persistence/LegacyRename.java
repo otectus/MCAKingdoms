@@ -46,6 +46,25 @@ public final class LegacyRename {
     /** Config files, old name to new. The keys inside them did not change. */
     static final Map<String, String> CONFIG_FILES = configFiles();
 
+    /** What one migration step did at this start. A destination that already exists is skipped, never overwritten. */
+    public enum Outcome { COPIED, SKIPPED_DESTINATION_EXISTS, FAILED }
+
+    /** One file's outcome at this start; {@code detail} explains a failure. */
+    public record Step(String from, String to, Outcome outcome, String detail) { }
+
+    /**
+     * The steps of this process's starts, kept in memory for server health. Earlier starts are not recorded anywhere, so
+     * health reports only what this run observed and never reconstructs a past migration.
+     */
+    private static final List<Step> CONFIG_STEPS = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private static final List<Step> DATA_STEPS = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private static volatile boolean dataChecked;
+
+    public static List<Step> configSteps() { return List.copyOf(CONFIG_STEPS); }
+    public static List<Step> dataSteps() { return List.copyOf(DATA_STEPS); }
+    /** Whether this run has checked the world's data folder for Ultima Kingdoms files yet. */
+    public static boolean dataChecked() { return dataChecked; }
+
     private LegacyRename() {
     }
 
@@ -108,18 +127,25 @@ public final class LegacyRename {
      */
     public static List<String> migrateConfigs(Path configDirectory) {
         List<String> copied = new ArrayList<>();
+        CONFIG_STEPS.clear();
         CONFIG_FILES.forEach((legacy, current) -> {
             Path from = configDirectory.resolve(legacy);
             Path to = configDirectory.resolve(current);
-            if (!Files.isRegularFile(from) || Files.exists(to)) return;
+            if (!Files.isRegularFile(from)) return;
+            if (Files.exists(to)) {
+                CONFIG_STEPS.add(new Step(legacy, current, Outcome.SKIPPED_DESTINATION_EXISTS, ""));
+                return;
+            }
             try {
                 Files.copy(from, to);
                 copied.add(current);
+                CONFIG_STEPS.add(new Step(legacy, current, Outcome.COPIED, ""));
                 LOGGER.info("[MCA: Kingdoms] Copied config {} to {} (renamed from Ultima Kingdoms; the old file is kept)",
                         legacy, current);
             } catch (IOException failure) {
-                LOGGER.error("[MCA: Kingdoms] Could not copy config {} to {}; defaults will be used. Copy it by hand.",
-                        legacy, current, failure);
+                CONFIG_STEPS.add(new Step(legacy, current, Outcome.FAILED, String.valueOf(failure.getMessage())));
+                LOGGER.error("[MCA: Kingdoms] Could not copy config {} to {}; that file's settings start at their defaults. "
+                        + "Copy the old file to the new name by hand while the game is stopped.", legacy, current, failure);
             }
         });
         return copied;
@@ -132,22 +158,32 @@ public final class LegacyRename {
      */
     public static List<String> migrateSavedData(Path dataDirectory) {
         List<String> migrated = new ArrayList<>();
+        DATA_STEPS.clear();
         for (String suffix : SAVED_DATA) {
             Path from = dataDirectory.resolve(LEGACY_NAMESPACE + '_' + suffix + ".dat");
             Path to = dataDirectory.resolve(NAMESPACE + '_' + suffix + ".dat");
-            if (!Files.isRegularFile(from) || Files.exists(to)) continue;
+            if (!Files.isRegularFile(from)) continue;
+            if (Files.exists(to)) {
+                DATA_STEPS.add(new Step(from.getFileName().toString(), to.getFileName().toString(), Outcome.SKIPPED_DESTINATION_EXISTS, ""));
+                continue;
+            }
             try {
                 CompoundTag root = NbtIo.readCompressed(from.toFile());
                 AtomicSavedDataWriter.writeRoot(to.toFile(), rewrite(root));
                 migrated.add(to.getFileName().toString());
+                DATA_STEPS.add(new Step(from.getFileName().toString(), to.getFileName().toString(), Outcome.COPIED, ""));
                 LOGGER.info("[MCA: Kingdoms] Migrated {} to {} (renamed from Ultima Kingdoms; the old file is kept)",
                         from.getFileName(), to.getFileName());
             } catch (IOException | RuntimeException failure) {
-                LOGGER.error("[MCA: Kingdoms] Could not migrate {}; this store starts empty. The old file is untouched: "
-                        + "stop the server, delete {} and fix or restore {} to retry.", from.getFileName(),
-                        to.getFileName(), from.getFileName(), failure);
+                DATA_STEPS.add(new Step(from.getFileName().toString(), to.getFileName().toString(), Outcome.FAILED, String.valueOf(failure.getMessage())));
+                // Recovery is narrow on purpose: only this failed first copy may be redone, and only before new play saves into it.
+                LOGGER.error("[MCA: Kingdoms] Could not migrate {}; that store starts empty for this run and the old file is untouched. "
+                        + "Stop the server before anyone plays on. If {} now exists, it holds only what this run saved: move it aside "
+                        + "(keep it), fix or restore {}, and start again to retry this one copy. Once new progress is saved, restore "
+                        + "a world backup instead.", from.getFileName(), to.getFileName(), from.getFileName(), failure);
             }
         }
+        dataChecked = true;
         return migrated;
     }
 

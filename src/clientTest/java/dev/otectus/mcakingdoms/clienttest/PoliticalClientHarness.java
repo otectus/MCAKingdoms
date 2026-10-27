@@ -54,11 +54,11 @@ public final class PoliticalClientHarness {
                     if(!actionReady())return;var reply=actionReply();
                     if(reply.mode().equals("tasks")){if(wizardStep==0){searchActions("Establish a government");wizardStep++;}else click("Establish a government");}
                     else if(reply.mode().equals("choice")){String answer=switch(wizardStep++){case 1->"Serenum";case 2->"Serenum Civic Crown";default->mc.player.getName().getString();};click(answer);}
-                    else if(reply.mode().equals("review")){check(reply.detailText().contains("Bellmeadow"),"Kingdom screen prefilled the capital settlement");click("Apply reviewed action");}
-                    else if(reply.mode().equals("result")){check(!reply.detailText().contains("Could not complete"),"Reviewed government established");mc.screen.onClose();click("Refresh");next();}
+                    else if(reply.mode().equals("review")){check(reply.detailText().contains("Bellmeadow"),"Kingdom screen prefilled the capital settlement");check(!reply.actionComponent().getString().isBlank(),"The review names its action");click(reply.actionComponent().getString());}
+                    else if(reply.mode().equals("result")){check(!reply.detailText().contains("Could not complete"),"Reviewed government established");mc.screen.onClose();next();}
                     else throw new AssertionError(reply.detailText());entered=ticks;
                 }
-                case 4->{if(!ready())return;check(page().rows().stream().anyMatch(r->r.title().equals("ACTIVE")),"Real packet constituted a government");shot("politics-overview.png");click("Council");next();}
+                case 4->{if(!ready())return;check(page().rows().stream().anyMatch(r->r.title().equals("ACTIVE")),"Returning from the reviewed action refreshed the Kingdom screen: a real packet constituted a government");shot("politics-overview.png");click("Council");next();}
                 case 5->{if(!ready())return;check(page().rows().stream().anyMatch(r->r.id().equals("mcakingdoms:leader")),"Persistent leadership visible");shot("politics-council.png");click("Actions");next();}
                 case 6->{if(!actionReady())return;searchActions("Appoint an official");next();}
                 case 7->{if(!actionReady())return;if(actionReply().mode().equals("tasks")){click("Appoint an official");entered=ticks;return;}check(actionReply().mode().equals("choice"),"Appointment uses named selection");mc.getWindow().setGuiScale(mc.getWindow().getHeight()/240.0);mc.screen.resize(mc,mc.getWindow().getGuiScaledWidth(),mc.getWindow().getGuiScaledHeight());check(mc.screen.height>=240&&mc.screen.height<=241,"Compact viewport reached");for(var child:mc.screen.children())if(child instanceof Button b)check(b.getY()+b.getHeight()<=mc.screen.height,"Form button stays on screen");shot("politics-form-compact.png");click("Close");next();}

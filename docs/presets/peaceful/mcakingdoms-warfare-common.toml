@@ -1,0 +1,43 @@
+# MCA: Kingdoms peaceful preset for config/mcakingdoms-warfare-common.toml.
+# An example to copy by hand, never applied automatically. Back up config/ first; see docs/presets/README.md.
+
+[political_warfare]
+	#Enable the warfare features: territory, campaigns, accords, mobilization, civilian recovery and world context.
+	#Disabling preserves every record; the switches below turn off one feature each.
+	enabled = true
+	#Campaigns, settlement control agreements and temporary recruit deployments. They also need Recruits 1.15.2.
+	#Off refuses new military actions; existing records stay readable.
+	#Peaceful preset: no campaigns, control agreements or deployments. Civilian contracts, world context and
+	#target protection stay on.
+	militaryActions = false
+	#Civilian recovery contracts offered by settlement contacts. Contracts that belong to an evolving-world opportunity or
+	#protection obligation follow that system instead.
+	civilianContracts = true
+	#Limit what recruits and mapped native armies may attack: not their own faction or allies, and villagers, players under
+	#safe conduct and neutral companions only under local enforcement rules.
+	targetProtection = true
+	#World sites, institution routes, route travel and encounters.
+	worldContext = true
+	#Refuse campaigns and control changes against a kingdom's capital seat.
+	protectCapitals = true
+	#Bound settlement sieges require the native defending leader online. Does not change unbound native claims.
+	requireDefenderOnline = true
+	#Game ticks between declaring a campaign and its start (default 1200 = 1 minute at 20 ticks per second).
+	#Range: 20 ~ 168000
+	campaignNoticeTicks = 1200
+	#Game ticks a campaign, and a proposed control agreement, stays open before it expires (default 168000 = 2 hours 20 minutes).
+	#Range: 1200 ~ 2400000
+	campaignDurationTicks = 168000
+	#Game ticks a temporary recruit deployment lasts before the recruit's original orders are restored (default 6000 = 5 minutes).
+	#Range: 100 ~ 24000
+	mobilizationTicks = 6000
+	#Most recruits one player may have deployed at the same time.
+	#Range: 1 ~ 64
+	unitsPerCommander = 16
+	#Ticks between bounded native snapshot reconciliation batches.
+	#Range: 20 ~ 1200
+	reconcileInterval = 100
+	#Settlement control records and campaigns examined per reconciliation batch.
+	#Range: 1 ~ 32
+	claimsPerBatch = 8
+

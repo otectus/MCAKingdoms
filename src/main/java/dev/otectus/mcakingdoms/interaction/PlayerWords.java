@@ -20,23 +20,35 @@ public final class PlayerWords {
     public static boolean isKey(String value){return value!=null&&WORDS.containsKey(value);}
     /** Plain text for a handler result: joined paragraphs, keys resolved, selected record values shown by their labels, bounded. */
     public static String safe(Object value,ActionRegistry.Context context){
-        String result=value instanceof Collection<?> list?String.join("\n\n",list.stream().map(Object::toString).toList()):String.valueOf(value);
+        String result=value instanceof Collection<?> list?String.join("\n\n",list.stream().map(PlayerWords::plain).toList()):plain(value);
         result=text(result);
         result=labels(result,context);
         return result.length()>LIMIT?result.substring(0,LIMIT)+"\nMore details are available by selecting a narrower task.":result;
     }
-    /** Component form of a handler result: each paragraph that is a bundled key becomes translatable, everything else stays literal. */
+    /**
+     * Component form of a handler result. A {@link Component} paragraph is kept as built (translation key, arguments and
+     * player-authored literals intact); a string paragraph that is a bundled key becomes translatable; any other string
+     * stays literal. Nothing is converted to English and back.
+     */
     public static Component component(Object value,ActionRegistry.Context context){
-        List<String> paragraphs=value instanceof Collection<?> list?list.stream().map(Object::toString).toList():List.of(String.valueOf(value));
+        List<?> paragraphs=value instanceof Collection<?> list?List.copyOf(list):List.of(value==null?"":value);
         MutableComponent out=Component.empty();int length=0;boolean first=true;
-        for(String paragraph:paragraphs){
+        for(Object item:paragraphs){
             if(!first)out.append("\n\n");first=false;
+            if(item instanceof Component built){
+                int size=built.getString().length();
+                if(length+size>LIMIT){out.append(ActionRegistry.tr("interaction.mcakingdoms.truncated","More details are available by selecting a narrower task."));break;}
+                length+=size;out.append(built);continue;
+            }
+            String paragraph=String.valueOf(item);
             if(length+paragraph.length()>LIMIT){out.append(ActionRegistry.tr("interaction.mcakingdoms.truncated","More details are available by selecting a narrower task."));break;}
             length+=paragraph.length();
             out.append(isKey(paragraph)?ActionRegistry.tr(paragraph,WORDS.get(paragraph)):Component.literal(labels(paragraph,context)));
         }
         return out;
     }
+    /** English reading of one paragraph, for logs, tests and string-only consumers. */
+    private static String plain(Object value){return value instanceof Component built?built.getString():String.valueOf(value);}
     private static String labels(String result,ActionRegistry.Context context){
         for(var entry:context.values().entrySet()){var choice=context.choice(entry.getKey());if(choice!=null&&!choice.value().isBlank())result=result.replace(choice.value(),choice.label());}
         return result;

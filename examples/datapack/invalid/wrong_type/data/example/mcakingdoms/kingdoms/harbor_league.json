@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "id": "example:harbor_league",
+  "translation_key": "kingdom.example.harbor_league",
+  "name_pool": "example:harbor_league",
+  "heraldry": {"icon": "mcakingdoms:shimaguni", "color": "teal"},
+  "style_hints": [],
+  "metadata": {"petition_honor": "mcakingdoms:open_road"}
+}

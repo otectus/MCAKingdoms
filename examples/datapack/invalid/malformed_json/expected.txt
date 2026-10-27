@@ -1,0 +1,4 @@
+core
+example:mcakingdoms/kingdoms/harbor_league.json
+malformed JSON
+line

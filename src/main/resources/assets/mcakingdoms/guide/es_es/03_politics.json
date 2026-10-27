@@ -1,0 +1,323 @@
+{
+  "schema": 2,
+  "entries": [
+    {
+      "id": "political_pages",
+      "category": "politics",
+      "title": "Consulta las páginas del reino",
+      "summary": "Primero inspecciona; una acción cambia un registro concreto bajo una autoridad concreta.",
+      "body": [
+        "Abre el Registro de aldeas, selecciona un asentamiento conocido y elige Reino. Resumen describe el gobierno; Consejo enumera cargos y mandatos; Acuerdos muestra la diplomacia; Peticiones muestra las solicitudes que puedes ver; Instituciones enumera los lugares reconocidos; Distinciones muestra los galardones; Historial enumera los acontecimientos políticos registrados.",
+        "Elige Acciones en una página del reino, o pulsa {key:tasks} y busca Gobierno. Cada operación admitida tiene su propia tarea y sus propios campos. Los acuerdos, peticiones, instituciones, distinciones, cargos, sucesión, casas, elecciones y regencia usan formularios distintos en lugar de un único selector de acciones genérico.",
+        "El servidor ofrece los registros con nombre que se te permite ver. Una petición sigue siendo privada para quienes pueden verla, los votos son secretos y otro jugador puede recibir una lista distinta. Seleccionar una opción no concede autoridad; el cargo, el mandato, la jurisdicción, el estado actual y las definiciones instaladas se comprueban de nuevo.",
+        "Las tareas con consecuencias terminan en una página de revisión que muestra el reino elegido, las personas, los detalles del registro y las condiciones. Aplicar acción revisada realiza la operación una sola vez. Si el estado del gobierno cambia mientras el formulario está abierto, vuelve a abrir la tarea y revisa el nuevo estado.",
+        "Las elecciones y la regencia tienen tareas propias. Busca Abrir elecciones al liderazgo, Votar en unas elecciones, Cerrar elecciones y contar votos, Nombrar un regente temporal o Finalizar una regencia. Estas tareas aplican la norma constitucional adoptada y nunca deducen la muerte o la incapacidad de alguien porque esté desconectado o sin cargar."
+      ],
+      "commands": [],
+      "task": "politics.read_overview"
+    },
+    {
+      "id": "found_a_government",
+      "category": "politics",
+      "title": "Establece un gobierno",
+      "summary": "Un operador, o un residente que cumpla los requisitos, funda el primer gobierno de un reino.",
+      "commands": [],
+      "task": "politics.bootstrap",
+      "blocks": [
+        {
+          "id": "journey_heading",
+          "type": "heading",
+          "text": "La fundación de un vistazo"
+        },
+        {
+          "id": "journey",
+          "type": "diagram",
+          "alt": "Comprueba quién puede fundar el gobierno, elige la capital y constitución permitidas, revisa y consulta el nuevo gobierno.",
+          "nodes": [
+            {
+              "id": "n0",
+              "label": "Comprobar requisitos",
+              "item": "minecraft:book"
+            },
+            {
+              "id": "n1",
+              "label": "Elegir capital y reglas",
+              "item": "minecraft:map"
+            },
+            {
+              "id": "n2",
+              "label": "Revisar las opciones",
+              "item": "minecraft:writable_book"
+            },
+            {
+              "id": "n3",
+              "label": "Leer el gobierno",
+              "item": "minecraft:golden_helmet"
+            }
+          ],
+          "edges": [
+            {
+              "from": "n0",
+              "to": "n1"
+            },
+            {
+              "from": "n1",
+              "to": "n2"
+            },
+            {
+              "from": "n2",
+              "to": "n3"
+            }
+          ]
+        },
+        {
+          "id": "text_0",
+          "type": "paragraph",
+          "text": "Un reino cívico con nombre puede existir sin gobierno. Establecerlo es una acción de configuración explícita; tener un registro, una gran reputación o un gran ejército de Recruits no lo establece automáticamente."
+        },
+        {
+          "id": "text_1",
+          "type": "paragraph",
+          "text": "1. Abre Establecer un gobierno. Un operador elige el reino, un asentamiento capital reconocido, una constitución instalada y un primer líder que cumpla los requisitos. Con la fundación por residentes activada (opción predeterminada), un jugador cuya residencia cívica registrada esté en un reino sin gobierno también puede fundarlo; sus opciones se limitan a ese reino, su residencia como capital y él mismo como líder. Comprobar si puedes fundar un gobierno explica tu caso. Si conviene, registra deliberadamente un lugar que falte con las tareas de asentamientos."
+        },
+        {
+          "id": "text_2",
+          "type": "paragraph",
+          "text": "2. Una residencia cívica es un registro que fija un operador o un complemento. Visitar un asentamiento, dormir en él o comerciar allí no la fija, y ninguno de los dos libros la crea. El servidor comprueba el reino guardado de la capital, la definición, el líder y, si se trata de un residente, vuelve a comprobar su residencia al aplicar. Revisa las cuatro opciones con nombre y aplica una sola vez. Establecer un gobierno no reclama territorio nativo ni concede cargos ajenos a la constitución."
+        },
+        {
+          "id": "text_3",
+          "type": "paragraph",
+          "text": "3. Abre Resumen y Consejo para comprobar la sede y el líder. El perfil fija las condiciones constitucionales que usa el gobierno. El líder puede nombrar cargos y delegar los permisos adecuados. Este paso no recrea los datos sociales existentes, las reclamaciones nativas, los edificios ni la propiedad de tropas."
+        },
+        {
+          "id": "text_4",
+          "type": "paragraph",
+          "text": "Para trasladar la capital más adelante, usa Trasladar la capital con la autoridad actual para fijar la capital y otro asentamiento que cumpla los requisitos. Las referencias de una capital deben resolverse antes de reasignar su identidad a otro sitio. Si falta el perfil de un gobierno tras un cambio de contenido, las acciones de ese gobierno quedan latentes; restaura la definición correcta en lugar de establecer un gobierno duplicado."
+        },
+        {
+          "id": "text_5",
+          "type": "paragraph",
+          "text": "MCA: Capitals desactiva el gobierno nativo de MCA: Kingdoms. En esos servidores usa el sistema de gobierno de Capitals; instalarlo no añade un segundo gobierno funcional de MCA: Kingdoms a su lado."
+        }
+      ]
+    },
+    {
+      "id": "offices_and_permissions",
+      "task": "politics.read_council",
+      "category": "politics",
+      "title": "Nombra funcionarios y delega poderes",
+      "summary": "Concede una responsabilidad definida, no el control total de todos los sistemas.",
+      "blocks": [
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "Un cargo es un papel político definido. Su titular puede ser un jugador que cumpla los requisitos o, en los cargos compatibles, un PNJ adulto, vivo y cargado con residencia cívica confirmada. La constitución predeterminada permite dos cargos por persona en un gobierno. Si no se conoce la edad adulta o la residencia, el nombramiento de un PNJ queda bloqueado; eso no justifica cambiar su edad ni su hogar."
+        },
+        {
+          "id": "p2",
+          "type": "paragraph",
+          "text": "Abre Nombrar a un funcionario y elige el gobierno, la definición del cargo, la persona y, si procede, la jurisdicción de asentamiento con nombre. Destituir a un funcionario deja vacante ese mismo ámbito definido; no borra a la persona ni la aparta de su vida corriente."
+        },
+        {
+          "id": "p3",
+          "type": "paragraph",
+          "text": "Un líder usa Autorizar una responsabilidad política para conceder una responsabilidad concreta a un jugador con nombre, y Revocar los mandatos de un jugador para retirar esas concesiones. Cada acción posterior vuelve a comprobar la autoridad actual. El servidor lleva las versiones de los registros durante la revisión."
+        },
+        {
+          "id": "p4",
+          "type": "paragraph",
+          "text": "Usa Consejo para comprobar quién tiene realmente autoridad. RATIFY es el permiso para firmar acuerdos en nombre de ese reino. RECOGNIZE se refiere a las instituciones. REVIEW se refiere a revisar solicitudes. Son distintos de ser miembro de un gremio o de mandar una facción de Recruits. El privilegio general de un operador no lo convierte, por sí solo, en firmante válido de tratados."
+        },
+        {
+          "id": "p5",
+          "type": "paragraph",
+          "text": "Nombrar a un PNJ no cambia su nombre, profesión, familia, horario, necesidades, ropa ni IA. Una ausencia temporal o un chunk sin cargar no es una vacante. Solo un evento de muerte confirmado y aplicable, una destitución legal u otra transición de gobierno explícita cambia esos registros."
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "task",
+              "target": "politics.read_council",
+              "label": "Consultar el consejo"
+            },
+            {
+              "kind": "task",
+              "target": "politics.appoint"
+            },
+            {
+              "kind": "task",
+              "target": "politics.delegate"
+            }
+          ]
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "agreements",
+      "task": "politics.read_agreements",
+      "category": "politics",
+      "title": "Propón y firma un acuerdo",
+      "summary": "Dos gobiernos aprueban por separado las mismas condiciones.",
+      "blocks": [
+        {
+          "id": "stages",
+          "type": "diagram",
+          "alt": "Un acuerdo lo propone un reino, lo firma una persona autorizada en cada uno de los dos reinos, en cualquier orden, y entra en vigor cuando ambos han firmado.",
+          "nodes": [
+            {
+              "id": "propose",
+              "label": "Proponer",
+              "note": "El líder del primer reino o quien tenga su responsabilidad de proponer"
+            },
+            {
+              "id": "sign_first",
+              "label": "Firmar",
+              "note": "Quien tiene la ratificación en un gobierno firma los términos fijados"
+            },
+            {
+              "id": "sign_second",
+              "label": "Firmar",
+              "note": "El otro gobierno firma los mismos términos"
+            },
+            {
+              "id": "active",
+              "label": "En vigor",
+              "note": "Hasta que caduque o se termine"
+            }
+          ],
+          "edges": [
+            {
+              "from": "propose",
+              "to": "sign_first"
+            },
+            {
+              "from": "sign_first",
+              "to": "sign_second",
+              "label": "en cualquier orden"
+            },
+            {
+              "from": "sign_second",
+              "to": "active"
+            }
+          ]
+        },
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "Necesitas permiso para proponer en nombre del primer gobierno y un gobierno contraparte definido y disponible. Empieza por el reconocimiento diplomático. Los acuerdos incluidos de hospitalidad, intercambio académico, carta de artesanía y mercado, y ayuda cívica requieren un reconocimiento diplomático activo para que sus condiciones adicionales surtan efecto."
+        },
+        {
+          "id": "p2",
+          "type": "paragraph",
+          "text": "1. Abre Proponer un acuerdo, elige ambos gobiernos y una definición de acuerdo disponible, y escribe unas condiciones claras. La propuesta fija sus condiciones escritas y su duración. Usa Consultar los acuerdos para ver el resultado."
+        },
+        {
+          "id": "p3",
+          "type": "paragraph",
+          "text": "2. El otro gobierno autorizado abre Firmar las condiciones revisadas del acuerdo y selecciona la propuesta visible. La revisión incluye sus condiciones exactas actuales. El servidor vuelve a comprobar la autoridad RATIFY, que los gobiernos estén activos, el plazo y las condiciones fijadas."
+        },
+        {
+          "id": "p4",
+          "type": "paragraph",
+          "text": "3. Comprueba que el acuerdo está activo. Los acuerdos ratificados se hacen públicos; las propuestas sin ratificar solo son visibles para las partes autorizadas. Un acuerdo es una autorización política para las oportunidades que admite, no una recompensa de objetos gratis, un traspaso de tropas, un proyecto de construcción ni un teletransporte."
+        },
+        {
+          "id": "p5",
+          "type": "paragraph",
+          "text": "Rechazar un acuerdo lo deniega desde la parte receptora. Retirar anula una propuesta admisible aún sin completar. Poner fin a un acuerdo lo termina según sus reglas de autoridad. Lee el registro antes de elegir, porque la hospitalidad futura y otros servicios vinculados pueden detenerse. El vencimiento en tiempo de juego también pone fin a las condiciones temporales."
+        },
+        {
+          "id": "p6",
+          "type": "paragraph",
+          "text": "La revisión del acuerdo lleva las condiciones exactas actuales junto con la propuesta con nombre. Si aparece un aviso de estado desfasado, vuelve a abrir la tarea y revisa; nunca selecciones otro registro solo para salir del paso. Los comandos siguen siendo una vía técnica opcional y requieren el hash completo que muestra la inspección."
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "task",
+              "target": "politics.propose"
+            },
+            {
+              "kind": "task",
+              "target": "politics.sign"
+            },
+            {
+              "kind": "task",
+              "target": "politics.read_agreements"
+            }
+          ]
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "petitions",
+      "category": "politics",
+      "title": "Pide mediante una petición",
+      "summary": "Una solicitud puede revisarse sin dar a su autor el poder de aprobarla.",
+      "body": [
+        "Abre la tarea correspondiente en Tareas del reino: Solicitar el reconocimiento de una institución, Solicitar una distinción o Solicitar una presentación diplomática. Cada tarea pide solo su objetivo real, la persona propuesta, el edificio, el asentamiento, la contraparte y una explicación. Las opciones con nombre sustituyen al antiguo formulario político compartido.",
+        "Las peticiones son privadas para las partes correspondientes y para la autoridad que las revisa. Una solicitud no reconoce de inmediato una institución, no concede una distinción, no transfiere un reino ni crea un tratado. Espera a la revisión y a una decisión registrada.",
+        "Un revisor independiente autorizado puede revisarla, aprobarla o denegarla con un motivo. Ni quien la solicita ni la persona propuesta para la distinción pueden aprobar su propia petición. La aprobación vuelve a comprobar las pruebas originales, incluido el edificio real de una institución propuesta. Si las circunstancias cambiaron, repara el requisito o presenta una nueva solicitud debidamente revisada; la aprobación no sirve para saltarse pruebas que faltan.",
+        "Una propuesta de distinción da lugar a un galardón discrecional, visiblemente distinto de una prueba de servicio completado. Una presentación familiar crea la oportunidad de presentar una solicitud diplomática corriente, no un consentimiento automático a un tratado.",
+        "Retirar está disponible para las solicitudes pendientes admisibles. Las solicitudes vencidas o ya decididas conservan su historial. Consulta Peticiones e Historial para entender el resultado en lugar de presentar duplicados una y otra vez; el gobierno predeterminado limita las peticiones simultáneas por jugador y por reino.",
+        "Las peticiones de patrocinio de encargos están desactivadas por ahora, aunque tengas pruebas de finalización. Usa los procedimientos separados de taller remunerado y de distinciones donde estén disponibles; las pruebas no desbloquean las peticiones de encargos."
+      ],
+      "commands": [],
+      "task": "politics.read_petitions"
+    },
+    {
+      "id": "institutions_and_honors",
+      "category": "politics",
+      "title": "Reconoce lugares y premia el servicio",
+      "summary": "El estatus oficial registra un lugar o un galardón reales; no los crea.",
+      "body": [
+        "Una institución es un lugar cívico reconocido oficialmente. Los tipos de carta disponibles proceden de las definiciones. El reconocimiento requiere pruebas reales de un edificio admisible, autoridad política actual y la jurisdicción de asentamiento correcta. Estar junto a un cartel cualquiera no lo convierte en un taller o una institución válidos.",
+        "Usa Reconocer un edificio cívico y selecciona dónde estás o adónde miras, el gobierno y la definición de institución disponible. Después consulta las instituciones. Una institución reconocida puede albergar una sede gremial con su propia carta y un contacto nombrado; siguen siendo registros distintos.",
+        "Suspender el reconocimiento detiene deliberadamente los servicios políticos activos de la institución sin borrar su historial. Revalidar comprueba el mismo lugar original antes de restaurar el reconocimiento. No se vincula en silencio a un edificio vecino de sustitución. Si falta el proveedor de edificios, las comprobaciones pueden quedar suspendidas en lugar de inventar una validez.",
+        "Las distinciones registran por qué se premió a una persona. Una distinción discrecional autorizada incluye un motivo; una distinción ganada por servicio procede de la finalización guardada concreta. Ninguna concede automáticamente un cargo, cambia la historia familiar ni añade mando militar. Revocar una distinción cambia su valor político y conserva el registro histórico.",
+        "Consulta la pestaña correspondiente antes de revocar o suspender. Estos cambios pueden afectar a otros servicios, aunque no eliminan el edificio real, el PNJ ni el inventario."
+      ],
+      "commands": [],
+      "task": "politics.read_institutions"
+    },
+    {
+      "id": "succession_and_houses",
+      "category": "politics",
+      "title": "Planifica la sucesión antes de dejar el cargo",
+      "summary": "Un sucesor designado es una elección legal, no una herencia familiar automática.",
+      "body": [
+        "El líder actual abre Designar un sucesor y elige a una persona con nombre que cumpla los requisitos. Consulta el resumen para confirmar a esa persona antes de Abdicar del liderazgo. Designar a alguien no es lo mismo que instalarlo de inmediato.",
+        "La abdicación deja vacante el liderazgo. Un gobierno entre dos gobernantes está en interregno, es decir, sin líder actual. El sucesor designado o un operador autorizado pueden confirmar la sucesión de forma explícita; se vuelve a comprobar que cumple los requisitos. La capital, la identidad del reino y los tratados activos continúan, mientras que los mandatos delegados antiguos no sobreviven automáticamente a la vacante.",
+        "La muerte confirmada de un PNJ puede dejar vacante un cargo. Descargarse, ausentarse temporalmente o que un jugador muera y reaparezca no instala automáticamente a otro gobernante. Una vacante sin sucesor designado necesita la reparación admitida de un operador o una norma electoral adoptada explícitamente; el mod no adivina un heredero a partir de los lazos familiares.",
+        "Usa Registrar una casa política para anotar una etiqueta de casa, un lema y un miembro elegido explícitamente para un gobierno. Es un registro político, no un editor de apellidos ni un sistema genealógico. El matrimonio por sí solo nunca transfiere el reino.",
+        "Las elecciones y la regencia temporal se explican en Un mundo en evolución. Requieren una norma adoptada y usan sus propias tareas en Tareas del reino. Durante una regencia activa se conserva el sucesor designado; finaliza esa regencia según sus normas antes de intentar sustituir el acuerdo de sucesión protegido."
+      ],
+      "commands": [],
+      "task": "politics.read_overview"
+    },
+    {
+      "id": "read_political_history",
+      "category": "politics",
+      "title": "Consulta el historial y los registros privados",
+      "summary": "Una entrada del historial te dice qué se registró y quién puede verlo.",
+      "body": [
+        "Abre la pestaña Historial desde la pantalla del reino. Las entradas muestran una acción política registrada, su momento en días de juego, su autoría y su estado actual. El historial es de solo lectura; seleccionar una entrada no sirve para repetir la acción original.",
+        "Vigente significa que el resultado registrado sigue teniendo ese valor. Sustituido significa que una decisión posterior lo reemplazó o lo hizo avanzar. Vencido significa que su efecto temporal ha terminado. El acontecimiento antiguo sigue siendo historia aunque cambie su efecto actual.",
+        "Los hechos públicos pueden ser visibles para muchos. Las peticiones privadas están limitadas a las personas implicadas y a los revisores autorizados actuales; los acuerdos sin ratificar, a sus partes. Cada voto es privado para quien lo emite. Conocer el nombre de un registro o compartir asentamiento no te da derecho a leer un registro privado.",
+        "El servidor registra las decisiones confirmadas antes de publicar el aviso correspondiente. Así se garantiza que repetir una solicitud o reiniciar el servidor se comporten de forma estable, pero el historial no promete que todos los mods opcionales mantengan un segundo archivo. La versión admitida de Townstead no tiene un adaptador de archivo de crónicas propio.",
+        "Ante un resultado modificado o en disputa, usa el registro vivo actual y su vía legal de revisión, terminación o recuperación. Borrar un archivo de historial no es una forma segura de deshacer: puede que ya existan un pago de misión, un traspaso de tropas o el estado guardado de otro proveedor."
+      ],
+      "commands": [
+        "/kingdoms politics inspect \"<kingdom name>\" history"
+      ],
+      "task": "politics.read_history"
+    }
+  ]
+}

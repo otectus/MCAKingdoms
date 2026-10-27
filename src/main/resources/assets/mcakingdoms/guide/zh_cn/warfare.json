@@ -1,0 +1,297 @@
+{
+  "entries": [
+    {
+      "id": "warfare_ownership_and_setup",
+      "category": "warfare",
+      "title": "战争的职责划分与准备",
+      "summary": "在发起战役之前，先了解哪些系统负责战斗、聚居地、契约、法律和地图。",
+      "body": [
+        "MCA: Kingdoms围绕其他模组协调政治权限，而不会取代它们。Recruits 1.15.2负责阵营、士兵、装备、领地、围攻进度和战斗结果。MCA: Kingdoms负责把这些事实对应到公民聚居地，并负责公开的战役意图、通知期、政治授权、主权协议和持久凭证。原生的占领会产生一条占领记录；它不会重命名城镇、抹去居民、改变文化、移动建筑，也不会清除声望和法律记录。",
+        "军事玩法需要对应的Recruits提供方。民事契约需要兼容的MCA Quests，Crime辖区需要对应的MCA Crime提供方。安装Map Atlases时，它仍负责绘制地图。普通的聚居地名册、发现记录、路线和遭遇凭证仍属于MCA: Kingdoms，即使缺少某个可选的配套模组也依然有用。与版本绑定的操作会安全失败，而不会猜测提供方的状态。",
+        "所有战争功能开关默认开启。通用配置可以分别关闭军事行动、民事契约、目标保护或世界情境。默认策略会保护首都，绑定的围攻伤害要求防守方领袖在线，战役通知期为1200刻，通知结束后持续168000刻，每位指挥官最多拥有16个临时单位，动员持续6000刻。服务器管理员可以在开始游玩前调整这些有上限的数值。"
+      ],
+      "commands": [],
+      "task": "warfare.here"
+    },
+    {
+      "id": "claim_mapping_and_binding",
+      "task": "warfare.bind_here",
+      "category": "warfare",
+      "title": "把领地映射到聚居地",
+      "summary": "管理员把真实的Recruits领地与公民王国和聚居地联系起来，而不会把任何人分配到阵营。",
+      "body": [
+        "初始映射是管理员事务。站在参与的Recruits领地中，打开“映射此处的原生阵营”，选择具名的阵营和公民王国。然后站到同一块已加载领地与已识别聚居地重叠的位置，打开“绑定当前原生领地”。一块领地只能绑定一个聚居地。这些事务只记录关联；它们绝不会把玩家或NPC放进原生队伍，也绝不会创建领地。",
+        "每一步之后使用“查看此处的军事控制权”。它会显示该位置已知的聚居地、领地、控制方、映射、战役和相关路线。远程查看对普通玩家有意加以限制：他们需要事先发现该地点并且当前身处当地。管理员可以远程诊断。“停用原生领地绑定”会展示当前的具名绑定供核对，并拒绝已经变化的记录。",
+        "映射是前提条件，而不是开战的许可。军事宣战仍需要实际的原生阵营领袖，以及当前有效的PROPOSE或RATIFY政治授权。仅有管理员身份并不能提供这项授权。如果无法核实预期的领地、控制方、领袖或提供方的保存，命令会拒绝执行，并保留现有的公民和原生状态。"
+      ],
+      "commands": [
+        "/kingdoms warfare here",
+        "/kingdoms warfare inspect \"<settlement name>\"",
+        "/kingdoms warfare map_here <kingdom definition id>",
+        "/kingdoms warfare bind_here \"<settlement name>\"",
+        "/kingdoms warfare retire \"<settlement name>\" <revision>"
+      ]
+    },
+    {
+      "id": "campaign_declaration",
+      "task": "warfare.declare",
+      "category": "warfare",
+      "title": "宣布有限的战役",
+      "summary": "公布一个经授权的军事目标，附带通知期、截止时间和真实的原生领地。",
+      "commands": [
+        "/kingdoms warfare campaigns \"<settlement name>\"",
+        "/kingdoms warfare declare defend \"<settlement name>\" <revision> <public reason...>",
+        "/kingdoms warfare declare relief_access \"<settlement name>\" <revision> <public reason...>",
+        "/kingdoms warfare declare withdrawal \"<settlement name>\" <revision> <public reason...>",
+        "/kingdoms warfare declare autonomy \"<settlement name>\" <revision> <public reason...>",
+        "/kingdoms warfare declare transfer \"<settlement name>\" <revision> <public reason...>"
+      ],
+      "blocks": [
+        {
+          "id": "journey_heading",
+          "type": "heading",
+          "text": "从宣告到战斗"
+        },
+        {
+          "id": "journey",
+          "type": "diagram",
+          "alt": "经授权的宣告指定真实绑定领地，经过复核和公开预告后，遵循军事模组的规则。期限本身不会判定胜利。",
+          "nodes": [
+            {
+              "id": "n0",
+              "label": "选择已绑定目标",
+              "item": "minecraft:map"
+            },
+            {
+              "id": "n1",
+              "label": "复核权限与目标",
+              "item": "minecraft:writable_book"
+            },
+            {
+              "id": "n2",
+              "label": "公开预告",
+              "item": "minecraft:bell"
+            },
+            {
+              "id": "n3",
+              "label": "原生军事规则",
+              "item": "minecraft:iron_sword"
+            }
+          ],
+          "edges": [
+            {
+              "from": "n0",
+              "to": "n1"
+            },
+            {
+              "from": "n1",
+              "to": "n2"
+            },
+            {
+              "from": "n2",
+              "to": "n3"
+            }
+          ]
+        },
+        {
+          "id": "text_0",
+          "type": "paragraph",
+          "text": "打开“浏览当地战役”或“查看此处的军事控制权”，然后选择“宣布军事战役”。选择已知的聚居地和一个编写好的目标，并写下其他参与者能够理解的公开理由。核对页携带聚居地的当前版本。保存之前，服务器会检查发现情况、领地绑定、原生阵营领导权、政治权限、目标策略、当前的控制序列以及相互冲突的行动。"
+        },
+        {
+          "id": "text_1",
+          "type": "paragraph",
+          "text": "宣战成功后，会先进入通知期，然后才在原生系统中生效。默认通知期为1200游戏刻，之后战役持续168000刻。防守方在线规则会在防守方领袖离线时暂停允许的绑定围攻伤害。原生的部队检测、原生伤害以及提供方自身的围攻规则决定结果。MCA: Kingdoms不会根据截止时间或命令的回应来凭空判定胜利。"
+        },
+        {
+          "id": "text_2",
+          "type": "paragraph",
+          "text": "记录的版本检查保护多人游戏中的选择。如果有人在核对之后更改了聚居地，请重新打开事务，并根据新的状态做出决定。首都保护或缺少领导权是策略上的拒绝，而不是隐藏的战役。保留的记录会区分通知、进行中、已占领、已解决、已过期和已暂停等阶段，让玩家和管理员都能看到发生了什么。"
+        }
+      ]
+    },
+    {
+      "id": "campaign_withdrawal_and_recovery",
+      "task": "warfare.withdraw",
+      "category": "warfare",
+      "title": "撤回或恢复战役",
+      "summary": "当原生宣战被取消、中断或等待确认时，使用明确的退出和重试方式。",
+      "body": [
+        "宣战的指挥官可以在已保存的阶段允许时撤回自己的战役。撤回会请求原生负责方取消对应的行动并记录结果；它不能制造隐藏的围攻，也不能强迫平民进入特殊状态。之后请检查聚居地，确认最终阶段和当前控制方，而不要以为一条聊天消息就改变了原生控制权。",
+        "如果MCA: Kingdoms保存了战役意图，但提供方没有确认，“恢复待处理的战役宣告”（retry_campaign）会重复同一个有限的原生宣战。它不会创建第二个战役身份。请在恢复受支持的确切Recruits提供方之后，或在保存中断之后使用它。提供方拒绝时，记录会保持暂停或其他可恢复的状态，并保留原始证据以供查看。",
+        "不要为了清除待处理的战役而删除世界附属文件。那样会删除判断Recruits是否已经发生变化所需的证据。请备份世界，恢复提供方，检查已保存的战役和原生阵营状态，然后视情况使用重试或撤回。如果原生状态已经偏离了固定的领地和控制序列，请协商一个新的行动，而不要强行推进旧的行动。"
+      ],
+      "commands": [
+        "/kingdoms warfare retry_campaign \"<campaign name>\"",
+        "/kingdoms warfare withdraw \"<campaign name>\"",
+        "/kingdoms warfare inspect \"<settlement name>\""
+      ]
+    },
+    {
+      "id": "sovereignty_accords",
+      "task": "warfare.accord",
+      "category": "warfare",
+      "title": "协商主权协议",
+      "summary": "在不改写公民身份的前提下，达成双方认可的受认可、自治或独立地位。",
+      "body": [
+        "控制权协议记录两个真实的原生阵营围绕某个已知聚居地协商达成的关系。打开“提议聚居地控制权协议”，选择受认可、自治或独立的地位、具名的对方阵营、受认可的公民王国、聚居地以及清晰的条款。核对页会固定原生关系、签署方政府、实际的领地和控制方，以及用于判定的聚居地证据。",
+        "另一方获得授权的一方打开“签署控制权协议”并选择可见的提议。协议生效时，双方现任领袖都必须在线并保有RATIFY权限。执行会通过受支持的原生提供方进行双向写入，并核实其已保存的确认。部分完成的结果会保持待定，等待明确地重新执行。拒绝是一种持久的中立结束。",
+        "主权地位与原生控制权和公民身份是分开的。独立承认不会自动转移领地、重命名聚居地、迁移居民，也不会改变家庭和建筑。只要有效的协议和原生关系允许，和平的中立访客就可以获得安全通行。之后的违约会终止有效的安全通行，但会保留历史上的批准记录，而不会假装协议从未存在。"
+      ],
+      "commands": [
+        "/kingdoms warfare accord recognized \"<settlement name>\" <native faction id> <kingdom definition id> <revision> <terms...>",
+        "/kingdoms warfare accord autonomous \"<settlement name>\" <native faction id> <kingdom definition id> <revision> <terms...>",
+        "/kingdoms warfare accord independent \"<settlement name>\" <native faction id> <kingdom definition id> <revision> <terms...>",
+        "/kingdoms warfare accord sign \"<control agreement name>\" <revision>",
+        "/kingdoms warfare accord reject \"<control agreement name>\" <revision>",
+        "/kingdoms warfare accord apply \"<control agreement name>\""
+      ]
+    },
+    {
+      "id": "occupation_and_civilian_safety",
+      "category": "warfare",
+      "title": "占领与平民安全",
+      "summary": "了解原生占领会改变什么，以及哪些公民事实保持不变。",
+      "body": [
+        "经Recruits确认的控制权变化，可以为已绑定的聚居地创建一条占领记录。该记录保存变化前后的控制序列，并可作为之后救援、自治、保护或叛乱的证据。它不会抹去聚居地。公民王国、文化、居住地、机构、建筑、资产、家庭关系、组织声望、声望和法律案件仍由各自的系统管理。",
+        "MCA: Kingdoms的目标策略默认保护首都，并在允许绑定的围攻伤害之前确认防守方在线。离线的防守方不会因为不在场而被判定战败。未加载的士兵、缺席的NPC、玩家下线、服务器重启和时间流逝都不是胜利的证据。部队检测和战斗进展仍由Recruits负责，而已确认的提供方状态是原生控制权的唯一来源。",
+        "MCA Crime的辖区通过其对应的提供方，跟随当前受认可的公民和占领事实。占领不会悄悄赦免案件，也不会没收平民财产。之后的协议可以承认自治或独立，但在原生负责方确认任何单独的控制操作之前，它仍只是一种政治地位。每当公民层面的情况与原生领地地图看起来不一致时，请查看聚居地名册和战役历史。"
+      ],
+      "commands": [
+        "/kingdoms warfare here",
+        "/kingdoms warfare inspect \"<settlement name>\"",
+        "/kingdoms warfare campaigns \"<settlement name>\""
+      ],
+      "task": "warfare.campaign_overview"
+    },
+    {
+      "id": "temporary_mobilization",
+      "task": "warfare.muster",
+      "category": "warfare",
+      "title": "给新兵下达临时命令",
+      "summary": "以防御、护送或侦察方针，在有限的租约期内召集你拥有且已加载的新兵。",
+      "body": [
+        "动员会临时更改你真正拥有的新兵的命令。打开“临时部署新兵”或“临时部署附近的新兵”，并在提示时选择你拥有且已加载的具名新兵。选择防御、护送或侦察。按照默认配置，一位指挥官最多持有16个租约，每个持续6000刻。系统绝不会强制加载新兵，也不会访问未加载的区块。",
+        "更改命令之前，MCA: Kingdoms会记录新兵的身份、所有者、原有分组和命令、提供方会话以及到期时间。然后它请求Recruits应用临时方针并核实结果。正在进行未完成的新兵移交的新兵不能被动员，因为两项已保存的操作不能争夺同一个原生实体。",
+        "使用“查看正在进行或保留的部署”（或status）查看当前的租约及其恢复状态。“结束临时部署”会提前结束一个有效租约并恢复快照。自然到期同样会请求恢复。如果提供方当时不可用或其保存未被确认，恢复操作会重试受保护的恢复。所有权缺失或已改变会阻止不安全的修复；它不会猜测新兵现在应该执行什么命令。"
+      ],
+      "commands": [
+        "/kingdoms-mobilization muster nearby <defense|escort|scout>",
+        "/kingdoms-mobilization muster \"<recruit name>\" <defense|escort|scout>",
+        "/kingdoms-mobilization status",
+        "/kingdoms-mobilization dismiss \"<deployment name>\"",
+        "/kingdoms-mobilization recover \"<deployment name>\""
+      ]
+    },
+    {
+      "id": "civilian_contracts",
+      "task": "warfare.contract",
+      "category": "warfare",
+      "title": "接取民事契约",
+      "summary": "从附近一位已认可的平民联系人处，开启六种编写好的原生服务任务之一。",
+      "body": [
+        "民事重建提供救济、侦察、调解、自治、防御和护送契约。站在一位已认可、已加载、在世且可见的联系人附近，打开“选择民事重建工作”，选择该具名联系人和工作类型。在请求MCA Quests开启原生任务之前，服务器会核实委托人、机构、聚居地、公民控制权、任务类型和玩家。未加载或无关的村民不能充当远程派发任务的人。",
+        "MCA Quests负责接取、目标、物品栏消耗、奖励及其完成凭证。MCA: Kingdoms把已接取的原生任务实例与其委托人和政治背景绑定，之后只在编写好的后果需要时才使用持久的完成证明。重复提交凭证不能获得两次报酬，也不能满足另一项职责。这些不限范围的民事契约每一份都被编写为一次性的服务机会。",
+        "对应版本范围的MCA Quests提供方对于核心启动是可选的，但这些命令要成功执行就必须有它。如果缺少或不兼容，不会创建任何合成的目标或奖励。重试之前请恢复兼容的提供方和保留的世界状态。机会和保护工作使用另一种限定范围的契约（“开启机会服务”和“开启义务服务”），在演变章节中说明；不要用不限范围的契约代替具名的义务。"
+      ],
+      "commands": [
+        "/kingdoms-contract relief \"<contact name>\"",
+        "/kingdoms-contract reconnaissance \"<contact name>\"",
+        "/kingdoms-contract mediation \"<contact name>\"",
+        "/kingdoms-contract autonomy \"<contact name>\"",
+        "/kingdoms-contract defense \"<contact name>\"",
+        "/kingdoms-contract escort \"<contact name>\""
+      ]
+    },
+    {
+      "id": "discover_world_sites",
+      "task": "world.sites",
+      "category": "warfare",
+      "title": "发现世界地点",
+      "summary": "通过拜访配置好的结构和编写好的地点，建立一份有证据支持的私人名册。",
+      "body": [
+        "世界情境会在你旅行时发现已配置且已加载的结构起点。安装的默认值可以识别村庄、掠夺者前哨站、林地府邸、要塞、远古城市、沙漠神殿和丛林神庙、海底神殿、下界要塞、堡垒遗迹、废弃传送门和古迹废墟，并赋予它们聚居地、敌对要塞、废墟或考古遗址等角色。数据包可以替换或扩展这些定义；角色只是内容数据，而不是新生成的结构。",
+        "你的地点页面只显示你已发现的地点，而拥有2级权限的管理员可以查看所有记录。发现依据的是真实的维度和位置证据。由管理员创建的地点一开始是隐藏的，只有当某位玩家亲自来到其已加载位置八格以内之后，该玩家才能使用它。因此，创建地点并不能向所有人透露远处的位置。",
+        "列表每页显示16个。当已核实的战争事实支持时，地点可能会显示控制方或争夺标记。如果关闭了世界情境，发现和路线进度会停止，但已保存的名册不会被删除。已安装数据包中的定义决定哪些结构和遭遇类型参与其中；可选的地图配套模组不会为无人加载和拜访的结构创建证据。"
+      ],
+      "commands": [
+        "/kingdoms-world sites",
+        "/kingdoms-world sites <page>",
+        "/kingdoms-world author site <role>"
+      ]
+    },
+    {
+      "id": "institution_routes",
+      "task": "world.routes",
+      "category": "warfare",
+      "title": "沿机构路线旅行",
+      "summary": "在拥有当前安全通行的前提下，沿着编写好的检查点路线，往返于已知且正常运作的机构之间。",
+      "body": [
+        "管理员只能在同一维度中两个不同的、正常运作的机构之间创建路线。两个端点附近都必须有管理员亲自发现过的地点。已保存的路线包含出发、途中和到达三个检查点。它不会传送任何人，不会修建道路，不会加载区块，也不保证两点之间的地形容易通行。",
+        "玩家只有在了解两个机构之后才能看到一条路线。在开始旅程之前以及推进每个检查点之前，服务器都会检查两个机构是否仍正常运作，以及当前的战争和协议状态是否在两个聚居地都给予安全通行。被拒绝的路线会说明为什么不可用，而不会绕过敌对控制。按顺序到达每个已加载检查点的八格以内；进度和完成都会被保存。",
+        "打开“浏览已知路线”查看具名的端点和下一个检查点，然后选择“开始引导路线”。重新开始会重置该玩家在这条路线上的旅程。已完成的旅程会作为事实记录保留在名册中。路线记录有数量上限，进度检查使用很小的每位玩家预算，因此大量已保存的路线不会导致大范围的世界扫描。"
+      ],
+      "commands": [
+        "/kingdoms-world routes",
+        "/kingdoms-world routes <page>",
+        "/kingdoms-world route start \"<route name>\"",
+        "/kingdoms-world author route \"<starting institution name>\" \"<destination institution name>\""
+      ]
+    },
+    {
+      "id": "neutral_resource_access",
+      "task": "world.resource",
+      "category": "warfare",
+      "title": "申请中立资源使用权",
+      "summary": "使用一项在聚居地之外编写的资源策略，并配有一条已知的独立返回路线。",
+      "body": [
+        "中立资源使用权是一项范围很窄的旅行策略，而不是所有权。管理员打开“配置中立资源使用权”，选择两个亲自发现过的具名地点，以及允许和排除的物品。资源地点必须位于任何聚居地之外，返回地点必须是另一个地点。该事务会拒绝未知的、位于聚居地内的或不可用的地点。",
+        "玩家在一个地点申请一种物品。资源地点和独立返回地点都必须是该玩家已知的。所申请的资源必须在允许的集合中，且不在排除列表中。申请成功只表示获得了带返回路线的中立使用权；它不会给予物品，不会自动挖掘方块，不会改变领地，不会创建交易，也不会压制其他模组的原生规则。",
+        "数据包和管理员使用已安装整合包中的资源标识符来定义这些物品。如果之后移除了该内容，已保存的策略仍是证据，但无法凭空变出缺失的物品。当前的战争安全通行和路线系统，仍是穿越受控聚居地时各自独立的检查。"
+      ],
+      "commands": [
+        "/kingdoms-world resource request \"<site name>\" <commodity item id>",
+        "/kingdoms-world author resource \"<site name>\" \"<return site name>\" <commodity item id> <excluded commodity item id>"
+      ]
+    },
+    {
+      "id": "encounter_receipts",
+      "task": "world.encounters",
+      "category": "warfare",
+      "title": "记录遭遇贡献",
+      "summary": "查看在你已知地点附近、针对配置好的敌对遭遇获得的有限积分。",
+      "body": [
+        "当你在已发现的地点附近击败一个符合条件的实体时，配置好的遭遇可以记录一次贡献。安装的默认值把远古守卫者认定为地点防御，把唤魔者认定为聚居地防御。服务器依据的是真实的战斗贡献、实体身份、附近地点的证据和完成时间。仅仅在线或待在该区域附近并不会产生积分。",
+        "每个被计入的实体只会使用一次。默认情况下，同一玩家、同一地点、同一遭遇类型在七个游戏日内最多计入三次，贡献在配置的1200刻时间段内收集。数据包可以定义其他遭遇类型、重复次数上限和角色。这些定义用于对真实事件进行分类；它们不会生成敌人，也不会给予任意的战利品。",
+        "遭遇名册对获得积分的玩家私密，但管理员可以为诊断而查看。每一行都包含遭遇类型、贡献、第几次重复以及一个稳定的凭证身份。可以按每页16条浏览较早的条目。可选的任务或地图集配套模组可能会显示相关背景，但MCA: Kingdoms的持久凭证仍是之后任何编写好的后果的依据。"
+      ],
+      "commands": [
+        "/kingdoms-world encounters",
+        "/kingdoms-world encounters <page>"
+      ]
+    },
+    {
+      "id": "atlas_and_recovery",
+      "category": "warfare",
+      "title": "地图集视图与管理员恢复",
+      "summary": "了解可选的地图发布，并在不凭空推测提供方状态的情况下恢复保留的战争记录。",
+      "body": [
+        "MCA: Kingdoms会把已发现的地点和路线中下一个可到达的检查点发布到其世界情境地图数据源。兼容的外部地图集可以绘制这些数据；Map Atlases仍负责绘制地图。Recruits保留它自己的领地地图。没有地图集配套模组时，地点、路线、遭遇和战争的查看事务仍是权威依据。发布绝不会向普通玩家透露尚未发现的地点。",
+        "战争、动员、民事契约和世界情境在世界的数据目录下分别保存各自的数据。对于未来的或不受支持的结构，它们会以只读方式保留，而不会改写未知的内容。保存失败时，操作会在报告成功之前被拒绝。提供方的确认会被保留，以便重启后能够区分待处理的重试和已完成的操作。",
+        "进行恢复时，先备份世界，检查具名的操作和提供方状态，恢复确切兼容的配套模组，然后选择相应的重试、恢复、执行、撤回或结束部署事务。命令为自动化提供同样的具名操作。不要仅仅为了消除错误而删除附属文件或编辑原生阵营文件。请在副本上测试缺少提供方的情况，并从未经改动的提供方世界快照重新开始恢复。"
+      ],
+      "commands": [
+        "/kingdoms warfare here",
+        "/kingdoms warfare retry_campaign \"<campaign name>\"",
+        "/kingdoms warfare accord apply \"<control agreement name>\"",
+        "/kingdoms-mobilization status",
+        "/kingdoms-mobilization recover \"<deployment name>\"",
+        "/kingdoms-world sites",
+        "/kingdoms-world routes",
+        "/kingdoms-world encounters"
+      ],
+      "task": "world.sites"
+    }
+  ],
+  "schema": 2
+}

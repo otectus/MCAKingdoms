@@ -1,0 +1,198 @@
+{
+  "schema": 2,
+  "entries": [
+    {
+      "id": "ledger_and_discovery",
+      "task": "settlement.inspect",
+      "category": "settlements",
+      "title": "Encontrar y usar asentamientos",
+      "summary": "El Registro de aldeas es tu punto de partida para lugares, gremios y gobierno.",
+      "body": [
+        "El mod examina los chunks cargados en busca de estructuras de aldea y de grupos de puntos de interés de aldea, como hogares y puestos de trabajo. Los registros de aldea compatibles de MCA también pueden aportar pruebas de asentamiento. Un operador puede registrar un lugar manualmente. Descubrir un lugar no genera un pueblo ni coloca edificios en el mundo.",
+        "Usa el Registro de aldeas para consultar los asentamientos que has descubierto, además de los que el servidor haya hecho públicos. Busca por nombre (los alias cuentan), elige un reino con el botón de reino y ordena por nombre o por distancia en tu dimensión. Selecciona un asentamiento para ver su reino, dimensión y ubicación; Más detalles muestra cómo se reconoció. Reino abre sus páginas políticas, Gremios abre tu propia vista de servicio de gremio y Sala de guerra muestra su control y sus opciones civiles.",
+        "El descubrimiento es personal. Un jugador corriente no recibe todas las coordenadas lejanas solo porque el servidor las conozca. Las visitas y las presentaciones compatibles amplían lo que conoces. Una presentación privada no revela el mapa a todo el mundo, y los mods de mapas externos siguen gestionando su propio terreno explorado.",
+        "Si el registro está vacío, todavía no has descubierto ningún asentamiento: entra en una aldea (abrir el registro dentro de una también la anota) y actualiza. Con un filtro de reino o una búsqueda, una lista vacía solo significa que nada de lo que conoces coincide; elige Todos los reinos o borra la búsqueda. Si apareció el rótulo de entrada pero una página parece desfasada, actualiza antes de intentar una reparación administrativa. Si Consultar este asentamiento indica que no hay ningún asentamiento reconocido, puede que estés fuera de sus límites guardados o que aún no se haya reconocido. Un operador puede investigarlo; crear a ciegas una segunda identidad puede generar duplicados."
+      ],
+      "commands": [
+        "/kingdoms village here",
+        "/kingdoms village info [village]",
+        "/kingdoms kingdom info mcakingdoms:serenum"
+      ]
+    },
+    {
+      "id": "kingdoms",
+      "task": "kingdom.list",
+      "category": "settlements",
+      "title": "Los reinos y su heráldica",
+      "summary": "La identidad de reino es persistente y un paquete de datos puede ampliarla.",
+      "keywords": [
+        "reino",
+        "heráldica",
+        "estandarte",
+        "Serenum",
+        "Lunari",
+        "Madera",
+        "Anemosia",
+        "Yew",
+        "Shimaguni"
+      ],
+      "blocks": [
+        {
+          "id": "gallery",
+          "type": "kingdoms",
+          "caption": "Todos los reinos que define este servidor, con su heráldica y cuántos de sus asentamientos conoces."
+        },
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "Los reinos incluidos son Serenum, Lunari, Madera, Anemosia, Yew y Shimaguni. Sus identificadores de comando usan mcakingdoms: seguido del nombre en minúsculas. Los nombres, la heráldica, las preferencias de bioma, las asociaciones de estructura y las listas de nombres proceden de las definiciones."
+        },
+        {
+          "id": "p2",
+          "type": "paragraph",
+          "text": "Las pruebas de bioma y de estructura ayudan a elegir el reino inicial de un asentamiento recién reconocido. Los asentamientos existentes conservan su asignación guardada aunque cambien las definiciones o el terreno cercano. Un bioma de jungla no es una frontera militar activa, y cambiar el color de un estandarte no transfiere la soberanía."
+        },
+        {
+          "id": "p3",
+          "type": "paragraph",
+          "text": "Shimaguni se inspira en la historia del imperio insular del modpack, en el Pacto de las Islas y en el Archivo de las Mareas. Los nuevos asentamientos de jungla, jungla dispersa y jungla de bambú usan su preferencia de bioma. Akatsura está reservada para que no salga al azar y pueda usarse como capital deliberada; el mod no crea automáticamente esa ciudad, esa capital ni esa alianza histórica."
+        },
+        {
+          "id": "p4",
+          "type": "paragraph",
+          "text": "El nombre cultural de un reino no es un gobierno constituido. Un gobierno se funda por separado con una capital, una carta y un líder. Del mismo modo, el control militar se registra a partir del proveedor que lo gestiona; no se deduce del nombre cultural de un asentamiento."
+        },
+        {
+          "id": "p5",
+          "type": "paragraph",
+          "text": "Usa Consultar reinos para ver las definiciones del servidor, incluidas las añadidas. Los paquetes de datos del servidor pueden ampliar o sustituir los valores incluidos; el registro actual es la descripción autorizada de un asentamiento guardado."
+        }
+      ],
+      "commands": [
+        "/kingdoms kingdom list",
+        "/kingdoms kingdom info mcakingdoms:serenum"
+      ]
+    },
+    {
+      "id": "identity_government_control",
+      "task": "warfare.here",
+      "category": "settlements",
+      "title": "Reino, gobierno y control",
+      "summary": "Tres preguntas distintas sobre un mismo asentamiento: quiénes son sus habitantes, quién gobierna y quién lo controla ahora.",
+      "keywords": [
+        "ocupación",
+        "conquista",
+        "dueño",
+        "quién controla",
+        "lealtad",
+        "soberanía",
+        "identidad"
+      ],
+      "blocks": [
+        {
+          "id": "comparison",
+          "type": "comparison",
+          "alt": "El reino de un asentamiento dice quiénes son sus habitantes. Un gobierno es quien dirige ese reino. El control militar es quien tiene ahora la reclamación del asentamiento. Cada uno puede cambiar por separado.",
+          "columns": [
+            {
+              "title": "Reino del asentamiento",
+              "points": [
+                "Quiénes son sus habitantes; aparece en el rótulo y en el Registro.",
+                "Se fija al reconocer el asentamiento; los operadores pueden reclasificarlo.",
+                "La conquista no lo cambia."
+              ]
+            },
+            {
+              "title": "Gobierno",
+              "points": [
+                "Quién dirige el reino: líder, cargos, acuerdos.",
+                "Opcional; se funda una vez por reino.",
+                "Se consulta en la página del reino."
+              ]
+            },
+            {
+              "title": "Control militar",
+              "points": [
+                "Quién tiene ahora la reclamación del asentamiento, según Recruits.",
+                "Cambia con asedios y campañas.",
+                "Nunca reescribe familias, hogares, reputación ni identidad."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "occupation",
+          "type": "paragraph",
+          "text": "Durante una ocupación, el bando que controla y el gobierno civil reconocido pueden ser distintos. Los servicios civiles de gremio y los contratos de recuperación mantienen sus propias normas, y un acuerdo sobre quién gobierna el asentamiento (un acuerdo de soberanía) se negocia aparte."
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "task",
+              "target": "warfare.here",
+              "label": "Ver quién controla donde estás"
+            },
+            {
+              "kind": "guide",
+              "target": "political_pages"
+            },
+            {
+              "kind": "guide",
+              "target": "occupation_and_civilian_safety"
+            }
+          ]
+        }
+      ],
+      "commands": []
+    },
+    {
+      "id": "npc_identity",
+      "category": "settlements",
+      "title": "Residentes, orígenes y visitantes",
+      "summary": "La identidad cívica registra un hogar sin adueñarse de la vida de nadie.",
+      "body": [
+        "MCA: Kingdoms añade registros separados de origen y residencia a las entidades admitidas. Las pruebas positivas de un hogar actual pueden actualizar la residencia cívica. El primer hogar conocido puede fijar el origen; los recién nacidos en un asentamiento reconocido también pueden recibir ese asentamiento como origen inicial.",
+        "El origen se conserva como historia cuando un residente se muda. La residencia actual debe estar respaldada; ver a un PNJ cruzar un mercado no basta para declarar que se ha mudado allí. Desconocer el hogar de alguien no equivale a que no tenga hogar, haya muerto o sea hostil.",
+        "Con MCA instalado, los nombres personales, la genética, los corazones, la familia, la personalidad y el hogar de MCA siguen siendo datos de MCA. Renombrar un asentamiento de MCA: Kingdoms cambia la etiqueta cívica sin renombrar a los residentes ni reescribir la historia familiar. Nombrar a alguien para un cargo no sustituye su profesión ni le da un nuevo horario de IA.",
+        "Algunos papeles requieren un adulto vivo y cargado con residencia confirmada. Una etapa vital desconocida o un PNJ sin cargar pueden impedir un nombramiento sin que eso signifique que el PNJ haya muerto. Los operadores pueden inspeccionar la identidad y corregir deliberadamente el origen o la residencia, pero esos comandos no son herramientas para que los jugadores se muden."
+      ],
+      "commands": [
+        "/kingdoms citizen info <entity selector>",
+        "/kingdoms citizen setorigin <entity selector> \"<settlement name>\"",
+        "/kingdoms citizen setresidence <entity selector> \"<settlement name>\""
+      ],
+      "task": "citizen.inspect",
+      "operator": true
+    },
+    {
+      "id": "settlement_changes",
+      "category": "settlements",
+      "title": "Renombrar, reasignar o fusionar lugares",
+      "summary": "Las herramientas de operador cambian la identidad guardada; no reconstruyen el asentamiento.",
+      "body": [
+        "Estos comandos requieren el nivel de permiso de operador 2. Empieza inspeccionando el registro existente y haz una copia de seguridad del mundo antes de una fusión o reasignación importante. Usa el selector de asentamiento real; el nombre nuevo puede contener espacios sin comillas.",
+        "Create registra una identidad en tu posición actual, con un radio de 16 a 512 bloques (64 por defecto). Rename cambia su nombre cívico visible. Setkingdom asigna un reino de forma explícita. Reclassify pide a las reglas de clasificación actuales que reconsideren un registro admitido. Lock y unlock controlan los bloqueos automáticos de identidad del asentamiento; revisa la salida de debug antes de fiarte de una reclasificación.",
+        "Discover examina una zona acotada de chunks cercanos, con un radio de 1 a 32 chunks (8 por defecto). Es una herramienta de reconocimiento, no un comando para construir pueblos. Para el juego cotidiano, viaja y descubre con normalidad. Conciliar registros de aldeas cercanas fusiona los registros que resultan ser partes de una misma aldea generada, para los registros situados en chunks cargados a tu alrededor; su revisión muestra cuántos registros entran en el alcance.",
+        "Merge dirige la identidad de origen hacia la de destino y conserva las referencias canónicas en lugar de tratar como nuevo un lugar renombrado. Fusionar registros de asentamiento duplicados muestra, antes de aplicar, qué registro se conserva y cuál se retira, los bloqueos, qué pasa al registro conservado, qué no se reescribe y cualquier referencia que impida la fusión. Esto es distinto de fusionar gremios o de anexionar una reclamación militar. Se comprueban las referencias de capital e institución: traslada la sede antes de reasignar, resuelve los titulares de cargos locales en conflicto y suspende explícitamente las cartas de institución en conflicto antes de reintentar una fusión bloqueada.",
+        "Cambiar una asignación no transfiere al nuevo reino todo el prestigio ni las hazañas históricas. Las pruebas históricas conservan su contexto original. No uses las reasignaciones repetidas como forma de reiniciar recompensas.",
+        "Para dar nombre en el comando a un asentamiento recién creado, indica primero el radio y después el nombre."
+      ],
+      "commands": [
+        "/kingdoms village create [radius [name...]]",
+        "/kingdoms village rename \"<settlement name>\" <new name...>",
+        "/kingdoms village setkingdom \"<settlement name>\" <kingdom definition id>",
+        "/kingdoms village reclassify \"<settlement name>\"",
+        "/kingdoms village lock \"<settlement name>\"",
+        "/kingdoms village unlock \"<settlement name>\"",
+        "/kingdoms village discover [radiusChunks]",
+        "/kingdoms village merge \"<source settlement name>\" \"<target settlement name>\"",
+        "/kingdoms village debug [village]"
+      ],
+      "task": "settlement.rename",
+      "operator": true,
+      "player_task": "settlement.inspect"
+    }
+  ]
+}

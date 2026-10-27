@@ -3,6 +3,7 @@ package dev.otectus.mcakingdoms.client;
 import com.mojang.blaze3d.systems.RenderSystem;
 import dev.otectus.mcakingdoms.presentation.KingdomSummary;
 import dev.otectus.mcakingdoms.presentation.SettlementSummary;
+import dev.otectus.mcakingdoms.client.book.BookSkin;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.locale.Language;
@@ -10,10 +11,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 
-/** Vanilla advancement-toast styling, retaining the configured arrival position and fade timing. */
+/** Compact parchment arrival plaque, retaining the configured position and fade timing. */
 final class SettlementOverlayRenderer {
     private static final int HEIGHT = 32;
-    private static final ResourceLocation TOASTS = new ResourceLocation("minecraft", "textures/gui/toasts.png");
 
     private SettlementOverlayRenderer() { }
 
@@ -39,8 +39,7 @@ final class SettlementOverlayRenderer {
         RenderSystem.enableBlend();
         graphics.setColor(1, 1, 1, opacity);
         try {
-            // AdvancementToast uses the icon-free 160 x 32 frame at (0, 0).
-            graphics.blitNineSliced(TOASTS, left, top, width, HEIGHT, 4, 160, 32, 0, 0);
+            BookSkin.plaque(graphics, left, top, width, HEIGHT, BookSkin.Binding.LEDGER);
             graphics.blit(texture, left + 8, top + 8, 0.0F, 0.0F, 16, 16, 16, 16);
         } finally {
             graphics.setColor(1, 1, 1, 1);
@@ -48,9 +47,9 @@ final class SettlementOverlayRenderer {
         }
         var language = Language.getInstance();
         graphics.drawString(font, language.getVisualOrder(font.ellipsize(title, width - 38)),
-                left + 30, top + 7, color(0xFFFF00, opacity), false);
+                left + 30, top + 7, color(BookSkin.RED, opacity), false);
         graphics.drawString(font, language.getVisualOrder(font.ellipsize(subtitle, width - 38)),
-                left + 30, top + 18, color(0xFFFFFF, opacity), false);
+                left + 30, top + 18, color(BookSkin.INK, opacity), false);
     }
 
     private static int color(int rgb, float opacity) {

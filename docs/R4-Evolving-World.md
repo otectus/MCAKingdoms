@@ -1,5 +1,7 @@
 # R4 evolving-world operations
 
+> **Design and delivery record.** Current operational guidance is in the [README](../README.md), the [configuration reference](Configuration.md), the [datapack reference](Datapack-Reference.md), the [addon API guide](Addon-API.md) and the in-game Book of Kingdoms; where this record differs, those win. Validation results below are dated evidence for the build named with them, not for later builds.
+
 Press **K** for the current **Kingdom Tasks** interface. In-mod player and operator actions have a GUI path with named choices and a review step. Saved-record command selectors also accept readable names; legacy UUID examples remain compatible but are optional. See [the current player interface guide](Player-Experience-Review.md) and the in-game Book of Kingdoms.
 
 R4 adds opt-in political opportunities around the existing settlement, politics, organization, MCA Quests, Recruits, and warfare owners. It does not infer control, family relationships, deaths, victories, or completed work. A provider must return the relevant fact or receipt before R4 records a consequence.
@@ -8,11 +10,11 @@ All durations and deadlines below use game ticks. Commands that take a revision 
 
 ## Enable a world and its regions
 
-Evolution starts paused. An operator must enable the world and then opt individual settlements in by UUID:
+Evolution starts paused. An operator must enable the world. With `autoEligibleRegions` on (the default, in `mcakingdoms-evolution-common.toml`), every settlement of a kingdom with a government is then an eligible region unless an operator pauses it; the region command pauses a settlement, or makes one eligible explicitly. It takes the settlement's readable name (a UUID is also accepted):
 
 ```text
 /kingdoms-evolution configure <enabled:true|false> <drama:true|false>
-/kingdoms-evolution region <settlement UUID> <enabled:true|false>
+/kingdoms-evolution region "<settlement name>" <enabled:true|false>
 ```
 
 The first flag controls ordinary authored scenarios. The second flag separately permits dramatic scenarios and the negotiated Recruits transfer extension. Changing the world enabled flag clears the currently active sampling set; it does not delete saved scenarios. Disabling a region removes it from eligibility and pauses its active sampling.

@@ -116,6 +116,7 @@ public final class PoliticalSavedData extends SavedData {
         return data;
     }
     boolean writable() { return preserved == null; }
+    public static dev.otectus.mcakingdoms.persistence.StoreStatus status(MinecraftServer server) { var data = get(server); return dev.otectus.mcakingdoms.persistence.StoreStatus.of(NAME, data.writable(), data.diagnostic()); }
     String diagnostic() { return diagnostic; }
     Records records() { return records; }
     Records transaction() {

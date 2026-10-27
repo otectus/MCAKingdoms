@@ -98,6 +98,7 @@ public final class WorldContextSavedData extends SavedData {
         }catch(RuntimeException failure){result.state=new State();result.preserved=tag.copy();result.diagnostic=failure.getMessage();}
         return result;
     }
+    public static dev.otectus.mcakingdoms.persistence.StoreStatus status(MinecraftServer server){var data=get(server);return dev.otectus.mcakingdoms.persistence.StoreStatus.of(NAME,data.writable(),data.diagnostic());}
     public boolean writable(){return preserved==null;} public String diagnostic(){return diagnostic;} public long revision(){return state.revision;}
     /** Carries routes that start or end at a merged settlement over to the survivor. */
     public static void settlementMerged(MinecraftServer server,UUID source,UUID target){

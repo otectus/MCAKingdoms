@@ -13,17 +13,28 @@ import uuid
 
 from production_client import allowed
 
+def _mod_version():
+    """mod_version from gradle.properties, so default artifact names follow the build."""
+    for line in (pathlib.Path(__file__).resolve().parents[2] / 'gradle.properties').read_text().splitlines():
+        if line.startswith('mod_version='):
+            return line.split('=', 1)[1].strip()
+    raise SystemExit('gradle.properties has no mod_version')
+
+
+MOD_VERSION = _mod_version()
+
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-INSTALL = pathlib.Path('/home/otectus/Documents/curseforge/minecraft/Install')
-DEFAULT_MOD = ROOT / 'build/libs/mcakingdoms-0.1.0.jar'
-DEFAULT_HARNESS = ROOT / 'build/test-artifacts/mcakingdoms-0.1.0-client-acceptance.jar'
-DEFAULT_XVFB = pathlib.Path('/tmp/jewelcraft-xvfb/usr/bin/Xvfb')
+INSTALL = pathlib.Path(os.environ.get('MCAKINGDOMS_MC_INSTALL', '/home/otectus/Documents/curseforge/minecraft/Install'))
+DEFAULT_MOD = ROOT / f'build/libs/mcakingdoms-{MOD_VERSION}.jar'
+DEFAULT_HARNESS = ROOT / f'build/test-artifacts/mcakingdoms-{MOD_VERSION}-client-acceptance.jar'
+DEFAULT_XVFB = pathlib.Path('/tmp/kd-xvfb/usr/bin/Xvfb')
 SCREENSHOTS = [
+    '00-start-view.png',
     '01-create-review.png',
     '02-created-read.png',
     '03-rename-result.png',
     '04-compact-tasks.png',
-    '05-war-room-wizard.png',
+    '05-war-room-unavailable.png',
 ]
 
 
@@ -49,13 +60,22 @@ def expand(arguments, values):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--work-dir', required=True, type=pathlib.Path)
+    parser.add_argument('--install', type=pathlib.Path, default=None,
+                        help='Minecraft launcher install with versions/, libraries/ and assets/ (default: $MCAKINGDOMS_MC_INSTALL or the maintainer path)')
     parser.add_argument('--gui-style', action='store_true', help='Tour every Kingdoms GUI after the interaction checks')
+    parser.add_argument('--task-style', action='store_true', help='Tour only Kingdom Tasks forms, start, categories and help at three GUI scales')
     parser.add_argument('--suite', choices=['interactions', 'politics'], default='interactions')
     parser.add_argument('--mod', type=pathlib.Path, default=DEFAULT_MOD)
     parser.add_argument('--harness', type=pathlib.Path, default=DEFAULT_HARNESS)
     parser.add_argument('--xvfb', type=pathlib.Path, default=DEFAULT_XVFB)
     parser.add_argument('--display', default=':95')
+    parser.add_argument('--languages', default='', help='Comma-separated client languages (for example es_es,zh_cn) for extra GUI tours after the English one; needs --gui-style')
     args = parser.parse_args()
+    if args.task_style:
+        args.gui_style = True
+    global INSTALL
+    if args.install is not None:
+        INSTALL = args.install.resolve()
 
     work = args.work_dir.resolve()
     mod = args.mod.resolve()
@@ -118,6 +138,12 @@ def main():
     ]
     if args.gui_style:
         command.insert(1, '-Dmcakingdoms.clientTest.guiStyle=true')
+    if args.task_style:
+        command.insert(1, '-Dmcakingdoms.clientTest.taskStyle=true')
+    if args.languages:
+        if not args.gui_style:
+            raise SystemExit('--languages needs --gui-style')
+        command.insert(1, f'-Dmcakingdoms.clientTest.languages={args.languages}')
     (work / 'launch-command.json').write_text(json.dumps(command, indent=2) + '\n')
     environment = os.environ.copy()
     environment.update(DISPLAY=args.display, LIBGL_ALWAYS_SOFTWARE='1')
@@ -126,7 +152,8 @@ def main():
         display = subprocess.Popen([str(xvfb), args.display, '-screen', '0', '1600x1000x24', '-nolisten', 'tcp', '-ac'], stdout=display_log, stderr=display_log)
         try:
             time.sleep(1)
-            completed = subprocess.run(command, cwd=work, env=environment, stdout=client_log, stderr=subprocess.STDOUT, timeout=480)
+            completed = subprocess.run(command, cwd=work, env=environment, stdout=client_log, stderr=subprocess.STDOUT,
+                                       timeout=480 + 360 * len([code for code in args.languages.split(',') if code.strip()]))
         finally:
             display.terminate()
             display.wait(timeout=15)
@@ -136,7 +163,13 @@ def main():
     if completed.returncode != 0 or not marker.is_file():
         detail = failure.read_text() if failure.is_file() else 'No harness failure marker was written.'
         raise SystemExit(f'Interaction client acceptance failed; inspect {work}/client.log\n{detail}')
-    expected = SCREENSHOTS if args.suite == 'interactions' else ['politics-overview.png', 'politics-council.png', 'politics-form-compact.png', 'politics-petitions-compact.png']
+    expected = list(SCREENSHOTS) if args.suite == 'interactions' else ['politics-overview.png', 'politics-council.png', 'politics-form-compact.png', 'politics-petitions-compact.png']
+    if args.gui_style:
+        pages = ['start', 'categories', 'ledger', 'settlement', 'guild', 'kingdom', 'form', 'blueprint-header', 'guide', 'guide-recipe', 'war-room', 'entry', 'getting-started', 'settings', 'settings-tasks', 'history-confirm']
+        if args.task_style:
+            pages = ['start', 'categories', 'form', 'getting-started']
+        for prefix in [''] + [f'{code.strip()}-' for code in args.languages.split(',') if code.strip()]:
+            expected += [f'{prefix}gui-{scale}-{page}.png' for scale in ('2', '3', 'compact') for page in pages]
     missing = [name for name in expected if not (work / 'screenshots' / name).is_file() or (work / 'screenshots' / name).stat().st_size == 0]
     if missing:
         raise SystemExit(f'Interaction acceptance omitted screenshots: {missing}')

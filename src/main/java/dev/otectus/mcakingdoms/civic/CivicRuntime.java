@@ -6,6 +6,9 @@ import net.minecraft.server.MinecraftServer;
 import java.util.*;
 
 public final class CivicRuntime {
+    /** Store health for server diagnostics: the civic network and institutional commission ledgers. */
+    public static java.util.List<dev.otectus.mcakingdoms.persistence.StoreStatus> storeStatus(net.minecraft.server.MinecraftServer server) { return java.util.List.of(CivicSavedData.status(server), InstitutionalCommissionData.status(server)); }
+
     private static final Map<MinecraftServer,CivicService> SERVICES=new WeakHashMap<>();
     private CivicRuntime() { }
     public static Registration attach(MinecraftServer server,KingdomsService kingdoms) {

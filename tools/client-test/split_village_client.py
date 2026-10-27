@@ -6,7 +6,7 @@ from production_client import allowed
 ROOT=pathlib.Path(__file__).resolve().parents[2]
 PROJECTS=ROOT.parent
 PACK=pathlib.Path('/home/otectus/Documents/curseforge/minecraft/Instances/Ultima')
-INSTALL=pathlib.Path('/home/otectus/Documents/curseforge/minecraft/Install')
+INSTALL = pathlib.Path(os.environ.get('MCAKINGDOMS_MC_INSTALL', '/home/otectus/Documents/curseforge/minecraft/Install'))
 
 def hashes(folder):
     return {str(p.relative_to(folder)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(folder.rglob('*')) if p.is_file()}

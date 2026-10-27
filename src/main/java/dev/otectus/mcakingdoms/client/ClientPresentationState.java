@@ -45,8 +45,10 @@ public final class ClientPresentationState {
             clientDimension = actualDimension;
         }
         if (packet.settlement().isEmpty()) {
+            // Left the settlement: a banner still waiting behind a screen must not appear for a place no longer here.
             currentOverlay = OverlayPacket.empty();
             lastSettlement = null;
+            overlayTicks = 0;
             return;
         }
         SettlementSummary settlement = packet.settlement().orElseThrow();
@@ -61,7 +63,15 @@ public final class ClientPresentationState {
                 && (!PresentationConfig.KINGDOM_BORDERS_ONLY.get() || changedKingdom)) {
             overlayTicks = PresentationConfig.OVERLAY_DURATION_TICKS.get();
             overlayDuration = overlayTicks;
+        } else if (changedSettlement) {
+            // A different settlement that does not qualify for a banner must not inherit another one's remaining time.
+            overlayTicks = 0;
         }
+    }
+
+    /** The banner can be seen only with no screen open and the HUD shown; its time runs only then. */
+    static boolean overlayVisible(Minecraft minecraft) {
+        return minecraft.screen == null && !minecraft.options.hideGui && !minecraft.isPaused();
     }
 
     public static void openLedger() {
@@ -72,6 +82,7 @@ public final class ClientPresentationState {
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         InteractionClient.tickKeys();
+        dev.otectus.mcakingdoms.client.guide.GuideKingdoms.tick();
         Minecraft minecraft = Minecraft.getInstance();
         ResourceLocation dimension = minecraft.level == null ? null : minecraft.level.dimension().location();
         if (clientDimension == null) {
@@ -79,7 +90,8 @@ public final class ClientPresentationState {
         } else if (!java.util.Objects.equals(clientDimension, dimension)) {
             clearTransientState();
             clientDimension = dimension;
-        } else if (!minecraft.isPaused() && overlayTicks > 0) {
+        } else if (overlayTicks > 0 && overlayVisible(minecraft)) {
+            // Deferred while a screen or F1 hides the HUD, so the whole banner shows once the view is clear.
             overlayTicks--;
         }
     }
@@ -101,6 +113,21 @@ public final class ClientPresentationState {
     @SubscribeEvent
     public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
         clearAll();
+        // The next server has its own kingdoms; nothing from this one is shown there.
+        dev.otectus.mcakingdoms.client.guide.GuideKingdoms.clear();
+    }
+
+    /** The server sent its recipes (joining, /reload): an open Book shows the new ones at the same reading position. */
+    @SubscribeEvent
+    public static void onRecipesUpdated(net.minecraftforge.client.event.RecipesUpdatedEvent event) {
+        if (Minecraft.getInstance().screen instanceof KingdomGuideScreen guide) guide.refreshArticle();
+    }
+
+    /** Tags decide which items an ingredient accepts, so a tag update is also a recipe change for the Book. */
+    @SubscribeEvent
+    public static void onTagsUpdated(net.minecraftforge.event.TagsUpdatedEvent event) {
+        if (event.getUpdateCause() == net.minecraftforge.event.TagsUpdatedEvent.UpdateCause.CLIENT_PACKET_RECEIVED
+                && Minecraft.getInstance().screen instanceof KingdomGuideScreen guide) guide.refreshArticle();
     }
 
     private static void clearTransientState() {
