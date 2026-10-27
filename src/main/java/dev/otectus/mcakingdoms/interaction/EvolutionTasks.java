@@ -56,16 +56,21 @@ public final class EvolutionTasks {
                 c->Long.toString(evolution(c).revision()),c->evolution(c).subscribe(c.player,c.bool("enabled")));
         task("evolution.contribute","Evolution","Contribute to opportunity","Record one receipt-backed or authority-backed choice.",false,true,
                 List.of(pick("scenario","Opportunity","scenario"),pick("outcome","Contribution",EvolutionTasks::contributionChoices)),EvolutionTasks::scenarioVersion,
-                c->evolution(c).contribute(c.player,c.uuid("scenario"),c.revision("scenario"),EvolutionState.Outcome.valueOf(c.text("outcome"))));
+                c->Outcomes.scenarioAction(c,"contribute",c.uuid("scenario"),()->evolution(c).contribute(c.player,c.uuid("scenario"),c.revision("scenario"),EvolutionState.Outcome.valueOf(c.text("outcome")))));
+        probe("evolution.contribute",(c,operation)->Outcomes.scenario(c,"contribute",UUID.fromString(operation)));
         task("evolution.withdraw","Evolution","Withdraw contribution","Withdraw your current choice; its evidence receipt remains consumed.",false,true,List.of(pick("scenario","Opportunity","scenario")),
-                EvolutionTasks::scenarioVersion,c->evolution(c).withdraw(c.player,c.uuid("scenario"),c.revision("scenario")));
+                EvolutionTasks::scenarioVersion,c->Outcomes.scenarioAction(c,"withdraw",c.uuid("scenario"),()->evolution(c).withdraw(c.player,c.uuid("scenario"),c.revision("scenario"))));
+        probe("evolution.withdraw",(c,operation)->Outcomes.scenario(c,"withdraw",UUID.fromString(operation)));
         task("evolution.resolve","Evolution","Resolve opportunity","Apply one supported outcome after enough verified contributions.",false,true,
                 List.of(pick("scenario","Opportunity","scenario"),pick("outcome","Outcome",EvolutionTasks::outcomeChoices),pick("kingdom","Counterpart government",EvolutionTasks::counterpartChoices)),EvolutionTasks::scenarioVersion,
-                c->evolution(c).resolve(c.player,c.uuid("scenario"),c.revision("scenario"),EvolutionState.Outcome.valueOf(c.text("outcome")),c.text("kingdom")));
+                c->Outcomes.scenarioAction(c,"resolve",c.uuid("scenario"),()->evolution(c).resolve(c.player,c.uuid("scenario"),c.revision("scenario"),EvolutionState.Outcome.valueOf(c.text("outcome")),c.text("kingdom"))));
+        probe("evolution.resolve",(c,operation)->Outcomes.scenario(c,"resolve",UUID.fromString(operation)));
         task("evolution.retry","Evolution","Retry pending resolution","Resume the same durable owner request after a provider interruption.",false,true,List.of(pick("scenario","Opportunity","scenario")),
-                EvolutionTasks::scenarioVersion,c->evolution(c).retry(c.player,c.uuid("scenario")));
+                EvolutionTasks::scenarioVersion,c->Outcomes.scenarioAction(c,"retry",c.uuid("scenario"),()->evolution(c).retry(c.player,c.uuid("scenario"))));
+        probe("evolution.retry",(c,operation)->Outcomes.scenario(c,"retry",UUID.fromString(operation)));
         task("evolution.release","Evolution","Release rejected resolution","Reopen an uncommitted rejected owner request for a fresh choice.",false,true,List.of(pick("scenario","Opportunity","scenario")),
-                EvolutionTasks::scenarioVersion,c->evolution(c).releaseRejected(c.player,c.uuid("scenario")));
+                EvolutionTasks::scenarioVersion,c->Outcomes.scenarioAction(c,"release",c.uuid("scenario"),()->evolution(c).releaseRejected(c.player,c.uuid("scenario"))));
+        probe("evolution.release",(c,operation)->Outcomes.scenario(c,"release",UUID.fromString(operation)));
         task("evolution.contract","Evolution","Open opportunity service","Offer the matching scoped MCA civilian contract from a nearby contact.",false,true,
                 List.of(pick("scenario","Opportunity","scenario"),pick("outcome","Service",EvolutionTasks::contractChoices),pick("npc","Institutional contact","nearby_npc")),EvolutionTasks::scenarioVersion,
                 c->EvolutionContracts.offer(c.player,c.uuid("scenario"),c.uuid("npc"),EvolutionContracts.kind(EvolutionState.Outcome.valueOf(c.text("outcome")))));
@@ -111,7 +116,8 @@ public final class EvolutionTasks {
         task("transfer.inspect","Transfers","Inspect recruit transfer","Read the private parties, notice, phase and recovery detail.",false,false,List.of(pick("transfer","Transfer","transfer")),EvolutionTasks::selectedTransferVersion,c->transferLines(c,selectedTransfer(c)));
         task("transfer.propose","Transfers","Propose recruit transfer","Offer one nearby owned native recruit to an online player and their active native group.",false,true,
                 List.of(pick("unit","Recruit","native_recruit"),pick("recipient","Recipient","player"),pick("group","Recipient group","native_group"),toggle("family","Family-backed introduction")),EvolutionTasks::transferProposalVersion,
-                c->transfers(c).propose(c.player,c.uuid("unit"),c.uuid("recipient"),c.uuid("group"),c.bool("family")));
+                c->Outcomes.transferProposal(c,()->transfers(c).propose(c.player,c.uuid("unit"),c.uuid("recipient"),c.uuid("group"),c.bool("family"))));
+        probe("transfer.propose",(c,operation)->Outcomes.transfer(c,"propose",UUID.fromString(operation)));
         task("transfer.share_destination","Transfers","Share a recruit transfer destination","Allow one named online sender to select one of your native groups for this connection only.",false,true,
                 List.of(pick("sender","Allowed sender",c->c.choices("player").stream().filter(v->!v.value().equals(c.player.getUUID().toString())).toList()),pick("group","Your destination group","own_native_group")),c->RecruitTransferDestinations.revision(c.server())+":"+c.text("sender")+":"+c.text("group"),
                 c->RecruitTransferDestinations.share(c.player,c.uuid("sender"),c.uuid("group"),c.choice("group").label()));
@@ -136,7 +142,8 @@ public final class EvolutionTasks {
         task("drama.propose","World events","Propose a world event","Create a bounded proposal from an installed world event template and real authority evidence.",false,true,
                 List.of(pick("template","World event template",c->drama(c).templates().stream().map(t->Choice.of(t.id(),Component.literal(t.title()),e("template.detail","%s · %s",enumLabel(t.kind()),t.objective()))).toList()),
                         pick("settlement","Involved settlement","settlement"),pick("subject","Source organization",EvolutionTasks::dramaSubjectChoices)),c->Long.toString(drama(c).revision()),
-                c->drama(c).propose(c.player,UUID.randomUUID(),drama(c).revision(),c.text("template"),c.uuid("settlement"),c.text("subject")));
+                c->{UUID request=UUID.randomUUID();return Outcomes.dramaAction(c,"propose",request,()->drama(c).propose(c.player,request,drama(c).revision(),c.text("template"),c.uuid("settlement"),c.text("subject")));});
+        probe("drama.propose",(c,operation)->Outcomes.drama(c,"propose",UUID.fromString(operation)));
         dramaAction("consent","Consent to a world event","Accept as the eligible opposing commander or independent active source member.",(s,c)->s.consent(c.player,c.uuid("drama"),c.revision("drama")));
         dramaAction("execute","Carry out a world event's outcome","The proposer begins the one authority-checked native or organization operation.",(s,c)->s.execute(c.player,c.uuid("drama"),c.revision("drama")));
         dramaAction("negotiate","Negotiate a world event","Propose the installed nonviolent accord outcome.",(s,c)->s.negotiate(c.player,c.uuid("drama"),c.revision("drama")));
@@ -170,9 +177,15 @@ public final class EvolutionTasks {
         add(new Task(id,category,title,help,operator,consequential,fields,version,handler));
     }
     private interface TransferAction{String run(RecruitTransferService service,Context context);}
-    private static void transferAction(String id,String title,String help,TransferAction action){task("transfer."+id,"Transfers",title,help,false,true,List.of(pick("transfer","Transfer","transfer")),EvolutionTasks::selectedTransferVersion,c->action.run(transfers(c),c));}
+    /** A transfer action whose result is read from the transfer's phase afterwards, and again on Check (F07). */
+    private static void transferAction(String id,String title,String help,TransferAction action){task("transfer."+id,"Transfers",title,help,false,true,List.of(pick("transfer","Transfer","transfer")),EvolutionTasks::selectedTransferVersion,
+            c->Outcomes.transferAction(c,id,c.uuid("transfer"),()->action.run(transfers(c),c)));
+        probe("transfer."+id,(c,operation)->Outcomes.transfer(c,id,UUID.fromString(operation)));}
     private interface DramaAction{String run(DramaService service,Context context);}
-    private static void dramaAction(String id,String title,String help,DramaAction action){task("drama."+id,"World events",title,help,false,true,List.of(pick("drama","World event","drama")),EvolutionTasks::dramaVersion,c->action.run(drama(c),c));}
+    /** A world-event action whose result is read from the event's phase afterwards, and again on Check (F07). */
+    private static void dramaAction(String id,String title,String help,DramaAction action){task("drama."+id,"World events",title,help,false,true,List.of(pick("drama","World event","drama")),EvolutionTasks::dramaVersion,
+            c->Outcomes.dramaAction(c,id,c.uuid("drama"),()->action.run(drama(c),c)));
+        probe("drama."+id,(c,operation)->Outcomes.drama(c,id,UUID.fromString(operation)));}
     private interface MergeAction{OrganizationLifecycleResult run(OrganizationService service,Context context);}
     private static void organizationMergeAction(String id,String title,String help,MergeAction action){task("organization."+id,"Organizations",title,help,false,true,List.of(pick("merge","Merge proposal","merge")),EvolutionTasks::mergeVersion,c->organizationResult(action.run(organizations(c),c)));}
 
@@ -270,7 +283,8 @@ public final class EvolutionTasks {
     private static Component transferNext(RecruitTransferService.TransferView v){return switch(v.phase()){case OFFERED->e("transfer.next.offered","the recipient may consent, or either party may cancel");
         case CONSENTED->e("transfer.next.consented","the source owner may apply after the notice while both players and the recruit are present");case APPLYING,CONFIRMING->e("transfer.next.confirming","either party may confirm the retained native save");
         case RESTORING->e("transfer.next.restoring","either party may restore with both players present, then confirm");case COMPLETE->e("transfer.next.complete","the negotiated transfer is complete");
-        case CANCELLED->e("transfer.next.cancelled","native ownership remains with, or was restored to, the source");case RECONCILED->e("transfer.next.reconciled","an operator review is recorded; the divergence evidence remains");};}
+        case CANCELLED->e("transfer.next.cancelled","native ownership remains with, or was restored to, the source");case RECONCILED->e("transfer.next.reconciled","an operator review is recorded; the divergence evidence remains");
+        case EXPIRED->e("transfer.next.expired","the offer expired before anything changed; propose again if both players still agree");};}
     private static List<Object> reconciliationLines(RecruitTransferService.ReconciliationReview review){return List.of(e("reconcile.revision","Pending native intent, revision %s.",review.revision()),Component.literal(review.observation()),
             e("reconcile.note","The current fingerprint is captured with this reviewed choice. Applying reconciliation records an operator note; it does not rewrite native counts."));}
 

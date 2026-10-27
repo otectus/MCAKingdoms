@@ -291,6 +291,10 @@ public final class CivicService implements dev.otectus.mcakingdoms.api.civic.Ins
     public Result workshop(ServerPlayer player,Entity npc) {
         actor(player);
         if(!CivicConfig.ENABLED.get()||!CivicConfig.INSTITUTIONAL_SERVICES.get()||!contracts().writable())return Result.deny("civic.institution_unavailable");
+        // Paid work is never offered when the installed MCA: Quests could accept it but never complete it (F04).
+        String institutional=dev.otectus.mcakingdoms.compat.quests.receipts.QuestCompletionBridge.institutionalCapability();
+        if(!institutional.equals("available"))
+            return Result.deny(institutional.equals("absent")?"civic.commissions_quests_absent":"civic.workshop_quests_contract_unsupported");
         var context=speakerContext(player,npc);
         if(context.isEmpty()||!context.get().servicesAvailable())return Result.deny("civic.institution_unavailable");
         if(!context.get().commissionQualified())return Result.deny("civic.commission_not_qualified");

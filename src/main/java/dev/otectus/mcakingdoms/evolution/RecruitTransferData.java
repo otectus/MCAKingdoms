@@ -12,7 +12,12 @@ import java.util.*;
 public final class RecruitTransferData extends SavedData {
     public static final String NAME = "mcakingdoms_recruit_transfers";
     static final Gson JSON = new Gson();
-    public enum Phase { OFFERED, CONSENTED, APPLYING, CONFIRMING, RESTORING, COMPLETE, CANCELLED, RECONCILED }
+    /**
+     * {@code EXPIRED} (0.3.0, F10): an offer that passed its deadline before any native change. Terminal, like
+     * {@code CANCELLED}; a build that predates it reads such a record as malformed and keeps the store read-only and
+     * unchanged rather than guessing.
+     */
+    public enum Phase { OFFERED, CONSENTED, APPLYING, CONFIRMING, RESTORING, COMPLETE, CANCELLED, RECONCILED, EXPIRED }
     public record Reconciliation(UUID actor,String fingerprint,String reason,long at,String observation) {
         public Reconciliation { Objects.requireNonNull(actor);EvolutionState.text(reason,256);EvolutionState.text(observation,512);
             if(reason.isBlank()||fingerprint==null||!fingerprint.matches("[a-f0-9]{64}")||at<0)throw new IllegalArgumentException("Invalid reconciliation receipt"); }
@@ -37,7 +42,11 @@ public final class RecruitTransferData extends SavedData {
                     || snapshot != null && (!snapshot.unit().equals(unit) || !snapshot.owner().equals(owner) || !snapshot.recipient().equals(recipient)
                     || !snapshot.recipientGroup().equals(recipientGroup) || !snapshot.equipment().equals(equipment))) throw new IllegalArgumentException("Invalid transfer terms");
         }
-        public boolean terminal() { return phase == Phase.COMPLETE || phase == Phase.CANCELLED || phase == Phase.RECONCILED; }
+        public boolean terminal() { return phase == Phase.COMPLETE || phase == Phase.CANCELLED || phase == Phase.RECONCILED || phase == Phase.EXPIRED; }
+        /** Overdue and untouched: offered or consented, past its deadline, with no native snapshot or accounting divergence. */
+        public boolean expirable(long now) {
+            return (phase == Phase.OFFERED || phase == Phase.CONSENTED) && now >= deadline && snapshot == null && !accountingDiverged;
+        }
         public Transfer phase(Phase next, Snapshot proof, String reason) {
             return new Transfer(id, unit, owner, recipient, recipientGroup, equipment, family, noticeUntil, deadline, revision + 1, next, proof, reason, accountingDiverged);
         }

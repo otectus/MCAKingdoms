@@ -129,6 +129,32 @@ public final class RecruitTransferService {
         RecruitsTransfer.restore(unit, owner, recipient, t.snapshot());
         return confirmVerified(actor, id);
     }
+    /** Most overdue offers expired per maintenance pass. */
+    static final int EXPIRY_BUDGET = 8;
+
+    /**
+     * Expires overdue offers that never reached a native change (F10): offered or consented, past the deadline, with no
+     * native snapshot. Oldest deadline first, at most {@link #EXPIRY_BUDGET} per pass, durably, whether or not world
+     * events are enabled and whether or not either party is online. A transfer that began applying keeps its recovery
+     * fence and is never expired. Returns how many expired.
+     */
+    public int expireOverdue() {
+        if (!server.isSameThread()) throw new IllegalStateException("Transfer requires server thread");
+        if (!data.writable()) return 0;
+        long now = server.overworld().getGameTime();
+        int expired = 0;
+        for (var t : data.all().stream().filter(t -> t.expirable(now))
+                .sorted(Comparator.comparingLong(Transfer::deadline).thenComparing(Transfer::id)).limit(EXPIRY_BUDGET).toList()) {
+            if (!data.put(server, t.phase(Phase.EXPIRED, null, "Offer expired before any native change; ownership and equipment are unchanged"))) break;
+            expired++;
+            var notice = net.minecraft.network.chat.Component.translatableWithFallback("notice.mcakingdoms.transfer_expired",
+                    "The recruit transfer offer for %s expired before anything changed; native ownership is unchanged.",
+                    dev.otectus.mcakingdoms.interaction.Names.entity(server, t.unit()));
+            dev.otectus.mcakingdoms.interaction.Notify.players(server, List.of(t.owner(), t.recipient()), null, notice, "transfer.inspect");
+        }
+        return expired;
+    }
+
     public List<String> inspect(ServerPlayer actor, UUID id) {
         var t = own(actor, id); return List.of(t.id() + " | " + t.phase() + " | revision " + t.revision(),
                 "Recruit " + t.unit() + " to player " + t.recipient() + " group " + t.recipientGroup(),

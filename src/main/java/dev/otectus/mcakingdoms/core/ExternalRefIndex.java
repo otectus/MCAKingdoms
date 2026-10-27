@@ -16,6 +16,10 @@ final class ExternalRefIndex {
         return Optional.ofNullable(owners.get(new Key(namespace, value)));
     }
 
+    void clear() {
+        owners.clear();
+    }
+
     void rebuild(Collection<SettlementRecord> records) {
         Map<Key, UUID> rebuilt = new LinkedHashMap<>();
         for (SettlementRecord record : records) {

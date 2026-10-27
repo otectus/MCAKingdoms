@@ -33,15 +33,24 @@ public final class QuestCompletionBridge {
     private static final Set<UUID> WAKE=new LinkedHashSet<>();
     private static Binding binding;
     private static String capability="not_probed";
+    /**
+     * Whether paid institutional work can complete with the installed MCA: Quests (F04): {@code available} only when the
+     * provider names its institutional consumer itself, under this mod's namespace, and exposes the renewal and
+     * institutional-menu methods. A provider that predates the rename (MCA: Quests 1.7.1 and earlier) requires a consumer
+     * this mod no longer is, so its paid work could be accepted but never completed: it is reported as unsupported and
+     * the workshop refuses before any offer is recorded. Ordinary guild deeds do not depend on it.
+     */
+    private static String institutionalCapability="not_probed";
     private static int cursor;
     private record Binding(Method read,Method ack,Method status,Method commission) { }
     private QuestCompletionBridge(){ }
     @SuppressWarnings("unchecked") public static void register() {
         MinecraftForge.EVENT_BUS.register(QuestCompletionBridge.class);
-        if(!ModList.get().isLoaded("mcaquests")){capability="absent";return;}
+        if(!ModList.get().isLoaded("mcaquests")){capability="absent";institutionalCapability="absent";return;}
         try {
             Class<?> api=Class.forName("dev.otectus.mcaquests.api.McaQuestsApi");
             consumer=providerConsumer(api);
+            institutionalCapability=institutionalContract(api);
             binding=new Binding(api.getMethod("readCompletionReceipts",ServerPlayer.class,ResourceLocation.class,int.class),
                     api.getMethod("acknowledgeCompletionReceipt",ServerPlayer.class,ResourceLocation.class,UUID.class,UUID.class),
                     api.getMethod("completionReceiptStatus",ServerPlayer.class),api.getMethod("openCommissionMenu",ServerPlayer.class,Entity.class,Set.class));
@@ -61,8 +70,25 @@ public final class QuestCompletionBridge {
         }
         return DEFAULT_CONSUMER;
     }
+    /**
+     * {@code available}, or why paid institutional work cannot complete with this provider: {@code legacy_consumer_contract}
+     * (no {@code institutionalCompletionConsumer()}), {@code foreign_consumer_namespace} (it names another mod's consumer) or
+     * {@code missing_institutional_methods}. Probes methods only; nothing is called that changes provider state.
+     */
+    static String institutionalContract(Class<?> api) {
+        try {
+            api.getMethod("renewInstitutionalCompletionConsumer",ServerPlayer.class);
+            api.getMethod("openInstitutionalCommissionMenu",ServerPlayer.class,Entity.class,Set.class,String.class);
+        } catch(ReflectiveOperationException|LinkageError missing) { return "missing_institutional_methods"; }
+        final Object named;
+        try { named=api.getMethod("institutionalCompletionConsumer").invoke(null); }
+        catch(ReflectiveOperationException|LinkageError|RuntimeException olderProvider) { return "legacy_consumer_contract"; }
+        return named instanceof ResourceLocation id&&id.getNamespace().equals(McaKingdomsApi.MOD_ID)?"available":"foreign_consumer_namespace";
+    }
     /** Whether the provider API bound: {@code available}, {@code absent}, {@code not_probed}, or why not. */
     public static String capability(){return capability;}
+    /** Whether paid institutional commissions can complete; see {@link #institutionalContract}. */
+    public static String institutionalCapability(){return binding==null&&!capability.equals("absent")&&!capability.equals("not_probed")?capability:institutionalCapability;}
     /** The completion-receipt consumer id this server polls and acknowledges as. */
     public static ResourceLocation consumerId(){return consumer;}
     public static String status(ServerPlayer player){if(!CivicConfig.ENABLED.get())return "disabled";return HEALTH.getOrDefault(player.getUUID(),capability);}
@@ -169,6 +195,7 @@ public final class QuestCompletionBridge {
         try{return (boolean)binding.commission.invoke(null,player,giver,quests);}catch(ReflectiveOperationException|RuntimeException failure){HEALTH.put(player.getUUID(),"commission_provider_failed");return false;}
     }
     public static boolean openInstitutionalCommissions(ServerPlayer player,Entity giver,Set<ResourceLocation> quests,String token) {
+        if(!institutionalCapability().equals("available")){HEALTH.put(player.getUUID(),"institutional_contract_"+institutionalCapability());return false;}
         if(!ensureInstitutionalRecipient(player))return false;
         try {
             return (boolean)Class.forName("dev.otectus.mcaquests.api.McaQuestsApi").getMethod("openInstitutionalCommissionMenu",

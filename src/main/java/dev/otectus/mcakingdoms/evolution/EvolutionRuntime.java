@@ -20,7 +20,12 @@ public final class EvolutionRuntime {
         return EvolutionSavedData.get(server).snapshot().scenarios.values().stream().filter(EvolutionState.Scenario::pending).count();
     }
     @SubscribeEvent public static void tick(TickEvent.ServerTickEvent event) {
-        if (event.phase == TickEvent.Phase.END && event.getServer().getTickCount() % 200 == 0) get(event.getServer()).tick();
+        if (event.phase != TickEvent.Phase.END || event.getServer().getTickCount() % 200 != 0) return;
+        var service = get(event.getServer());
+        service.observePresence();
+        service.tick();
+        // Harmless cleanup runs even while world events are off: an untouched overdue offer stops blocking its recruit.
+        new RecruitTransferService(event.getServer()).expireOverdue();
     }
     @SubscribeEvent public static void stopped(ServerStoppedEvent event) { SERVICES.remove(event.getServer()); }
     private EvolutionRuntime() { }

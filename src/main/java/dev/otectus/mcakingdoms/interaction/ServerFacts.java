@@ -142,6 +142,9 @@ public final class ServerFacts {
         var mca = dev.otectus.mcakingdoms.compat.mca.McaCompat.status();
         lines.add(f("health.mca", "MCA Reborn: %s; settlement detection %s, home evidence %s.", installed("mca"), onOff(mca.detection()), onOff(mca.evidence())));
         lines.add(f("health.quests", "MCA Quests: %s; completion receipts: %s.", installed("mcaquests"), dev.otectus.mcakingdoms.compat.quests.receipts.QuestCompletionBridge.capability()));
+        lines.add(f("health.quests_contract", "MCA Quests contract: receipts are read as %s; paid workshop jobs: %s.",
+                dev.otectus.mcakingdoms.compat.quests.receipts.QuestCompletionBridge.consumerId().toString(),
+                dev.otectus.mcakingdoms.compat.quests.receipts.QuestCompletionBridge.institutionalCapability()));
         lines.add(f("health.townstead", "Townstead: %s; capabilities bound: %s.", installed("townstead"), townsteadCapabilities(server)));
         lines.add(f("health.recruits", "Recruits: %s; the military bridge is gated to exactly 1.15.2 and is %s.", installed("recruits"),
                 version("recruits").filter("1.15.2"::equals).isPresent() ? f("health.bridge_active", "active") : f("health.bridge_inactive", "inactive")));
@@ -213,7 +216,7 @@ public final class ServerFacts {
         return switch (step.outcome()) {
             case COPIED -> f("health.migration_copied", "Copied %s to %s.", step.from(), step.to());
             case SKIPPED_DESTINATION_EXISTS -> f("health.migration_skipped", "Skipped %s: %s already exists.", step.from(), step.to());
-            case FAILED -> Component.empty().append(f("health.migration_failed", "Failed %s → %s: %s. That store started empty this run; see the log before anyone plays on.",
+            case FAILED -> Component.empty().append(f("health.migration_failed", "Failed %s → %s: %s. The old file is unchanged; see the log. A failed saved-data or common config copy stops the world from starting.",
                     step.from(), step.to(), step.detail())).withStyle(ChatFormatting.RED);
         };
     }

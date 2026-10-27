@@ -67,6 +67,30 @@ public final class ActionRegistry {
     }
     /** A result that finishes later; {@code message} (text or a component) is shown until {@code completion} reports the outcome. */
     public record Pending(java.util.concurrent.CompletionStage<?> completion,Object message) {}
+    /**
+     * Where a consequential operation stands, as its owning service's records say (F07): {@code APPLIED} (in effect),
+     * {@code PENDING} (recorded and waiting for another party, a native save or a retry), {@code REFUSED} (nothing was
+     * changed), {@code UNKNOWN} (the outcome cannot be confirmed) or {@code READ} (nothing was meant to change). It is
+     * decided from typed service state, never by reading message text. {@code operation} names the record acted on, so
+     * Check can read it again later without repeating anything; {@code next} is an action valid for this state.
+     */
+    public record Outcome(State state,Object message,String operation,Optional<NextStep> next) {
+        public enum State { APPLIED, PENDING, REFUSED, UNKNOWN, READ }
+        public Outcome { Objects.requireNonNull(state);message=message==null?"":message;operation=operation==null?"":operation;next=next==null?Optional.empty():next; }
+        public static Outcome of(State state,Object message,String operation){return new Outcome(state,message,operation,Optional.empty());}
+        public static Outcome applied(Object message,String operation){return of(State.APPLIED,message,operation);}
+        public static Outcome pending(Object message,String operation){return of(State.PENDING,message,operation);}
+        public static Outcome refused(Object message,String operation){return of(State.REFUSED,message,operation);}
+        public Outcome then(String task,Map<String,String> prefill){return new Outcome(state,message,operation,Optional.of(new NextStep(task,prefill)));}
+        /** The protocol word the client shows: done, waiting, refused, unknown or read. */
+        public String status(){return switch(state){case APPLIED->"done";case PENDING->"waiting";case REFUSED->"refused";case UNKNOWN->"unknown";case READ->"read";};}
+    }
+    /**
+     * Reads the current state of an operation a task started, from its owner, without changing anything (F07). Used
+     * for Check; a task's handler usually returns the same reading right after acting. Empty when the record is gone or
+     * no longer visible to this player.
+     */
+    @FunctionalInterface public interface Probe { Optional<Outcome> status(Context context,String operation); }
     /** A server-validated follow-up offered after a result: open {@code task}, preselecting {@code prefill} where still valid. */
     public record NextStep(String task,Map<String,String> prefill) {
         public NextStep { prefill=Map.copyOf(prefill); }
@@ -125,6 +149,12 @@ public final class ActionRegistry {
     private static final Map<String,BiFunction<Context,Throwable,Optional<NextStep>>> NEXT=new LinkedHashMap<>();
     private static final Map<String,Function<Context,List<Requirement>>> REQUIREMENTS=new LinkedHashMap<>();
     private static final Map<String,Function<Context,Component>> APPLY_LABELS=new LinkedHashMap<>();
+    private static final Map<String,Probe> PROBES=new LinkedHashMap<>();
+    /** Registers how Check reads {@code task}'s operation again; see {@link Probe}. */
+    public static void probe(String task,Probe probe){if(PROBES.putIfAbsent(task,probe)!=null)throw new IllegalArgumentException("Duplicate probe "+task);}
+    /** The operation's current state, or empty when the task has no probe or the record is unavailable. */
+    public static Optional<Outcome> probe(Task task,Context context,String operation){var probe=PROBES.get(task.id());if(probe==null||operation==null||operation.isBlank())return Optional.empty();return probe.status(context,operation);}
+    public static boolean probed(Task task){return PROBES.containsKey(task.id());}
     /**
      * What {@code task} needs, shown on its first page and on its review from current records. Checks that depend on a
      * later choice should say so ("Choose a guild to check this") rather than report failure.

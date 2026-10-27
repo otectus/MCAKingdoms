@@ -84,8 +84,11 @@ public final class McaKingdoms {
     public void serverAboutToStart(ServerAboutToStartEvent event) {
         // Levels and saved data load after this event, so a world saved as Ultima Kingdoms is carried
         // over before anything reads the new file names.
-        dev.otectus.mcakingdoms.persistence.LegacyRename.migrateSavedData(event.getServer()
-                .getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).resolve("data"));
+        // A failed copy stops the world here, before any store exists, so no empty store can be saved in its place.
+        java.nio.file.Path dataDirectory = event.getServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).resolve("data");
+        dev.otectus.mcakingdoms.persistence.LegacyRename.migrateSavedData(dataDirectory);
+        dev.otectus.mcakingdoms.persistence.LegacyRename.writeReport(dataDirectory);
+        dev.otectus.mcakingdoms.persistence.LegacyRename.requireMigrated();
         dev.otectus.mcakingdoms.evolution.drama.DramaRuntime.commitPending();
         dev.otectus.mcakingdoms.evolution.EvolutionDefinitions.INSTANCE.commitPending();
         DEFINITIONS.commitPending();
@@ -271,6 +274,19 @@ public final class McaKingdoms {
         if (Math.floorMod(entity.tickCount + entity.getId(), interval) != 0) return;
         RuntimeState runtime = RUNTIMES.get(level.getServer());
         if (runtime != null) runtime.service().observeEntity(entity);
+    }
+
+    /**
+     * Respawning and returning from the End replace the player entity, and Forge copies only {@code PlayerPersisted}
+     * across. The civic identity (origin, residence, last residence change) is carried to the new entity here, alone and
+     * unchanged: no join or leave event fires, because the person did not move. Stored settlement ids resolve through
+     * redirects on the next read, as for any other entity.
+     */
+    @SubscribeEvent
+    public void playerCloned(net.minecraftforge.event.entity.player.PlayerEvent.Clone event) {
+        if (!(event.getEntity() instanceof net.minecraft.server.level.ServerPlayer)) return;
+        dev.otectus.mcakingdoms.citizen.CivicIdentityStore.carryOver(
+                event.getOriginal().getPersistentData(), event.getEntity().getPersistentData());
     }
 
     @SubscribeEvent

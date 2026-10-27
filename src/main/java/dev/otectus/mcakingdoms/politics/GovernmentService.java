@@ -38,7 +38,8 @@ public final class GovernmentService implements PoliticalService {
     private final java.util.function.Predicate<UUID> knownPlayer;
     private final java.util.function.BooleanSupplier openFounding;
     private final java.util.function.BooleanSupplier institutionalServices;
-    private int maintenanceCursor;
+    /** Most deadline transitions each maintenance pass commits per domain (agreements, petitions, elections, regencies). */
+    static final int MAINTENANCE_BUDGET = 8;
     private final java.util.Deque<LivingDeathEvent> pendingDeaths = new java.util.ArrayDeque<>();
     public GovernmentService(MinecraftServer server, KingdomsService kingdoms, PoliticalDefinitions definitions) {
         this(server, kingdoms, definitions, PoliticalSavedData.get(server), ModList.get().isLoaded("mcacapitals"));
@@ -918,6 +919,38 @@ public final class GovernmentService implements PoliticalService {
      * A page row as players read it: translated title and detail, naming people, places and kingdoms instead of ids, and
      * the same facts as labelled fields ("State", "Parties", "Signatures") for screens that show records as sections.
      */
+    /** One political record's current state for a task's Check (F07): {@code agreement}, {@code petition} or {@code election}. */
+    public record RecordState(String kind, String state, String detail) { }
+    /**
+     * The state of the agreement, petition or election {@code recordId}, read without changing anything, when the viewer
+     * may see it: a party or authorized official of an agreement (or anyone once it is in effect), the requester, nominee,
+     * decider or a reviewing official of a petition, and the visibility rules of {@link #election} for an election.
+     */
+    public Optional<RecordState> recordState(ServerPlayer viewer, String recordId) {
+        thread();
+        Optional<UUID> id = parse(recordId);
+        if (id.isEmpty()) return Optional.empty();
+        var records = data.records();
+        Agreement agreement = records.agreements.get(id.get());
+        if (agreement != null) {
+            boolean party = agreement.state() == AgreementState.ACTIVE || agreement.signatures().containsValue(viewer.getUUID())
+                    || viewer.hasPermissions(2);
+            for (String kingdom : List.of(agreement.proposer(), agreement.recipient())) {
+                Government g = records.governments.get(kingdom);
+                party |= permitted(viewer, g, Permission.PROPOSE) || permitted(viewer, g, Permission.RATIFY);
+            }
+            return party ? Optional.of(new RecordState("agreement", agreement.state().name(), Integer.toString(agreement.signatures().size()))) : Optional.empty();
+        }
+        Petition petition = records.petitions.get(id.get());
+        if (petition != null) {
+            boolean party = viewer.getUUID().equals(petition.requester()) || viewer.getUUID().equals(petition.decidedBy())
+                    || petition.nominee() != null && viewer.getUUID().equals(petition.nominee().id())
+                    || permitted(viewer, records.governments.get(petition.kingdom()), Permission.REVIEW) || viewer.hasPermissions(2);
+            return party ? Optional.of(new RecordState("petition", petition.state().name(), petition.decision())) : Optional.empty();
+        }
+        return election(viewer, id.get()).map(e -> new RecordState("election", e.state().name(), Long.toString(e.graceUntil())));
+    }
+
     public record PresentedRow(net.minecraft.network.chat.Component title, net.minecraft.network.chat.Component detail, List<Field> fields) {
         public PresentedRow { fields = List.copyOf(fields); }
         public PresentedRow(net.minecraft.network.chat.Component title, net.minecraft.network.chat.Component detail) { this(title, detail, List.of()); }
@@ -1308,64 +1341,102 @@ public final class GovernmentService implements PoliticalService {
             }
         }
     }
+    /**
+     * Commits deadline transitions (F05). Each domain (agreements, petitions, elections, regencies) independently takes
+     * its due records, oldest deadline first with the record id breaking ties, and transitions at most
+     * {@link #MAINTENANCE_BUDGET} of them per pass, so one domain's size never delays another's. A record that came due
+     * transitions within ceil(d / 8) passes, d being the records of its domain due no later than it: a record due later
+     * always queues behind it, so nothing starves. There is no shared cursor to drift or overflow, and growing or
+     * shrinking sets need no bookkeeping. Facts and notices commit once, in the same durable transaction, and are
+     * published only after it. Receipt pruning keeps its own bounded batch.
+     */
     private void maintainDeadlines() {
         if (!data.writable() || conflict) return;
         var current = data.records();
-        List<UUID> ids = new ArrayList<>(current.agreements.keySet()); ids.addAll(current.petitions.keySet());
+        long now = now();
         PoliticalSavedData.Records next = null;
         List<Notice> notices = new ArrayList<>();
-        for (int count = 0; count < Math.min(8, ids.size()); count++) {
-            UUID id = ids.get(Math.floorMod(maintenanceCursor++, ids.size()));
-            Agreement a = current.agreements.get(id);
-            if (a != null && now() >= a.expiresAt() && (a.state() == AgreementState.PROPOSED || a.state() == AgreementState.ACTIVE)) {
-                if (next == null) { next = data.transaction(); next.revision++; }
-                next.agreements.put(id, new Agreement(a.id(), a.proposer(), a.recipient(), a.definitionId(), a.terms(), a.explanation(), a.termsHash(),
-                        a.signatures(), AgreementState.EXPIRED, a.proposedAt(), a.expiresAt(), next.revision));
-                UUID source = stable("agreement-expired", id, a.expiresAt());
-                Notice notice = new Notice(source, a.proposer(), Action.PROPOSE, new UUID(0, 0), id.toString(), now());
-                append(next, notice, new PoliticalFact(source, source, next.revision, now(), a.proposer(), PoliticalFact.Type.AGREEMENT_EXPIRED,
-                        null, id.toString(), Set.of(a.proposer(), a.recipient()), new LinkedHashSet<>(a.signatures().values()),
-                        a.state() == AgreementState.ACTIVE ? PoliticalFact.Visibility.PUBLIC : PoliticalFact.Visibility.PARTIES,
-                        PoliticalFact.Correction.CURRENT, null, summary(PoliticalFact.Type.AGREEMENT_EXPIRED)));
-                notices.add(notice);
-            }
-            Petition p = current.petitions.get(id);
-            if (p != null && open(p) && now() >= p.expiresAt()) {
-                if (next == null) { next = data.transaction(); next.revision++; }
-                next.petitions.put(id, decision(p, PetitionState.EXPIRED, "Submission deadline elapsed", null, next.revision));
-                UUID source = stable("petition-expired", id, p.expiresAt());
-                Notice notice = new Notice(source, p.kingdom(), Action.PETITION, new UUID(0, 0), id.toString(), now());
-                Set<UUID> affected = new LinkedHashSet<>(); affected.add(p.requester());
-                if (p.nominee() != null) affected.add(p.nominee().id());
-                append(next, notice, new PoliticalFact(source, source, next.revision, now(), p.kingdom(), PoliticalFact.Type.PETITION_EXPIRED,
-                        null, id.toString(), Set.of(p.kingdom()), affected, PoliticalFact.Visibility.PRIVATE,
-                        PoliticalFact.Correction.CURRENT, null, summary(PoliticalFact.Type.PETITION_EXPIRED)));
-                notices.add(notice);
-            }
+        for (Agreement a : due(current.agreements.values(), value -> (value.state() == AgreementState.PROPOSED || value.state() == AgreementState.ACTIVE)
+                && now >= value.expiresAt(), Agreement::expiresAt, Agreement::id)) {
+            if (next == null) { next = data.transaction(); next.revision++; }
+            UUID id = a.id();
+            next.agreements.put(id, new Agreement(a.id(), a.proposer(), a.recipient(), a.definitionId(), a.terms(), a.explanation(), a.termsHash(),
+                    a.signatures(), AgreementState.EXPIRED, a.proposedAt(), a.expiresAt(), next.revision));
+            UUID source = stable("agreement-expired", id, a.expiresAt());
+            Notice notice = new Notice(source, a.proposer(), Action.PROPOSE, new UUID(0, 0), id.toString(), now);
+            append(next, notice, new PoliticalFact(source, source, next.revision, now, a.proposer(), PoliticalFact.Type.AGREEMENT_EXPIRED,
+                    null, id.toString(), Set.of(a.proposer(), a.recipient()), new LinkedHashSet<>(a.signatures().values()),
+                    a.state() == AgreementState.ACTIVE ? PoliticalFact.Visibility.PUBLIC : PoliticalFact.Visibility.PARTIES,
+                    PoliticalFact.Correction.CURRENT, null, summary(PoliticalFact.Type.AGREEMENT_EXPIRED)));
+            notices.add(notice);
         }
-        List<UUID> electionIds=new ArrayList<>(current.elections.keySet());
-        for(int count=0;count<Math.min(8,electionIds.size());count++){
-            UUID id=electionIds.get(Math.floorMod(maintenanceCursor++,electionIds.size()));Election election=current.elections.get(id);ElectionState phase=null;
-            if(election.state()==ElectionState.OPEN&&now()>=election.deadline())phase=ElectionState.GRACE;
-            else if(election.state()==ElectionState.GRACE&&now()>=election.graceUntil())phase=ElectionState.EXPIRED;
-            if(phase!=null){if(next==null){next=data.transaction();next.revision++;}
-                next.elections.put(id,new Election(election.id(),election.kingdom(),election.candidates(),election.electorate(),election.ballots(),phase,election.openedAt(),election.deadline(),election.graceUntil(),next.revision,null));
-                UUID source=stable("election-"+phase.name().toLowerCase(Locale.ROOT),id,phase==ElectionState.GRACE?election.deadline():election.graceUntil());
-                Notice notice=new Notice(source,election.kingdom(),Action.CLOSE_ELECTION,new UUID(0,0),id.toString(),now());
-                PoliticalFact.Type type=phase==ElectionState.EXPIRED?PoliticalFact.Type.ELECTION_EXPIRED:PoliticalFact.Type.ELECTION_GRACE;
-                append(next,notice,new PoliticalFact(source,source,next.revision,now(),election.kingdom(),type,null,id.toString(),Set.of(election.kingdom()),election.candidates(),PoliticalFact.Visibility.PUBLIC,PoliticalFact.Correction.CURRENT,null,phase==ElectionState.EXPIRED?"Election expired without a unique authorized result":"Election entered neutral grace"));notices.add(notice);}
+        for (Petition p : due(current.petitions.values(), value -> open(value) && now >= value.expiresAt(), Petition::expiresAt, Petition::id)) {
+            if (next == null) { next = data.transaction(); next.revision++; }
+            UUID id = p.id();
+            next.petitions.put(id, decision(p, PetitionState.EXPIRED, "Submission deadline elapsed", null, next.revision));
+            UUID source = stable("petition-expired", id, p.expiresAt());
+            Notice notice = new Notice(source, p.kingdom(), Action.PETITION, new UUID(0, 0), id.toString(), now);
+            Set<UUID> affected = new LinkedHashSet<>(); affected.add(p.requester());
+            if (p.nominee() != null) affected.add(p.nominee().id());
+            append(next, notice, new PoliticalFact(source, source, next.revision, now, p.kingdom(), PoliticalFact.Type.PETITION_EXPIRED,
+                    null, id.toString(), Set.of(p.kingdom()), affected, PoliticalFact.Visibility.PRIVATE,
+                    PoliticalFact.Correction.CURRENT, null, summary(PoliticalFact.Type.PETITION_EXPIRED)));
+            notices.add(notice);
         }
-        List<Regency> regencies=new ArrayList<>(current.regencies.values());for(int count=0;count<Math.min(8,regencies.size());count++){Regency regency=regencies.get(Math.floorMod(maintenanceCursor++,regencies.size()));if(regency.active()&&now()>=regency.expiresAt()){
-            if(next==null){next=data.transaction();next.revision++;}next.regencies.put(regency.kingdom(),new Regency(regency.id(),regency.kingdom(),regency.regent(),regency.permissions(),regency.preservedSuccessor(),regency.appointedAt(),regency.expiresAt(),false,next.revision));
-            UUID source=stable("regency-expired",regency.id(),regency.expiresAt());Notice notice=new Notice(source,regency.kingdom(),Action.END_REGENCY,new UUID(0,0),regency.id().toString(),now());
-            append(next,notice,new PoliticalFact(source,source,next.revision,now(),regency.kingdom(),PoliticalFact.Type.REGENCY_EXPIRED,null,regency.id().toString(),Set.of(regency.kingdom()),Set.of(regency.regent().id()),PoliticalFact.Visibility.PUBLIC,PoliticalFact.Correction.CURRENT,null,"Regency authority expired; named successor preserved"));notices.add(notice);
-        }}
-        var expiredReceipts = expiredReceipts(current, now());
+        for (Election election : due(current.elections.values(), value -> electionPhaseDue(value, now) != null, GovernmentService::electionTransitionAt, Election::id)) {
+            ElectionState phase = electionPhaseDue(election, now);
+            if (next == null) { next = data.transaction(); next.revision++; }
+            UUID id = election.id();
+            next.elections.put(id, new Election(election.id(), election.kingdom(), election.candidates(), election.electorate(), election.ballots(), phase,
+                    election.openedAt(), election.deadline(), election.graceUntil(), next.revision, null));
+            UUID source = stable("election-" + phase.name().toLowerCase(Locale.ROOT), id, phase == ElectionState.GRACE ? election.deadline() : election.graceUntil());
+            Notice notice = new Notice(source, election.kingdom(), Action.CLOSE_ELECTION, new UUID(0, 0), id.toString(), now);
+            PoliticalFact.Type type = phase == ElectionState.EXPIRED ? PoliticalFact.Type.ELECTION_EXPIRED : PoliticalFact.Type.ELECTION_GRACE;
+            append(next, notice, new PoliticalFact(source, source, next.revision, now, election.kingdom(), type, null, id.toString(), Set.of(election.kingdom()),
+                    election.candidates(), PoliticalFact.Visibility.PUBLIC, PoliticalFact.Correction.CURRENT, null,
+                    phase == ElectionState.EXPIRED ? "Election expired without a unique authorized result" : "Election entered neutral grace"));
+            notices.add(notice);
+        }
+        for (Regency regency : due(current.regencies.values(), value -> value.active() && now >= value.expiresAt(), Regency::expiresAt, Regency::id)) {
+            if (next == null) { next = data.transaction(); next.revision++; }
+            next.regencies.put(regency.kingdom(), new Regency(regency.id(), regency.kingdom(), regency.regent(), regency.permissions(), regency.preservedSuccessor(),
+                    regency.appointedAt(), regency.expiresAt(), false, next.revision));
+            UUID source = stable("regency-expired", regency.id(), regency.expiresAt());
+            Notice notice = new Notice(source, regency.kingdom(), Action.END_REGENCY, new UUID(0, 0), regency.id().toString(), now);
+            append(next, notice, new PoliticalFact(source, source, next.revision, now, regency.kingdom(), PoliticalFact.Type.REGENCY_EXPIRED, null,
+                    regency.id().toString(), Set.of(regency.kingdom()), Set.of(regency.regent().id()), PoliticalFact.Visibility.PUBLIC,
+                    PoliticalFact.Correction.CURRENT, null, "Regency authority expired; named successor preserved"));
+            notices.add(notice);
+        }
+        var expiredReceipts = expiredReceipts(current, now);
         if (!expiredReceipts.isEmpty()) {
             if (next == null) { next = data.transaction(); next.revision++; }
             expiredReceipts.forEach(next.receipts::remove);
         }
         if (next != null && data.commitDurably(server, next)) notices.forEach(this::publish);
+    }
+
+    /** The phase an election moves to now, or null: OPEN past its deadline enters GRACE; GRACE past its grace expires. */
+    static ElectionState electionPhaseDue(Election election, long now) {
+        if (election.state() == ElectionState.OPEN && now >= election.deadline()) return ElectionState.GRACE;
+        if (election.state() == ElectionState.GRACE && now >= election.graceUntil()) return ElectionState.EXPIRED;
+        return null;
+    }
+
+    /** When an election's next transition falls due: its deadline while open, its grace end while in grace. */
+    static long electionTransitionAt(Election election) {
+        return election.state() == ElectionState.GRACE ? election.graceUntil() : election.deadline();
+    }
+
+    /**
+     * One domain's work for this pass: the due records, oldest deadline first (ties by id), at most
+     * {@link #MAINTENANCE_BUDGET}. Pure, so the fairness bound is tested without a server.
+     */
+    static <T> List<T> due(Collection<T> records, java.util.function.Predicate<T> isDue,
+                           java.util.function.ToLongFunction<T> deadline, java.util.function.Function<T, UUID> id) {
+        return records.stream().filter(isDue)
+                .sorted(Comparator.comparingLong(deadline).thenComparing(id))
+                .limit(MAINTENANCE_BUDGET).toList();
     }
     /** Oldest receipts past retention, bounded per pass. Their revision is behind, so a resend is refused, never re-run. */
     static List<UUID> expiredReceipts(PoliticalSavedData.Records records, long now) {

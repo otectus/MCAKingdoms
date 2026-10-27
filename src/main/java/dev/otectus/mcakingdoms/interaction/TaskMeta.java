@@ -59,6 +59,7 @@ public final class TaskMeta {
         CHAPTER_SERVICES("guild chapter services", "first_guild_steps"),
         INSTITUTIONAL_SERVICES("institutional guild services", "workshop_commissions"),
         GUILD_QUESTS("MCA Quests", "optional_features"),
+        INSTITUTIONAL_QUESTS("MCA Quests paid workshop jobs", "workshop_commissions"),
         WORKSHOP_LEGALITY("MCA: Crime", "workshop_commissions"),
         GOVERNMENT("MCA: Kingdoms governments", "optional_features"),
         WARFARE("warfare", "warfare_ownership_and_setup"),
@@ -99,13 +100,49 @@ public final class TaskMeta {
     private static final Set<String> RECRUIT_TASKS = Set.of("transfer.propose", "transfer.share_destination", "transfer.consent", "transfer.apply",
             "transfer.confirm", "transfer.restore");
 
+    /**
+     * What a task does to an operation (F08), which decides the switches it needs. Starting or expanding needs the
+     * feature turned on. Inspecting retained records, cancelling before any effect, verifying an effect that already
+     * happened and restoring or reconciling one stay available while the feature is off, so turning a feature off never
+     * strands an obligation; the native provider is still required where the step touches native state. The owning
+     * services apply the same rules to commands, and still decide every request.
+     */
+    public enum Intent { START, INSPECT, CANCEL, VERIFY, RESTORE }
+
+    private static final Map<String, Intent> INTENTS = Map.ofEntries(
+            Map.entry("warfare.deployments", Intent.INSPECT), Map.entry("warfare.campaigns", Intent.INSPECT),
+            Map.entry("warfare.campaign_overview", Intent.INSPECT), Map.entry("transfer.overview", Intent.INSPECT),
+            Map.entry("transfer.inspect", Intent.INSPECT), Map.entry("drama.overview", Intent.INSPECT),
+            Map.entry("drama.inspect", Intent.INSPECT), Map.entry("evolution.overview", Intent.INSPECT),
+            Map.entry("evolution.inspect", Intent.INSPECT),
+            Map.entry("transfer.cancel", Intent.CANCEL), Map.entry("evolution.withdraw", Intent.CANCEL),
+            Map.entry("evolution.release", Intent.CANCEL), Map.entry("drama.exit", Intent.CANCEL),
+            Map.entry("transfer.confirm", Intent.VERIFY), Map.entry("evolution.retry", Intent.VERIFY),
+            Map.entry("transfer.restore", Intent.RESTORE), Map.entry("warfare.deployment_dismiss", Intent.RESTORE),
+            Map.entry("warfare.deployment_recover", Intent.RESTORE));
+
+    /** The task's intent; anything not listed starts or expands an operation. */
+    public static Intent intent(ActionRegistry.Task task) {
+        return INTENTS.getOrDefault(task.id(), Intent.START);
+    }
+
     /** The features {@code task} needs, in the order they are checked. */
     public static List<Feature> features(ActionRegistry.Task task) {
         String id = task.id();
         List<Feature> out = new ArrayList<>();
+        switch (intent(task)) {
+            case INSPECT, CANCEL -> { return out; }
+            case VERIFY, RESTORE -> {
+                // A native step needs the provider that holds the state; never the switch that allows new operations.
+                if (RECRUIT_TASKS.contains(id) || id.startsWith("warfare.deployment_")) out.add(Feature.RECRUITS);
+                return out;
+            }
+            case START -> { }
+        }
         if (CHAPTER_TASKS.contains(id)) out.add(Feature.CHAPTER_SERVICES);
         if (id.equals("civic.hospitality") || id.equals("civic.workshop")) out.add(Feature.INSTITUTIONAL_SERVICES);
         if (id.equals("civic.commissions") || id.equals("civic.workshop")) out.add(Feature.GUILD_QUESTS);
+        if (id.equals("civic.workshop")) out.add(Feature.INSTITUTIONAL_QUESTS);
         if (id.equals("civic.workshop")) out.add(Feature.WORKSHOP_LEGALITY);
         if (id.startsWith("politics.") && task.consequential()) out.add(Feature.GOVERNMENT);
         if (id.startsWith("warfare.")) out.add(Feature.WARFARE);
@@ -130,6 +167,11 @@ public final class TaskMeta {
             case GUILD_QUESTS -> switch (dev.otectus.mcakingdoms.compat.quests.receipts.QuestCompletionBridge.capability()) {
                 case "available" -> Availability.AVAILABLE;
                 case "absent" -> missing(feature);
+                default -> unsupported(feature);
+            };
+            case INSTITUTIONAL_QUESTS -> switch (dev.otectus.mcakingdoms.compat.quests.receipts.QuestCompletionBridge.institutionalCapability()) {
+                case "available" -> Availability.AVAILABLE;
+                case "absent" -> missing(Feature.GUILD_QUESTS);
                 default -> unsupported(feature);
             };
             case WORKSHOP_LEGALITY -> !ModList.get().isLoaded("mcacrime") ? missing(feature)

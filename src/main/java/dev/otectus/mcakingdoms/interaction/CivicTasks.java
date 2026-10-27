@@ -32,7 +32,7 @@ public final class CivicTasks {
             return memberships.stream().map(m->(Object)tr("interaction.mcakingdoms.civic.status","%s\n%s · standing %s · verified deeds %s · rank %s",
                     c.choices("organization").stream().filter(o->o.value().equals(m.organizationId().toString())).map(Choice::shown).findFirst().orElse(tr("interaction.mcakingdoms.civic.organization","Organization")),
                     enumLabel(m.status()),m.standing(),m.deedCount(),m.rank().<Object>map(r->words(r.getPath())).orElse(tr("interaction.mcakingdoms.civic.rank_none","None")))).toList();});
-        for(boolean joining:new boolean[]{true,false})membershipTask(joining?"join":"leave",joining?"Join a guild":"Leave a guild",List.of(pick("organization","Organization",joining?"organization":"own_membership")),c->{var s=OrganizationApi.get(c.server());var result=joining?s.join(c.player,c.id("organization")):s.leave(c.player,c.id("organization"));if(!result.applied())throw new IllegalArgumentException(PlayerWords.text(result.reason()));return PlayerWords.text(result.reason());});
+        for(boolean joining:new boolean[]{true,false})membershipTask(joining?"join":"leave",joining?"Join a guild":"Leave a guild",List.of(pick("organization","Organization",joining?"organization":"own_membership")),c->{var s=OrganizationApi.get(c.server());var result=joining?s.join(c.player,c.id("organization")):s.leave(c.player,c.id("organization"));if(!result.applied())throw new InteractionNetwork.FormException(PlayerWords.component(result.reason(),c));return PlayerWords.component(result.reason(),c);});
         // The decision, then each requirement on its own row with current and required values, then the contact rule.
         task("explain","Check service requirements",false,List.of(pick("organization","Organization","organization"),pick("permission","Service","guild_permission")),c->{var r=OrganizationApi.get(c.server()).explainOwn(c.player,c.id("organization"),c.id("permission"));var lines=new ArrayList<Object>();
             lines.add(tr("interaction.mcakingdoms.civic.explain.decision","Decision: %s",enumLabel(r.decision())));
@@ -48,6 +48,14 @@ public final class CivicTasks {
         task("dismiss","Dismiss a chapter contact",true,List.of(pick("contact","Chapter contact","contact")),c->result(c,civic(c).dismiss(c.player,c.uuid("contact"))));
         task("qualify","Check a personal qualification",false,List.of(pick("kind","Qualification",c->enums(ProgressionPredicate.Kind.values())),text("subject","Skill, deity, race or lore entry name"),number("minimum","Minimum level or amount",1,MINIMUM)),c->{int minimum=c.integer("minimum",MINIMUM);var answer=ProgressionApi.evaluate(c.player,new ProgressionPredicate(ProgressionPredicate.Kind.valueOf(c.text("kind").toUpperCase(Locale.ROOT)),c.text("subject"),minimum));return List.of(answer.matches()?"Qualified":"Not qualified",answer.reason());});
     }
-    private static String result(Context c,CivicService.Result result){if(!result.success())throw new IllegalArgumentException(PlayerWords.text(result.reason()));return PlayerWords.text(result.reason())+result.settlement().map(id->"\nDestination: "+BasicTargets.settlement(c,id)).orElse("");}
+    /**
+     * The service's reason travels as its translation key (F14): each player reads it in their own language, and a
+     * refusal stays a refusal. The destination settlement's name is a literal, as player-facing names always are.
+     */
+    private static Object result(Context c,CivicService.Result result){
+        if(!result.success())throw new InteractionNetwork.FormException(PlayerWords.component(result.reason(),c));
+        var lines=new ArrayList<Object>();lines.add(PlayerWords.component(result.reason(),c));
+        result.settlement().ifPresent(id->lines.add(tr("interaction.mcakingdoms.civic.destination","Destination: %s",BasicTargets.settlement(c,id))));
+        return lines;}
     private CivicTasks(){}
 }

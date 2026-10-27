@@ -21,6 +21,13 @@ public final class EvolutionService {
                                Optional<Outcome> ownChoice, String cause, String result, boolean privateAudience) {}
     private final MinecraftServer server;
     private final EvolutionSavedData data;
+    /**
+     * Eligible regions occupied without a break, with the game time each run of occupation was first observed (F06). Kept
+     * in memory and observed every 200 ticks for every online player, independently of which regions this evaluation's
+     * bounded generation budget reaches. Cleared while evolution is off and on restart, so neither a disabled period nor
+     * the time a server was down is ever credited: there is no offline catch-up.
+     */
+    private final Map<UUID, Long> occupiedSince = new HashMap<>();
     public EvolutionService(MinecraftServer server) { this.server = server; this.data = EvolutionSavedData.get(server); }
     public long revision() { if (!server.isSameThread()) throw new IllegalStateException("Evolution requires server thread"); return data.revision(); }
     /** The world's opt-in state for capability reports, without a player: enabled, drama, eligible and active regions. */
@@ -47,7 +54,7 @@ public final class EvolutionService {
     }
     public String configure(ServerPlayer player, boolean enabled, boolean drama) {
         actor(player); if (!player.hasPermissions(2)) throw new IllegalArgumentException("Operator permission required");
-        var s = data.snapshot(); if (s.enabled != enabled) s.activeRegions.clear(); s.enabled = enabled; s.drama = drama; commit(s);
+        var s = data.snapshot(); if (s.enabled != enabled) { s.activeRegions.clear(); occupiedSince.clear(); } s.enabled = enabled; s.drama = drama; commit(s);
         return "World evolution " + (enabled ? "enabled" : "paused") + "; dramatic scenarios " + (drama ? "enabled" : "disabled") + ".";
     }
     public String region(ServerPlayer player, UUID settlement, boolean enabled) {
@@ -230,6 +237,55 @@ public final class EvolutionService {
         if (KingdomsPoliticsApi.get(server).receipt(player, e.intent().request()).isPresent()) throw new IllegalArgumentException("Owner already committed; retry acknowledgment instead");
         s.scenarios.put(id, e.reopen()); commit(s); return "Uncommitted outcome released; refresh before choosing again.";
     }
+    /**
+     * Records which eligible regions hold at least one online player now. Cheap (one indexed lookup per player, no chunk
+     * loads) and run every 200 ticks while evolution is on; a region left empty at an observation starts a new run of
+     * occupation when someone returns.
+     */
+    public void observePresence() {
+        if (!server.isSameThread()) throw new IllegalStateException("Evolution requires server thread");
+        if (!data.writable()) { occupiedSince.clear(); return; }
+        var s = data.snapshot();
+        if (!s.enabled) { occupiedSince.clear(); return; }
+        long now = now(s);
+        var present = presentRegions(s).keySet();
+        occupiedSince.keySet().retainAll(present);
+        for (UUID region : present) occupiedSince.putIfAbsent(region, now);
+    }
+
+    /** Eligible regions with an online player in them, each with its online players in UUID order. */
+    private Map<UUID, List<ServerPlayer>> presentRegions(EvolutionState s) {
+        var kingdoms = McaKingdomsApi.get(server);
+        var present = new TreeMap<UUID, List<ServerPlayer>>();
+        for (var player : server.getPlayerList().getPlayers().stream().sorted(Comparator.comparing(ServerPlayer::getUUID)).toList()) {
+            kingdoms.getSettlementAt(player.serverLevel(), player.blockPosition())
+                    .filter(place -> eligible(s, place.id()))
+                    .ifPresent(place -> present.computeIfAbsent(place.id(), ignored -> new ArrayList<>()).add(player));
+        }
+        return present;
+    }
+
+    /**
+     * The part of an evaluation window [{@code windowStart}, {@code now}] its region spent occupied, given when the current
+     * run of occupation was first observed (null: unoccupied now). The rest of the window extends the deadline.
+     */
+    static long creditedTicks(Long occupiedSince, long windowStart, long now) {
+        if (occupiedSince == null || now <= windowStart) return 0;
+        return Math.max(0, now - Math.max(windowStart, occupiedSince));
+    }
+
+    /**
+     * One scenario at an evaluation: the unoccupied part of the window [max(last evaluation, created), now] extends its
+     * deadline (unoccupied time is frozen; returning to a region applies no offline catch-up), and an occupied region's
+     * scenario expires once its extended deadline has passed. {@code occupiedSince} is null when the region is empty now.
+     */
+    static EvolutionState.Scenario account(EvolutionState.Scenario e, Long occupiedSince, long lastEvaluation, long now) {
+        long windowStart = Math.max(lastEvaluation, e.created());
+        long credited = creditedTicks(occupiedSince, windowStart, now);
+        var paused = e.pause(Math.max(0, now - windowStart) - credited);
+        return occupiedSince != null ? paused.expire(now) : paused;
+    }
+
     public void tick() {
         if (!server.isSameThread()) throw new IllegalStateException("Evolution requires server thread");
         if (!data.evaluationDue(server.overworld().getGameTime())) return;
@@ -237,37 +293,39 @@ public final class EvolutionService {
         var s = data.snapshot();
         long now = now(s); s.nextEvaluation = Math.addExact(now, EvolutionConfig.INTERVAL.get());
         var players = server.getPlayerList().getPlayers().stream().sorted(Comparator.comparing(ServerPlayer::getUUID)).toList();
-        var active = new LinkedHashMap<UUID, ServerPlayer>();
-        int count = Math.min(players.size(), EvolutionConfig.BUDGET.get());
-        for (int i = 0; i < count; i++) {
-            var player = players.get(Math.floorMod(s.cursor++, players.size()));
-            McaKingdomsApi.get(server).getSettlementAt(player.serverLevel(), player.blockPosition())
-                    .filter(place -> eligible(s, place.id())).ifPresent(place -> active.putIfAbsent(place.id(), player));
-        }
-        if (s.cursor > 1_000_000) s.cursor = 0;
-        // Freeze the deadline across inactive sampling windows; returning to a region does not apply offline catch-up.
+        // Activity covers every online player; only the expensive generation below is bounded by the region budget.
+        var present = presentRegions(s);
+        occupiedSince.keySet().retainAll(present.keySet());
+        for (UUID region : present.keySet()) occupiedSince.putIfAbsent(region, now);
         var kingdoms = McaKingdomsApi.get(server);
-        s.scenarios.replaceAll((id, e) -> {
-            UUID place = kingdoms.resolveSettlementId(e.settlement());
-            if (!active.containsKey(place) || !s.activeRegions.contains(place))
-                return e.pause(Math.max(0, now - Math.max(s.lastEvaluation, e.created())));
-            return e.expire(now);
-        });
-        s.activeRegions = new LinkedHashSet<>(active.keySet()); s.lastEvaluation = now;
-        for (var entry : active.entrySet()) generate(s, entry.getValue(), entry.getKey(), now);
-        var deliveries = new ArrayList<ServerPlayer>();
-        for (var player : players.stream().limit(EvolutionConfig.BUDGET.get()).toList()) {
-            if (!s.subscriptions.contains(player.getUUID()) || now - s.digest.getOrDefault(player.getUUID(), now) < EvolutionConfig.DIGEST_INTERVAL.get()) continue;
-            s.digest.put(player.getUUID(), now); deliveries.add(player);
+        s.scenarios.replaceAll((id, e) -> account(e, occupiedSince.get(kingdoms.resolveSettlementId(e.settlement())), s.lastEvaluation, now));
+        s.activeRegions = new LinkedHashSet<>(present.keySet()); s.lastEvaluation = now;
+        var regions = new ArrayList<>(present.keySet());
+        int count = Math.min(regions.size(), EvolutionConfig.BUDGET.get());
+        int start = regions.isEmpty() ? 0 : Math.floorMod(s.cursor, regions.size());
+        s.cursor = s.cursor > 1_000_000 ? 0 : s.cursor + count;
+        var announcements = new ArrayList<Runnable>();
+        for (int i = 0; i < count; i++) {
+            UUID region = regions.get((start + i) % regions.size());
+            generate(s, present.get(region).get(0), region, now, announcements);
         }
-        if (deliveries.isEmpty() && EvolutionSavedData.sameApartFromSchedule(before, s)) {
+        // Digests: the due subscribers who have waited longest go first, so a large server serves everyone in turn.
+        var deliveries = players.stream()
+                .filter(player -> s.subscriptions.contains(player.getUUID())
+                        && now - s.digest.getOrDefault(player.getUUID(), now) >= EvolutionConfig.DIGEST_INTERVAL.get())
+                .sorted(Comparator.comparingLong((ServerPlayer player) -> s.digest.getOrDefault(player.getUUID(), now))
+                        .thenComparing(ServerPlayer::getUUID))
+                .limit(EvolutionConfig.BUDGET.get()).toList();
+        for (var player : deliveries) s.digest.put(player.getUUID(), now);
+        if (deliveries.isEmpty() && announcements.isEmpty() && EvolutionSavedData.sameApartFromSchedule(before, s)) {
             // Only the schedule and sampling cursor moved: keep them in memory and let the next world save
             // write them. A crash before then repeats one evaluation, which changes nothing.
             s.clock = now;
             data.advanceSchedule(s);
             return;
         }
-        commit(s); // Save cursors before notification: a restart cannot repeat a digest.
+        // Durable before anything is announced: a failed save announces nothing and a restart repeats no digest.
+        commitThenAnnounce(() -> commit(s), announcements);
         for (var player : deliveries) {
             long open = s.scenarios.values().stream().filter(e -> e.pending() && visible(player, e)).count();
             if (open > 0) dev.otectus.mcakingdoms.interaction.Notify.player(server, player.getUUID(), null,
@@ -275,13 +333,23 @@ public final class EvolutionService {
                     "evolution.overview");
         }
     }
+    /**
+     * Commits, then announces (F09). A commit that throws announces nothing, so no notice or actionable link ever names
+     * an opportunity that was not saved; the exception reaches the caller unchanged.
+     */
+    static void commitThenAnnounce(Runnable commit, List<Runnable> announcements) {
+        commit.run();
+        announcements.forEach(Runnable::run);
+    }
+
     /** Explicitly eligible, or automatically eligible when its kingdom is governed and no operator paused it. */
     private boolean eligible(EvolutionState s, UUID settlement) {
         if (s.eligible.contains(settlement)) return true;
         if (!EvolutionConfig.AUTO_ELIGIBLE.get() || s.paused != null && s.paused.contains(settlement)) return false;
         return McaKingdomsApi.get(server).getSettlement(settlement).flatMap(place -> KingdomsPoliticsApi.get(server).government(place.kingdomId().toString())).isPresent();
     }
-    private void generate(EvolutionState s, ServerPlayer viewer, UUID settlement, long now) {
+    /** Prepares at most one opportunity for the region; its announcement is queued until the evaluation commits (F09). */
+    private void generate(EvolutionState s, ServerPlayer viewer, UUID settlement, long now, List<Runnable> announcements) {
         if (s.scenarios.size() >= CAPACITY || activeCount(s) >= EvolutionConfig.CONCURRENT.get()) return;
         var place = McaKingdomsApi.get(server).getSettlement(settlement).orElse(null); if (place == null) return;
         var politics = KingdomsPoliticsApi.get(server); var government = politics.government(place.kingdomId().toString()).orElse(null);
@@ -321,7 +389,10 @@ public final class EvolutionService {
             var event = new Scenario(id, item.getKey(), terms, settlement, terms.trigger() == Trigger.INTERREGNUM || institution == null ? null : institution.id(),
                     place.kingdomId().toString(), cause, null, now, Math.addExact(now, terms.duration()), 1, Phase.OPEN, Map.of(), null, "");
             s.scenarios.put(id, event); s.consumed.add(causeKey); s.cooldowns.put(key, Math.addExact(now, terms.cooldown()));
-            dev.otectus.mcakingdoms.interaction.Notify.government(server, place.kingdomId().toString(), null, net.minecraft.network.chat.Component.translatableWithFallback("notice.mcakingdoms.opportunity_opened", "A new opportunity opened at %s: %s.", place.displayName(), terms.title()), "evolution.inspect");
+            String kingdom = place.kingdomId().toString(), name = place.displayName(), title = terms.title();
+            announcements.add(() -> dev.otectus.mcakingdoms.interaction.Notify.government(server, kingdom, null,
+                    net.minecraft.network.chat.Component.translatableWithFallback("notice.mcakingdoms.opportunity_opened", "A new opportunity opened at %s: %s.", name, title),
+                    "evolution.inspect"));
             return;
         }
     }

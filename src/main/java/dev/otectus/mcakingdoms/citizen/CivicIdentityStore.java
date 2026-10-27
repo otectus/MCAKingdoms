@@ -53,11 +53,21 @@ public final class CivicIdentityStore {
     }
 
     public void copy(Entity source, Entity target) {
-        CompoundTag sourceData = source.getPersistentData();
+        carryOver(source.getPersistentData(), target.getPersistentData());
+    }
+
+    /**
+     * Copies only this mod's identity compound from one entity's persistent data to another's, moving a pre-rename key
+     * first. Nothing else in either compound is touched: other mods' keys stay theirs. Returns whether an identity was
+     * copied. Used for living-entity conversion and for the player clone that respawning or leaving the End creates,
+     * where Forge itself carries over only {@code PlayerPersisted}.
+     */
+    public static boolean carryOver(CompoundTag sourceData, CompoundTag targetData) {
         LegacyRename.moveCompound(sourceData, LEGACY_KEY, KEY);
-        if (sourceData.contains(KEY, Tag.TAG_COMPOUND)) {
-            target.getPersistentData().put(KEY, sourceData.getCompound(KEY).copy());
-        }
+        if (!sourceData.contains(KEY, Tag.TAG_COMPOUND)) return false;
+        targetData.remove(LEGACY_KEY);
+        targetData.put(KEY, sourceData.getCompound(KEY).copy());
+        return true;
     }
 
     private static Optional<ResourceLocation> optionalId(String value) {

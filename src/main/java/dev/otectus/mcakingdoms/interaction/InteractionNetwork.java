@@ -85,6 +85,8 @@ public final class InteractionNetwork {
         UUID id=UUID.randomUUID(),state=UUID.randomUUID(),startedRequest;Reply lastReply;Task task;int field;long expires;boolean executed;String version="";Component result=Component.empty();String search="";int page;
         /** The outcome reported with the result: done, waiting, refused (by the owning service) or unknown (a fault). */
         String status="";
+        /** The record the executed operation acted on, read again by Check through the task's probe (F07). */
+        String operation="";
         final Map<String,String> values=new LinkedHashMap<>();final Map<String,Choice> selected=new LinkedHashMap<>();
         /** Choice values to select again automatically when their field is reached, if still offered (opening screen, edits). */
         final Map<String,String> autoSelect=new LinkedHashMap<>();
@@ -143,7 +145,8 @@ public final class InteractionNetwork {
                 s=RETAINED.getOrDefault(p.getUUID(),new LinkedHashMap<>()).get(q.session());
                 if(s==null){var latest=SESSIONS.get(p.getUUID());if(latest!=null&&latest.startedRequest.toString().equals(q.value()))s=latest;}
                 if(s==null)throw fail("check.none","No retained action was received. Inspect current status before starting again.");
-                task(s.task.id(),p);if(s.executed)return result(q,s);
+                task(s.task.id(),p);
+                if(s.executed){recheck(p,s);return result(q,s);}
                 if(s.lastReply!=null)return copy(q,s.lastReply);
                 throw fail("check.early","No reviewed action is available yet.");
             }
@@ -239,10 +242,43 @@ public final class InteractionNetwork {
     private static Reply execute(ServerPlayer p,Request q,Session s,Context c){
         s.executed=true;s.state=UUID.randomUUID();
         try{var outcome=s.task.handler().run(c);
-            if(outcome instanceof Pending pending){s.result=PlayerWords.component(pending.message(),c);s.status="waiting";Session retained=s;pending.completion().whenComplete((value,failure)->p.getServer().execute(()->{retained.result=failure==null?PlayerWords.component(value,c):failed(failure,c);retained.status=failure==null?done(retained.task):status(failure);retained.next=next(retained,c,failure);}));}
+            if(outcome instanceof Pending pending){s.result=PlayerWords.component(pending.message(),c);s.status="waiting";Session retained=s;pending.completion().whenComplete((value,failure)->p.getServer().execute(()->{if(failure==null&&value instanceof Outcome typed)apply(retained,typed,c);else{retained.result=failure==null?PlayerWords.component(value,c):failed(failure,c);retained.status=failure==null?done(retained.task):status(failure);retained.next=next(retained,c,failure);}}));}
+            else if(outcome instanceof Outcome typed)apply(s,typed,c);
             else{s.result=PlayerWords.component(outcome,c);s.status=done(s.task);s.next=next(s,c,null);}
         }catch(Exception failure){s.result=failed(failure,c);s.status=status(failure);s.next=next(s,c,failure);}
         return result(q,s);
+    }
+    /**
+     * A typed outcome (F07): its state, not its wording, decides the status, and its operation is kept so Check can read
+     * that record again. A refusal reads like any other refusal; the next step is the outcome's own when it names one.
+     */
+    private static void apply(Session s,Outcome outcome,Context c){
+        Component message=PlayerWords.component(outcome.message(),c);
+        s.result=switch(outcome.state()){
+            case REFUSED->lines(List.of(msg("failed","Could not complete: %s",message),msg("failed.hint","Check the current status before repeating a consequential action.")));
+            case UNKNOWN->lines(List.of(msg("failed.unknown","We could not confirm the result. Check its status before trying again."),message));
+            default->message;};
+        s.status=outcome.state()==Outcome.State.APPLIED&&!s.task.consequential()?"read":outcome.status();
+        if(!outcome.operation().isBlank())s.operation=outcome.operation();
+        s.next=outcome.next().isPresent()?outcome.next():next(s,c,outcome.state()==Outcome.State.REFUSED?new IllegalArgumentException("refused"):null);
+    }
+    /**
+     * Check: reads the executed operation's current state from its owner through the task's probe, without running the
+     * handler again, so no payment, ownership change, vote or signature repeats. Tasks without a probe (their result was
+     * final when it was reported) keep the retained result.
+     */
+    private static void recheck(ServerPlayer p,Session s){
+        if(s.operation.isBlank()||!ActionRegistry.probed(s.task))return;
+        var c=s.context(p);
+        try{
+            var current=ActionRegistry.probe(s.task,c,s.operation);
+            if(current.isEmpty()){s.result=lines(List.of(msg("check.gone","This record is no longer available to you; its last known outcome is below."),s.result));return;}
+            apply(s,current.get(),c);
+            s.result=lines(List.of(msg("check.current","Current status, read again just now; nothing was sent again."),s.result));
+        }catch(RuntimeException unreadable){
+            com.mojang.logging.LogUtils.getLogger().warn("[MCA: Kingdoms] Could not read the current status of {}",s.task.id(),unreadable);
+            s.result=lines(List.of(msg("check.unreadable","The current status could not be read just now; the last known outcome is below."),s.result));
+        }
     }
     /** A completed action is "done"; a read-only task changed nothing, so its result is simply what it read. */
     private static String done(Task task){return task.consequential()?"done":"read";}
