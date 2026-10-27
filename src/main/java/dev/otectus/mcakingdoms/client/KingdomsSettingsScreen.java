@@ -35,6 +35,9 @@ public final class KingdomsSettingsScreen extends Screen {
     private int duration, bannerY;
     private TasksStart openTo;
     private int previewTicks;
+    private PresentationConfig.Notices notices;
+    private boolean badges;
+    private int badgeDistance;
 
     public KingdomsSettingsScreen(Screen parent) {
         super(Component.translatableWithFallback("menu.mcakingdoms.settings.title", "MCA: Kingdoms settings"));
@@ -47,6 +50,9 @@ public final class KingdomsSettingsScreen extends Screen {
         openTo = PresentationConfig.TASKS_START.get();
         intro = PresentationConfig.SHOW_INTRO.get();
         reducedMotion = PresentationConfig.REDUCED_MOTION.get();
+        notices = PresentationConfig.POLITICAL_NOTICES.get();
+        badges = PresentationConfig.OFFICE_BADGES.get();
+        badgeDistance = PresentationConfig.OFFICE_BADGE_DISTANCE.get();
     }
 
     static Component s(String key, String fallback, Object... args) {
@@ -61,10 +67,13 @@ public final class KingdomsSettingsScreen extends Screen {
         int x = left() + 22, w = panelWidth() - 44, half = (w - 4) / 2;
         int top = folio.y();
         rowStep = Math.min(24, Math.max(20, (folio.footer() - 4 - (top + 54) - 20) / 5));
-        var bannerTab = addRenderableWidget(BookButton.builder(s("tab.banner", "Entry banner"), b -> { page = 0; rebuildWidgets(); }).bounds(x, top + 30, half, 20).build().selected(page == 0));
+        int tab = (w - 8) / 3;
+        var bannerTab = addRenderableWidget(BookButton.builder(s("tab.banner", "Entry banner"), b -> { page = 0; rebuildWidgets(); }).bounds(x, top + 30, tab, 20).build().selected(page == 0));
         bannerTab.active = page != 0;
-        var tasksTab = addRenderableWidget(BookButton.builder(s("tab.tasks", "Tasks and Book"), b -> { page = 1; rebuildWidgets(); }).bounds(x + half + 4, top + 30, w - half - 4, 20).build().selected(page == 1));
+        var tasksTab = addRenderableWidget(BookButton.builder(s("tab.tasks", "Tasks and Book"), b -> { page = 1; rebuildWidgets(); }).bounds(x + tab + 4, top + 30, tab, 20).build().selected(page == 1));
         tasksTab.active = page != 1;
+        var politicsTab = addRenderableWidget(BookButton.builder(s("tab.politics", "Politics"), b -> { page = 2; rebuildWidgets(); }).bounds(x + 2 * (tab + 4), top + 30, w - 2 * (tab + 4), 20).build().selected(page == 2));
+        politicsTab.active = page != 2;
         int y = top + 54;
         if (page == 0) {
             addCycle(CycleButton.onOffBuilder(showBanner).withTooltip(v -> Tooltip.create(Component.empty().append(s("banner.help", "A title naming the settlement and its kingdom when you walk in."))
@@ -97,6 +106,24 @@ public final class KingdomsSettingsScreen extends Screen {
             var preview = addRenderableWidget(BookButton.builder(s("preview", "Preview the banner"), b -> previewTicks = duration).bounds(x, y, w, 20)
                     .tooltip(Tooltip.create(s("preview.help", "Shows the banner here, at the chosen position and for the chosen time, without saving."))).build());
             preview.active = showBanner;
+        } else if (page == 2) {
+            addCycle(CycleButton.<PresentationConfig.Notices>builder(value -> switch (value) {
+                        case OFF -> s("notices.off", "Off");
+                        case CHAT -> s("notices.chat", "Chat line");
+                        case BANNER -> s("notices.banner", "Chat line and banner");
+                    }).withValues(PresentationConfig.Notices.values()).withInitialValue(notices)
+                    .withTooltip(v -> Tooltip.create(s("notices.help", "Foundings, accessions, vacancies and memorials from the server's committed record, once each. Off by default; no sound plays.")))
+                    .create(x, y, w, 20, s("notices", "Political notices"), (button, value) -> notices = value));
+            y += rowStep;
+            addCycle(CycleButton.booleanBuilder(s("badges.shown", "Shown"), s("badges.hidden", "Hidden")).withInitialValue(badges)
+                    .withTooltip(v -> Tooltip.create(s("badges.help", "A small line above public office holders near you naming their office, such as Leader of Serenum. Their names are never changed.")))
+                    .create(x, y, w, 20, s("badges", "Office badges"), (button, value) -> { badges = value; rebuildWidgets(); }));
+            y += rowStep;
+            var distance = addRenderableWidget(new BookSlider(x, y, w, 20, (badgeDistance - 4) / 44.0) {
+                @Override protected void updateMessage() { setMessage(s("badges.distance", "Badge distance: %s blocks", badgeDistance)); }
+                @Override protected void applyValue() { badgeDistance = 4 + (int) Math.round(value * 44); }
+            });
+            distance.active = badges;
         } else {
             addCycle(CycleButton.<TasksStart>builder(value -> value == TasksStart.START ? s("open.start", "Start view") : s("open.all", "All tasks"))
                     .withValues(TasksStart.values()).withInitialValue(openTo)
@@ -126,7 +153,7 @@ public final class KingdomsSettingsScreen extends Screen {
         }
         int third = (w - 8) / 3, footer = folio.footer();
         addRenderableWidget(BookButton.builder(s("reset", "Reset to defaults"), b -> { reset(); rebuildWidgets(); }).bounds(x, footer, third, 20)
-                .tooltip(Tooltip.create(s("reset.help", "Sets every value on both pages to its default. Nothing is saved until you choose Apply."))).build());
+                .tooltip(Tooltip.create(s("reset.help", "Sets every value on every page to its default. Nothing is saved until you choose Apply."))).build());
         addRenderableWidget(BookButton.builder(s("cancel", "Cancel"), b -> onClose()).bounds(x + third + 4, footer, third, 20)
                 .tooltip(Tooltip.create(s("cancel.help", "Leave without saving."))).build());
         addRenderableWidget(BookButton.builder(s("apply", "Apply"), b -> { apply(); onClose(); }).bounds(x + 2 * (third + 4), footer, w - 2 * (third + 4), 20)
@@ -142,6 +169,9 @@ public final class KingdomsSettingsScreen extends Screen {
         openTo = PresentationConfig.TASKS_START.getDefault();
         intro = PresentationConfig.SHOW_INTRO.getDefault();
         reducedMotion = PresentationConfig.REDUCED_MOTION.getDefault();
+        notices = PresentationConfig.POLITICAL_NOTICES.getDefault();
+        badges = PresentationConfig.OFFICE_BADGES.getDefault();
+        badgeDistance = PresentationConfig.OFFICE_BADGE_DISTANCE.getDefault();
     }
 
     private void apply() {
@@ -153,6 +183,9 @@ public final class KingdomsSettingsScreen extends Screen {
         PresentationConfig.TASKS_START.set(openTo);
         PresentationConfig.SHOW_INTRO.set(intro);
         PresentationConfig.REDUCED_MOTION.set(reducedMotion);
+        PresentationConfig.POLITICAL_NOTICES.set(notices);
+        PresentationConfig.OFFICE_BADGES.set(badges);
+        PresentationConfig.OFFICE_BADGE_DISTANCE.set(Mth.clamp(badgeDistance, 4, 48));
         PresentationConfig.SPEC.save();
     }
 

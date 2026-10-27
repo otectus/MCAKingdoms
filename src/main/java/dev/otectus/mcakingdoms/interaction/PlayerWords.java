@@ -47,6 +47,14 @@ public final class PlayerWords {
         }
         return out;
     }
+    /**
+     * One service message for a player: a bundled translation key becomes translatable (English as fallback), anything
+     * else stays literal. For messages outside a task form, such as command feedback and the Kingdom screen (F14).
+     */
+    public static Component component(String value){
+        if(value==null)return Component.empty();
+        return isKey(value)?ActionRegistry.tr(value,WORDS.get(value)):Component.literal(value);
+    }
     /** English reading of one paragraph, for logs, tests and string-only consumers. */
     private static String plain(Object value){return value instanceof Component built?built.getString():String.valueOf(value);}
     private static String labels(String result,ActionRegistry.Context context){

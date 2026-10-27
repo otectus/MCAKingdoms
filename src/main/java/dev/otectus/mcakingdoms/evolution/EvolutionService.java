@@ -225,7 +225,7 @@ public final class EvolutionService {
                     action == Politics.Action.PETITION ? "mcakingdoms:introduction_petition" : "", e.settlement().toString(),
                     null, intent.counterpart(), "Scenario: " + e.terms().title(), "", 0, 0, 0);
             var response = KingdomsPoliticsApi.get(server).execute(player, request);
-            if (!response.success()) return "Resolution remains pending: " + response.message();
+            if (!response.success()) return "Resolution remains pending: " + dev.otectus.mcakingdoms.interaction.PlayerWords.text(response.message());
             result = "The government accepted this resolution and filed its record.";
         } else result = intent.outcome() == Outcome.DECLINE ? "Opportunity declined peacefully" : "Verified " + intent.outcome().name().toLowerCase(Locale.ROOT) + " service acknowledged; further political terms require consent";
         s.scenarios.put(id, e.finish(result)); commit(s); return result;
@@ -350,7 +350,9 @@ public final class EvolutionService {
     }
     /** Prepares at most one opportunity for the region; its announcement is queued until the evaluation commits (F09). */
     private void generate(EvolutionState s, ServerPlayer viewer, UUID settlement, long now, List<Runnable> announcements) {
-        if (s.scenarios.size() >= CAPACITY || activeCount(s) >= EvolutionConfig.CONCURRENT.get()) return;
+        // Stop before a bound rather than at it: a state past a bound fails validation and would refuse every save (F12).
+        if (s.scenarios.size() >= CAPACITY || s.cooldowns.size() >= CAPACITY - 1 || s.consumed.size() >= CAPACITY * 16 - 1
+                || activeCount(s) >= EvolutionConfig.CONCURRENT.get()) return;
         var place = McaKingdomsApi.get(server).getSettlement(settlement).orElse(null); if (place == null) return;
         var politics = KingdomsPoliticsApi.get(server); var government = politics.government(place.kingdomId().toString()).orElse(null);
         if (government == null) return;

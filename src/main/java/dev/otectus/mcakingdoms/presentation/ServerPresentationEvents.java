@@ -30,6 +30,22 @@ public final class ServerPresentationEvents {
             return;
         }
         poll(player).ifPresent(packet -> NetworkHandler.sendOverlay(player, packet));
+        // At most one gallery-stale notice per player every ten ticks, however many settlements they just learned of.
+        try {
+            if (SettlementKnowledge.get(player.getServer()).consumeChanged(player.getUUID()))
+                NetworkHandler.galleryChanged(player, dev.otectus.mcakingdoms.network.GalleryStalePacket.Reason.KNOWLEDGE);
+        } catch (IllegalStateException unavailable) {
+            // Discovery is not loaded on this thread or server yet; the next poll tells the client.
+        }
+    }
+
+    /** Reloaded kingdom definitions change every player's gallery. */
+    @SubscribeEvent
+    public static void onDefinitionsReloaded(dev.otectus.mcakingdoms.api.event.KingdomDefinitionsReloadedEvent event) {
+        var server = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
+        if (server == null) return;
+        for (ServerPlayer player : server.getPlayerList().getPlayers())
+            NetworkHandler.galleryChanged(player, dev.otectus.mcakingdoms.network.GalleryStalePacket.Reason.DEFINITIONS);
     }
 
     /** The overlay change this player has not been sent yet, if any. */

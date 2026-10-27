@@ -29,6 +29,7 @@ final class GettingStarted {
                 mca ? help("mca", "MCA Reborn is installed: a villager's confirmed home records where they live, and that becomes their civic residence. Their MCA names, families and homes are never rewritten.")
                         : help("no_mca", "MCA Reborn is not installed: settlements, kingdoms, discovery, the Ledger and the built-in records all work without it. MCA would only add villagers' home evidence."),
                 help("guild_jobs", "Guild jobs, such as the Lamplighters' service, are quests from your modpack's content and need MCA Quests. If no jobs appear, ask your server operator whether that content is installed; the Book's Help the Lamplighters topic explains it."),
+                help("residence", "To take part in civic life, and to found a government where that is allowed, record a civic residence: sleep in a bed inside a settlement so your respawn point is there, stand in the settlement and use Register my residence. It records a civic home only; it claims no land."),
                 help("review", "Tasks that change records end on a review page, and nothing happens until you choose Apply reviewed action. Read-only tasks show their result at once."),
                 help("optional", "Governments, guild chapters, warfare and world events are optional and depend on this server's settings. Search What is available here? to see which ones it enables."));
     }

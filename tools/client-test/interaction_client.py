@@ -12,6 +12,8 @@ import time
 import uuid
 
 from production_client import allowed
+import sys
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / 'test')); import environment  # F16: prerequisites from the environment
 
 def _mod_version():
     """mod_version from gradle.properties, so default artifact names follow the build."""
@@ -24,10 +26,10 @@ def _mod_version():
 MOD_VERSION = _mod_version()
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-INSTALL = pathlib.Path(os.environ.get('MCAKINGDOMS_MC_INSTALL', '/home/otectus/Documents/curseforge/minecraft/Install'))
+INSTALL = environment.install()  # MCAKINGDOMS_MC_INSTALL
 DEFAULT_MOD = ROOT / f'build/libs/mcakingdoms-{MOD_VERSION}.jar'
 DEFAULT_HARNESS = ROOT / f'build/test-artifacts/mcakingdoms-{MOD_VERSION}-client-acceptance.jar'
-DEFAULT_XVFB = pathlib.Path('/tmp/kd-xvfb/usr/bin/Xvfb')
+DEFAULT_XVFB = environment.xvfb(required=False)  # MCAKINGDOMS_XVFB or Xvfb on PATH
 SCREENSHOTS = [
     '00-start-view.png',
     '01-create-review.png',
@@ -61,7 +63,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--work-dir', required=True, type=pathlib.Path)
     parser.add_argument('--install', type=pathlib.Path, default=None,
-                        help='Minecraft launcher install with versions/, libraries/ and assets/ (default: $MCAKINGDOMS_MC_INSTALL or the maintainer path)')
+                        help='Minecraft launcher install with versions/, libraries/ and assets/ (default: $MCAKINGDOMS_MC_INSTALL or tools/test/local-environment.json)')
     parser.add_argument('--gui-style', action='store_true', help='Tour every Kingdoms GUI after the interaction checks')
     parser.add_argument('--task-style', action='store_true', help='Tour only Kingdom Tasks forms, start, categories and help at three GUI scales')
     parser.add_argument('--suite', choices=['interactions', 'politics'], default='interactions')

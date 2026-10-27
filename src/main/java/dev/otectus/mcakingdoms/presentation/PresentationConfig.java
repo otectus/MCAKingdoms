@@ -12,6 +12,12 @@ public final class PresentationConfig {
     public static final ForgeConfigSpec.BooleanValue SHOW_INTRO;
     public static final ForgeConfigSpec.EnumValue<TasksStart> TASKS_START;
     public static final ForgeConfigSpec.BooleanValue REDUCED_MOTION;
+    public static final ForgeConfigSpec.EnumValue<Notices> POLITICAL_NOTICES;
+    public static final ForgeConfigSpec.BooleanValue OFFICE_BADGES;
+    public static final ForgeConfigSpec.IntValue OFFICE_BADGE_DISTANCE;
+
+    /** How committed political moments are shown (A02): not at all (the default), as a chat line, or also as a banner. */
+    public enum Notices { OFF, CHAT, BANNER }
 
     /** What the Kingdom Tasks key opens first. */
     public enum TasksStart { START, ALL_TASKS }
@@ -51,6 +57,18 @@ public final class PresentationConfig {
         REDUCED_MOTION = builder
                 .comment("Show the first item of a recipe ingredient that accepts several items, instead of cycling through them every two seconds.")
                 .define("reducedMotion", false);
+        builder.pop();
+        builder.push("politics");
+        POLITICAL_NOTICES = builder
+                .comment("Political notices (foundings, accessions, vacancies and memorials) from the server's committed record.",
+                        "OFF shows none (the default); CHAT adds one chat line; BANNER adds the chat line and a short banner. No sound plays.")
+                .defineEnum("notices", Notices.OFF);
+        OFFICE_BADGES = builder
+                .comment("Show a small line above public office holders near you naming their office. Names are never changed.")
+                .define("officeBadges", true);
+        OFFICE_BADGE_DISTANCE = builder
+                .comment("How far away, in blocks, office badges are shown.")
+                .defineInRange("officeBadgeDistance", 16, 4, 48);
         builder.pop();
         SPEC = builder.build();
     }

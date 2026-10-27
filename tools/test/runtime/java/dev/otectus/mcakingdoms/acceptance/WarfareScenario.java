@@ -26,7 +26,10 @@ final class WarfareScenario {
         var observer = FakePlayerFactory.get(level, new GameProfile(UUID.fromString("721be7a7-110e-4a66-a24b-3ad63d3c93ff"), "R3Civilian"));
         observer.setPos(0, 64, 0);
         var runtime = WarfareRuntime.get(server);
-        check(WarfareConfig.ENABLED.get(), "R3 defaults enabled in isolated server without a config override");
+        check(WarfareConfig.ENABLED.get(), "R3 keeps warfare enabled in its isolated server");
+        // The fixture config sets militaryActions = false before launch (integration_runtime.py, phase r3): this observation
+        // fixture bypasses campaign policy, and a runtime set() would race Forge's config watcher (F16).
+        check(!WarfareConfig.MILITARY.get(), "R3 fixture config must turn military actions off before launch");
         if (!phase.equals("r3")) {
             var settlement = kingdoms.findSettlement("R3 Harbor").orElseThrow();
             if (phase.equals("r3-future")) {
@@ -78,9 +81,11 @@ final class WarfareScenario {
         check(runtime.view(observer, settlement.id()).equals(List.of("Visit this settlement to inspect its control history.")), "discovery alone grants no remote live intelligence");
         observer.setPos(0, 64, 0);
         var forced = Set.copyOf(level.getForcedChunks());
-        // This legacy observation fixture bypasses campaign policy; military policy has its own all-enabled scenario.
-        WarfareConfig.MILITARY.set(false);
+        // This legacy observation fixture bypasses campaign policy (military actions are off in its config from launch);
+        // military policy has its own all-enabled scenario. The native flag is checked at once, so a cancelled start is
+        // reported as such instead of surfacing later as missing history.
         call(claim, "setUnderSiege", true, level);
+        check(Boolean.TRUE.equals(claimType.getField("isUnderSiege").get(claim)), "native siege start was cancelled (military policy hook or provider refusal)");
         runtime.reconcile(); runtime.reconcile();
         check(runtime.revision() == boundRevision, "unsaved native siege creates no durable control event");
         call(manager, "save", level); server.saveEverything(false, true, true);
@@ -93,7 +98,6 @@ final class WarfareScenario {
         call(manager, "save", level); server.saveEverything(false, true, true);
         runtime.reconcile(); runtime.reconcile();
         check(runtime.view(actor, settlement.id()).stream().anyMatch(s -> s.toLowerCase(java.util.Locale.ROOT).contains("occupied")), "saved native siege records provisional occupation");
-        WarfareConfig.MILITARY.set(true);
         long occupiedRevision = runtime.revision(); runtime.reconcile(); runtime.reconcile();
         check(occupiedRevision == runtime.revision(), "duplicate reconciliation does not repeat control transition");
         var after = kingdoms.getSettlement(settlement.id()).orElseThrow();

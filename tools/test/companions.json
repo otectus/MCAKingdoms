@@ -1,0 +1,77 @@
+{
+  "about": "The MCA: Kingdoms 0.3.0 companion tuple (F04/F16). 'accepted' is the optional range in gradle.properties (never a launch blocker); 'validated' lists the exact jars used for acceptance, by SHA-256; 'publicSource' is the newest public commit inspected and whether it carries the contract; 'pendingRelease' is local work that is not published. A version string alone does not identify a contract: the pack's mcaquests-1.7.1.jar was built from local work and carries the current contract, while the public 1.7.1 source does not.",
+  "inspected": "2026-10-27",
+  "companions": [
+    {
+      "mod": "mcaquests",
+      "accepted": "[1.6.5,)",
+      "contract": {
+        "classes": {"dev/otectus/mcaquests/api/McaQuestsApi.class": ["institutionalCompletionConsumer", "renewInstitutionalCompletionConsumer", "openInstitutionalCommissionMenu", "mcakingdoms"]},
+        "needed_for": "paid institutional workshop jobs (ordinary guild deeds work with any receipt API)",
+        "without_it": "Kingdoms refuses paid workshop jobs before any offer and reports 'paid workshop jobs: legacy_consumer_contract' in Server health"
+      },
+      "validated": [
+        {"file": "mcaquests-1.7.1.jar", "sha256": "b11c9a4d2dab45ae398a4d369f0a98d0a21577a3cc60a532799108f982f6a4c0", "builtFrom": "local MCAQuests tree before its 1.7.2 bump (uncommitted)", "carriesContract": true}
+      ],
+      "publicSource": {"commit": "784f5d5b7061ae3e8c441467204e7e8095379169", "version": "1.7.1", "carriesContract": false, "detail": "requires ultima_kingdoms:regional_civic_network and reflects the pre-rename facades"},
+      "pendingRelease": {"version": "1.7.2", "state": "local uncommitted tree on top of 784f5d5; 1576 tests pass, 16 skipped (2026-10-26 results, unchanged inputs); not published"}
+    },
+    {
+      "mod": "mcareputation",
+      "accepted": "[0.6.0,)",
+      "contract": {
+        "classes": {"dev/otectus/mcareputation/state/StandingOutbox.class": ["adoptRenamedConsumer", "mcakingdoms", "ultima_kingdoms"]},
+        "needed_for": "carrying a pre-rename standing-journal backlog over to mcakingdoms:factions",
+        "without_it": "the renamed consumer registers at the journal tail; Kingdoms reports the skipped range as a journal gap"
+      },
+      "validated": [
+        {"file": "mcareputation-0.6.1.jar", "sha256": "c381709e2f4a6b10ad4acf795ad4b4e2c6e89a0097646873bd84caf8cafc2642", "builtFrom": "local MCAReputation tree (earlier adoption rule that forgot a pending old cursor)", "carriesContract": true}
+      ],
+      "publicSource": {"commit": "6e90ee4459ac2182691af30f6e6748427d161065", "version": "0.6.1", "carriesContract": false, "detail": "registers a renamed consumer at the tail; no rename handoff"},
+      "pendingRelease": {"version": "0.6.1 (unreleased)", "state": "local uncommitted tree; 2026-10-27 keeps an old cursor that still holds unacknowledged entries instead of forgetting it; 863 tests pass, 1 skipped; not published"}
+    },
+    {
+      "mod": "mcaconversations",
+      "accepted": "any (optional)",
+      "contract": {"classes": {}, "needed_for": "Kingdoms identity in conversation gates", "without_it": "conversation gates fall back to their own rules"},
+      "validated": [
+        {"file": "mcaconversations-1.8.0.jar", "sha256": "361b0faac7b7ac89c67861ec3dbf0d0da3a2d7231e8163ddda9112d2ce1c3cba", "builtFrom": "pack copy", "carriesContract": true}
+      ],
+      "publicSource": {"commit": "184f8095c95019f69e2f24a2aa5f981aed34a8c3", "version": "1.8.1", "carriesContract": true, "detail": "KingdomsIdentity recognises both mod ids; nothing to change"}
+    },
+    {
+      "mod": "mcacrime",
+      "accepted": "[0.7.5,)",
+      "contract": {"classes": {}, "needed_for": "workshop legality for paid workshop jobs", "without_it": "paid workshop jobs are unavailable with a provider explanation"},
+      "validated": [
+        {"file": "mcacrime-0.7.5.jar", "sha256": "aed00eb531cfb1ebdb7f1b63ee62cd4d18bc9e9de14d6d7889e39a004e6e284b", "builtFrom": "pack copy", "carriesContract": true}
+      ],
+      "publicSource": {"commit": "719fc401a57d1b3dd43da7ea64c35318ccbe4770", "version": "0.8.0", "carriesContract": true, "detail": "InstitutionalServiceApi.workshop(ServerPlayer, Entity) matches; source match only, no packaged test in this review"}
+    },
+    {
+      "mod": "recruits",
+      "accepted": "exactly 1.15.2 at runtime",
+      "contract": {"classes": {}, "needed_for": "military actions, deployments, recruit transfers", "without_it": "those tasks report the provider as missing or unsupported"},
+      "validated": [
+        {"file": "recruits-1.20.1-1.15.2.jar", "sha256": "4b53c1b752e886ba10985aad2df30d668971810230eb77867e07428a21d1af7f", "builtFrom": "pack copy", "carriesContract": true}
+      ]
+    },
+    {
+      "mod": "townstead",
+      "accepted": "[0.7.6,0.9)",
+      "contract": {"classes": {}, "needed_for": "political building evidence (probed by capability)", "without_it": "MCA loaded-village buildings are used"},
+      "validated": [
+        {"file": "townstead-0.7.6+1.20.1.jar", "sha256": "78ab52d551dfaf2ca3366da565ccb501918f73affe7b48f339ce63b17de1513e", "builtFrom": "pack copy", "carriesContract": true}
+      ]
+    },
+    {
+      "mod": "mca",
+      "accepted": "[7.6,8)",
+      "contract": {"classes": {}, "needed_for": "villages, residence evidence, family", "without_it": "Kingdoms recognises settlements from structures and POIs only"},
+      "validated": [
+        {"file": "minecraft-comes-alive-7.6.26+1.20.1-universal.jar", "sha256": "5dc3ee1f2f74221b3b7b73456451bf9a3f0cc87c8378a64233680f051dbc3d19", "builtFrom": "pack copy", "carriesContract": true},
+        {"file": "architectury-9.2.14-forge.jar", "sha256": "218b471d0b8a1f6cda14cfc1beb9eeb0df54304500acc6c5613d9b88ec65d9af", "builtFrom": "pack copy (MCA dependency)", "carriesContract": true}
+      ]
+    }
+  ]
+}

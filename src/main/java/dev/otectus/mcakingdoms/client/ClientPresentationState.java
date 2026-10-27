@@ -89,6 +89,7 @@ public final class ClientPresentationState {
             clientDimension = dimension;
         } else if (!java.util.Objects.equals(clientDimension, dimension)) {
             clearTransientState();
+            PoliticalPresentation.dimensionChanged();
             clientDimension = dimension;
         } else if (overlayTicks > 0 && overlayVisible(minecraft)) {
             // Deferred while a screen or F1 hides the HUD, so the whole banner shows once the view is clear.

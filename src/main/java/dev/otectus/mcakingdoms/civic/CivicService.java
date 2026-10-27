@@ -21,6 +21,30 @@ import java.util.*;
 public final class CivicService implements dev.otectus.mcakingdoms.api.civic.InstitutionalCommissionApi.Handler {
     /** Commission contract state folded into task versions so a stale review cannot apply over a changed offer. */
     public long commissionFingerprint(){return InstitutionalCommissionData.get(server).fingerprint();}
+    /** This player's own commission contracts, as a fingerprint for their review versions (F15). */
+    public long commissionFingerprint(UUID player){return InstitutionalCommissionData.get(server).fingerprint(player);}
+    /**
+     * What a civic review of these records depends on (F15): the selected chapter and its contacts, the selected contact
+     * or resident's appointment, the selected institution's recognition, whether a chapter already exists for the
+     * organization there, and whether the actor may recognize at the places involved. Activity elsewhere in the civic
+     * network leaves it unchanged, so another player's join, charter or appointment no longer voids this review; any
+     * change to the records reviewed does. Null arguments are not part of the review.
+     */
+    public String reviewVersion(ServerPlayer actor,String organization,UUID chapterId,UUID npc,UUID institution) {
+        actor(actor);
+        var state=data.state();var out=new StringBuilder();
+        if(chapterId!=null){var chapter=state.chapters.get(chapterId);
+            out.append("chapter:").append(chapter==null?"none":chapter.revision()+"@"+chapter.institution());
+            if(chapter!=null){state.contacts.values().stream().filter(c->c.chapter().equals(chapterId)).map(c->c.npc()+"="+c.revision()).sorted().forEach(c->out.append(',').append(c));
+                place(chapter).ifPresent(p->out.append("|place:").append(p.revision()).append(p.operational()).append(politics().canRecognize(actor,p.settlement())));}}
+        if(npc!=null){var contact=state.contacts.get(npc);
+            out.append("|contact:").append(contact==null?"none":contact.revision()+"@"+contact.chapter()).append(state.dismissed.contains(npc)?"!":"");
+            if(contact!=null){var prior=state.chapters.get(contact.chapter());if(prior!=null)place(prior).ifPresent(p->out.append("|prior:").append(politics().canRecognize(actor,p.settlement())));}}
+        if(institution!=null){var place=politics().institution(institution);
+            out.append("|institution:").append(place.map(p->p.revision()+":"+p.operational()+":"+politics().canRecognize(actor,p.settlement())).orElse("none"));
+            if(organization!=null)out.append("|chartered:").append(state.chapters.values().stream().anyMatch(c->c.organization().equals(organization)&&Objects.equals(c.institution(),institution)));}
+        return out.toString();
+    }
     public static final ResourceLocation WORKSHOP_QUEST=new ResourceLocation("ultima:civic/lamplighters/workshop_lanterns");
     public static final ResourceLocation INTRODUCTIONS=new ResourceLocation("mcakingdoms:route_introductions");
     public static final ResourceLocation COMMISSIONS=new ResourceLocation("mcakingdoms:commission_access");

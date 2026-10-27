@@ -28,6 +28,8 @@ public final class SettlementKnowledge extends SavedData {
     private long revision;
     private CompoundTag preserved;
     private String diagnostic = "";
+    /** Players whose known settlements changed since their client was last told (F11); in memory, bounded. */
+    private final Set<UUID> changedFor = new LinkedHashSet<>();
 
     public static SettlementKnowledge get(MinecraftServer server) {
         if (!server.isSameThread()) throw new IllegalStateException("Discovery requires the server thread");
@@ -60,11 +62,7 @@ public final class SettlementKnowledge extends SavedData {
     /** Every settlement the viewer may see in ledger order, bounded, for selectors that need the whole list once. */
     public List<SettlementView> all(ServerPlayer viewer, KingdomsService kingdoms, Optional<ResourceLocation> kingdom, int limit) {
         if (limit < 1 || limit > 1_000_000) throw new IllegalArgumentException("Invalid discovery limit");
-        if (viewer.hasPermissions(2)) {
-            var out = new ArrayList<SettlementView>();
-            for (int offset = 0; offset < limit; offset += 64) { var page = kingdoms.getSettlementPage(kingdom, offset, Math.min(64, limit - offset)); out.addAll(page); if (page.size() < 64) break; }
-            return out;
-        }
+        if (viewer.hasPermissions(2)) return everything(kingdoms, kingdom).stream().limit(limit).toList();
         return known(viewer, kingdoms, kingdom).limit(limit).toList();
     }
     private java.util.stream.Stream<SettlementView> known(ServerPlayer viewer, KingdomsService kingdoms, Optional<ResourceLocation> kingdom) {
@@ -77,6 +75,12 @@ public final class SettlementKnowledge extends SavedData {
     }
 
     public boolean writable() { return preserved == null; }
+    /** Discovery and visit records are bounded so the file and packets stay bounded; new ones stop at the bound (F12). */
+    public static java.util.List<dev.otectus.mcakingdoms.persistence.Capacity> capacity(MinecraftServer server) {
+        var data = get(server);
+        return java.util.List.of(new dev.otectus.mcakingdoms.persistence.Capacity(NAME, "discoveries", data.entries, LIMIT, dev.otectus.mcakingdoms.persistence.Capacity.Relief.OFFLINE_PROCEDURE),
+                new dev.otectus.mcakingdoms.persistence.Capacity(NAME, "visits", data.visits, LIMIT, dev.otectus.mcakingdoms.persistence.Capacity.Relief.OFFLINE_PROCEDURE));
+    }
     public static dev.otectus.mcakingdoms.persistence.StoreStatus status(MinecraftServer server) { var data = get(server); return dev.otectus.mcakingdoms.persistence.StoreStatus.of(NAME, data.writable(), data.diagnostic()); }
     public String diagnostic() { return diagnostic; }
     public long revision() { return revision; }
@@ -94,7 +98,13 @@ public final class SettlementKnowledge extends SavedData {
         entries++;
         revision++;
         setDirty();
+        if (changedFor.size() < 4_096) changedFor.add(player);
         return true;
+    }
+
+    /** Whether this player's known settlements changed since the last call; clears the mark. */
+    public boolean consumeChanged(UUID player) {
+        return changedFor.remove(player);
     }
 
     /**
@@ -140,29 +150,33 @@ public final class SettlementKnowledge extends SavedData {
     /** One ledger page and how many settlements the viewer may see match the search (never more than the viewer may know). */
     public record SearchPage(List<SettlementView> settlements, int total) { }
 
-    /** The most settlements one ledger search considers; a larger operator world shows the first matches in order. */
-    static final int SEARCH_CAP = 20_000;
+    /**
+     * Every settlement, for operators: the service's snapshot built once per settlement revision when it is the built-in
+     * one (F13), otherwise its pages. Never filtered by viewer; callers do that.
+     */
+    private static List<SettlementView> everything(KingdomsService kingdoms, Optional<ResourceLocation> kingdom) {
+        if (kingdoms instanceof dev.otectus.mcakingdoms.core.KingdomsServiceImpl impl) return impl.orderedSettlements(kingdom);
+        var all = new ArrayList<SettlementView>();
+        for (int from = 0; from <= 1_000_000; from += 64) {
+            var page = kingdoms.getSettlementPage(kingdom, from, 64);
+            all.addAll(page);
+            if (page.size() < 64) break;
+        }
+        return all;
+    }
 
     /**
      * The ledger's search: the viewer's visible settlements (discovered or public; every one for operators), filtered by
-     * kingdom and by words of the name or its former names, sorted, then paged. Hidden records never reach the page or
-     * the count. Reads saved records only; no chunk is loaded.
+     * kingdom and by words of the name or its former names, sorted, then paged. Every visible match is counted, so the
+     * total is truthful however large the world (F13: the old 20,000-record cap applied before the text filter hid later
+     * matches). Hidden records never reach the page or the count. Reads saved records only; no chunk is loaded.
      */
     public SearchPage search(ServerPlayer viewer, KingdomsService kingdoms, Optional<ResourceLocation> kingdom, String query,
                              Sort sort, int offset, int limit) {
         if (offset < 0 || offset > 1_000_000 || limit < 1 || limit > 64) throw new IllegalArgumentException("Invalid discovery page");
         var tokens = dev.otectus.mcakingdoms.interaction.SearchText.tokens(query == null ? "" : query);
-        java.util.stream.Stream<SettlementView> visible;
-        if (viewer.hasPermissions(2)) {
-            var all = new ArrayList<SettlementView>();
-            for (int from = 0; from < SEARCH_CAP; from += 64) {
-                var page = kingdoms.getSettlementPage(kingdom, from, 64);
-                all.addAll(page);
-                if (page.size() < 64) break;
-            }
-            visible = all.stream();
-        } else visible = known(viewer, kingdoms, kingdom);
-        var matching = visible.limit(SEARCH_CAP).filter(s -> tokens.isEmpty() || dev.otectus.mcakingdoms.interaction.SearchText.matches(tokens,
+        java.util.stream.Stream<SettlementView> visible = viewer.hasPermissions(2) ? everything(kingdoms, kingdom).stream() : known(viewer, kingdoms, kingdom);
+        var matching = visible.filter(s -> tokens.isEmpty() || dev.otectus.mcakingdoms.interaction.SearchText.matches(tokens,
                 dev.otectus.mcakingdoms.interaction.SearchText.normalize(s.displayName() + " | " + String.join(" | ", s.aliases()) + " | " + s.slug().getPath().replace('_', ' '))));
         Comparator<SettlementView> byName = Comparator.comparing((SettlementView s) -> s.displayName().toLowerCase(Locale.ROOT)).thenComparing(s -> s.id().toString());
         Comparator<SettlementView> order = byName;
@@ -206,8 +220,13 @@ public final class SettlementKnowledge extends SavedData {
         if (!writable()) return;
         boolean changed = false;
         if (legacyPublic.remove(source)) { legacyPublic.add(target); changed = true; }
-        for (Set<UUID> ids : discovered.values()) {
-            if (ids.remove(source)) { if (!ids.add(target)) entries--; changed = true; }
+        for (var entry : discovered.entrySet()) {
+            Set<UUID> ids = entry.getValue();
+            if (ids.remove(source)) {
+                if (!ids.add(target)) entries--;
+                changed = true;
+                if (changedFor.size() < 4_096) changedFor.add(entry.getKey());
+            }
         }
         boolean visitsChanged = false;
         for (Set<UUID> ids : visited.values()) {

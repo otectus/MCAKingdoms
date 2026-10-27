@@ -60,6 +60,8 @@ public final class KingdomGuideScreen extends Screen implements GuideArticle.Rea
     public KingdomGuideScreen(Screen parent, String topic) {
         super(Component.translatable("item.mcakingdoms.book_of_kingdoms"));
         this.parent = parent;
+        // Reopening the Book is a deliberate retry of a gallery that failed to load.
+        dev.otectus.mcakingdoms.client.guide.GuideKingdoms.reopened();
         var library = dev.otectus.mcakingdoms.client.guide.GuideLibrary.get();
         entries = library.entries();
         byId.putAll(library.byId());

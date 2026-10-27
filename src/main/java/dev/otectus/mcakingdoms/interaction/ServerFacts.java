@@ -146,6 +146,8 @@ public final class ServerFacts {
                 dev.otectus.mcakingdoms.compat.quests.receipts.QuestCompletionBridge.consumerId().toString(),
                 dev.otectus.mcakingdoms.compat.quests.receipts.QuestCompletionBridge.institutionalCapability()));
         lines.add(f("health.townstead", "Townstead: %s; capabilities bound: %s.", installed("townstead"), townsteadCapabilities(server)));
+        lines.add(f("health.political_presentation", "Political notices %s and office badges %s; they present this mod's own committed record, because Townstead offers no political narrative bridge to hand them to.",
+                onOff(McaKingdomsConfig.POLITICAL_NOTICES.get()), onOff(McaKingdomsConfig.OFFICE_BADGES.get())));
         lines.add(f("health.recruits", "Recruits: %s; the military bridge is gated to exactly 1.15.2 and is %s.", installed("recruits"),
                 version("recruits").filter("1.15.2"::equals).isPresent() ? f("health.bridge_active", "active") : f("health.bridge_inactive", "inactive")));
         lines.add(f("health.crime", "MCA: Crime: %s; workshop-legality provider %s.", installed("mcacrime"),
@@ -175,6 +177,9 @@ public final class ServerFacts {
                     : Component.empty().append(f("health.store_read_only", "%s: read-only — %s", store.name(), store.diagnostic())).withStyle(ChatFormatting.RED));
         }
 
+        lines.add(heading("health.capacity", "Capacity"));
+        lines.addAll(capacityLines(server));
+
         lines.add(heading("health.reload", "Last definition reload"));
         var attempt = ReloadReport.latest();
         if (attempt.isEmpty()) lines.add(f("health.reload_none", "No reload has been observed since this server started."));
@@ -195,6 +200,25 @@ public final class ServerFacts {
         } catch (RuntimeException unavailable) {
             return "unavailable";
         }
+    }
+
+    /**
+     * Bounded collections at 80% or more, each with what relieves it (F12); a single line when every one is below that.
+     * The full list is {@code /kingdoms maintenance capacity}.
+     */
+    static List<Component> capacityLines(MinecraftServer server) {
+        var all = dev.otectus.mcakingdoms.persistence.Capacity.all(server);
+        List<Component> lines = new ArrayList<>();
+        all.stream().filter(c -> c.level() != dev.otectus.mcakingdoms.persistence.Capacity.Level.NORMAL)
+                .sorted(java.util.Comparator.comparingInt(dev.otectus.mcakingdoms.persistence.Capacity::percent).reversed())
+                .forEach(c -> lines.add(Component.empty().append(dev.otectus.mcakingdoms.command.MaintenanceCommands.line(c))
+                        .withStyle(c.level() == dev.otectus.mcakingdoms.persistence.Capacity.Level.FULL ? ChatFormatting.RED : ChatFormatting.GOLD)));
+        if (lines.isEmpty()) {
+            var fullest = all.stream().max(java.util.Comparator.comparingInt(dev.otectus.mcakingdoms.persistence.Capacity::percent));
+            lines.add(fullest.map(c -> f("health.capacity_ok", "Every bounded collection is below 80%%; the fullest is %s / %s at %s%%.", c.store(), c.collection(), c.percent()))
+                    .orElse(f("health.capacity_unknown", "Capacity could not be read.")));
+        }
+        return lines;
     }
 
     static List<Component> migrationLines() {

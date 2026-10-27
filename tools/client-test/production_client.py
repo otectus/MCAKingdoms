@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Offline packaged client acceptance using installed launcher libraries, isolated saves/mods."""
 import json, os, pathlib, shutil, subprocess, sys, uuid, re, hashlib
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / 'test')); import environment  # F16: prerequisites from the environment
 
 def _mod_version():
     """mod_version from gradle.properties, so default artifact names follow the build."""
@@ -12,8 +13,8 @@ def _mod_version():
 
 MOD_VERSION = _mod_version()
 ROOT=pathlib.Path(__file__).resolve().parents[2]
-INSTALL = pathlib.Path(os.environ.get('MCAKINGDOMS_MC_INSTALL', '/home/otectus/Documents/curseforge/minecraft/Install'))
-PACK=pathlib.Path('/home/otectus/Documents/curseforge/minecraft/Instances/Ultima/mods')
+INSTALL = environment.path('MCAKINGDOMS_MC_INSTALL', required=False, kind='dir')  # checked in main()
+PACK=None  # resolved in main() from MCAKINGDOMS_PACK
 # Usage: production_client.py [work-suffix] [--xvfb /path/to/Xvfb]. Without --xvfb the client opens a real window.
 ARGS=[a for a in sys.argv[1:]]
 XVFB=pathlib.Path(ARGS[ARGS.index('--xvfb')+1]) if '--xvfb' in ARGS else None
@@ -29,6 +30,9 @@ def allowed(rules):
     return answer
 
 def main():
+    global PACK, INSTALL
+    PACK=environment.pack_mods()  # MCAKINGDOMS_PACK
+    INSTALL=environment.install()  # MCAKINGDOMS_MC_INSTALL
     if WORK.exists(): raise SystemExit(f'Refusing to reuse {WORK}')
     WORK.mkdir(parents=True); (WORK/'mods').mkdir(); (WORK/'natives').mkdir()
     vanilla=json.loads((INSTALL/'versions/1.20.1/1.20.1.json').read_text())

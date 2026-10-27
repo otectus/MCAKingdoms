@@ -34,7 +34,8 @@ public class PlayerIdentityGameTests {
 
     private static SettlementView settlement(GameTestHelper helper, KingdomsService api, int offset, String name) {
         var level = helper.getLevel();
-        return api.registerCandidate(level, SettlementCandidate.manual(level.dimension(), helper.absolutePos(new BlockPos(offset, 2, offset)), 32,
+        // One shared row far from other tests (80 blocks apart, bounds never overlap), so few new chunks are generated.
+        return api.registerCandidate(level, SettlementCandidate.manual(level.dimension(), helper.absolutePos(new BlockPos(72_000 + offset, 2, 72_000)), 32,
                 new ResourceLocation("mcakingdoms", "manual"), "identity-" + UUID.randomUUID(), name));
     }
 
@@ -55,7 +56,7 @@ public class PlayerIdentityGameTests {
     @GameTest(template = "empty", timeoutTicks = 200)
     public static void civicIdentitySurvivesDeathAndEndReturnOnce(GameTestHelper helper) {
         var api = McaKingdomsApi.get(helper.getLevel().getServer());
-        var home = settlement(helper, api, 72_000, "Respawn Reach");
+        var home = settlement(helper, api, 0, "Respawn Reach");
         var first = player(helper, UUID.randomUUID(), "CloneResident");
         api.setResidence(first, home.id());
         var before = api.getCivicIdentity(first).orElseThrow();
@@ -90,8 +91,8 @@ public class PlayerIdentityGameTests {
     @GameTest(template = "empty", timeoutTicks = 200)
     public static void cloneFollowsMergesAndKeepsOriginAcrossReassignment(GameTestHelper helper) {
         var api = McaKingdomsApi.get(helper.getLevel().getServer());
-        var retired = settlement(helper, api, 72_400, "Merged Reach");
-        var survivor = settlement(helper, api, 72_440, "Surviving Reach");
+        var retired = settlement(helper, api, 80, "Merged Reach");
+        var survivor = settlement(helper, api, 160, "Surviving Reach");
         var resident = player(helper, UUID.randomUUID(), "CloneMerge");
         api.setResidence(resident, retired.id());
         ResourceLocation originKingdom = api.getCivicIdentity(resident).orElseThrow().originKingdom().orElseThrow();
@@ -114,7 +115,7 @@ public class PlayerIdentityGameTests {
     @GameTest(template = "empty", timeoutTicks = 200)
     public static void preRenameIdentityIsCarriedUnderTheCurrentKey(GameTestHelper helper) {
         var api = McaKingdomsApi.get(helper.getLevel().getServer());
-        var home = settlement(helper, api, 72_800, "Legacy Reach");
+        var home = settlement(helper, api, 240, "Legacy Reach");
         var resident = player(helper, UUID.randomUUID(), "CloneLegacy");
         CompoundTag legacy = new CompoundTag();
         legacy.putUUID("ResidenceSettlement", home.id());
@@ -135,7 +136,7 @@ public class PlayerIdentityGameTests {
     public static void aRespawnedResidentKeepsFoundingEligibility(GameTestHelper helper) {
         InteractionNetwork.init();
         var api = McaKingdomsApi.get(helper.getLevel().getServer());
-        var home = settlement(helper, api, 73_200, "Eligible Reach");
+        var home = settlement(helper, api, 320, "Eligible Reach");
         var resident = player(helper, UUID.randomUUID(), "CloneFounder");
         api.setResidence(resident, home.id());
         var respawned = clone(helper, resident, true);

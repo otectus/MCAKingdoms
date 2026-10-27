@@ -67,7 +67,7 @@ public final class RecruitTransferData extends SavedData {
             if (!tag.contains("Schema", Tag.TAG_INT) || tag.getInt("Schema") != 1 || !tag.contains("Transfers", Tag.TAG_STRING)
                     || tag.getString("Transfers").length() > 16_000_000) throw new IllegalArgumentException("Unsupported transfer payload");
             Transfer[] values = JSON.fromJson(tag.getString("Transfers"), Transfer[].class);
-            if (values == null || values.length > 1024) throw new IllegalArgumentException("Transfer capacity exceeded");
+            if (values == null || values.length > LIMIT) throw new IllegalArgumentException("Transfer capacity exceeded");
             Set<UUID> active = new HashSet<>();
             for (var value : values) if (value == null || data.transfers.putIfAbsent(value.id(), value) != null || !value.terminal() && !active.add(value.unit()))
                 throw new IllegalArgumentException("Duplicate transfer intent");
@@ -75,6 +75,12 @@ public final class RecruitTransferData extends SavedData {
         return data;
     }
     public boolean writable() { return preserved == null; }
+    /** Every transfer, finished ones included, counts towards this bound until an operator archives finished ones (F12). */
+    public static final int LIMIT = 1024;
+    public static java.util.List<dev.otectus.mcakingdoms.persistence.Capacity> capacity(MinecraftServer server) {
+        var data = get(server);
+        return java.util.List.of(new dev.otectus.mcakingdoms.persistence.Capacity(NAME, "transfers", data.transfers.size(), LIMIT, dev.otectus.mcakingdoms.persistence.Capacity.Relief.COMPACT_TRANSFERS));
+    }
     public static dev.otectus.mcakingdoms.persistence.StoreStatus status(MinecraftServer server) { var data = get(server); return dev.otectus.mcakingdoms.persistence.StoreStatus.of(NAME, data.writable(), ""); }
     public boolean accountingSafe(UUID unit) { return writable() && transfers.values().stream().noneMatch(t -> t.unit().equals(unit) && !t.terminal() && t.accountingDiverged()); }
     /** Called before native accounting changes, including unrelated deaths and administrative recounts. */
@@ -86,12 +92,44 @@ public final class RecruitTransferData extends SavedData {
         }
     }
     Optional<Transfer> get(UUID id) { return Optional.ofNullable(transfers.get(id)); }
+
+    /** Finished transfers are archived only this long after their deadline: three Minecraft days. */
+    public static final long ARCHIVE_AFTER = 72_000L;
+
+    /**
+     * Finished transfers an operator may archive (F12): complete, cancelled or expired, past the deadline by
+     * {@link #ARCHIVE_AFTER}, never accounting-diverged. Reconciled transfers stay as operator evidence; anything not
+     * finished keeps its recovery fence. Nothing here frees a recruit whose native state is uncertain.
+     */
+    public List<Transfer> archivable(long now) {
+        return transfers.values().stream().filter(t -> (t.phase() == Phase.COMPLETE || t.phase() == Phase.CANCELLED || t.phase() == Phase.EXPIRED)
+                && !t.accountingDiverged() && now - t.deadline() >= ARCHIVE_AFTER).toList();
+    }
+
+    /**
+     * Archives {@code archivable(now)} to a file, then removes those records in one durable commit. Returns the archive
+     * file and how many records moved, or empty when there was nothing to archive. Throws when the archive or the store
+     * cannot be written; an archive written before a failed commit only duplicates records that are still active.
+     */
+    public Optional<java.util.Map.Entry<java.nio.file.Path, Integer>> compact(MinecraftServer server, long now) throws java.io.IOException {
+        if (!server.isSameThread()) throw new IllegalStateException("Transfer requires server thread");
+        if (!writable()) throw new IllegalStateException("Transfer records are read-only; nothing can be archived");
+        var archived = archivable(now);
+        if (archived.isEmpty()) return Optional.empty();
+        var file = dev.otectus.mcakingdoms.persistence.Archive.write(server.getWorldPath(LevelResource.ROOT), NAME, now,
+                "Finished recruit transfers past their deadline by " + ARCHIVE_AFTER + " ticks", JSON.toJsonTree(archived));
+        var next = new LinkedHashMap<>(transfers);
+        archived.forEach(t -> next.remove(t.id()));
+        AtomicSavedDataWriter.write(server.getWorldPath(LevelResource.ROOT).resolve("data").resolve(NAME + ".dat").toFile(), encode(next));
+        transfers = next; setDirty(false);
+        return Optional.of(java.util.Map.entry(file, archived.size()));
+    }
     Collection<Transfer> all() { return List.copyOf(transfers.values()); }
     boolean put(MinecraftServer server, Transfer transfer) {
         if (!server.isSameThread()) throw new IllegalStateException("Transfer requires server thread");
         var previous = transfers.get(transfer.id());
         if(previous != null && previous.accountingDiverged() && !transfer.accountingDiverged()) return false;
-        if (!writable() || !transfers.containsKey(transfer.id()) && transfers.size() >= 1024
+        if (!writable() || !transfers.containsKey(transfer.id()) && transfers.size() >= LIMIT
                 || transfers.values().stream().anyMatch(t -> !t.id().equals(transfer.id()) && !t.terminal() && t.unit().equals(transfer.unit()))) return false;
         var next = new LinkedHashMap<>(transfers); next.put(transfer.id(), transfer);
         try {

@@ -99,8 +99,8 @@ public final class PoliticalCommands {
     }
     private interface TransitionWork { Result run(PoliticalService service,net.minecraft.server.level.ServerPlayer player) throws com.mojang.brigadier.exceptions.CommandSyntaxException; }
     private static int transition(CommandContext<CommandSourceStack> c,TransitionWork work) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
-        try{var player=c.getSource().getPlayerOrException();Result result=work.run(KingdomsPoliticsApi.get(player.getServer()),player);if(result.success())c.getSource().sendSuccess(()->Component.literal(result.message()+": "+result.recordId()),false);else c.getSource().sendFailure(Component.literal(result.message()));return result.success()?1:0;}
-        catch(IllegalArgumentException|IllegalStateException failure){c.getSource().sendFailure(Component.literal(failure.getMessage()));return 0;}
+        try{var player=c.getSource().getPlayerOrException();Result result=work.run(KingdomsPoliticsApi.get(player.getServer()),player);if(result.success())c.getSource().sendSuccess(()->Component.empty().append(dev.otectus.mcakingdoms.interaction.PlayerWords.component(result.message())).append(": "+result.recordId()),false);else c.getSource().sendFailure(dev.otectus.mcakingdoms.interaction.PlayerWords.component(result.message()));return result.success()?1:0;}
+        catch(IllegalArgumentException|IllegalStateException failure){c.getSource().sendFailure(dev.otectus.mcakingdoms.interaction.PlayerWords.component(failure.getMessage()));return 0;}
     }
     private static Person person(Entity entity) { return new Person(entity.getUUID(), entity instanceof Player ? Kind.PLAYER : Kind.NPC); }
     private static int run(CommandContext<CommandSourceStack> c, Action action, String definition, String target, Person person, String counterpart, String text, String hash)
@@ -111,8 +111,8 @@ public final class PoliticalCommands {
         }
         Request request = new Request(UUID.randomUUID(), service.revision(), action, arg(c,"kingdom"), definition, target, person, counterpart, text, hash, 0,0,0);
         Result result = service.execute(player, request);
-        if (result.success()) c.getSource().sendSuccess(() -> Component.literal(result.message() + ": " + result.recordId()), false);
-        else c.getSource().sendFailure(Component.literal(result.message()));
+        if (result.success()) c.getSource().sendSuccess(() -> Component.empty().append(dev.otectus.mcakingdoms.interaction.PlayerWords.component(result.message())).append(": " + result.recordId()), false);
+        else c.getSource().sendFailure(dev.otectus.mcakingdoms.interaction.PlayerWords.component(result.message()));
         return result.success() ? 1 : 0;
     }
     /** Readable election summary: names, counts and remaining time instead of identifiers. */

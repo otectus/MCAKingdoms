@@ -2,6 +2,8 @@
 """Read the current pack, replace only R1 artifacts, and open a copied old world in an isolated client."""
 import argparse, hashlib, json, os, pathlib, re, shutil, subprocess, time, uuid
 from production_client import allowed
+import sys
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / 'test')); import environment  # F16: prerequisites from the environment
 
 def _mod_version():
     """mod_version from gradle.properties, so default artifact names follow the build."""
@@ -13,8 +15,8 @@ def _mod_version():
 
 MOD_VERSION = _mod_version()
 ROOT=pathlib.Path(__file__).resolve().parents[2]
-PACK=pathlib.Path('/home/otectus/Documents/curseforge/minecraft/Instances/Ultima')
-INSTALL = pathlib.Path(os.environ.get('MCAKINGDOMS_MC_INSTALL', '/home/otectus/Documents/curseforge/minecraft/Install'))
+PACK=environment.pack()  # MCAKINGDOMS_PACK
+INSTALL = environment.install()  # MCAKINGDOMS_MC_INSTALL
 
 def hashes(folder):
     return {str(p.relative_to(folder)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(folder.rglob('*')) if p.is_file()}
@@ -84,7 +86,7 @@ def main():
     (work/'launch-command.json').write_text(json.dumps(command,indent=2))
     environment=os.environ.copy();environment.update(DISPLAY=':98',LIBGL_ALWAYS_SOFTWARE='1')
     with (work/'xvfb.log').open('w') as xlog,(work/'client.log').open('w') as log:
-        display=subprocess.Popen([os.environ.get('MCAKINGDOMS_XVFB','/tmp/kd-xvfb/usr/bin/Xvfb'),':98','-screen','0','1600x1000x24','-nolisten','tcp','-ac'],stdout=xlog,stderr=xlog)
+        display=subprocess.Popen([str(environment.xvfb()),':98','-screen','0','1600x1000x24','-nolisten','tcp','-ac'],stdout=xlog,stderr=xlog)
         try:
             time.sleep(1)
             completed=subprocess.run(command,cwd=work,env=environment,stdout=log,stderr=subprocess.STDOUT,timeout=1100)

@@ -85,6 +85,7 @@ public final class KingdomsServiceImpl implements KingdomsService {
     private final DefinitionRegistry definitions;
     private final SettlementSavedData data;
     private final SpatialSettlementIndex spatialIndex = new SpatialSettlementIndex();
+    private final OrderedSettlements ordered = new OrderedSettlements();
     private final CivicIdentityStore civicStore = new CivicIdentityStore();
     private final Map<ResourceLocation, SettlementDetector> detectors = new LinkedHashMap<>();
     private final Map<ResourceLocation, KingdomResolver> resolvers = new LinkedHashMap<>();
@@ -187,11 +188,7 @@ public final class KingdomsServiceImpl implements KingdomsService {
     public Collection<SettlementView> getSettlements(ResourceLocation kingdomId) {
         requireServerThread();
         Objects.requireNonNull(kingdomId, "kingdomId");
-        return data.records().stream()
-                .filter(record -> record.kingdomId.equals(kingdomId))
-                .map(record -> (SettlementView) record.snapshot())
-                .sorted(settlementOrder())
-                .toList();
+        return ordered.of(data, Optional.of(kingdomId));
     }
 
     @Override
@@ -200,13 +197,16 @@ public final class KingdomsServiceImpl implements KingdomsService {
         Objects.requireNonNull(kingdomId, "kingdomId");
         if (offset < 0) throw new IllegalArgumentException("Settlement page offset must be non-negative");
         if (limit < 1 || limit > 64) throw new IllegalArgumentException("Settlement page limit must be from 1 to 64");
-        return data.records().stream()
-                .filter(record -> kingdomId.isEmpty() || record.kingdomId.equals(kingdomId.get()))
-                .map(record -> (SettlementView) record.snapshot())
-                .sorted(settlementOrder())
-                .skip(offset)
-                .limit(limit)
-                .toList();
+        return ordered.page(data, kingdomId, offset, limit);
+    }
+
+    /**
+     * Every settlement of {@code kingdom} (or all) in page order, from the snapshot built once per store revision (F13).
+     * For server-side searches and selectors that need the whole set; viewer filtering is the caller's.
+     */
+    public List<SettlementView> orderedSettlements(Optional<ResourceLocation> kingdom) {
+        requireServerThread();
+        return ordered.of(data, kingdom);
     }
 
     @Override
@@ -773,6 +773,28 @@ public final class KingdomsServiceImpl implements KingdomsService {
         return entity instanceof net.minecraft.world.entity.npc.Villager || entity.getType().is(CIVIC_RESIDENTS);
     }
 
+    /**
+     * Records a player's own verified residence (A01): the same change as an operator's setResidence, with the identity
+     * source REGISTERED. The caller has verified the evidence; this neither loads chunks nor reads beds.
+     */
+    public CivicIdentityView registerResidence(Entity entity, UUID settlementId) {
+        return setResidence(entity, settlementId, CivicIdentitySource.REGISTERED);
+    }
+
+    /** What civic evidence providers say about this entity now, read-only; empty when none speaks for it. */
+    public Optional<CivicIdentityHint> providerEvidence(Entity entity) {
+        requireEntity(entity);
+        for (CivicEvidenceProvider provider : List.copyOf(evidenceProviders.values())) {
+            try {
+                Optional<CivicIdentityHint> hint = provider.observe(entity);
+                if (hint.isPresent()) return hint;
+            } catch (RuntimeException failing) {
+                // A failing provider is no evidence; the bed rule still applies.
+            }
+        }
+        return Optional.empty();
+    }
+
     public void copyIdentity(Entity source, Entity target) {
         requireServerThread();
         civicStore.copy(source, target);
@@ -1200,11 +1222,6 @@ public final class KingdomsServiceImpl implements KingdomsService {
 
     private static void addAlias(SettlementRecord record, String alias) {
         if (!alias.isBlank() && !record.aliases.contains(alias)) record.aliases.add(alias);
-    }
-
-    private static Comparator<SettlementView> settlementOrder() {
-        return Comparator.comparing((SettlementView settlement) -> settlement.slug().toString())
-                .thenComparing(SettlementView::id);
     }
 
     private <T> Registration register(Map<ResourceLocation, T> registrations, ResourceLocation owner,

@@ -119,7 +119,10 @@ public final class McaKingdoms {
             dev.otectus.mcakingdoms.warfare.CampaignService.attach(server);
             dev.otectus.mcakingdoms.compat.crime.JurisdictionPolicyBridge.attach(server);
             MinecraftForge.EVENT_BUS.register(politics);
-            RUNTIMES.put(server, new RuntimeState(service, mca, integrations, politics));
+            // A02: notices and office badges, derived from committed authority only.
+            var presentation = dev.otectus.mcakingdoms.politics.OfficePresentation.start(server);
+            MinecraftForge.EVENT_BUS.register(presentation);
+            RUNTIMES.put(server, new RuntimeState(service, mca, integrations, politics, presentation));
             Set<PendingChunk> pending = PENDING_CHUNKS.remove(server);
             if (pending != null) {
                 pending.forEach(chunk -> {
@@ -131,7 +134,11 @@ public final class McaKingdoms {
         } catch (RuntimeException exception) {
             PENDING_CHUNKS.remove(server);
             RuntimeState failedRuntime = RUNTIMES.remove(server);
-            if (failedRuntime != null) MinecraftForge.EVENT_BUS.unregister(failedRuntime.politics());
+            if (failedRuntime != null) {
+                MinecraftForge.EVENT_BUS.unregister(failedRuntime.politics());
+                MinecraftForge.EVENT_BUS.unregister(failedRuntime.presentation());
+            }
+            dev.otectus.mcakingdoms.politics.OfficePresentation.stop(server);
             dev.otectus.mcakingdoms.api.politics.KingdomsPoliticsApi.detach(server);
             dev.otectus.mcakingdoms.compat.crime.JurisdictionPolicyBridge.detach(server);
             dev.otectus.mcakingdoms.warfare.CampaignService.clear(server);
@@ -304,8 +311,10 @@ public final class McaKingdoms {
         dev.otectus.mcakingdoms.warfare.WarfareRuntime.clear(event.getServer());
         PENDING_CHUNKS.remove(event.getServer());
         RuntimeState runtime = RUNTIMES.remove(event.getServer());
+        dev.otectus.mcakingdoms.politics.OfficePresentation.stop(event.getServer());
         if (runtime != null) {
             MinecraftForge.EVENT_BUS.unregister(runtime.politics());
+            MinecraftForge.EVENT_BUS.unregister(runtime.presentation());
             dev.otectus.mcakingdoms.api.politics.KingdomsPoliticsApi.detach(event.getServer());
             try {
                 runtime.mca().close();
@@ -326,7 +335,8 @@ public final class McaKingdoms {
         dev.otectus.mcakingdoms.data.ReloadReport.reset();
     }
 
-    private record RuntimeState(KingdomsServiceImpl service, Registration mca, Registration integrations, dev.otectus.mcakingdoms.politics.GovernmentService politics) {
+    private record RuntimeState(KingdomsServiceImpl service, Registration mca, Registration integrations, dev.otectus.mcakingdoms.politics.GovernmentService politics,
+                                dev.otectus.mcakingdoms.politics.OfficePresentation presentation) {
     }
 
     private static void enqueueLoadedSpawnChunks(MinecraftServer server, KingdomsServiceImpl service) {

@@ -11,7 +11,18 @@ public final class CivicTasks {
     private static CivicService civic(Context c){return CivicRuntime.get(c.server());}
     private static final String SERVICE_HELP="Membership, service qualification, nearby contact and legal access are checked separately. A missing requirement is explained by the service.";
     private static void task(String id,String title,boolean change,List<Field> fields,Handler handler){task(id,title,change?SERVICE_HELP:"Reads guild, service and qualification records available to you. Read-only.",change,fields,handler);}
-    private static void task(String id,String title,String help,boolean change,List<Field> fields,Handler handler){add(new Task("civic."+id,"Guilds and service",title,help,false,change,fields,c->civic(c).revision()+":"+OrganizationApi.get(c.server()).revision()+":"+civic(c).commissionFingerprint(),handler));}
+    private static void task(String id,String title,String help,boolean change,List<Field> fields,Handler handler){add(new Task("civic."+id,"Guilds and service",title,help,false,change,fields,CivicTasks::version,handler));}
+    /**
+     * The review's dependencies (F15): civic rules, the actor's own memberships and commission contracts, and the
+     * selected chapter, contact, resident and institution with the actor's authority there. Another player's activity
+     * elsewhere no longer voids a review; a change to anything reviewed still does, and the service checks again on apply.
+     */
+    private static String version(Context c){
+        UUID chapter=uuidOrNull(c.text("chapter")),npc=uuidOrNull(c.text("npc")),contact=uuidOrNull(c.text("contact")),institution=uuidOrNull(c.text("institution"));
+        return CivicDefinitions.INSTANCE.revision()+"|"+ownMemberships(c)+"|"+civic(c).commissionFingerprint(c.player.getUUID())+"|"
+                +civic(c).reviewVersion(c.player,c.text("organization").isBlank()?null:c.text("organization"),chapter,npc!=null?npc:contact,institution);
+    }
+    private static UUID uuidOrNull(String value){try{return value.isBlank()?null:UUID.fromString(value);}catch(IllegalArgumentException invalid){return null;}}
     /**
      * Joining or leaving depends on the player's own memberships and on which guilds exist. Versioning it by those alone
      * keeps another player's join from making this player's review stale; the service checks everything again on apply.

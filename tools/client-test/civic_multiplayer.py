@@ -13,6 +13,8 @@ import time
 import uuid
 
 from production_client import allowed
+import sys
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / 'test')); import environment  # F16: prerequisites from the environment
 
 def _mod_version():
     """mod_version from gradle.properties, so default artifact names follow the build."""
@@ -25,8 +27,8 @@ def _mod_version():
 MOD_VERSION = _mod_version()
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-INSTALL = pathlib.Path(os.environ.get('MCAKINGDOMS_MC_INSTALL', '/home/otectus/Documents/curseforge/minecraft/Install'))
-DEFAULT_XVFB = pathlib.Path('/tmp/kd-xvfb/usr/bin/Xvfb')
+INSTALL = environment.install()  # MCAKINGDOMS_MC_INSTALL
+DEFAULT_XVFB = environment.xvfb(required=False)  # MCAKINGDOMS_XVFB or Xvfb on PATH
 
 
 def main():

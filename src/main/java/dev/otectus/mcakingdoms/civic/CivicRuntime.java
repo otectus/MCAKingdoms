@@ -10,6 +10,17 @@ public final class CivicRuntime {
     public static java.util.List<dev.otectus.mcakingdoms.persistence.StoreStatus> storeStatus(net.minecraft.server.MinecraftServer server) { return java.util.List.of(CivicSavedData.status(server), InstitutionalCommissionData.status(server)); }
 
     private static final Map<MinecraftServer,CivicService> SERVICES=new WeakHashMap<>();
+    /** Capacity readings of the civic network and institutional commission ledgers (F12). */
+    public static java.util.List<dev.otectus.mcakingdoms.persistence.Capacity> capacity(MinecraftServer server) {
+        var s=CivicSavedData.get(server).state();var out=new ArrayList<dev.otectus.mcakingdoms.persistence.Capacity>();
+        out.add(new dev.otectus.mcakingdoms.persistence.Capacity(CivicSavedData.NAME,"guild chapters",s.chapters.size(),4096,dev.otectus.mcakingdoms.persistence.Capacity.Relief.OFFLINE_PROCEDURE));
+        out.add(new dev.otectus.mcakingdoms.persistence.Capacity(CivicSavedData.NAME,"chapter contacts",s.contacts.size(),16384,dev.otectus.mcakingdoms.persistence.Capacity.Relief.OFFLINE_PROCEDURE));
+        out.add(new dev.otectus.mcakingdoms.persistence.Capacity(CivicSavedData.NAME,"authored roles",s.seeds.size(),16384,dev.otectus.mcakingdoms.persistence.Capacity.Relief.OFFLINE_PROCEDURE));
+        out.add(new dev.otectus.mcakingdoms.persistence.Capacity(CivicSavedData.NAME,"dismissed contacts",s.dismissed.size(),16384,dev.otectus.mcakingdoms.persistence.Capacity.Relief.KEPT_AS_EVIDENCE));
+        out.add(new dev.otectus.mcakingdoms.persistence.Capacity(CivicSavedData.NAME,"chapter introductions",s.introductions.size(),100000,dev.otectus.mcakingdoms.persistence.Capacity.Relief.KEPT_AS_EVIDENCE));
+        out.add(new dev.otectus.mcakingdoms.persistence.Capacity(InstitutionalCommissionData.NAME,"commission contracts",InstitutionalCommissionData.get(server).size(),16384,dev.otectus.mcakingdoms.persistence.Capacity.Relief.OFFLINE_PROCEDURE));
+        return out;
+    }
     private CivicRuntime() { }
     public static Registration attach(MinecraftServer server,KingdomsService kingdoms) {
         if(!server.isSameThread())throw new IllegalStateException("Civic runtime requires server thread");

@@ -96,6 +96,10 @@ public final class GuideArticle {
                 Component caption = k.caption().isEmpty() ? GuideKingdoms.status()
                         : Component.empty().append(text(k.caption())).append(" ").append(GuideKingdoms.status());
                 pieces.add(Pieces.kingdoms(k.id(), GuideKingdoms::tiles, caption));
+                // A failure rests until the player asks again; nothing here re-requests on its own.
+                if (GuideKingdoms.state() == GuideKingdoms.State.FAILED || GuideKingdoms.refreshFailed())
+                    pieces.add(Pieces.actions(k.id() + "_retry", List.of(Pieces.button(k.id() + "_retry", g("kingdoms_retry", "Try again"),
+                            g("kingdoms_retry.hint", "Asks this server for its kingdoms again."), GuideKingdoms::retry, true))));
             } else if (block instanceof Unavailable u)
                 pieces.add(Pieces.text(u.id(), g("unavailable_block", "Part of this topic could not be shown; the game log names the problem."), Pieces.MUTED, 0));
         }

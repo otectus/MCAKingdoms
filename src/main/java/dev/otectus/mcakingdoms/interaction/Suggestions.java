@@ -53,6 +53,16 @@ final class Suggestions {
         add(suggestions, () -> worldEvents(player));
         here.ifPresent(settlement -> suggestions.add(new Suggestion("task", "settlement.here", Map.of(),
                 s("here", "Read %s", settlement.displayName()), s("here.reason", "You are in %s, a settlement of %s.", settlement.displayName(), kingdomName))));
+        // A01: someone with no civic residence who stands in a settlement is offered the way to record one.
+        if (here.isPresent() && api.getResidence(player).isEmpty() && dev.otectus.mcakingdoms.config.McaKingdomsConfig.PLAYER_REGISTRATION.get()) {
+            boolean ready = dev.otectus.mcakingdoms.citizen.ResidenceRegistration.evidence(player).found();
+            String name = here.get().displayName();
+            suggestions.add(ready
+                    ? new Suggestion("task", "citizen.register_residence", Map.of(), s("residence", "Register %s as your residence", name),
+                            s("residence.reason", "Your bed is in %s and you have no civic residence yet.", name))
+                    : new Suggestion("task", "citizen.residence_status", Map.of(), s("residence.check", "How to make %s your residence", name),
+                            s("residence.check.reason", "You have no civic residence yet. Founding and civic services need one.")));
+        }
         add(suggestions, () -> guildContacts(player));
         if (SettlementKnowledge.get(server).all(player, api, Optional.empty(), 1).isEmpty())
             suggestions.add(new Suggestion("guide", "ledger_recipe", Map.of(), s("first_village", "Find and record your first village"),

@@ -2,6 +2,8 @@
 """Two real offline clients against an isolated packaged Forge dedicated server."""
 import argparse, hashlib, json, os, pathlib, re, shutil, socket, subprocess, time, uuid
 from production_client import allowed
+import sys
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / 'test')); import environment  # F16: prerequisites from the environment
 
 def _mod_version():
     """mod_version from gradle.properties, so default artifact names follow the build."""
@@ -13,8 +15,8 @@ def _mod_version():
 
 MOD_VERSION = _mod_version()
 ROOT=pathlib.Path(__file__).resolve().parents[2]
-INSTALL = pathlib.Path(os.environ.get('MCAKINGDOMS_MC_INSTALL', '/home/otectus/Documents/curseforge/minecraft/Install'))
-DEFAULT_XVFB = pathlib.Path('/tmp/kd-xvfb/usr/bin/Xvfb')
+INSTALL = environment.install()  # MCAKINGDOMS_MC_INSTALL
+DEFAULT_XVFB = environment.xvfb(required=False)  # MCAKINGDOMS_XVFB or Xvfb on PATH
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--work-dir',type=pathlib.Path,required=True)
@@ -25,10 +27,10 @@ def main():
     if work.exists():raise SystemExit(f'Refusing to reuse {work}')
     work.mkdir(parents=True);server=work/'server';server.mkdir();(server/'mods').mkdir();(server/'libraries').symlink_to(ROOT/'build/forge-server/libraries',target_is_directory=True)
     mod=ROOT/f'build/libs/mcakingdoms-{MOD_VERSION}.jar';harness=ROOT/f'build/test-artifacts/mcakingdoms-{MOD_VERSION}-client-acceptance.jar'
-    native=pathlib.Path('/home/otectus/Documents/curseforge/minecraft/Instances/Ultima/mods/recruits-1.20.1-1.15.2.jar')
+    native=environment.pack_mods()/'recruits-1.20.1-1.15.2.jar'
     acceptance=ROOT/f'build/test-artifacts/mcakingdoms-{MOD_VERSION}-acceptance.jar'
     for jar in [native,acceptance]:shutil.copy2(jar,server/'mods'/jar.name)
-    shutil.copy2(mod,server/'mods'/mod.name);shutil.copy2('/home/otectus/Projects/MCACrime/run/eula.txt',server/'eula.txt')
+    shutil.copy2(mod,server/'mods'/mod.name);environment.eula(server)
     with socket.socket() as sock:sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
     (server/'server.properties').write_text(f'online-mode=false\nenforce-secure-profile=false\nserver-ip=127.0.0.1\nserver-port={port}\nlevel-type=minecraft:flat\ngenerate-structures=false\nview-distance=2\nsimulation-distance=2\nspawn-protection=0\n')
     vanilla=json.loads((INSTALL/'versions/1.20.1/1.20.1.json').read_text());forge=json.loads((INSTALL/'versions/forge-47.4.23/forge-47.4.23.json').read_text())

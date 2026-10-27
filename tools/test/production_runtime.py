@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Exercise packaged Forge server restart and datapack reload without touching pack instances."""
-import argparse, gzip, io, json, pathlib, re, shutil, struct, subprocess, time
+import argparse, gzip, io, json, pathlib, re, shutil, struct, subprocess, sys, time
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import environment
 
 def read_nbt(path):
     f=io.BytesIO(gzip.open(path,'rb').read())
@@ -35,12 +37,12 @@ def main():
     properties=dict(line.strip().split('=',1) for line in (root/'gradle.properties').read_text().splitlines() if '=' in line and not line.startswith('#'))
     (work/'mods').mkdir(); jar=root/'build/libs'/f"{properties['mod_id']}-{properties['mod_version']}.jar";shutil.copy2(jar,work/'mods'/jar.name)
     if args.mca:
-        source=pathlib.Path('/home/otectus/Documents/curseforge/minecraft/Instances/Ultima/mods')
+        source=environment.pack_mods()  # MCAKINGDOMS_PACK
         for name in ('minecraft-comes-alive-7.6.26+1.20.1-universal.jar','architectury-9.2.14-forge.jar'):shutil.copy2(source/name,work/'mods'/name)
     for extra in args.extra_mod:shutil.copy2(extra,work/'mods'/extra.name)
     if args.lifecycle_only or args.commands_only:
         harness=root/'build/test-artifacts'/f"{properties['mod_id']}-{properties['mod_version']}-acceptance.jar";shutil.copy2(harness,work/'mods'/harness.name)
-    shutil.copy2('/home/otectus/Projects/MCACrime/run/eula.txt',work/'eula.txt')
+    environment.eula(work)  # MCAKINGDOMS_EULA; acceptance is never assumed
     (work/'server.properties').write_text('online-mode=false\nserver-ip=127.0.0.1\nserver-port=0\nlevel-type=minecraft:flat\ngenerate-structures=false\nview-distance=2\nsimulation-distance=2\nspawn-protection=0\ngenerator-settings={"layers":[{"block":"minecraft:bedrock","height":1},{"block":"minecraft:dirt","height":2},{"block":"minecraft:grass_block","height":1}],"biome":"minecraft:plains"}\n')
     launcher='@libraries/net/minecraftforge/forge/1.20.1-47.4.23/unix_args.txt'
     import atexit
@@ -52,7 +54,7 @@ def main():
                 except Exception: process.terminate()
     atexit.register(cleanup)
     def boot(stage):
-        log=work/f'{stage}.log';out=log.open('w');proc=subprocess.Popen(['java','-Xmx2G',*(['-Dmcakingdoms.acceptance.commands=true'] if args.commands_only else []),launcher,'nogui'],cwd=work,stdin=subprocess.PIPE,stdout=out,stderr=out,text=True)
+        log=work/f'{stage}.log';out=log.open('w');proc=subprocess.Popen([environment.java(),'-Xmx2G',*(['-Dmcakingdoms.acceptance.commands=true'] if args.commands_only else []),launcher,'nogui'],cwd=work,stdin=subprocess.PIPE,stdout=out,stderr=out,text=True)
         running.append(proc);wait(proc,log,'Done (',180);return proc,log,out
     def wait(proc,log,text,timeout=60):
         end=time.monotonic()+timeout
@@ -99,7 +101,7 @@ def main():
     before=hashlib.sha256(save.read_bytes()).hexdigest();rule.unlink()
     refusal=work/'03-future-schema.log'
     with refusal.open('w') as out:
-        proc=subprocess.Popen(['java','-Xmx2G',*(['-Dmcakingdoms.acceptance.commands=true'] if args.commands_only else []),launcher,'nogui'],cwd=work,stdin=subprocess.PIPE,stdout=out,stderr=out,text=True)
+        proc=subprocess.Popen([environment.java(),'-Xmx2G',*(['-Dmcakingdoms.acceptance.commands=true'] if args.commands_only else []),launcher,'nogui'],cwd=work,stdin=subprocess.PIPE,stdout=out,stderr=out,text=True)
         try: proc.wait(timeout=120)
         except subprocess.TimeoutExpired: proc.terminate();proc.wait(timeout=15);raise RuntimeError('Future schema server did not refuse startup')
     assert 'Unsupported MCA: Kingdoms save schema 99' in refusal.read_text(errors='replace')

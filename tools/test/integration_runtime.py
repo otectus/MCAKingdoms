@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Fresh packaged-server integration checks; optional source/target process-crash replay."""
-import argparse, json, gzip, hashlib, pathlib, shutil, subprocess, time
+import argparse, json, gzip, hashlib, pathlib, shutil, subprocess, sys, time
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import environment
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--work-dir',required=True,type=pathlib.Path);p.add_argument('--mod',action='append',default=[],type=pathlib.Path);p.add_argument('--crash-replay',action='store_true');p.add_argument('--phase',default='initial');p.add_argument('--startup-only',action='store_true');p.add_argument('--seed-world',type=pathlib.Path);args=p.parse_args()
@@ -11,7 +13,7 @@ def main():
     jars=[*args.mod] if args.startup_only else [root/'build/libs'/f"{props['mod_id']}-{props['mod_version']}.jar",root/'build/test-artifacts'/f"{props['mod_id']}-{props['mod_version']}-acceptance.jar",*args.mod]
     for jar in jars:shutil.copy2(jar,work/'mods'/jar.name)
     (work/'artifacts.sha256').write_text(''.join(hashlib.sha256(j.read_bytes()).hexdigest()+'  '+j.name+'\n' for j in jars))
-    shutil.copy2('/home/otectus/Projects/MCACrime/run/eula.txt',work/'eula.txt')
+    environment.eula(work)  # an EULA you accepted (MCAKINGDOMS_EULA); acceptance is never assumed
     (work/'server.properties').write_text('online-mode=false\nserver-ip=127.0.0.1\nserver-port=0\nlevel-type=minecraft:flat\ngenerate-structures=false\nview-distance=2\nsimulation-distance=2\nspawn-protection=0\ngenerator-settings={"layers":[{"block":"minecraft:bedrock","height":1},{"block":"minecraft:dirt","height":2},{"block":"minecraft:grass_block","height":1}],"biome":"minecraft:plains"}\n')
     if args.seed_world:shutil.copytree(args.seed_world,work/'world')
     if args.phase=='named':
@@ -26,11 +28,13 @@ def main():
         shutil.copy2(root/'pack/r1/kubejs/data/ultima/mcaquests/quests/civic/lamplighters/fire_in_poor_hands.json',work/'fire_in_poor_hands.json')
     if args.phase=='r3':
         (work/'config').mkdir(exist_ok=True)
-        (work/'config/mcakingdoms-warfare-common.toml').write_text('[political_warfare]\n')
+        # The observation fixture bypasses campaign policy, so military actions are off from launch; toggling the
+        # setting at runtime raced Forge's config watcher (F16).
+        (work/'config/mcakingdoms-warfare-common.toml').write_text('[political_warfare]\nmilitaryActions = false\n')
     def boot(phase,crash=False):
         log=work/f'{phase}.log'
         with log.open('w') as out:
-            proc=subprocess.Popen(['java','-Xmx2G',f'-Dmcakingdoms.acceptance.integration={phase}','@libraries/net/minecraftforge/forge/1.20.1-47.4.23/unix_args.txt','nogui'],cwd=work,stdin=subprocess.PIPE,stdout=out,stderr=out,text=True)
+            proc=subprocess.Popen([environment.java(),'-Xmx2G',f'-Dmcakingdoms.acceptance.integration={phase}','@libraries/net/minecraftforge/forge/1.20.1-47.4.23/unix_args.txt','nogui'],cwd=work,stdin=subprocess.PIPE,stdout=out,stderr=out,text=True)
             try:
                 deadline=time.monotonic()+(1500 if args.phase=='politics-cycle' else 180)
                 while proc.poll() is None and time.monotonic()<deadline:

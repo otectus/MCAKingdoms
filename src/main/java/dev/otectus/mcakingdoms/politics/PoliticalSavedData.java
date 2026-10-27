@@ -116,6 +116,18 @@ public final class PoliticalSavedData extends SavedData {
         return data;
     }
     boolean writable() { return preserved == null; }
+    public static java.util.List<dev.otectus.mcakingdoms.persistence.Capacity> capacity(MinecraftServer server) {
+        var r = get(server).records;
+        return java.util.List.of(
+                new dev.otectus.mcakingdoms.persistence.Capacity(NAME, "governments", r.governments.size(), 128, dev.otectus.mcakingdoms.persistence.Capacity.Relief.OFFLINE_PROCEDURE),
+                new dev.otectus.mcakingdoms.persistence.Capacity(NAME, "agreements", r.agreements.size(), 4096, dev.otectus.mcakingdoms.persistence.Capacity.Relief.OFFLINE_PROCEDURE),
+                new dev.otectus.mcakingdoms.persistence.Capacity(NAME, "petitions", r.petitions.size(), 4096, dev.otectus.mcakingdoms.persistence.Capacity.Relief.OFFLINE_PROCEDURE),
+                new dev.otectus.mcakingdoms.persistence.Capacity(NAME, "institution recognitions", r.recognitions.size(), 4096, dev.otectus.mcakingdoms.persistence.Capacity.Relief.OFFLINE_PROCEDURE),
+                new dev.otectus.mcakingdoms.persistence.Capacity(NAME, "honors", r.honors.size(), 8192, dev.otectus.mcakingdoms.persistence.Capacity.Relief.OFFLINE_PROCEDURE),
+                new dev.otectus.mcakingdoms.persistence.Capacity(NAME, "elections", r.elections.size(), 512, dev.otectus.mcakingdoms.persistence.Capacity.Relief.OFFLINE_PROCEDURE),
+                new dev.otectus.mcakingdoms.persistence.Capacity(NAME, "request receipts", r.receipts.size(), 8192, dev.otectus.mcakingdoms.persistence.Capacity.Relief.RETENTION),
+                new dev.otectus.mcakingdoms.persistence.Capacity(NAME, "history", r.facts.size(), 32768, dev.otectus.mcakingdoms.persistence.Capacity.Relief.RETENTION));
+    }
     public static dev.otectus.mcakingdoms.persistence.StoreStatus status(MinecraftServer server) { var data = get(server); return dev.otectus.mcakingdoms.persistence.StoreStatus.of(NAME, data.writable(), data.diagnostic()); }
     String diagnostic() { return diagnostic; }
     Records records() { return records; }

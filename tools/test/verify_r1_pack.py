@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """Verify the R1 overlay preserves authored IDs and all existing mechanics."""
-import argparse,hashlib,json,pathlib
+import argparse,hashlib,json,pathlib,sys
+sys.path.insert(0,str(pathlib.Path(__file__).resolve().parent))
+import environment
 ROOT=pathlib.Path(__file__).resolve().parents[2]
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--pack',type=pathlib.Path,default=pathlib.Path('/home/otectus/Documents/curseforge/minecraft/Instances/Ultima'));args=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--pack',type=pathlib.Path,default=None,help='modpack instance folder (default: MCAKINGDOMS_PACK)');args=p.parse_args()
+    if args.pack is None:args.pack=environment.pack()
     rows=json.loads((ROOT/'pack/r1/quest-manifest.json').read_text());assert len(rows)==12
     ids=set()
     for row in rows:

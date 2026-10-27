@@ -1,5 +1,7 @@
 package dev.otectus.mcakingdoms.interaction;
 
+import net.minecraft.network.chat.Component;
+
 import dev.otectus.mcakingdoms.civic.CivicConfig;
 
 import dev.otectus.mcakingdoms.api.*;
@@ -15,9 +17,12 @@ public final class BasicTargets {
         targets("kingdom",c->McaKingdomsApi.get(c.server()).getKingdoms().stream().map(k->Choice.of(k.id().toString(),tr(k.translationKey(),PlayerWords.text(k.translationKey())))).toList());
         targets("settlement",c->{var api=McaKingdomsApi.get(c.server());var out=new ArrayList<Choice>();
             for(var s:SettlementKnowledge.get(c.server()).all(c.player,api,Optional.empty(),4096))out.add(new Choice(s.id().toString(),s.displayName(),s.dimension().location()+" · "+s.anchor().toShortString(),Map.of("revision",Long.toString(s.revision()),"kingdom",s.kingdomId().toString())));return out;});
-        targets("player",c->c.server().getPlayerList().getPlayers().stream().map(p->new Choice(p.getUUID().toString(),p.getGameProfile().getName())).toList());
+        // A02: a person's public offices are part of how they are named in pickers (the text equivalent of a badge).
+        targets("player",c->c.server().getPlayerList().getPlayers().stream().map(p->Choice.of(p.getUUID().toString(),Component.literal(p.getGameProfile().getName()),
+                dev.otectus.mcakingdoms.politics.OfficePresentation.describe(c.server(),p.getUUID()).orElse(null))).toList());
         targets("person",c->{var result=new ArrayList<>(c.choices("player"));result.addAll(c.choices("npc"));return result;});
-        targets("npc",c->c.player.serverLevel().getEntities(c.player,c.player.getBoundingBox().inflate(32),e->e instanceof LivingEntity&&!(e instanceof net.minecraft.world.entity.player.Player)&&e.isAlive()&&c.player.hasLineOfSight(e)).stream().map(e->Choice.of(e.getUUID().toString(),e.getDisplayName(),tr("interaction.mcakingdoms.choice.nearby","Nearby and visible"))).toList());
+        targets("npc",c->c.player.serverLevel().getEntities(c.player,c.player.getBoundingBox().inflate(32),e->e instanceof LivingEntity&&!(e instanceof net.minecraft.world.entity.player.Player)&&e.isAlive()&&c.player.hasLineOfSight(e)).stream().map(e->Choice.of(e.getUUID().toString(),e.getDisplayName(),dev.otectus.mcakingdoms.politics.OfficePresentation.describe(c.server(),e.getUUID())
+                .<Component>map(o->tr("interaction.mcakingdoms.choice.nearby_office","Nearby and visible · %s",o)).orElse(tr("interaction.mcakingdoms.choice.nearby","Nearby and visible")))).toList());
         // Contacts for guild and contract services: exactly the people those services will accept (contactRange).
         targets("nearby_npc",c->{int range=CivicConfig.CONTACT_RANGE.get();return c.player.serverLevel().getEntities(c.player,c.player.getBoundingBox().inflate(range),e->e instanceof LivingEntity&&!(e instanceof net.minecraft.world.entity.player.Player)&&e.isAlive()&&e.distanceToSqr(c.player)<=(double)range*range&&c.player.hasLineOfSight(e)).stream().map(e->Choice.of(e.getUUID().toString(),e.getDisplayName(),tr("interaction.mcakingdoms.choice.within","Within %s blocks and visible",range))).toList();});
         targets("organization",c->OrganizationApi.get(c.server()).definitions().stream().map(d->Choice.of(d.id().toString(),tr(d.nameKey(),PlayerWords.text(d.nameKey())))).toList());

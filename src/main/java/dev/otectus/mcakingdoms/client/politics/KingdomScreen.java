@@ -77,7 +77,7 @@ public final class KingdomScreen extends Screen {
             presented.put(row, new Presented(hasTitles ? InteractionNetwork.component(reply.titles().get(i)) : translated(row.title()),
                     hasDetails ? InteractionNetwork.component(reply.details().get(i)) : Component.literal(row.detail()), fields));
         }
-        status = reply.result() == null ? page.diagnostic().isBlank() ? Component.empty() : Component.literal(page.diagnostic()) : Component.literal(reply.result().message());
+        status = reply.result() == null ? page.diagnostic().isBlank() ? Component.empty() : Component.literal(page.diagnostic()) : dev.otectus.mcakingdoms.interaction.PlayerWords.component(reply.result().message());
         if (reply.result() != null && reply.result().success()) { selected = null; }
         rebuildWidgets();
     }

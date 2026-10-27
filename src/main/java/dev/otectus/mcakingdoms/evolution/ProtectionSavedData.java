@@ -39,6 +39,12 @@ public final class ProtectionSavedData extends SavedData {
         next.revision = Math.addExact(next.revision, 1);
         if (!data.commit(server, next)) throw new IllegalStateException("Protectorate records could not be saved");
     }
+    public static java.util.List<dev.otectus.mcakingdoms.persistence.Capacity> capacity(MinecraftServer server) {
+        var s = get(server).state;
+        return java.util.List.of(new dev.otectus.mcakingdoms.persistence.Capacity(NAME, "protection pacts", s.pacts.size(), 1024, dev.otectus.mcakingdoms.persistence.Capacity.Relief.OFFLINE_PROCEDURE),
+                new dev.otectus.mcakingdoms.persistence.Capacity(NAME, "pact obligations", s.obligations.size(), 8192, dev.otectus.mcakingdoms.persistence.Capacity.Relief.OFFLINE_PROCEDURE),
+                new dev.otectus.mcakingdoms.persistence.Capacity(NAME, "used receipts", s.receipts.size(), 8192, dev.otectus.mcakingdoms.persistence.Capacity.Relief.KEPT_AS_EVIDENCE));
+    }
     ProtectionState snapshot() { return JSON.fromJson(JSON.toJson(state), ProtectionState.class); }
     long revision() { return state.revision; }
     boolean commit(MinecraftServer server, ProtectionState next) {

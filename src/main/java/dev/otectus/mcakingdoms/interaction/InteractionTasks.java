@@ -6,7 +6,7 @@ import net.minecraftforge.fml.ModList;
 public final class InteractionTasks {
     private static boolean initialized;
     public static synchronized void init(){if(initialized)return;initialized=true;
-        hints();BasicTargets.init();HelpTasks.init();CoreTasks.init();PoliticalTasks.init();CivicTasks.init();StandingTasks.init();WarfareTasks.init();EvolutionTasks.init();ActionRegistry.targets("scope",c->{var values=new java.util.ArrayList<>(c.choices("scenario"));values.addAll(c.choices("obligation"));return values;});
+        hints();BasicTargets.init();HelpTasks.init();CoreTasks.init();ResidenceTasks.init();PoliticalTasks.init();CivicTasks.init();StandingTasks.init();WarfareTasks.init();EvolutionTasks.init();ActionRegistry.targets("scope",c->{var values=new java.util.ArrayList<>(c.choices("scenario"));values.addAll(c.choices("obligation"));return values;});
         NextSteps.init();Requirements.init();}
     private InteractionTasks(){}
     private static Component hint(String kind,String fallback,Object... args){return ActionRegistry.tr("interaction.mcakingdoms.hint."+kind,fallback,args);}

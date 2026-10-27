@@ -97,44 +97,44 @@ public final class GovernmentService implements PoliticalService {
         Objects.requireNonNull(rule); return transition(actor, request, expected, kingdom, Action.ADOPT_TRANSITION_RULE, PoliticalSavedData.JSON.toJson(rule), state -> {
             Government government = state.governments.get(kingdom); authorize(actor, government, Permission.APPOINT);
             check(government.offices().get(LEADER) != null && government.offices().get(LEADER).holder().equals(new Person(actor.getUUID(), Kind.PLAYER)),
-                    "Only the current leader may adopt constitutional transition rules");
-            check(state.elections.values().stream().noneMatch(e->e.kingdom().equals(kingdom)&&(e.state()==ElectionState.OPEN||e.state()==ElectionState.GRACE)),"Close the current election before changing its constitutional rule");
-            Regency regency=state.regencies.get(kingdom);check(regency==null||!regency.active(),"End the current regency before changing its constitutional rule");
+                    "politics.mcakingdoms.refusal.leader_only_rules");
+            check(state.elections.values().stream().noneMatch(e->e.kingdom().equals(kingdom)&&(e.state()==ElectionState.OPEN||e.state()==ElectionState.GRACE)),"politics.mcakingdoms.refusal.close_election_first");
+            Regency regency=state.regencies.get(kingdom);check(regency==null||!regency.active(),"politics.mcakingdoms.refusal.end_regency_first");
             state.transitionRules.put(kingdom, rule); return kingdom;
         });
     }
     @Override public Result openElection(ServerPlayer actor,UUID request,long expected,String kingdom,List<UUID> candidates) {
         List<UUID> frozen = List.copyOf(candidates); return transition(actor, request, expected, kingdom, Action.OPEN_ELECTION, frozen.toString(), state -> {
             Government government = state.governments.get(kingdom); authorize(actor, government, Permission.APPOINT);
-            Rule rule = state.transitionRules.get(kingdom); check(rule != null && rule.elections(), "This government has not opted into elections");
-            Set<UUID> nominees = new LinkedHashSet<>(frozen); check(nominees.size() >= 2 && nominees.size() <= rule.maxCandidates(), "Candidate count violates the adopted rule");
+            Rule rule = state.transitionRules.get(kingdom); check(rule != null && rule.elections(), "politics.mcakingdoms.refusal.no_elections");
+            Set<UUID> nominees = new LinkedHashSet<>(frozen); check(nominees.size() >= 2 && nominees.size() <= rule.maxCandidates(), "politics.mcakingdoms.refusal.candidate_count");
             nominees.forEach(id -> person(new Person(id, Kind.PLAYER), kingdom, null));
-            check(state.elections.values().stream().noneMatch(e -> e.kingdom().equals(kingdom) && (e.state() == ElectionState.OPEN || e.state() == ElectionState.GRACE)), "An election is already open");
+            check(state.elections.values().stream().noneMatch(e -> e.kingdom().equals(kingdom) && (e.state() == ElectionState.OPEN || e.state() == ElectionState.GRACE)), "politics.mcakingdoms.refusal.election_open");
             Set<UUID> electorate = electorate(government, rule); Regency regent = state.regencies.get(kingdom); if (unexpired(regent,now())) electorate.add(regent.regent().id());
-            check(!electorate.isEmpty() && electorate.size() <= 128, "No bounded eligible electorate is available");
+            check(!electorate.isEmpty() && electorate.size() <= 128, "politics.mcakingdoms.refusal.no_electorate");
             state.elections.put(request, new Election(request, kingdom, nominees, electorate, Map.of(), ElectionState.OPEN, now(), now()+rule.electionTicks(),
                     now()+rule.electionTicks()+rule.graceTicks(), state.revision, null)); return request.toString();
         });
     }
     @Override public Result castBallot(ServerPlayer actor,UUID request,long expected,UUID election,UUID candidate) {
-        Election existing = data.records().elections.get(election); if (existing == null) return new Result(false,revision(),"Election unavailable","");
+        Election existing = data.records().elections.get(election); if (existing == null) return new Result(false,revision(),"politics.mcakingdoms.refusal.election_unavailable","");
         return transition(actor, request, expected, existing.kingdom(), Action.CAST_BALLOT, election+"|"+candidate, state -> {
-            Election value = state.elections.get(election); check(value != null && (value.state()==ElectionState.OPEN || value.state()==ElectionState.GRACE) && now()<value.graceUntil(), "Election is closed");
-            check(value.electorate().contains(actor.getUUID()), "You are not in the frozen electorate"); check(value.candidates().contains(candidate), "Candidate is not on this ballot");
+            Election value = state.elections.get(election); check(value != null && (value.state()==ElectionState.OPEN || value.state()==ElectionState.GRACE) && now()<value.graceUntil(), "politics.mcakingdoms.refusal.election_closed");
+            check(value.electorate().contains(actor.getUUID()), "politics.mcakingdoms.refusal.not_in_electorate"); check(value.candidates().contains(candidate), "politics.mcakingdoms.refusal.candidate_not_on_ballot");
             Map<UUID,UUID> ballots = new LinkedHashMap<>(value.ballots()); ballots.put(actor.getUUID(), candidate);
             state.elections.put(election, new Election(value.id(),value.kingdom(),value.candidates(),value.electorate(),ballots,value.state(),value.openedAt(),value.deadline(),value.graceUntil(),state.revision,null));
             return election.toString();
         });
     }
     @Override public Result closeElection(ServerPlayer actor,UUID request,long expected,UUID election) {
-        Election existing = data.records().elections.get(election); if (existing == null) return new Result(false,revision(),"Election unavailable","");
+        Election existing = data.records().elections.get(election); if (existing == null) return new Result(false,revision(),"politics.mcakingdoms.refusal.election_unavailable","");
         return transition(actor, request, expected, existing.kingdom(), Action.CLOSE_ELECTION, election.toString(), state -> closeElection(actor,election,state));
     }
     @Override public Result appointRegent(ServerPlayer actor,UUID request,long expected,String kingdom,UUID regentId) {
         return transition(actor, request, expected, kingdom, Action.APPOINT_REGENT, regentId.toString(), state -> {
-            Government government = state.governments.get(kingdom); Rule rule = state.transitionRules.get(kingdom); check(rule != null && rule.regency(), "This government has not opted into regency");
-            if (government.state()==State.ACTIVE) authorize(actor,government,Permission.APPOINT); else check(actor.hasPermissions(2),"Interregnum regency recovery requires operator authority");
-            Regency prior = state.regencies.get(kingdom); check(prior==null || !prior.active() || now()>=prior.expiresAt(),"A regency is already active");
+            Government government = state.governments.get(kingdom); Rule rule = state.transitionRules.get(kingdom); check(rule != null && rule.regency(), "politics.mcakingdoms.refusal.no_regency");
+            if (government.state()==State.ACTIVE) authorize(actor,government,Permission.APPOINT); else check(actor.hasPermissions(2),"politics.mcakingdoms.refusal.regency_operator");
+            Regency prior = state.regencies.get(kingdom); check(prior==null || !prior.active() || now()>=prior.expiresAt(),"politics.mcakingdoms.refusal.regency_active");
             Person regent = person(new Person(regentId,Kind.PLAYER),kingdom,null); UUID id = request;
             state.regencies.put(kingdom,new Regency(id,kingdom,regent,rule.regentPermissions(),government.successor(),now(),now()+rule.regencyTicks(),true,state.revision));
             return id.toString();
@@ -142,8 +142,8 @@ public final class GovernmentService implements PoliticalService {
     }
     @Override public Result endRegency(ServerPlayer actor,UUID request,long expected,String kingdom) {
         return transition(actor, request, expected, kingdom, Action.END_REGENCY, kingdom, state -> {
-            Government government=state.governments.get(kingdom);Regency value=state.regencies.get(kingdom);check(value!=null&&value.active(),"No active regency");
-            check(actor.hasPermissions(2)||value.regent().id().equals(actor.getUUID())||permitted(actor,government,Permission.APPOINT),"Only the regent or appointing authority may end the regency");
+            Government government=state.governments.get(kingdom);Regency value=state.regencies.get(kingdom);check(value!=null&&value.active(),"politics.mcakingdoms.refusal.no_active_regency");
+            check(actor.hasPermissions(2)||value.regent().id().equals(actor.getUUID())||permitted(actor,government,Permission.APPOINT),"politics.mcakingdoms.refusal.end_regency_authority");
             state.regencies.put(kingdom,new Regency(value.id(),kingdom,value.regent(),value.permissions(),value.preservedSuccessor(),value.appointedAt(),value.expiresAt(),false,state.revision));return value.id().toString();
         });
     }
@@ -152,13 +152,13 @@ public final class GovernmentService implements PoliticalService {
     private Result transition(ServerPlayer actor,UUID request,long expected,String kingdom,Action action,String detail,TransitionMutation mutation) {
         thread();check(actor.getServer()==server&&!actor.hasDisconnected(),"Player is not connected to this server");Objects.requireNonNull(request); Politics.bounded(kingdom,128);
         String fingerprint=hash(action+"|"+expected+"|"+kingdom+"|"+detail);Receipt replay=data.records().receipts.get(request);
-        if(replay!=null)return replay.actor().equals(actor.getUUID())&&replay.fingerprint().equals(fingerprint)?replay.result():new Result(false,revision(),"Request ID already used","");
-        try{check(data.writable(),data.diagnostic());check(!conflict,"Native governance disabled while MCA: Capitals is installed");check(expected==revision(),"Political state changed; refresh before retrying");
-            Government government=data.records().governments.get(kingdom);check(government!=null,"Government is unorganized");
-            check(definitions.available(government.profileId()),"Constitution unavailable; government dormant");check(data.records().receipts.size()<RECEIPT_CAPACITY,"Political request receipts are temporarily full; try again shortly");
+        if(replay!=null)return replay.actor().equals(actor.getUUID())&&replay.fingerprint().equals(fingerprint)?replay.result():new Result(false,revision(),"politics.mcakingdoms.refusal.request_used","");
+        try{check(data.writable(),data.diagnostic());check(!conflict,"politics.mcakingdoms.refusal.capitals");check(expected==revision(),"politics.mcakingdoms.refusal.state_changed");
+            Government government=data.records().governments.get(kingdom);check(government!=null,"politics.mcakingdoms.refusal.no_government");
+            check(definitions.available(government.profileId()),"politics.mcakingdoms.refusal.dormant");check(data.records().receipts.size()<RECEIPT_CAPACITY,"politics.mcakingdoms.refusal.receipts_full");
             var next=data.transaction();next.revision++;String record=mutation.apply(next);Result result=new Result(true,next.revision,"Constitutional transition recorded",record);
             next.receipts.put(request,new Receipt(actor.getUUID(),fingerprint,result,now()));Notice notice=new Notice(request,kingdom,action,actor.getUUID(),record,now());append(next,notice,transitionFact(request,kingdom,action,actor.getUUID(),record,next));
-            if(!data.commitDurably(server,next))return new Result(false,revision(),"Constitutional transition could not be durably saved","");publish(notice);return result;
+            if(!data.commitDurably(server,next))return new Result(false,revision(),"politics.mcakingdoms.refusal.save_failed","");publish(notice);return result;
         }catch(IllegalArgumentException|IllegalStateException failure){return new Result(false,revision(),Objects.toString(failure.getMessage(),"Constitutional transition rejected"),"");}
     }
     @Override public List<PoliticalFact> history(ServerPlayer viewer, int offset, int limit) {
@@ -180,16 +180,16 @@ public final class GovernmentService implements PoliticalService {
         Receipt receipt = data.records().receipts.get(request.requestId());
         if (receipt != null) {
             return receipt.actor().equals(actor.getUUID()) && receipt.fingerprint().equals(fingerprint)
-                    ? receipt.result() : new Result(false, revision(), "Request ID already used", "");
+                    ? receipt.result() : new Result(false, revision(), "politics.mcakingdoms.refusal.request_used", "");
         }
         try {
             check(data.writable(), data.diagnostic());
-            check(!conflict, "Native governance disabled while MCA: Capitals is installed");
-            check(request.expectedRevision() == revision(), "Political state changed; refresh before retrying");
+            check(!conflict, "politics.mcakingdoms.refusal.capitals");
+            check(request.expectedRevision() == revision(), "politics.mcakingdoms.refusal.state_changed");
             check(kingdoms.getKingdom(new ResourceLocation(request.kingdom())).filter(KingdomView::defined).isPresent(),
-                    "Kingdom definition unavailable");
+                    "politics.mcakingdoms.refusal.kingdom_undefined");
             // Receipts retire after RECEIPT_RETENTION ticks; a later replay fails the expectedRevision check instead of re-executing.
-            check(data.records().receipts.size() < RECEIPT_CAPACITY, "Political request receipts are temporarily full; try again shortly");
+            check(data.records().receipts.size() < RECEIPT_CAPACITY, "politics.mcakingdoms.refusal.receipts_full");
             PoliticalSavedData.Records next = data.transaction();
             next.revision++;
             String id = mutate(actor, request, next);
@@ -198,7 +198,7 @@ public final class GovernmentService implements PoliticalService {
             Notice notice = new Notice(request.requestId(), request.kingdom(), request.action(), actor.getUUID(), id, now());
             append(next, notice, fact(request, result, next, actor.getUUID()));
             if (!data.commitDurably(server, next))
-                return new Result(false, revision(), "Political decision could not be durably saved", "");
+                return new Result(false, revision(), "politics.mcakingdoms.refusal.save_failed", "");
             try {
                 net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new PoliticalCommittedEvent(server, notice));
             } catch (RuntimeException listenerFailure) {
@@ -366,8 +366,8 @@ public final class GovernmentService implements PoliticalService {
             return r.kingdom();
         }
         if (r.action() == Action.PETITION) return petition(actor, r, s).toString();
-        check(g != null, "Government is unorganized");
-        check(definitions.available(g.profileId()), "Constitution unavailable; government dormant");
+        check(g != null, "politics.mcakingdoms.refusal.no_government");
+        check(definitions.available(g.profileId()), "politics.mcakingdoms.refusal.dormant");
         switch (r.action()) {
             case SEAT -> {
                 authorize(actor, g, Permission.SEAT);
@@ -474,7 +474,7 @@ public final class GovernmentService implements PoliticalService {
             }
             case NAME_SUCCESSOR -> {
                 authorize(actor, g, Permission.APPOINT);
-                check(!activeRegency(g.kingdom()), "Named successor is frozen during an active regency");
+                check(!activeRegency(g.kingdom()), "politics.mcakingdoms.refusal.successor_frozen");
                 check(!elected(s, g.kingdom(), g.successor()), "The named successor was elected; only a new election or the successor's own withdrawal replaces them");
                 Person successor = person(r.person(), g.kingdom(), null);
                 s.governments.put(g.kingdom(), government(g, g.capital(), g.offices(), g.mandates(), successor, s.revision));
@@ -522,14 +522,14 @@ public final class GovernmentService implements PoliticalService {
         return person != null && person.kind() == Kind.PLAYER && person.id().equals(state.electedMandates.get(kingdom));
     }
     private String closeElection(ServerPlayer actor,UUID id,PoliticalSavedData.Records state) {
-        Election value=state.elections.get(id);check(value!=null&&(value.state()==ElectionState.OPEN||value.state()==ElectionState.GRACE),"Election is closed");
-        Government government=state.governments.get(value.kingdom());check(value.electorate().contains(actor.getUUID())||actor.hasPermissions(2)||permitted(actor,government,Permission.APPOINT),"Only electorate or appointing authority may close the ballot");
-        check(value.ballots().size()==value.electorate().size()||now()>=value.deadline(),"Ballot remains open until all eligible votes arrive or the deadline passes");
+        Election value=state.elections.get(id);check(value!=null&&(value.state()==ElectionState.OPEN||value.state()==ElectionState.GRACE),"politics.mcakingdoms.refusal.election_closed");
+        Government government=state.governments.get(value.kingdom());check(value.electorate().contains(actor.getUUID())||actor.hasPermissions(2)||permitted(actor,government,Permission.APPOINT),"politics.mcakingdoms.refusal.close_authority");
+        check(value.ballots().size()==value.electorate().size()||now()>=value.deadline(),"politics.mcakingdoms.refusal.ballot_still_open");
         ElectionState outcome=closureState(value,now());
         if(outcome!=ElectionState.RESOLVED){ElectionState phase=outcome;
             state.elections.put(id,new Election(value.id(),value.kingdom(),value.candidates(),value.electorate(),value.ballots(),phase,value.openedAt(),value.deadline(),value.graceUntil(),state.revision,null));return id.toString();}
         UUID winner=uniqueWinner(value).orElseThrow();Person elected=person(new Person(winner,Kind.PLAYER),value.kingdom(),null);Regency activeRegency=state.regencies.get(value.kingdom());
-        check(activeRegency==null||!activeRegency.active()||government.state()==State.INTERREGNUM,"End the active regency before replacing its preserved successor by election");
+        check(activeRegency==null||!activeRegency.active()||government.state()==State.INTERREGNUM,"politics.mcakingdoms.refusal.regency_preserves_successor");
         if(government.state()==State.INTERREGNUM){Map<String,Office> offices=new LinkedHashMap<>(government.offices());
             offices.put(LEADER,new Office(LEADER,definitions.get(LEADER,"office"),elected,null,actor.getUUID(),now()));
             state.governments.put(government.kingdom(),government(government,government.capital(),offices,Map.of(),null,state.revision));
@@ -919,6 +919,16 @@ public final class GovernmentService implements PoliticalService {
      * A page row as players read it: translated title and detail, naming people, places and kingdoms instead of ids, and
      * the same facts as labelled fields ("State", "Parties", "Signatures") for screens that show records as sections.
      */
+    /** The committed fact with this id (the id a {@link PoliticalCommittedEvent}'s notice carries), for presentation (A02). */
+    public Optional<PoliticalFact> committedFact(UUID id) {
+        thread();
+        for (int i = data.records().facts.size() - 1; i >= 0; i--) {
+            PoliticalFact fact = data.records().facts.get(i);
+            if (fact.id().equals(id)) return Optional.of(fact);
+        }
+        return Optional.empty();
+    }
+
     /** One political record's current state for a task's Check (F07): {@code agreement}, {@code petition} or {@code election}. */
     public record RecordState(String kind, String state, String detail) { }
     /**
@@ -1059,6 +1069,8 @@ public final class GovernmentService implements PoliticalService {
                         fields.add(f("responsibilities", "Granted responsibilities", permissions));
                     } else if (g != null && g.offices().containsKey(row.id())) {
                         Office office = g.offices().get(row.id());
+                        // A02: the same mark the office badge shows above the holder, so the list and the world agree.
+                        title = net.minecraft.network.chat.Component.literal(row.id().equals(LEADER) || row.id().startsWith(LEADER + "@") ? "♛ " : "⚑ ").append(title);
                         detail = office.settlement() == null ? p("holder", "%s", personLabel(office.holder()))
                                 : p("holder.at", "%s at %s", personLabel(office.holder()), dev.otectus.mcakingdoms.interaction.Names.settlement(server, office.settlement()));
                         fields.add(f("office", "Office", title));
@@ -1254,13 +1266,13 @@ public final class GovernmentService implements PoliticalService {
         for (Action action : Action.values()) {
             String reason = "";
             if (!data.writable()) reason = data.diagnostic();
-            else if (conflict) reason = "Native governance disabled while MCA: Capitals is installed";
+            else if (conflict) reason = "politics.mcakingdoms.refusal.capitals";
             else if (action == Action.BOOTSTRAP) reason = g != null ? "Government already constituted"
                     : viewer.hasPermissions(2) || openFounding.getAsBoolean() && residentOf(viewer, kingdom) ? ""
                     : openFounding.getAsBoolean() ? "Founding requires an operator, or a civic resident of this kingdom naming themselves leader with their residence as capital"
                     : "Founding requires an operator; resident founding is turned off on this server";
-            else if (g == null) reason = "Government is unorganized";
-            else if (!definitions.available(g.profileId())) reason = "Constitution unavailable; government dormant";
+            else if (g == null) reason = "politics.mcakingdoms.refusal.no_government";
+            else if (!definitions.available(g.profileId())) reason = "politics.mcakingdoms.refusal.dormant";
             else if (action == Action.NAME_SUCCESSOR && elected(data.records(), g.kingdom(), g.successor())) reason = "The named successor holds an elected mandate";
             else if (action == Action.REMOVE_OFFICE && g.offices().containsKey(LEADER) && elected(data.records(), g.kingdom(), g.offices().get(LEADER).holder()) && g.offices().size() == 1) reason = "The leader holds an elected mandate";
             else if (action == Action.ABDICATE) reason = g.offices().containsKey(LEADER) && g.offices().get(LEADER).holder().equals(new Person(viewer.getUUID(), Kind.PLAYER)) ? "" : "Only the leader may abdicate";

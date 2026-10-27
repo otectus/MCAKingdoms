@@ -22,7 +22,35 @@ public final class PoliticalTasks {
     private static final String ACTION_HELP="Political authority is checked for the selected kingdom. Review the named parties and terms before applying.";
     private static final String READ_HELP="Shows the selected kingdom's records that you are allowed to see. Read-only.";
     private static void task(String id,String title,boolean operator,boolean change,List<Field> fields,Handler handler){task(id,title,change?ACTION_HELP:READ_HELP,operator,change,fields,handler);}
-    private static void task(String id,String title,String help,boolean operator,boolean change,List<Field> fields,Handler handler){add(new Task("politics."+id,"Government",title,help,operator,change,fields,c->Long.toString(service(c).revision()),handler));}
+    private static void task(String id,String title,String help,boolean operator,boolean change,List<Field> fields,Handler handler){add(new Task("politics."+id,"Government",title,help,operator,change,fields,PoliticalTasks::version,handler));}
+    /**
+     * What a political review depends on (F15): the political definitions; each government the review names (its
+     * revision and state cover offices, mandates, successor and capital), with its transition rule and regency; the
+     * selected agreement, petition or election and its terms; the actor's authority in those governments; and the actor's
+     * own civic residence, which decides resident founding. A decision about an unrelated government no longer voids the
+     * review, while a changed signer, mandate, term, office or record does, and two conflicting decisions cannot both apply:
+     * the second finds its review stale. The service still checks every rule when Apply runs.
+     */
+    private static String version(Context c){
+        var service=service(c);var out=new StringBuilder();
+        out.append(dev.otectus.mcakingdoms.McaKingdoms.POLITICS.snapshot().hashCode());
+        Set<String> kingdoms=new LinkedHashSet<>();
+        for(String key:List.of("kingdom","counterpart"))if(!c.text(key).isBlank())kingdoms.add(c.text(key));
+        for(String key:List.of("target","election")){var choice=c.choice(key);if(choice!=null&&choice.metadata().containsKey("kingdom"))kingdoms.add(choice.metadata().get("kingdom"));}
+        for(String kingdom:kingdoms){
+            out.append('|').append(kingdom).append('=').append(service.government(kingdom).map(g->g.revision()+":"+g.state()).orElse("none"));
+            out.append(':').append(service.transitionRule(kingdom).map(Object::hashCode).orElse(0));
+            out.append(':').append(service.regency(kingdom).map(r->r.revision()+":"+r.active()).orElse("-"));
+            int authority=0;for(Permission permission:Permission.values())if(service.authorized(c.player,kingdom,permission))authority|=1<<permission.ordinal();
+            out.append(':').append(authority);
+        }
+        for(String key:List.of("target","election")){String id=c.text(key);if(id.isBlank())continue;
+            if(service instanceof dev.otectus.mcakingdoms.politics.GovernmentService government)
+                government.recordState(c.player,id).ifPresent(r->out.append('|').append(r.kind()).append(':').append(r.state()).append(':').append(r.detail()));
+            var choice=c.choice(key);if(choice!=null)out.append(':').append(choice.metadata().getOrDefault("hash",""));}
+        out.append('|').append(c.player.hasPermissions(2)).append('|').append(residence(c).map(r->r.id()+"@"+r.kingdomId()).orElse("-"));
+        return out.toString();
+    }
     public static void init(){
         for(String kind:List.of("government","office","agreement","petition","institution","honor"))targets(kind+"_definition",c->{String kingdom=c.text("kingdom");if(kingdom.isEmpty())kingdom=c.choices("kingdom").stream().findFirst().map(ActionRegistry.Choice::value).orElse("");return service(c).page(c.player,UUID.randomUUID(),kingdom,"overview",0).definitions().stream().filter(d->d.kind().equals(kind)&&!d.id().endsWith(":commission_petition")).map(d->ActionRegistry.Choice.of(d.id(),definitionTitle(d.title()))).toList();});
         for(String kind:List.of("agreement","petition","institution","honor"))targets(kind,c->records(c,kind+"s"));
@@ -99,7 +127,7 @@ public final class PoliticalTasks {
         if(c.player.hasPermissions(2))return foundingKingdoms(c).isEmpty()?Optional.of(tr("politics.mcakingdoms.founding.all_governed","Every kingdom already has a government. Read a kingdom's Overview for its leader and capital.")):Optional.empty();
         if(!dev.otectus.mcakingdoms.config.McaKingdomsConfig.OPEN_FOUNDING.get())return Optional.of(tr("politics.mcakingdoms.founding.closed","Resident founding is turned off on this server (politics.openFounding = false). Only an operator can establish a government."));
         var home=residence(c);
-        if(home.isEmpty())return Optional.of(tr("politics.mcakingdoms.founding.no_residence","You have no recorded civic residence. Resident founding needs one, recorded for you by an operator or an addon; walking through, sleeping in or trading with a settlement does not record it."));
+        if(home.isEmpty())return Optional.of(tr("politics.mcakingdoms.founding.no_residence","You have no recorded civic residence. Resident founding needs one: set your respawn bed in a house of the settlement, stand there and use Register my residence. Walking through, sleeping or trading alone records nothing."));
         String kingdom=home.get().kingdomId().toString();
         if(governed(c,kingdom))return Optional.of(tr("politics.mcakingdoms.founding.governed","%s, the kingdom of your residence %s, already has a government. Read its Overview, or ask its leader about offices.",kingdomLabel(c,kingdom),home.get().displayName()));
         return Optional.empty();
@@ -136,7 +164,7 @@ public final class PoliticalTasks {
         if(c.player.hasPermissions(2))lines.add(tr("politics.mcakingdoms.founding.status.operator","As an operator you may establish any kingdom's first government, choosing its capital and first leader."));
         var refusal=foundingRefusal(c);
         lines.add(refusal.isEmpty()?tr("politics.mcakingdoms.founding.status.eligible","You can found a government now: open Establish a government and review the terms before applying."):refusal.get());
-        lines.add(tr("politics.mcakingdoms.founding.status.note","Residence is a civic record, not something gained by visiting, sleeping or holding a book. Founding records a government only; it claims no territory and grants no offices beyond its constitution."));
+        lines.add(tr("politics.mcakingdoms.founding.status.note","Residence is a civic record you register yourself from verified evidence (your respawn bed in the settlement, while you stand there); visiting, sleeping or holding a book alone records nothing. Founding records a government only; it claims no territory and grants no offices beyond its constitution."));
         return lines;
     }
     private static Component kingdomLabel(Context c,String kingdom){return c.choices("kingdom").stream().filter(k->k.value().equals(kingdom)).findFirst().map(ActionRegistry.Choice::shown).orElse(Component.literal(kingdom));}

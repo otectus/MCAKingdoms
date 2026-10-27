@@ -11,63 +11,78 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The connected server's kingdoms for the Book's gallery, requested once per connection when an article shows them and
- * forgotten on disconnect, so another server's kingdoms are never shown.
+ * The connected server's kingdoms for the Book's gallery, forgotten on disconnect so another server's kingdoms are never
+ * shown. When to ask is decided by {@link GalleryRequests} (F11): rendering only starts the first request, a failure
+ * stays visible until Try again or reopening the Book, and a change the server reports refreshes the gallery once.
  */
 public final class GuideKingdoms {
     public enum State { NONE, LOADING, READY, FAILED }
-    private static final int TIMEOUT = 40, ATTEMPTS = 3;
-    private static State state = State.NONE;
-    private static long request;
-    private static int timeout, attempts;
+    private static final GalleryRequests REQUESTS = new GalleryRequests();
+    private static final GalleryRequests.Sender SEND = NetworkHandler::requestKingdomGallery;
     private static GuideKingdomsPacket gallery;
 
     private GuideKingdoms() {
     }
 
     public static State state() {
-        return state;
+        return State.valueOf(REQUESTS.state().name());
     }
 
-    /** Asks the server once; later calls reuse the answer until disconnect. */
-    public static void ensure() {
-        if (state == State.LOADING || state == State.READY || Minecraft.getInstance().getConnection() == null) return;
-        attempts = 0;
-        send();
+    /** The last refresh went unanswered; the tiles shown may be out of date. */
+    public static boolean refreshFailed() {
+        return REQUESTS.refreshFailed();
     }
 
-    private static void send() {
-        attempts++;
-        state = State.LOADING;
-        timeout = TIMEOUT;
-        request = NetworkHandler.requestKingdomGallery();
+    private static boolean connected() {
+        return Minecraft.getInstance().getConnection() != null;
     }
 
-    public static void receive(GuideKingdomsPacket packet) {
-        if (packet.requestId() != request || state != State.LOADING) return;
-        gallery = packet;
-        state = State.READY;
+    private static boolean shown() {
+        return Minecraft.getInstance().screen instanceof KingdomGuideScreen;
+    }
+
+    private static void redraw() {
         if (Minecraft.getInstance().screen instanceof KingdomGuideScreen screen) screen.refreshArticle();
     }
 
+    /** Called while the gallery is built: asks only for the first answer, or for a refresh the server asked for. */
+    public static void ensure() {
+        if (connected()) REQUESTS.ensure(SEND);
+    }
+
+    /** Try again, chosen by the player. */
+    public static void retry() {
+        if (connected() && REQUESTS.retry(SEND)) redraw();
+    }
+
+    /** The Book was opened: a failed gallery may ask again. */
+    public static void reopened() {
+        REQUESTS.reopened();
+    }
+
+    /** The server reported that this player's kingdoms or known settlements changed. */
+    public static void invalidate() {
+        REQUESTS.invalidate(shown());
+    }
+
+    public static void receive(GuideKingdomsPacket packet) {
+        if (!REQUESTS.receive(packet.requestId())) return;
+        gallery = packet;
+        redraw();
+    }
+
     public static void tick() {
-        if (state != State.LOADING || --timeout > 0) return;
-        if (attempts < ATTEMPTS) send();
-        else {
-            state = State.FAILED;
-            if (Minecraft.getInstance().screen instanceof KingdomGuideScreen screen) screen.refreshArticle();
-        }
+        if (connected() && REQUESTS.tick(SEND, shown())) redraw();
     }
 
     public static void clear() {
-        state = State.NONE;
+        REQUESTS.clear();
         gallery = null;
-        request = 0;
     }
 
     /** The tiles in the server's order; empty until the answer arrives. */
     public static List<Pieces.KingdomTile> tiles() {
-        if (state != State.READY || gallery == null) return List.of();
+        if (REQUESTS.state() != GalleryRequests.State.READY || gallery == null) return List.of();
         List<Pieces.KingdomTile> tiles = new ArrayList<>();
         for (int i = 0; i < gallery.kingdoms().size(); i++) {
             var kingdom = gallery.kingdoms().get(i);
@@ -79,13 +94,18 @@ public final class GuideKingdoms {
 
     /** What the gallery is doing, in words, or empty once it shows the kingdoms. */
     public static Component status() {
-        return switch (state) {
+        return switch (REQUESTS.state()) {
             case NONE, LOADING -> Component.translatableWithFallback("guide.mcakingdoms.kingdoms.loading", "Loading this server's kingdoms…");
             case FAILED -> Component.translatableWithFallback("guide.mcakingdoms.kingdoms.failed",
-                    "This server's kingdoms could not be loaded. Close and reopen the Book to try again.");
-            case READY -> gallery.kingdoms().isEmpty()
-                    ? Component.translatableWithFallback("guide.mcakingdoms.kingdoms.none", "This server defines no kingdoms.")
-                    : Component.translatableWithFallback("guide.mcakingdoms.kingdoms.count", "This server has %s kingdoms:", gallery.kingdoms().size());
+                    "This server's kingdoms could not be loaded. Choose Try again, or close and reopen the Book.");
+            case READY -> {
+                Component count = gallery == null || gallery.kingdoms().isEmpty()
+                        ? Component.translatableWithFallback("guide.mcakingdoms.kingdoms.none", "This server defines no kingdoms.")
+                        : Component.translatableWithFallback("guide.mcakingdoms.kingdoms.count", "This server has %s kingdoms:", gallery.kingdoms().size());
+                yield REQUESTS.refreshFailed() ? Component.empty().append(count).append(" ").append(Component.translatableWithFallback(
+                        "guide.mcakingdoms.kingdoms.refresh_failed", "These counts could not be refreshed just now and may be out of date."))
+                        : count;
+            }
         };
     }
 }

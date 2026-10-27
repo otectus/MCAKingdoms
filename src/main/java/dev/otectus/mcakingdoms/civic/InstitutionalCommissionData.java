@@ -27,8 +27,10 @@ final class InstitutionalCommissionData extends SavedData {
                 recognitionRevision,buildingFingerprint,legalFingerprint,offerExpires,value,honor,honorTerms); }
     }
     private Map<UUID,Contract> contracts=new LinkedHashMap<>();
-    /** Changes whenever any commission contract changes; part of the civic workshop task version. */
+    /** Changes whenever any commission contract changes. */
     long fingerprint(){return contracts.hashCode();}
+    /** Changes whenever one of this player's own contracts changes; another player's offers leave it alone (F15). */
+    long fingerprint(UUID player){return contracts.values().stream().filter(c->c.player().equals(player)).toList().hashCode();}
     private CompoundTag preserved;
     static InstitutionalCommissionData get(MinecraftServer server) {
         return server.overworld().getDataStorage().computeIfAbsent(InstitutionalCommissionData::load,InstitutionalCommissionData::new,NAME);
@@ -44,6 +46,7 @@ final class InstitutionalCommissionData extends SavedData {
         return data;
     }
     boolean writable() { return preserved==null; }
+    int size() { return contracts.size(); }
     public static dev.otectus.mcakingdoms.persistence.StoreStatus status(net.minecraft.server.MinecraftServer server) { var data=get(server); return dev.otectus.mcakingdoms.persistence.StoreStatus.of(NAME,data.writable(),""); }
     Optional<Contract> get(UUID id) { return Optional.ofNullable(contracts.get(id)); }
     List<Contract> own(UUID player) { return contracts.values().stream().filter(c->c.player().equals(player)).toList(); }

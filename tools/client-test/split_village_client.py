@@ -3,10 +3,12 @@
 client with the current builds; walk across the village and require one entry title naming the surviving settlement."""
 import argparse, hashlib, json, os, pathlib, re, shutil, subprocess, time, uuid
 from production_client import allowed
+import sys
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / 'test')); import environment  # F16: prerequisites from the environment
 ROOT=pathlib.Path(__file__).resolve().parents[2]
 PROJECTS=ROOT.parent
-PACK=pathlib.Path('/home/otectus/Documents/curseforge/minecraft/Instances/Ultima')
-INSTALL = pathlib.Path(os.environ.get('MCAKINGDOMS_MC_INSTALL', '/home/otectus/Documents/curseforge/minecraft/Install'))
+PACK=environment.pack()  # MCAKINGDOMS_PACK
+INSTALL = environment.install()  # MCAKINGDOMS_MC_INSTALL
 
 def hashes(folder):
     return {str(p.relative_to(folder)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(folder.rglob('*')) if p.is_file()}
@@ -17,7 +19,7 @@ def properties(project):
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--work-dir',required=True,type=pathlib.Path)
     parser.add_argument('--source-world',type=pathlib.Path,default=PACK/'saves/New World (21)')
-    parser.add_argument('--xvfb',type=pathlib.Path,default=pathlib.Path('/tmp/kd-xvfb/usr/bin/Xvfb'))
+    parser.add_argument('--xvfb',type=pathlib.Path,default=environment.xvfb(required=False))
     args=parser.parse_args()
     work=args.work_dir.resolve()
     if work.exists():raise SystemExit(f'Refusing to reuse {work}')

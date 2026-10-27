@@ -39,6 +39,15 @@ public final class CampaignSavedData extends SavedData {
         next.revision = Math.addExact(next.revision, 1);
         if (!data.commit(server, next)) throw new IllegalStateException("Campaign records could not be saved");
     }
+    public static java.util.List<dev.otectus.mcakingdoms.persistence.Capacity> capacity(MinecraftServer server) {
+        var s = get(server).state; int cap = CampaignState.CAPACITY;
+        return java.util.List.of(
+                new dev.otectus.mcakingdoms.persistence.Capacity(NAME, "campaigns", s.campaigns.size(), cap, dev.otectus.mcakingdoms.persistence.Capacity.Relief.OFFLINE_PROCEDURE),
+                new dev.otectus.mcakingdoms.persistence.Capacity(NAME, "control agreements", s.accords.size(), cap, dev.otectus.mcakingdoms.persistence.Capacity.Relief.OFFLINE_PROCEDURE),
+                new dev.otectus.mcakingdoms.persistence.Capacity(NAME, "settlement decisions", s.decisions.size(), cap, dev.otectus.mcakingdoms.persistence.Capacity.Relief.OFFLINE_PROCEDURE),
+                new dev.otectus.mcakingdoms.persistence.Capacity(NAME, "request receipts", s.receipts.size(), cap * 4L, dev.otectus.mcakingdoms.persistence.Capacity.Relief.OFFLINE_PROCEDURE),
+                new dev.otectus.mcakingdoms.persistence.Capacity(NAME, "history", s.history.size(), cap, dev.otectus.mcakingdoms.persistence.Capacity.Relief.OFFLINE_PROCEDURE));
+    }
     CampaignState snapshot() {
         var copy = new CampaignState(); copy.revision = state.revision;
         copy.campaigns.putAll(state.campaigns); copy.accords.putAll(state.accords); copy.decisions.putAll(state.decisions);

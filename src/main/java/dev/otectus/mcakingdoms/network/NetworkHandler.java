@@ -21,8 +21,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 public final class NetworkHandler {
-    /** 6: ledger search, sort and position (LedgerRequestPacket/LedgerPagePacket) and the Book's kingdom gallery. */
-    private static final String PROTOCOL = "6";
+    /**
+     * 6: ledger search, sort and position (LedgerRequestPacket/LedgerPagePacket) and the Book's kingdom gallery.
+     * 7 (0.3.0): the gallery-stale notice (GalleryStalePacket), political notices and office badges.
+     */
+    private static final String PROTOCOL = "7";
     private static final int PAGE_SIZE_WITH_SENTINEL = 21;
     private static final int MAX_OFFSET = 1_000_000;
     private static final int REQUEST_COOLDOWN_TICKS = 4;
@@ -41,6 +44,9 @@ public final class NetworkHandler {
     private static volatile Consumer<OverlayPacket> overlayReceiver = ignored -> { };
     private static volatile Runnable openLedgerReceiver = () -> { };
     private static volatile Consumer<GuideKingdomsPacket> galleryReceiver = ignored -> { };
+    private static volatile Consumer<GalleryStalePacket> galleryStaleReceiver = ignored -> { };
+    private static volatile Consumer<PoliticalNoticePacket> noticeReceiver = ignored -> { };
+    private static volatile Consumer<OfficeBadgePacket> badgeReceiver = ignored -> { };
     private static boolean initialized;
 
     private NetworkHandler() {
@@ -74,10 +80,25 @@ public final class NetworkHandler {
                 .decoder(GuideKingdomsPacket.Request::decode)
                 .consumerMainThread((packet, context) -> handleGalleryRequest(packet, context.get().getSender()))
                 .add();
-        CHANNEL.messageBuilder(GuideKingdomsPacket.class, id, NetworkDirection.PLAY_TO_CLIENT)
+        CHANNEL.messageBuilder(GuideKingdomsPacket.class, id++, NetworkDirection.PLAY_TO_CLIENT)
                 .encoder(GuideKingdomsPacket::encode)
                 .decoder(GuideKingdomsPacket::decode)
                 .consumerMainThread((packet, ignored) -> galleryReceiver.accept(packet))
+                .add();
+        CHANNEL.messageBuilder(GalleryStalePacket.class, id++, NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(GalleryStalePacket::encode)
+                .decoder(GalleryStalePacket::decode)
+                .consumerMainThread((packet, ignored) -> galleryStaleReceiver.accept(packet))
+                .add();
+        CHANNEL.messageBuilder(PoliticalNoticePacket.class, id++, NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(PoliticalNoticePacket::encode)
+                .decoder(PoliticalNoticePacket::decode)
+                .consumerMainThread((packet, ignored) -> noticeReceiver.accept(packet))
+                .add();
+        CHANNEL.messageBuilder(OfficeBadgePacket.class, id, NetworkDirection.PLAY_TO_CLIENT)
+                .encoder(OfficeBadgePacket::encode)
+                .decoder(OfficeBadgePacket::decode)
+                .consumerMainThread((packet, ignored) -> badgeReceiver.accept(packet))
                 .add();
         dev.otectus.mcakingdoms.politics.PoliticalNetwork.init();
         initialized = true;
@@ -94,6 +115,34 @@ public final class NetworkHandler {
     /** The Book's kingdom gallery receiver; set by the client bootstrap. */
     public static void setGalleryReceiver(Consumer<GuideKingdomsPacket> receiver) {
         galleryReceiver = receiver;
+    }
+
+    /** The Book's gallery-stale receiver; set by the client bootstrap. */
+    public static void setGalleryStaleReceiver(Consumer<GalleryStalePacket> receiver) {
+        galleryStaleReceiver = receiver;
+    }
+
+    public static void setPoliticalReceivers(Consumer<PoliticalNoticePacket> notices, Consumer<OfficeBadgePacket> badges) {
+        noticeReceiver = notices;
+        badgeReceiver = badges;
+    }
+
+    public static void sendNotice(ServerPlayer player, PoliticalNoticePacket packet) {
+        CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), packet);
+    }
+
+    public static void sendBadge(ServerPlayer player, OfficeBadgePacket packet) {
+        CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), packet);
+    }
+
+    /** To every player tracking {@code entity} (and the entity itself when it is a player): the office badge sync of A02. */
+    public static void sendBadgeToTrackers(net.minecraft.world.entity.Entity entity, OfficeBadgePacket packet) {
+        CHANNEL.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity), packet);
+    }
+
+    /** Tells one player that their Book gallery changed; the client decides whether and when to ask again. */
+    public static void galleryChanged(ServerPlayer player, GalleryStalePacket.Reason reason) {
+        CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new GalleryStalePacket(reason));
     }
 
     public static long requestKingdomGallery() {

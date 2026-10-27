@@ -28,6 +28,10 @@ public final class McaKingdomsConfig {
     public static final ForgeConfigSpec.DoubleValue CANDIDATE_OVERLAP_FRACTION;
     public static final ForgeConfigSpec.IntValue CIVIC_EVIDENCE_INTERVAL;
     public static final ForgeConfigSpec.BooleanValue OPEN_FOUNDING;
+    public static final ForgeConfigSpec.BooleanValue PLAYER_REGISTRATION;
+    public static final ForgeConfigSpec.BooleanValue POLITICAL_NOTICES;
+    public static final ForgeConfigSpec.BooleanValue OFFICE_BADGES;
+    public static final ForgeConfigSpec.IntValue RESIDENCE_MOVE_COOLDOWN;
 
     static {
         ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
@@ -90,11 +94,26 @@ public final class McaKingdomsConfig {
         builder.push("politics");
         OPEN_FOUNDING = builder.comment("Let a player whose civic residence is in the chosen capital found that kingdom's first government with themselves as leader; operators can always found.")
                 .define("openFounding", true);
+        POLITICAL_NOTICES = builder
+                .comment("Send committed foundings, accessions, vacancies and memorials to players who turned political notices on",
+                        "in their own Kingdoms settings (off by default on each client). Only public facts are announced, once.")
+                .define("politicalNotices", true);
+        OFFICE_BADGES = builder
+                .comment("Show public office holders' roles above them to nearby players (each player can hide badges in their settings).")
+                .define("officeBadges", true);
         builder.pop();
         builder.push("civicIdentity");
         CIVIC_EVIDENCE_INTERVAL = builder
                 .comment("Ticks between positive home-evidence checks for each loaded NPC.")
                 .defineInRange("evidenceInterval", 200, 20, 24_000);
+        PLAYER_REGISTRATION = builder
+                .comment("Let players register or move their own civic residence from verified evidence: their bed-set respawn point",
+                        "inside a recognized settlement, while they stand in it. It records a civic home only (no land, office or NPC home).")
+                .define("playerRegistration", true);
+        RESIDENCE_MOVE_COOLDOWN = builder
+                .comment("Game ticks after any residence change before a player may move their residence again (24000 = one",
+                        "Minecraft day of server ticks, not wall time). Operators can override it. 0 turns the wait off.")
+                .defineInRange("residenceMoveCooldown", 24_000, 0, 2_400_000);
         builder.pop();
         SPEC = builder.build();
     }

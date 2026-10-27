@@ -1,0 +1,8 @@
+{
+  "MCAKINGDOMS_EULA": "/path/to/an/eula.txt containing eula=true that you accepted",
+  "MCAKINGDOMS_MC_INSTALL": "/path/to/minecraft/launcher/install (versions/, libraries/, assets/)",
+  "MCAKINGDOMS_PACK": "/path/to/a/modpack/instance (with mods/)",
+  "MCAKINGDOMS_XVFB": "/path/to/Xvfb (optional; Xvfb on PATH is used otherwise)",
+  "MCAKINGDOMS_JAVA": "/path/to/java17/bin/java (optional; JAVA_HOME or PATH otherwise)",
+  "MCAKINGDOMS_GRADLEW_QUIET": "/path/to/gradlew-quiet.sh (optional)"
+}
