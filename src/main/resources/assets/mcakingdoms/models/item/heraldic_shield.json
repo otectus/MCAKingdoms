@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "mcakingdoms:item/heraldic_shield_board",
+    "layer1": "mcakingdoms:item/heraldic_shield_rim"
+  }
+}

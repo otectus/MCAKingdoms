@@ -41,7 +41,9 @@ public final class ReloadReport {
         ORGANIZATIONS(true, "Organization definitions"),
         GATES(true, "Kingdom gates"),
         CIVIC(false, "Civic network rules"),
-        WORLD_CONTEXT(false, "World-context selectors");
+        WORLD_CONTEXT(false, "World-context selectors"),
+        DYNASTY(false, "Succession laws and court ranks"),
+        DEVELOPMENT(false, "Development templates");
 
         public final boolean fatal;
         final String english;

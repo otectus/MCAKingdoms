@@ -43,6 +43,21 @@
       "player_task": "help.available"
     },
     {
+      "id": "capitals_interop",
+      "category": "operators",
+      "title": "MCA Capitals instalado a la vez",
+      "summary": "Capitals gobierna las coronas de sus capitales; MCA: Kingdoms conserva la capa cívica.",
+      "body": [
+        "Con MCA Capitals instalado, un reino cuya aldea es una capital gobernante de Capitals tiene la corona gobernada por Capitals: la fundación, la sede, el liderazgo, la sucesión, la casa real, las elecciones y la regencia se gestionan allí, y MCA: Kingdoms los rechaza. Sus cargos cívicos, acuerdos, gremios y distinciones continúan aquí. Los demás reinos conservan sus gobiernos de MCA: Kingdoms.",
+        "Capitals solo se lee, nunca se escribe. Los operadores revisan las asignaciones con Revisar las asignaciones de MCA Capitals o /kingdoms capitals report, aceptan una capital como la corona de un reino o liberan una asignación cuando su capital dejó de gobernar o se quitó Capitals. El ajuste capitals.interop = ALL_READ_ONLY mantiene en solo lectura toda acción de la corona, como antes de la 0.3.0."
+      ],
+      "commands": [
+        "/kingdoms capitals report"
+      ],
+      "task": "capitals.report",
+      "operator": true
+    },
+    {
       "id": "standing_sync",
       "category": "operators",
       "title": "Prestigio en los reinos y reputación de MCA",

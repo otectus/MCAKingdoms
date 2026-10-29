@@ -276,6 +276,8 @@ public final class KingdomsServiceImpl implements KingdomsService {
             context.put("mcakingdoms.origin_village", settlement.displayName());
             context.put("mcakingdoms.origin_village_id", settlement.id().toString());
         });
+        // A resident of a Recruits: Living Villages village also knows its realm, controller and any war it is in.
+        context.putAll(dev.otectus.mcakingdoms.compat.livingvillages.LvContext.values(server, entity));
         return Map.copyOf(context);
     }
 
@@ -833,7 +835,7 @@ public final class KingdomsServiceImpl implements KingdomsService {
                 source.snapshot(), target == null ? null : target.snapshot(), kingdom);
         validatingMutation = true;
         try {
-            if (MinecraftForge.EVENT_BUS.post(event)) throw new IllegalArgumentException(event.rejection());
+            if (MinecraftForge.EVENT_BUS.post(event)) throw dev.otectus.mcakingdoms.interaction.Keyed.of(event.rejection());
         } finally { validatingMutation = false; }
     }
 

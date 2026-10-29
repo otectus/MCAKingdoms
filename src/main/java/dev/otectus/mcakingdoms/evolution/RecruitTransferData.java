@@ -9,7 +9,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.storage.LevelResource;
 import java.util.*;
 
-public final class RecruitTransferData extends SavedData {
+public final class RecruitTransferData extends dev.otectus.mcakingdoms.persistence.DurableSavedData {
     public static final String NAME = "mcakingdoms_recruit_transfers";
     static final Gson JSON = new Gson();
     /**
@@ -35,7 +35,7 @@ public final class RecruitTransferData extends SavedData {
         }
         public Transfer {
             Objects.requireNonNull(id); Objects.requireNonNull(unit); Objects.requireNonNull(owner); Objects.requireNonNull(recipient); Objects.requireNonNull(recipientGroup);
-            Objects.requireNonNull(phase); EvolutionState.text(detail, 512);
+            Objects.requireNonNull(phase); EvolutionState.text(detail, dev.otectus.mcakingdoms.interaction.Keyed.LIMIT);
             if((phase==Phase.RECONCILED)!=(reconciliation!=null))throw new IllegalArgumentException("Reconciliation receipt required");
             if (owner.equals(recipient) || equipment == null || !equipment.matches("[a-f0-9]{64}") || noticeUntil < 0 || deadline <= noticeUntil || revision < 1
                     || (phase == Phase.APPLYING || phase == Phase.CONFIRMING || phase == Phase.RESTORING || phase == Phase.COMPLETE || phase == Phase.RECONCILED) && snapshot == null

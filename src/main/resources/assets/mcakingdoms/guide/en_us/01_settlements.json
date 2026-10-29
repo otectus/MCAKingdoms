@@ -7,11 +7,36 @@
       "category": "settlements",
       "title": "Find and use settlements",
       "summary": "The Village Ledger is your starting point for places, guilds, and government.",
-      "body": [
-        "The mod examines loaded chunks for village structures and clusters of village points of interest, such as homes and job sites. Supported MCA village records can also supply settlement evidence. An operator can register a place manually. Discovering a place does not generate a town or paste buildings into the world.",
-        "Use the Village Ledger to browse the settlements you have discovered, plus any the server made public. Search by name (aliases count), choose a kingdom with the kingdom button, and sort by name or by distance in your dimension. Select a settlement to see its kingdom, dimension and location; More details shows how it was recognized. Kingdom opens its political pages, Guilds opens your own guild service view, and War Room shows its control and civilian options.",
-        "Discovery is personal. An ordinary player does not receive all remote coordinates merely because the server knows them. Visiting and supported introductions can expand what you know. A private introduction is not a global map reveal, and external map mods still own their own explored terrain.",
-        "If the ledger is empty, you have not discovered a settlement yet: walk into a village (opening the ledger inside one also records it) and refresh. With a kingdom filter or a search, an empty list only means nothing you know matches; choose All kingdoms or clear the search. If the entry banner appeared but a page seems stale, refresh before trying an administrative repair. If Read this settlement reports no recognized settlement, you may be outside its saved bounds or the settlement may not yet be recognized. An operator can investigate; creating a second identity blindly can make duplicates."
+      "blocks": [
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "The mod examines loaded chunks for village structures and clusters of village points of interest, such as homes and job sites. Supported MCA village records can also supply settlement evidence. An operator can register a place manually. Discovering a place does not generate a town or paste buildings into the world."
+        },
+        {
+          "id": "diagram",
+          "type": "image",
+          "texture": "mcakingdoms:textures/gui/guide/discovery_map.png",
+          "width": 192,
+          "height": 96,
+          "alt": "A map: from your mark, a dotted path leads to two settlements you discovered; the hatched side is land you have not discovered, which the Ledger never reveals.",
+          "caption": "You see the settlements you discovered, never the rest."
+        },
+        {
+          "id": "p2",
+          "type": "paragraph",
+          "text": "Use the Village Ledger to browse the settlements you have discovered, plus any the server made public. Search by name (aliases count), choose a kingdom with the kingdom button, and sort by name or by distance in your dimension. Select a settlement to see its kingdom, dimension and location; More details shows how it was recognized. Kingdom opens its political pages, Guilds opens your own guild service view, and War Room shows its control and civilian options."
+        },
+        {
+          "id": "p3",
+          "type": "paragraph",
+          "text": "Discovery is personal. An ordinary player does not receive all remote coordinates merely because the server knows them. Visiting and supported introductions can expand what you know. A private introduction is not a global map reveal, and external map mods still own their own explored terrain."
+        },
+        {
+          "id": "p4",
+          "type": "paragraph",
+          "text": "If the ledger is empty, you have not discovered a settlement yet: walk into a village (opening the ledger inside one also records it) and refresh. With a kingdom filter or a search, an empty list only means nothing you know matches; choose All kingdoms or clear the search. If the entry banner appeared but a page seems stale, refresh before trying an administrative repair. If Read this settlement reports no recognized settlement, you may be outside its saved bounds or the settlement may not yet be recognized. An operator can investigate; creating a second identity blindly can make duplicates."
+        }
       ],
       "commands": [
         "/kingdoms village here",
@@ -304,6 +329,23 @@
       "task": "settlement.rename",
       "operator": true,
       "player_task": "settlement.inspect"
+    },
+    {
+      "id": "settlement_development",
+      "category": "settlements",
+      "title": "Develop a settlement with public works",
+      "summary": "Off unless the server turns it on; works are funded with real deliveries and built only where allowed.",
+      "body": [
+        "Settlement development is off unless an operator sets development.mode. Observe only explains a settlement's development from its recognized buildings and completed works. Projects lets officials post public works that players fund; a funded work is a recorded milestone and nothing is built. Managed growth also builds small works, and Full economy adds an abstract goods ledger. The Development tab of the Kingdom page shows the mode and every work.",
+        "An official with the Appoint officials responsibility opens Propose a public work for a settlement, then Approve a public work. Anyone then uses Deliver to a public work inside that settlement: only plain items the work still needs are taken, never more than it needs, and if the record cannot be saved they come back. A cancelled work's deliveries are returned with Claim development refunds.",
+        "In managed growth, a buildable work is surveyed where the official stands when proposing it, and is built only in a settlement that allows construction (Allow construction in a settlement). The plot must be loaded, inside the settlement and the world, in an allowed dimension, clear of homes, buildings, storage, beds, farmland, doors, redstone and workstations, and buildable by the approving official under any claim mod. Construction places a few blocks a second, never replaces a block changed since the survey, and stops when its approver loses office or the mode is lowered.",
+        "Protect your home from construction keeps every work away from the land around your bed. In full economy, the abstract ledger and its trade between settlements of kingdoms with an agreement are labelled abstract everywhere: no real item or coin is ever created or moved by them, and there is no tax."
+      ],
+      "commands": [
+        "/kingdoms development inspect <settlement>",
+        "/kingdoms economy diagnose"
+      ],
+      "task": "development.read"
     }
   ]
 }

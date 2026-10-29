@@ -155,8 +155,10 @@ class LegacyRenameTest {
 
     @Test
     void everySavedDataStoreInTheCodeIsMigrated() throws IOException {
-        assertEquals(literals(Pattern.compile("NAME\\s*=\\s*\"mcakingdoms_([a-z_]+)\"")), new TreeSet<>(LegacyRename.SAVED_DATA),
-                "a store missing here would start empty on an upgraded world");
+        var known = new TreeSet<>(LegacyRename.SAVED_DATA);
+        known.addAll(LegacyRename.SINCE_RENAME);
+        assertEquals(literals(Pattern.compile("NAME\\s*=\\s*\"mcakingdoms_([a-z_]+)\"")), known,
+                "a store missing here would start empty on an upgraded world, or is new and belongs in SINCE_RENAME");
     }
 
     @Test

@@ -74,7 +74,7 @@ public final class PoliticalCommands {
         root.then(Commands.literal("election_close").then(dev.otectus.mcakingdoms.interaction.NamedTargets.argument("election","election")
                 .executes(c->transition(c,(service,player)->service.closeElection(player,UUID.randomUUID(),service.revision(),dev.otectus.mcakingdoms.interaction.NamedTargets.uuid(c,"election","election"))))));
         root.then(Commands.literal("election_inspect").then(dev.otectus.mcakingdoms.interaction.NamedTargets.argument("election","election").executes(c->{var player=c.getSource().getPlayerOrException();var view=KingdomsPoliticsApi.get(player.getServer()).election(player,dev.otectus.mcakingdoms.interaction.NamedTargets.uuid(c,"election","election"));
-            if(view.isEmpty()){c.getSource().sendFailure(Component.literal("Election unavailable"));return 0;}c.getSource().sendSuccess(()->Component.literal(describe(player.getServer(),view.get())),false);return 1;})));
+            if(view.isEmpty()){c.getSource().sendFailure(tr("politics.mcakingdoms.refusal.election_unavailable","That election is not available."));return 0;}describe(player.getServer(),view.get()).forEach(line->c.getSource().sendSuccess(()->line,false));return 1;})));
         root.then(Commands.literal("appoint_regent").then(word("kingdom").then(Commands.argument("person",EntityArgument.player())
                 .executes(PoliticalCommands::appointRegent))));
         root.then(Commands.literal("end_regency").then(word("kingdom").executes(c->transition(c,(service,player)->service.endRegency(player,UUID.randomUUID(),service.revision(),arg(c,"kingdom"))))));
@@ -99,8 +99,8 @@ public final class PoliticalCommands {
     }
     private interface TransitionWork { Result run(PoliticalService service,net.minecraft.server.level.ServerPlayer player) throws com.mojang.brigadier.exceptions.CommandSyntaxException; }
     private static int transition(CommandContext<CommandSourceStack> c,TransitionWork work) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
-        try{var player=c.getSource().getPlayerOrException();Result result=work.run(KingdomsPoliticsApi.get(player.getServer()),player);if(result.success())c.getSource().sendSuccess(()->Component.empty().append(dev.otectus.mcakingdoms.interaction.PlayerWords.component(result.message())).append(": "+result.recordId()),false);else c.getSource().sendFailure(dev.otectus.mcakingdoms.interaction.PlayerWords.component(result.message()));return result.success()?1:0;}
-        catch(IllegalArgumentException|IllegalStateException failure){c.getSource().sendFailure(dev.otectus.mcakingdoms.interaction.PlayerWords.component(failure.getMessage()));return 0;}
+        try{var player=c.getSource().getPlayerOrException();Result result=work.run(KingdomsPoliticsApi.get(player.getServer()),player);if(result.success())c.getSource().sendSuccess(()->Component.empty().append(dev.otectus.mcakingdoms.interaction.PlayerWords.component(result.message())).append(" ").append(recordTag(result.recordId())),false);else c.getSource().sendFailure(dev.otectus.mcakingdoms.interaction.PlayerWords.component(result.message()));return result.success()?1:0;}
+        catch(IllegalArgumentException|IllegalStateException failure){c.getSource().sendFailure(dev.otectus.mcakingdoms.interaction.Keyed.component(failure));return 0;}
     }
     private static Person person(Entity entity) { return new Person(entity.getUUID(), entity instanceof Player ? Kind.PLAYER : Kind.NPC); }
     private static int run(CommandContext<CommandSourceStack> c, Action action, String definition, String target, Person person, String counterpart, String text, String hash)
@@ -111,25 +111,45 @@ public final class PoliticalCommands {
         }
         Request request = new Request(UUID.randomUUID(), service.revision(), action, arg(c,"kingdom"), definition, target, person, counterpart, text, hash, 0,0,0);
         Result result = service.execute(player, request);
-        if (result.success()) c.getSource().sendSuccess(() -> Component.empty().append(dev.otectus.mcakingdoms.interaction.PlayerWords.component(result.message())).append(": " + result.recordId()), false);
+        if (result.success()) c.getSource().sendSuccess(() -> Component.empty().append(dev.otectus.mcakingdoms.interaction.PlayerWords.component(result.message())).append(" ").append(recordTag(result.recordId())), false);
         else c.getSource().sendFailure(dev.otectus.mcakingdoms.interaction.PlayerWords.component(result.message()));
         return result.success() ? 1 : 0;
     }
     /** Readable election summary: names, counts and remaining time instead of identifiers. */
-    static String describe(net.minecraft.server.MinecraftServer server, dev.otectus.mcakingdoms.api.politics.PoliticalTransition.ElectionView view) {
-        String candidates = view.candidates().stream().map(id -> dev.otectus.mcakingdoms.interaction.Names.person(server, id)).sorted().collect(java.util.stream.Collectors.joining(", "));
-        String deadline = dev.otectus.mcakingdoms.interaction.Names.remaining(server, view.deadline());
-        return "Election in " + dev.otectus.mcakingdoms.interaction.Names.kingdom(server, view.kingdom()) + ": " + dev.otectus.mcakingdoms.interaction.Names.words(view.state())
-                + ". Candidates: " + (candidates.isEmpty() ? "none" : candidates) + ". Ballots: " + view.ballotsCast() + " of " + view.electorateSize()
-                + ". Voting closes " + (deadline.equals("expired") ? "now" : "in " + deadline) + "."
-                + (view.viewerEligible() ? view.viewerVoted() ? " You have voted." : " You may vote." : " You are not part of the electorate.")
-                + view.winner().map(w -> " Winner: " + dev.otectus.mcakingdoms.interaction.Names.person(server, w) + ".").orElse("");
+    /** An election as its electorate reads it: the same keyed lines as the Kingdom Tasks inspection (H03). */
+    static List<Component> describe(net.minecraft.server.MinecraftServer server, dev.otectus.mcakingdoms.api.politics.PoliticalTransition.ElectionView view) {
+        var candidates = Component.empty(); boolean first = true;
+        for (String name : view.candidates().stream().map(id -> dev.otectus.mcakingdoms.interaction.Names.person(server, id)).sorted().toList()) {
+            if (!first) candidates.append(", "); first = false; candidates.append(name); }
+        return List.of(tr("politics.mcakingdoms.election.choice", "Election · %s", dev.otectus.mcakingdoms.interaction.Names.kingdomName(server, view.kingdom())),
+                tr("politics.mcakingdoms.election.status", "Status: %s", dev.otectus.mcakingdoms.interaction.ActionRegistry.enumLabel(view.state())),
+                tr("politics.mcakingdoms.election.candidates", "Candidates: %s", candidates),
+                tr("politics.mcakingdoms.election.ballots", "Ballots: %s of %s", view.ballotsCast(), view.electorateSize()),
+                tr("politics.mcakingdoms.election.you", "You may vote: %s; your vote is recorded: %s", Component.translatable(view.viewerEligible() ? "gui.yes" : "gui.no"), Component.translatable(view.viewerVoted() ? "gui.yes" : "gui.no")),
+                tr("politics.mcakingdoms.election.times", "Voting closes in: %s; tie grace ends in: %s", dev.otectus.mcakingdoms.interaction.Names.remainingText(server, view.deadline()), dev.otectus.mcakingdoms.interaction.Names.remainingText(server, view.graceUntil())),
+                tr("politics.mcakingdoms.election.winner", "Winner: %s", view.winner().<Component>map(id -> Component.literal(dev.otectus.mcakingdoms.interaction.Names.person(server, id)))
+                        .orElse(tr("politics.mcakingdoms.election.no_winner", "no winner recorded"))));
+    }
+    private static Component tr(String key, String fallback, Object... args) { return Component.translatableWithFallback(key, fallback, args); }
+    /** A record id as a short tag that copies the full id, for later commands; the id itself is never the message. */
+    static Component recordTag(String id) {
+        if (id == null || id.isBlank()) return Component.empty();
+        String shown = id.length() > 8 && id.charAt(8) == '-' ? "#" + id.substring(0, 4) : id;
+        return Component.literal(shown).withStyle(style -> style.withUnderlined(true)
+                .withClickEvent(new net.minecraft.network.chat.ClickEvent(net.minecraft.network.chat.ClickEvent.Action.COPY_TO_CLIPBOARD, id))
+                .withHoverEvent(new net.minecraft.network.chat.HoverEvent(net.minecraft.network.chat.HoverEvent.Action.SHOW_TEXT,
+                        tr("politics.mcakingdoms.record.copy", "Click to copy this record's id for commands"))));
     }
     private static int inspect(CommandContext<CommandSourceStack> c, String tab) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
         var player = c.getSource().getPlayerOrException();
         Page page = KingdomsPoliticsApi.get(player.getServer()).page(player,UUID.randomUUID(),arg(c,"kingdom"),tab,0);
-        if (!page.diagnostic().isEmpty()) c.getSource().sendFailure(Component.literal(page.diagnostic()));
-        for (Row row : page.rows()) c.getSource().sendSuccess(() -> Component.literal(row.id()+" "+row.title()+": "+row.detail()+(row.termsHash().isEmpty()?"":" [terms hash: "+row.termsHash()+"]")),false);
+        if (!page.diagnostic().isEmpty()) c.getSource().sendFailure(dev.otectus.mcakingdoms.interaction.PlayerWords.component(page.diagnostic()));
+        if (KingdomsPoliticsApi.get(player.getServer()) instanceof GovernmentService government) {
+            var shown = government.present(player, page);
+            for (int i = 0; i < page.rows().size(); i++) { var row = page.rows().get(i); var line = Component.empty();
+                if (!row.id().isEmpty()) line.append(recordTag(row.id())).append(" ");
+                line.append(shown.get(i).title()).append(": ").append(shown.get(i).detail()); c.getSource().sendSuccess(() -> line, false); }
+        } else for (Row row : page.rows()) c.getSource().sendSuccess(() -> Component.literal(row.title()+": "+row.detail()),false);
         return 1;
     }
 }

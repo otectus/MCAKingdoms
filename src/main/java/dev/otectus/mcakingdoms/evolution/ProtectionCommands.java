@@ -13,10 +13,10 @@ public final class ProtectionCommands {
     @SubscribeEvent public static void register(RegisterCommandsEvent event) {
         var root = Commands.literal("kingdoms-protection");
         root.then(Commands.literal("list").executes(c -> run(c, () -> {
-            var p = c.getSource().getPlayerOrException(); new ProtectionService(p.getServer()).page(p, 0).forEach(s -> p.sendSystemMessage(Component.literal(s))); return "Use inspect <pact> for terms and obligations.";
+            var p = c.getSource().getPlayerOrException(); new ProtectionService(p.getServer()).page(p, 0).forEach(s -> p.sendSystemMessage(dev.otectus.mcakingdoms.interaction.Keyed.component(s))); return dev.otectus.mcakingdoms.interaction.Keyed.text("evolution.mcakingdoms.protection.inspect_hint", "Use inspect <pact> for terms and obligations.");
         })));
         root.then(Commands.literal("inspect").then(dev.otectus.mcakingdoms.interaction.NamedTargets.argument("pact","pact").executes(c -> run(c, () -> {
-            var p = c.getSource().getPlayerOrException(); new ProtectionService(p.getServer()).inspect(p, dev.otectus.mcakingdoms.interaction.NamedTargets.uuid(c,"pact","pact")).forEach(s -> p.sendSystemMessage(Component.literal(s))); return "Pact inspected.";
+            var p = c.getSource().getPlayerOrException(); new ProtectionService(p.getServer()).inspect(p, dev.otectus.mcakingdoms.interaction.NamedTargets.uuid(c,"pact","pact")).forEach(s -> p.sendSystemMessage(dev.otectus.mcakingdoms.interaction.Keyed.component(s))); return "Pact inspected.";
         }))));
         root.then(Commands.literal("propose").then(Commands.argument("protector", StringArgumentType.word()).then(Commands.argument("subordinate", StringArgumentType.word())
                 .then(dev.otectus.mcakingdoms.interaction.NamedTargets.argument("beneficiary","settlement").then(Commands.argument("duty", StringArgumentType.word())
@@ -44,8 +44,8 @@ public final class ProtectionCommands {
     }
     private interface Work { String run() throws com.mojang.brigadier.exceptions.CommandSyntaxException; }
     private static int run(CommandContext<CommandSourceStack> c, Work work) {
-        try { var result = work.run(); c.getSource().sendSuccess(() -> Component.literal(result), false); return 1; }
-        catch (IllegalArgumentException | IllegalStateException | com.mojang.brigadier.exceptions.CommandSyntaxException failure) { c.getSource().sendFailure(Component.literal(failure.getMessage())); return 0; }
+        try { var result = work.run(); c.getSource().sendSuccess(() -> dev.otectus.mcakingdoms.interaction.Keyed.component(result), false); return 1; }
+        catch (IllegalArgumentException | IllegalStateException | com.mojang.brigadier.exceptions.CommandSyntaxException failure) { c.getSource().sendFailure(dev.otectus.mcakingdoms.interaction.Keyed.component(failure)); return 0; }
     }
     private ProtectionCommands() { }
 }

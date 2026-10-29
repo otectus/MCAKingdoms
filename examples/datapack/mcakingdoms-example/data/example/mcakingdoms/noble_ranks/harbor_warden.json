@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "tier": 2,
+  "landed": true,
+  "title": "dynasty.example.rank.harbor_warden",
+  "address": "dynasty.example.rank.harbor_warden.address",
+  "styles": {
+    "example:harbor_league": "dynasty.example.rank.harbor_warden.league"
+  }
+}

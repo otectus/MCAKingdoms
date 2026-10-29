@@ -36,7 +36,7 @@ class LangCoverageTest {
     /** Prefixes that local helpers put before a short key, such as {@code e("organization.line", ...)} in the evolution tasks. */
     private static final List<String> HELPER_PREFIXES = List.of("interaction.mcakingdoms.", "interaction.mcakingdoms.evolution.",
             "interaction.mcakingdoms.warfare.", "interaction.mcakingdoms.settlement.", "facts.mcakingdoms.", "politics.mcakingdoms.row.",
-            "screen.mcakingdoms.ledger.", "interaction.mcakingdoms.outcome.");
+            "screen.mcakingdoms.ledger.", "interaction.mcakingdoms.outcome.", "dynasty.mcakingdoms.", "development.mcakingdoms.");
 
     private static JsonObject lang() throws IOException {
         return JsonParser.parseString(Files.readString(Path.of("src/main/resources/assets/mcakingdoms/lang/en_us.json")))

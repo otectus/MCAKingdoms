@@ -33,7 +33,7 @@ public final class DramaState {
     }
 
     public record Evidence(String source, String kind, String receipt, long revision, String detail) {
-        public Evidence { token(source); token(kind); token(receipt); text(detail, 512); if (revision < 0) throw new IllegalArgumentException("Invalid evidence revision"); }
+        public Evidence { token(source); token(kind); token(receipt); text(detail, dev.otectus.mcakingdoms.interaction.Keyed.LIMIT); if (revision < 0) throw new IllegalArgumentException("Invalid evidence revision"); }
     }
 
     public record Drama(UUID id, String templateId, Template terms, UUID settlement, UUID proposer,
@@ -46,7 +46,7 @@ public final class DramaState {
             token(sourceFaction); token(targetFaction); token(sourceKingdom); token(targetKingdom);
             subject = subject == null ? "" : subject; dynamicOrganization = dynamicOrganization == null ? "" : dynamicOrganization;
             text(subject, 256); text(dynamicOrganization, 128); participants = Map.copyOf(participants); consents = Set.copyOf(consents);
-            evidence = List.copyOf(evidence); Objects.requireNonNull(phase); Objects.requireNonNull(operation); Objects.requireNonNull(providerRequest); text(result, 1024);
+            evidence = List.copyOf(evidence); Objects.requireNonNull(phase); Objects.requireNonNull(operation); Objects.requireNonNull(providerRequest); text(result, dev.otectus.mcakingdoms.interaction.Keyed.LIMIT);
             if (created < 0 || remainingTicks < 0 || lastEvaluation < 0 || revision < 1 || operationCount < 0 || operationCount > terms.operationBudget() || participants.isEmpty()
                     || participants.size() > terms.maxParticipants() || evidence.size() > EVIDENCE_LIMIT
                     || !participants.containsValue(proposer) || !participants.keySet().containsAll(consents)
@@ -122,7 +122,7 @@ public final class DramaState {
         if (revision < 0 || cursor < 0 || dramas == null || receipts == null || dramas.size() > CAPACITY || receipts.size() > CAPACITY * 4)
             throw new IllegalArgumentException("Drama capacity exceeded");
         dramas.forEach((id, drama) -> { if (drama == null || !id.equals(drama.id())) throw new IllegalArgumentException("Drama identity mismatch"); });
-        receipts.forEach((id, value) -> { Objects.requireNonNull(id); text(value, 1024); });
+        receipts.forEach((id, value) -> { Objects.requireNonNull(id); text(value, dev.otectus.mcakingdoms.interaction.Keyed.LIMIT); });
     }
     public static UUID operationId(UUID drama, String operation) {
         return UUID.nameUUIDFromBytes(("kingdoms-drama|" + drama + "|" + operation).getBytes(StandardCharsets.UTF_8));

@@ -11,7 +11,7 @@ import net.minecraft.world.level.storage.LevelResource;
 import java.util.*;
 
 /** Durable leases are written before native orders. Terminal records are dedupe tombstones. */
-public final class MobilizationSavedData extends SavedData {
+public final class MobilizationSavedData extends dev.otectus.mcakingdoms.persistence.DurableSavedData {
     public static final String NAME="mcakingdoms_mobilization";static final int SCHEMA=1,LIMIT=8192;
     static final Gson JSON=new GsonBuilder().disableHtmlEscaping().create();
     public enum Phase { PREPARED, ACTIVE_PENDING_NATIVE_SAVE, DURABLE_ACTIVE, RESTORE_PENDING, RESTORE_PENDING_NATIVE_SAVE, RESTORED, DIVERGED, SUSPENDED }
@@ -46,5 +46,5 @@ public final class MobilizationSavedData extends SavedData {
     private static CompoundTag encode(State state){var tag=new CompoundTag();tag.putInt("Schema",SCHEMA);tag.putString("Payload",JSON.toJson(state));return tag;}
     @Override public boolean isDirty(){return writable()&&super.isDirty();}@Override public CompoundTag save(CompoundTag tag){return writable()?encode(state):preserved.copy();}
     private static void token(String value){if(value==null||value.isBlank()||value.length()>128||value.chars().anyMatch(Character::isISOControl))bad();}
-    private static void text(String value){if(value==null||value.length()>256)bad();}private static void bad(){throw new IllegalArgumentException("invalid mobilization data");}
+    private static void text(String value){if(value==null||value.length()>dev.otectus.mcakingdoms.interaction.Keyed.LIMIT)bad();}private static void bad(){throw new IllegalArgumentException("invalid mobilization data");}
 }

@@ -1,5 +1,7 @@
 package dev.otectus.mcakingdoms.compat.recruits;
 
+import dev.otectus.mcakingdoms.interaction.Keyed;
+
 import dev.otectus.mcakingdoms.warfare.CampaignState.Relation;
 import net.minecraft.nbt.*;
 import net.minecraft.server.MinecraftServer;
@@ -21,10 +23,10 @@ public final class RecruitsMilitary {
     public static void ready(MinecraftServer server) {
         if (!server.isSameThread()) throw new IllegalArgumentException("Native military operations require server thread.");
         if (!ModList.get().getModContainerById("recruits").map(m -> m.getModInfo().getVersion().toString().equals("1.15.2")).orElse(false))
-            throw new IllegalArgumentException("Supported Recruits 1.15.2 provider unavailable.");
+            throw Keyed.refuse("compat.mcakingdoms.recruits.unsupported","Recruits 1.15.2 is not available, so military features are off.");
     }
     private static Object manager(String field) throws ReflectiveOperationException {
-        return Objects.requireNonNull(Class.forName(ROOT + "FactionEvents").getField(field).get(null), "Native manager not ready");
+        return Objects.requireNonNull(Class.forName(ROOT + "FactionEvents").getField(field).get(null), Keyed.text("compat.mcakingdoms.recruits.not_ready","Recruits is still starting; try again shortly."));
     }
     public static Optional<Faction> faction(MinecraftServer server, String id) {
         ready(server);
@@ -44,16 +46,16 @@ public final class RecruitsMilitary {
     }
     public static String commandedFaction(ServerPlayer actor) {
         if (actor.getTeam() == null || !commands(actor, actor.getTeam().getName()))
-            throw new IllegalArgumentException("Only the native faction leader may command its military policy.");
+            throw Keyed.refuse("compat.mcakingdoms.recruits.leader_only","Only the Recruits faction leader may command its military policy.");
         return actor.getTeam().getName();
     }
     public static Relation relation(MinecraftServer server, String from, String to) {
         ready(server);
-        if (faction(server, from).isEmpty() || faction(server, to).isEmpty()) throw new IllegalArgumentException("Native faction unavailable.");
+        if (faction(server, from).isEmpty() || faction(server, to).isEmpty()) throw Keyed.refuse("compat.mcakingdoms.recruits.faction_unavailable","That Recruits faction is unavailable.");
         try {
             Object manager = manager("recruitsDiplomacyManager");
             return Relation.valueOf(manager.getClass().getMethod("getRelation", String.class, String.class).invoke(manager, from, to).toString());
-        } catch (ReflectiveOperationException | LinkageError failure) { throw new IllegalArgumentException("Native diplomacy API unavailable.", failure); }
+        } catch (ReflectiveOperationException | LinkageError failure) { throw Keyed.refuse("compat.mcakingdoms.recruits.diplomacy_api","Recruits' diplomacy functions are unavailable.").because(failure); }
     }
     public static boolean saved(MinecraftServer server, String from, String to, Relation expected) {
         ready(server);
@@ -81,10 +83,10 @@ public final class RecruitsMilitary {
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static boolean apply(ServerPlayer actor, String from, String to, Relation before, Relation desired) {
         var server = actor.getServer(); ready(server);
-        if (!packetGuardInstalled() || !RecruitsEvents.available()) throw new IllegalArgumentException("Verified native military security hooks unavailable.");
-        if (!commands(actor, from) || from.equals(to)) throw new IllegalArgumentException("Native command authority unavailable.");
+        if (!packetGuardInstalled() || !RecruitsEvents.available()) throw Keyed.refuse("compat.mcakingdoms.recruits.security_hooks","Recruits' military safety checks are unavailable, so military actions are refused.");
+        if (!commands(actor, from) || from.equals(to)) throw Keyed.refuse("compat.mcakingdoms.recruits.command_authority","Your command authority in Recruits cannot be checked.");
         Relation current = relation(server, from, to);
-        if (current != before && current != desired) throw new IllegalArgumentException("Native relation changed; reconcile explicitly.");
+        if (current != before && current != desired) throw Keyed.refuse("compat.mcakingdoms.recruits.relation_changed","The Recruits relation changed; reconcile it explicitly.");
         try {
             Object manager = manager("recruitsDiplomacyManager");
             if (current != desired) {

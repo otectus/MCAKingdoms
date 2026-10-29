@@ -15,7 +15,7 @@ public final class EvolutionCommands {
         root.then(Commands.literal("family_introduction").executes(c -> run(c, () -> EvolutionRuntime.get(c.getSource().getServer()).familyIntroduction(c.getSource().getPlayerOrException()))));
         root.then(Commands.literal("list").executes(c -> page(c, 0)).then(Commands.argument("offset", IntegerArgumentType.integer(0, 4096)).executes(c -> page(c, IntegerArgumentType.getInteger(c, "offset")))));
         root.then(Commands.literal("inspect").then(dev.otectus.mcakingdoms.interaction.NamedTargets.argument("scenario","scenario").executes(c -> run(c, () -> {
-            var p = c.getSource().getPlayerOrException(); EvolutionRuntime.get(p.getServer()).inspect(p, dev.otectus.mcakingdoms.interaction.NamedTargets.uuid(c,"scenario","scenario")).forEach(s -> p.sendSystemMessage(Component.literal(s))); return "Scenario inspected.";
+            var p = c.getSource().getPlayerOrException(); EvolutionRuntime.get(p.getServer()).inspect(p, dev.otectus.mcakingdoms.interaction.NamedTargets.uuid(c,"scenario","scenario")).forEach(s -> p.sendSystemMessage(dev.otectus.mcakingdoms.interaction.Keyed.component(s))); return dev.otectus.mcakingdoms.interaction.Keyed.text("evolution.mcakingdoms.world.scenario_inspected", "Opportunity shown above.");
         }))));
         root.then(Commands.literal("configure").requires(s -> s.hasPermission(2)).then(Commands.argument("enabled", BoolArgumentType.bool())
                 .then(Commands.argument("drama", BoolArgumentType.bool()).executes(c -> run(c, () -> EvolutionRuntime.get(c.getSource().getServer()).configure(c.getSource().getPlayerOrException(), BoolArgumentType.getBool(c, "enabled"), BoolArgumentType.getBool(c, "drama")))))));
@@ -50,12 +50,12 @@ public final class EvolutionCommands {
         return run(c, () -> EvolutionRuntime.get(c.getSource().getServer()).resolve(c.getSource().getPlayerOrException(), dev.otectus.mcakingdoms.interaction.NamedTargets.uuid(c,"scenario","scenario"), LongArgumentType.getLong(c, "revision"), outcome, counterpart));
     }
     private static int page(CommandContext<CommandSourceStack> c, int offset) {
-        return run(c, () -> { var p = c.getSource().getPlayerOrException(); EvolutionRuntime.get(p.getServer()).page(p, offset).forEach(s -> p.sendSystemMessage(Component.literal(s))); return "Use /kingdoms-evolution inspect <scenario> for causes and choices."; });
+        return run(c, () -> { var p = c.getSource().getPlayerOrException(); EvolutionRuntime.get(p.getServer()).page(p, offset).forEach(s -> p.sendSystemMessage(dev.otectus.mcakingdoms.interaction.Keyed.component(s))); return dev.otectus.mcakingdoms.interaction.Keyed.text("evolution.mcakingdoms.world.inspect_hint", "Use /kingdoms-evolution inspect <scenario> for causes and choices."); });
     }
     private interface Work { String run() throws com.mojang.brigadier.exceptions.CommandSyntaxException; }
     private static int run(CommandContext<CommandSourceStack> c, Work work) {
-        try { String result = work.run(); c.getSource().sendSuccess(() -> Component.literal(result), false); return 1; }
-        catch (IllegalArgumentException | IllegalStateException | com.mojang.brigadier.exceptions.CommandSyntaxException failure) { c.getSource().sendFailure(Component.literal(failure.getMessage())); return 0; }
+        try { String result = work.run(); c.getSource().sendSuccess(() -> dev.otectus.mcakingdoms.interaction.Keyed.component(result), false); return 1; }
+        catch (IllegalArgumentException | IllegalStateException | com.mojang.brigadier.exceptions.CommandSyntaxException failure) { c.getSource().sendFailure(dev.otectus.mcakingdoms.interaction.Keyed.component(failure)); return 0; }
     }
     private EvolutionCommands() { }
 }

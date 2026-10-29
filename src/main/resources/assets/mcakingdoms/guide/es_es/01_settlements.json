@@ -7,11 +7,36 @@
       "category": "settlements",
       "title": "Encontrar y usar asentamientos",
       "summary": "El Registro de aldeas es tu punto de partida para lugares, gremios y gobierno.",
-      "body": [
-        "El mod examina los chunks cargados en busca de estructuras de aldea y de grupos de puntos de interés de aldea, como hogares y puestos de trabajo. Los registros de aldea compatibles de MCA también pueden aportar pruebas de asentamiento. Un operador puede registrar un lugar manualmente. Descubrir un lugar no genera un pueblo ni coloca edificios en el mundo.",
-        "Usa el Registro de aldeas para consultar los asentamientos que has descubierto, además de los que el servidor haya hecho públicos. Busca por nombre (los alias cuentan), elige un reino con el botón de reino y ordena por nombre o por distancia en tu dimensión. Selecciona un asentamiento para ver su reino, dimensión y ubicación; Más detalles muestra cómo se reconoció. Reino abre sus páginas políticas, Gremios abre tu propia vista de servicio de gremio y Sala de guerra muestra su control y sus opciones civiles.",
-        "El descubrimiento es personal. Un jugador corriente no recibe todas las coordenadas lejanas solo porque el servidor las conozca. Las visitas y las presentaciones compatibles amplían lo que conoces. Una presentación privada no revela el mapa a todo el mundo, y los mods de mapas externos siguen gestionando su propio terreno explorado.",
-        "Si el registro está vacío, todavía no has descubierto ningún asentamiento: entra en una aldea (abrir el registro dentro de una también la anota) y actualiza. Con un filtro de reino o una búsqueda, una lista vacía solo significa que nada de lo que conoces coincide; elige Todos los reinos o borra la búsqueda. Si apareció el rótulo de entrada pero una página parece desfasada, actualiza antes de intentar una reparación administrativa. Si Consultar este asentamiento indica que no hay ningún asentamiento reconocido, puede que estés fuera de sus límites guardados o que aún no se haya reconocido. Un operador puede investigarlo; crear a ciegas una segunda identidad puede generar duplicados."
+      "blocks": [
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "El mod examina los chunks cargados en busca de estructuras de aldea y de grupos de puntos de interés de aldea, como hogares y puestos de trabajo. Los registros de aldea compatibles de MCA también pueden aportar pruebas de asentamiento. Un operador puede registrar un lugar manualmente. Descubrir un lugar no genera un pueblo ni coloca edificios en el mundo."
+        },
+        {
+          "id": "diagram",
+          "type": "image",
+          "texture": "mcakingdoms:textures/gui/guide/discovery_map.png",
+          "width": 192,
+          "height": 96,
+          "alt": "Un mapa: desde tu marca, un camino punteado lleva a dos asentamientos que descubriste; la zona rayada es tierra no descubierta, que el Registro nunca revela.",
+          "caption": "Ves los asentamientos que descubriste, nunca el resto."
+        },
+        {
+          "id": "p2",
+          "type": "paragraph",
+          "text": "Usa el Registro de aldeas para consultar los asentamientos que has descubierto, además de los que el servidor haya hecho públicos. Busca por nombre (los alias cuentan), elige un reino con el botón de reino y ordena por nombre o por distancia en tu dimensión. Selecciona un asentamiento para ver su reino, dimensión y ubicación; Más detalles muestra cómo se reconoció. Reino abre sus páginas políticas, Gremios abre tu propia vista de servicio de gremio y Sala de guerra muestra su control y sus opciones civiles."
+        },
+        {
+          "id": "p3",
+          "type": "paragraph",
+          "text": "El descubrimiento es personal. Un jugador corriente no recibe todas las coordenadas lejanas solo porque el servidor las conozca. Las visitas y las presentaciones compatibles amplían lo que conoces. Una presentación privada no revela el mapa a todo el mundo, y los mods de mapas externos siguen gestionando su propio terreno explorado."
+        },
+        {
+          "id": "p4",
+          "type": "paragraph",
+          "text": "Si el registro está vacío, todavía no has descubierto ningún asentamiento: entra en una aldea (abrir el registro dentro de una también la anota) y actualiza. Con un filtro de reino o una búsqueda, una lista vacía solo significa que nada de lo que conoces coincide; elige Todos los reinos o borra la búsqueda. Si apareció el rótulo de entrada pero una página parece desfasada, actualiza antes de intentar una reparación administrativa. Si Consultar este asentamiento indica que no hay ningún asentamiento reconocido, puede que estés fuera de sus límites guardados o que aún no se haya reconocido. Un operador puede investigarlo; crear a ciegas una segunda identidad puede generar duplicados."
+        }
       ],
       "commands": [
         "/kingdoms village here",
@@ -304,6 +329,23 @@
       "task": "settlement.rename",
       "operator": true,
       "player_task": "settlement.inspect"
+    },
+    {
+      "id": "settlement_development",
+      "category": "settlements",
+      "title": "Desarrollar un asentamiento con obras públicas",
+      "summary": "Desactivado salvo que el servidor lo active; las obras se financian con entregas reales y solo se construyen donde se permite.",
+      "body": [
+        "El desarrollo de los asentamientos está desactivado salvo que un operador ajuste development.mode. Observar solo explica el desarrollo de un asentamiento a partir de sus edificios reconocidos y sus obras completadas. Proyectos permite a los funcionarios publicar obras públicas que financian los jugadores; una obra financiada es un hito registrado y no se construye nada. El crecimiento gestionado también construye obras pequeñas, y la economía completa añade un registro abstracto de bienes. La pestaña Desarrollo de la página del reino muestra el modo y cada obra.",
+        "Un funcionario con la responsabilidad Nombrar funcionarios abre Proponer una obra pública para un asentamiento y después Aprobar una obra pública. Luego cualquiera usa Entregar a una obra pública dentro de ese asentamiento: solo se toman objetos sencillos que la obra aún necesita, nunca más de lo necesario, y si no se puede guardar el registro se devuelven. Las entregas de una obra cancelada se recuperan con Reclamar reembolsos de desarrollo.",
+        "En el crecimiento gestionado, una obra construible se inspecciona donde está el funcionario al proponerla, y solo se construye en un asentamiento que permita construir (Permitir construir en un asentamiento). La parcela debe estar cargada, dentro del asentamiento y del mundo, en una dimensión permitida, lejos de hogares, edificios, almacenamientos, camas, cultivos, puertas, redstone y puestos de trabajo, y el funcionario que aprueba debe poder construir allí según cualquier mod de reclamos. La construcción coloca unos pocos bloques por segundo, nunca reemplaza un bloque cambiado desde la inspección y se detiene si quien la aprobó pierde su cargo o se rebaja el modo.",
+        "Proteger tu hogar de las construcciones mantiene toda obra lejos del terreno alrededor de tu cama. En la economía completa, el registro abstracto y su comercio entre asentamientos de reinos con un acuerdo se marcan como abstractos en todas partes: nunca crean ni mueven ningún objeto ni moneda real, y no hay impuestos."
+      ],
+      "commands": [
+        "/kingdoms development inspect <settlement>",
+        "/kingdoms economy diagnose"
+      ],
+      "task": "development.read"
     }
   ]
 }

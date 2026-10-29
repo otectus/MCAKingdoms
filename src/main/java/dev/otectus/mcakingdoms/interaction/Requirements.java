@@ -67,8 +67,10 @@ final class Requirements {
         requirements("politics.bootstrap", c -> {
             var rows = new ArrayList<Requirement>();
             boolean operator = c.player.hasPermissions(2);
-            rows.add(Requirement.of(!net.minecraftforge.fml.ModList.get().isLoaded("mcacapitals"), r("founding.native", "MCA: Kingdoms governs kingdoms here"),
-                    Component.empty()));
+            var crown = c.text("kingdom").isBlank() || !(dev.otectus.mcakingdoms.api.politics.KingdomsPoliticsApi.get(c.server()) instanceof dev.otectus.mcakingdoms.politics.GovernmentService politics)
+                    ? dev.otectus.mcakingdoms.politics.Sovereignty.NATIVE : politics.sovereignty(c.text("kingdom"));
+            rows.add(Requirement.of(crown.native_(), r("founding.native", "MCA: Kingdoms governs this kingdom's crown"),
+                    crown.native_() ? Component.empty() : PlayerWords.component(crown.statusKey())));
             if (operator) rows.add(new Requirement(r("founding.operator", "Operator permission"), Requirement.Check.MET,
                     r("founding.operator.detail", "You may found any ungoverned kingdom's first government.")));
             else {
@@ -91,7 +93,7 @@ final class Requirements {
         Map<String, Permission> needs = new LinkedHashMap<>();
         for (String task : List.of("propose")) needs.put("politics." + task, Permission.PROPOSE);
         for (String task : List.of("sign", "decline", "terminate")) needs.put("politics." + task, Permission.RATIFY);
-        for (String task : List.of("appoint", "remove_office", "name_successor", "house", "transition_rule", "election_open", "election_close", "appoint_regent", "end_regency"))
+        for (String task : List.of("appoint", "name_successor", "house", "transition_rule", "election_open", "election_close", "appoint_regent", "end_regency"))
             needs.put("politics." + task, Permission.APPOINT);
         for (String task : List.of("delegate", "revoke")) needs.put("politics." + task, Permission.DELEGATE);
         needs.put("politics.seat", Permission.SEAT);
@@ -108,6 +110,19 @@ final class Requirements {
                 return List.of(Requirement.of(held, r("responsibility.in", "The %s responsibility in %s", enumLabel(permission), kingdom),
                         held ? Component.empty() : r("responsibility.missing", "Ask %s's leader to grant it, or to appoint you to an office that carries it.", kingdom)));
             });
+        });
+
+        // ---- removing an official: the decision for the office chosen, from the policy the service enforces (H02).
+        requirements("politics.remove_office", c -> {
+            if (c.text("kingdom").isBlank()) return List.of(new Requirement(r("responsibility", "The %s responsibility", enumLabel(Permission.APPOINT)), Requirement.Check.UNKNOWN,
+                    r("responsibility.choose", "Choose a kingdom to check whether you hold it.")));
+            if (!(KingdomsPoliticsApi.get(c.server()) instanceof dev.otectus.mcakingdoms.politics.GovernmentService government)) return List.of();
+            var target = c.text("office").isBlank() ? dev.otectus.mcakingdoms.politics.GovernmentActionPolicy.Target.ANY
+                    : dev.otectus.mcakingdoms.politics.GovernmentActionPolicy.Target.office(c.text("office"));
+            var denial = government.actionDenial(c.player, c.text("kingdom"), dev.otectus.mcakingdoms.api.politics.Politics.Action.REMOVE_OFFICE, target);
+            Component label = c.text("office").isBlank() ? r("remove_office.any", "An office you may vacate")
+                    : r("remove_office.chosen", "You may vacate %s", c.choice("office") == null ? Component.literal(c.text("office")) : c.choice("office").shown());
+            return List.of(Requirement.of(denial.isEmpty(), label, denial.map(PlayerWords::component).orElse(Component.empty())));
         });
 
         // ---- agreements: who must agree, and that consent is not execution.

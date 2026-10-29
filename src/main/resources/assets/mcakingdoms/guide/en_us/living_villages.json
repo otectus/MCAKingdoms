@@ -1,0 +1,379 @@
+{
+  "schema": 2,
+  "entries": [
+    {
+      "id": "living_villages",
+      "category": "warfare",
+      "task": "villages.here",
+      "title": "Recruits: Living Villages",
+      "summary": "Living Villages runs villages and armies on its own; MCA: Kingdoms gives the same places one identity, their politics and their history.",
+      "keywords": [
+        "realm",
+        "living villages",
+        "occupied",
+        "culture"
+      ],
+      "blocks": [
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "With Recruits 1.15.2 and Recruits: Living Villages 1.1.0 installed, every Living Villages village is one MCA: Kingdoms settlement: its arrival title, its Village Ledger page, its War Room and the Living Villages screen are the same place. Living Villages keeps running its economy, buildings, army and battles. MCA: Kingdoms records who holds each village, which government is recognized there, what was agreed and what happened."
+        },
+        {
+          "id": "three",
+          "type": "comparison",
+          "alt": "Three separate facts: the kingdom says who the people are; the realm is the faction that rules; military control is who holds the village now. Conquest changes control only.",
+          "columns": [
+            {
+              "title": "Kingdom",
+              "points": [
+                "Who its people are: culture, names, heraldry.",
+                "Conquest never changes it."
+              ]
+            },
+            {
+              "title": "Realm",
+              "points": [
+                "A Living Villages faction: a capital and its villages.",
+                "Two realms can share one culture and still be rivals."
+              ]
+            },
+            {
+              "title": "Control",
+              "points": [
+                "Who holds the village now.",
+                "An occupied village keeps its recognized government until a cession is agreed."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "p2",
+          "type": "paragraph",
+          "text": "Occupation does not rename the town, replace its residents, change their families or rewrite its kingdom. The Ledger shows the realm in control and, when it differs, the recognized government; the War Room shows the realm's wars, whether they are fought in the world or out of view."
+        },
+        {
+          "id": "callout",
+          "type": "callout",
+          "tone": "note",
+          "title": "Supported versions",
+          "text": "The integration is audited for Recruits 1.15.2 with the Living Villages 1.1.0 release jar. With any other combination, saved records stay as they are and nothing new is bound; Server health and the operator status say why."
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "task",
+              "target": "villages.here",
+              "label": "Read the village you stand in"
+            },
+            {
+              "kind": "guide",
+              "target": "living_villages_wars"
+            },
+            {
+              "kind": "guide",
+              "target": "living_villages_players"
+            },
+            {
+              "kind": "guide",
+              "target": "living_villages_residents"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "living_villages_wars",
+      "category": "warfare",
+      "task": "villages.realm",
+      "title": "How realms go to war",
+      "summary": "AI realms choose their own wars; the server's rules and the agreements in force decide which wars may happen.",
+      "blocks": [
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "Living Villages chooses targets for its AI realms by distance, strength and enmity. Before a war is declared, an abstract siege is laid, a battle begins, a siege moves between the world and the model, or a village is occupied, MCA: Kingdoms checks the same rules: warfare switched on, no peace, ceasefire or alliance in force, no truce running, a protected capital seat left alone, and a player-led realm's village attacked only while its leader is online. A refused target is skipped and the AI considers its next neighbour."
+        },
+        {
+          "id": "paths",
+          "type": "diagram",
+          "alt": "A declaration gives notice; the war is fought in the world when players are near and out of view otherwise, switching as they come and go; it ends in a conquest, a repel or a withdrawal, recorded once.",
+          "nodes": [
+            {
+              "id": "declared",
+              "label": "Declared",
+              "item": "minecraft:bell"
+            },
+            {
+              "id": "live",
+              "label": "In the world",
+              "item": "minecraft:iron_sword"
+            },
+            {
+              "id": "abstract",
+              "label": "Out of view",
+              "item": "minecraft:map"
+            },
+            {
+              "id": "outcome",
+              "label": "One outcome",
+              "item": "minecraft:writable_book"
+            }
+          ],
+          "edges": [
+            {
+              "from": "declared",
+              "to": "live"
+            },
+            {
+              "from": "declared",
+              "to": "abstract"
+            },
+            {
+              "from": "live",
+              "to": "abstract",
+              "label": "players leave"
+            },
+            {
+              "from": "abstract",
+              "to": "live",
+              "label": "players return"
+            },
+            {
+              "from": "live",
+              "to": "outcome"
+            },
+            {
+              "from": "abstract",
+              "to": "outcome"
+            }
+          ]
+        },
+        {
+          "id": "p2",
+          "type": "paragraph",
+          "text": "One war stays one record however often it moves between the world and the model, so declarations, rewards and history are never repeated. After a restart, a war Living Villages forgot continues out of view from the troops on its rosters; nothing is rerolled or granted. An ordinary AI capital can be attacked; a kingdom's protected capital seat cannot while the server protects capitals."
+        },
+        {
+          "id": "callout",
+          "type": "callout",
+          "tone": "tip",
+          "title": "Server settings",
+          "text": "Living Villages' own aiWarEnabled and aiWarRequiresEnemy decide whether AI realms look for wars at all. MCA: Kingdoms adds political_warfare.enabled and militaryActions, and livingVillages.allowAiVsAiWars, playerTargetPolicy, aiRealmCapitalPolicy and minimumTruceTicks."
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "task",
+              "target": "warfare.realm_peace",
+              "label": "Propose peace or an alliance"
+            },
+            {
+              "kind": "guide",
+              "target": "living_villages_players"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "living_villages_players",
+      "category": "warfare",
+      "task": "villages.supply",
+      "title": "Taking part as a player",
+      "summary": "Join an army, defend, negotiate for your realm or kingdom, and supply villages, through the menus you already use.",
+      "blocks": [
+        {
+          "id": "steps",
+          "type": "steps",
+          "items": [
+            {
+              "text": "Open village shows Living Villages' own screen for the village you stand in.",
+              "link": {
+                "kind": "task",
+                "target": "villages.open"
+              }
+            },
+            {
+              "text": "Join the army makes you a member. Members are not commanders, and joining never makes anyone a ruler.",
+              "link": {
+                "kind": "task",
+                "target": "villages.join"
+              }
+            },
+            {
+              "text": "War and peace with a realm proposes peace, a ceasefire, an alliance or a cession. An AI realm answers at once from its own interests: its opinion of you, its strength, its losses. A player-led party must sign.",
+              "link": {
+                "kind": "task",
+                "target": "warfare.realm_peace"
+              }
+            },
+            {
+              "text": "Provide supplies hands currency or smithing materials to the village you stand in; only what its stores can hold is taken, the rest stays with you.",
+              "link": {
+                "kind": "task",
+                "target": "villages.supply"
+              }
+            },
+            {
+              "text": "Why is growth paused? tells you what the village waits for: beds, money for its next building, ground, or the end of a siege.",
+              "link": {
+                "kind": "task",
+                "target": "villages.growth"
+              }
+            }
+          ]
+        },
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "A peace that takes effect ends the realms' wars through Living Villages itself: survivors go home once, casualties already taken stay taken, and nobody is paid for a conquest that did not happen. A truce then keeps the same realms from fighting again for a while. Periodic opinion changes cannot overturn an agreement in force; if a player sets an enemy relation in Recruits anyway, the agreement is recorded as broken and both sides are told."
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "guide",
+              "target": "living_villages"
+            },
+            {
+              "kind": "guide",
+              "target": "living_villages_residents"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "living_villages_residents",
+      "category": "settlements",
+      "task": "villages.here",
+      "title": "Residents of Living Villages villages",
+      "summary": "The people of an integrated village stay the same people when you leave, when they are promoted and when the village changes hands.",
+      "blocks": [
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "On its own, Living Villages folds a village back into numbers when players leave and spawns fresh villagers when they return, replaces a worker each time it is promoted, and deletes villagers its counts do not expect. In a village MCA: Kingdoms has integrated, residents stay in the world and are saved with their chunk, a worker is promoted in place and keeps its trades, and a person the provider stops counting simply keeps living there. With MCA Reborn installed, new residents are MCA people made by MCA itself."
+        },
+        {
+          "id": "states",
+          "type": "comparison",
+          "alt": "Unloaded, away and dead are different: an unloaded person still exists, someone away keeps their home and job, and only a confirmed death ends a person.",
+          "columns": [
+            {
+              "title": "Unloaded",
+              "points": [
+                "Their area is not loaded; they exist and nobody replaces them."
+              ]
+            },
+            {
+              "title": "Away",
+              "points": [
+                "Following a player or in another dimension; home and job are kept."
+              ]
+            },
+            {
+              "title": "Dead",
+              "points": [
+                "Only a confirmed death; an unexplained disappearance is investigated, not mourned."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "p2",
+          "type": "paragraph",
+          "text": "Married people, parents, family members, office holders and companions are not turned into workers or soldiers automatically; the village recruits from its own unspawned manpower instead. Soldiers who stand down into the village's rolls keep their name, health and effects as well as their kit."
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "guide",
+              "target": "living_villages"
+            },
+            {
+              "kind": "guide",
+              "target": "living_villages_operations"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "living_villages_operations",
+      "category": "operators",
+      "task": "villages.status",
+      "operator": true,
+      "player_task": "villages.here",
+      "title": "Living Villages: import, adoption and recovery",
+      "summary": "How existing worlds are imported, how an ordinary village is placed under management on purpose, and how interrupted records are recovered.",
+      "blocks": [
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "An existing world is imported in small batches after both mods load: each real village is matched to the settlement it already is (by its provider reference, then by place, never by name) or becomes a new settlement under the Living Villages name. A player faction whose Ledger is not placed yet is a realm only. Import grants no rewards and records existing control as a baseline, not as a battle. An ambiguous match waits for you with its candidates listed."
+        },
+        {
+          "id": "steps",
+          "type": "steps",
+          "items": [
+            {
+              "text": "Check readiness: every capability with its reason, the effective policies and the queues.",
+              "link": {
+                "kind": "task",
+                "target": "villages.status",
+                "operator": true
+              }
+            },
+            {
+              "text": "Preview the import, then decide ambiguous villages: bind each to a candidate or keep it separate.",
+              "link": {
+                "kind": "task",
+                "target": "villages.bind",
+                "operator": true
+              }
+            },
+            {
+              "text": "Enable Living Villages management here adopts an ordinary village from the people and beds already there, with construction held off.",
+              "link": {
+                "kind": "task",
+                "target": "villages.adopt",
+                "operator": true
+              }
+            },
+            {
+              "text": "Records waiting for you lists interrupted operations and wars; recover each after the bridge checks Living Villages again.",
+              "link": {
+                "kind": "task",
+                "target": "villages.recover",
+                "operator": true
+              }
+            }
+          ]
+        },
+        {
+          "id": "callout",
+          "type": "callout",
+          "tone": "warning",
+          "title": "Unsupported versions",
+          "text": "If a world already holds protected residents and the protection hooks cannot be active (another Living Villages build), the server refuses to start before anything changes, with the reason in the log. Install the audited jar, or set livingVillages.allowUnprotectedResidents to accept that Living Villages may replace them."
+        }
+      ],
+      "commands": [
+        "/kingdoms livingvillages status",
+        "/kingdoms livingvillages inspect <settlement>",
+        "/kingdoms livingvillages migration preview",
+        "/kingdoms livingvillages conflicts",
+        "/kingdoms livingvillages recover <id>"
+      ]
+    }
+  ]
+}

@@ -423,7 +423,7 @@
         {
           "id": "keyboard",
           "type": "paragraph",
-          "text": "Tab 可在控件与文章链接之间移动焦点；Enter 或空格激活当前控件。Page Up 和 Page Down 翻页；文章获得焦点时，方向键、Home 和 End 可滚动内容。Ctrl + F 聚焦搜索。Escape 关闭本书。窄窗口使用目录／文章切换书页，不会缩小文字。"
+          "text": "Tab 可在控件与文章链接之间移动焦点；Enter 或空格激活当前控件。Page Up 和 Page Down 翻页；文章获得焦点时，方向键、Home 和 End 可滚动内容。Ctrl + F 聚焦搜索。Escape 关闭本书。窄窗口使用目录／文章切换书页，不会缩小文字。在较矮的屏幕上，王国页面不显示多行标签，而是显示一个“栏目”按钮：点击它或在其上滚动滚轮可切换到下一栏目；按住 Shift 点击可返回上一栏目。"
         },
         {
           "id": "commands",

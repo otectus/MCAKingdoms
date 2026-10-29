@@ -5,10 +5,31 @@
       "category": "warfare",
       "title": "Warfare ownership and setup",
       "summary": "Learn which systems own battles, settlements, contracts, law, and maps before beginning a campaign.",
-      "body": [
-        "MCA: Kingdoms coordinates political authority around other mods without replacing them. Recruits 1.15.2 owns factions, soldiers, equipment, claims, siege progress, and combat results. MCA: Kingdoms owns the mapping from those facts to civic settlements, the public campaign intent, notice periods, political mandates, sovereignty accords, and durable receipts. A native capture creates an occupation; it does not rename a town, erase residents, change culture, move buildings, or clear reputation and legal records.",
-        "Military play needs the matching Recruits provider. Civilian contracts need a compatible MCA Quests installation, and Crime jurisdiction needs the matching MCA Crime provider. Map Atlases remains the map renderer when installed. The ordinary settlement ledger, discovery records, routes, and encounter receipts still belong to MCA: Kingdoms and remain useful when an optional companion is absent. Version-bound operations fail closed rather than guessing provider state.",
-        "All warfare feature switches default to enabled. The common configuration can separately disable military actions, civilian contracts, target protection, or world context. Default policy protects capitals, requires a defending leader online for bound siege damage, gives 1,200 ticks of campaign notice, lasts 168,000 ticks after notice, permits at most 16 temporary units per commander, and gives mobilizations 6,000 ticks. Server operators may tune these bounded values before play."
+      "blocks": [
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "MCA: Kingdoms coordinates political authority around other mods without replacing them. Recruits 1.15.2 owns factions, soldiers, equipment, claims, siege progress, and combat results. MCA: Kingdoms owns the mapping from those facts to civic settlements, the public campaign intent, notice periods, political mandates, sovereignty accords, and durable receipts. A native capture creates an occupation; it does not rename a town, erase residents, change culture, move buildings, or clear reputation and legal records."
+        },
+        {
+          "id": "diagram",
+          "type": "image",
+          "texture": "mcakingdoms:textures/gui/guide/warfare_control.png",
+          "width": 192,
+          "height": 96,
+          "alt": "An attacking kingdom's banner points across a border to a defended settlement with a shield: control changes only through a native siege, never by the banner alone.",
+          "caption": "A claim crosses a border; control follows a native siege."
+        },
+        {
+          "id": "p2",
+          "type": "paragraph",
+          "text": "Military play needs the matching Recruits provider. Civilian contracts need a compatible MCA Quests installation, and Crime jurisdiction needs the matching MCA Crime provider. Map Atlases remains the map renderer when installed. The ordinary settlement ledger, discovery records, routes, and encounter receipts still belong to MCA: Kingdoms and remain useful when an optional companion is absent. Version-bound operations fail closed rather than guessing provider state."
+        },
+        {
+          "id": "p3",
+          "type": "paragraph",
+          "text": "All warfare feature switches default to enabled. The common configuration can separately disable military actions, civilian contracts, target protection, or world context. Default policy protects capitals, requires a defending leader online for bound siege damage, gives 1,200 ticks of campaign notice, lasts 168,000 ticks after notice, permits at most 16 temporary units per commander, and gives mobilizations 6,000 ticks. Server operators may tune these bounded values before play."
+        }
       ],
       "commands": [],
       "task": "warfare.here"

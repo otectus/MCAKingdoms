@@ -73,10 +73,9 @@ final class R4FamilyScenario {
                     "R4 family evidence reads the reciprocal native tree without mutation");
 
             var evolution=EvolutionRuntime.get(server);evolution.configure(actor,true,false);evolution.region(actor,seatA.id(),true);
-            String opened=evolution.familyIntroduction(actor);check(opened.startsWith("Private family introduction"),"family introduction opened: "+opened);
+            String opened=evolution.familyIntroduction(actor);check(dev.otectus.mcakingdoms.interaction.Keyed.key(opened).equals("evolution.mcakingdoms.world.family_opened"),"family introduction opened: "+dev.otectus.mcakingdoms.interaction.Keyed.english(opened));
             UUID scenario=evolution.scenarios(actor).stream().filter(v->v.trigger()==dev.otectus.mcakingdoms.evolution.EvolutionState.Trigger.FAMILY).findFirst().orElseThrow().id();
-            check(evolution.page(actor,0).stream().anyMatch(line->line.contains(scenario.toString()))
-                    &&evolution.page(outsider,0).stream().noneMatch(line->line.contains(scenario.toString())),
+            check(evolution.scenario(actor,scenario).isPresent()&&evolution.scenario(outsider,scenario).isEmpty(), // pages name opportunities by title, not id
                     "family introduction uses separate civic residences and remains private to its audience");
             evolution.contribute(actor,scenario,1,EvolutionState.Outcome.INTRODUCE);
             check(firstBefore.equals(call(first,"save"))&&secondBefore.equals(call(second,"save")),
@@ -84,7 +83,7 @@ final class R4FamilyScenario {
 
             int forcedBefore=level.getForcedChunks().size();
             level.removePlayerImmediately(spouse,Entity.RemovalReason.DISCARDED);spouseLoaded=false;
-            boolean unloadedRefused=false;try{evolution.familyIntroduction(actor);}catch(IllegalArgumentException expected){unloadedRefused=expected.getMessage().contains("spouse is loaded");}
+            boolean unloadedRefused=false;try{evolution.familyIntroduction(actor);}catch(IllegalArgumentException expected){unloadedRefused=dev.otectus.mcakingdoms.interaction.Keyed.key(dev.otectus.mcakingdoms.interaction.Keyed.text(expected)).equals("evolution.mcakingdoms.world.spouse_unloaded");}
             check(unloadedRefused&&level.getForcedChunks().size()==forcedBefore&&McaFamilyEvidence.marriage(server,actor.getUUID()).isPresent()
                     &&!(boolean)call(second,"isDeceased"),"unloaded spouse pauses introduction without forced chunks or fabricated death");
 
@@ -92,7 +91,7 @@ final class R4FamilyScenario {
             first.getClass().getMethod("setRelationshipState",relationshipType).invoke(first,single);
             second.getClass().getMethod("setRelationshipState",relationshipType).invoke(second,single);
             check(McaFamilyEvidence.marriage(server,actor.getUUID()).isEmpty(),"native relationship invalidation is observed fail-closed");
-            boolean resolutionRefused=false;try{evolution.resolve(actor,scenario,2,EvolutionState.Outcome.INTRODUCE,B);}catch(IllegalArgumentException expected){resolutionRefused=expected.getMessage().contains("relationship changed");}
+            boolean resolutionRefused=false;try{evolution.resolve(actor,scenario,2,EvolutionState.Outcome.INTRODUCE,B);}catch(IllegalArgumentException expected){resolutionRefused=dev.otectus.mcakingdoms.interaction.Keyed.key(dev.otectus.mcakingdoms.interaction.Keyed.text(expected)).equals("evolution.mcakingdoms.world.family_changed");}
             check(resolutionRefused&&politics.page(actor,UUID.randomUUID(),A,"petitions",0).rows().isEmpty(),
                     "invalidated marriage prevents unresolved family-backed political operation");
             finish.accept("PASS integration R4 native MCA family: reciprocal owner state, read-only evidence, private introduction, invalidation and unloaded-spouse refusal");

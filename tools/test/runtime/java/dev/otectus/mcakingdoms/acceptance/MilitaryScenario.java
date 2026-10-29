@@ -93,8 +93,11 @@ final class MilitaryScenario {
             var firstTroop=troops.get(0);firstTroop.setCustomName(net.minecraft.network.chat.Component.literal("Harbor Guard"));var beforeOrders=RecruitsMobilization.snapshot(firstTroop);
             var muster=dev.otectus.mcakingdoms.warfare.mobilization.MobilizationEvents.get(server);
             String musterResult=wizard(one,"warfare.muster","Harbor Guard","Defense");
-            check(musterResult.startsWith("Mobilized"),"native defense muster applied: "+musterResult);
-            UUID lease=dev.otectus.mcakingdoms.warfare.mobilization.MobilizationEvents.get(server).deployments(one,0,64).get(0).id(); // newest lease first; results name units, not ids
+            var deployed=dev.otectus.mcakingdoms.warfare.mobilization.MobilizationEvents.get(server).deployments(one,0,64).get(0); // newest lease first; results name units, not ids
+            var deployedPhase=deployed.phase(); // the record, not the result's wording, says whether the orders changed
+            check(deployed.unit().equals(firstTroop.getUUID())&&(deployedPhase==dev.otectus.mcakingdoms.warfare.mobilization.MobilizationSavedData.Phase.ACTIVE_PENDING_NATIVE_SAVE
+                    ||deployedPhase==dev.otectus.mcakingdoms.warfare.mobilization.MobilizationSavedData.Phase.DURABLE_ACTIVE),"native defense muster applied: "+musterResult+" ("+deployedPhase+")");
+            UUID lease=deployed.id();
             muster.dismiss(one,lease);
             check(RecruitsMobilization.snapshot(firstTroop).equals(beforeOrders),"dismissal restores native orders and owner/group identity");
             var protectedVillager=net.minecraft.world.entity.EntityType.VILLAGER.create(level);protectedVillager.setPos(10,64,10);
@@ -113,7 +116,7 @@ final class MilitaryScenario {
             detection.invoke(nativeEvents,level);
             check((boolean)call(manager,"isActiveSiege",claim) && (boolean)type.getField("isUnderSiege").get(claim),"native troop detection starts eligible siege");
             call(manager,"save",level);server.saveEverything(false,true,true);control.reconcile();control.reconcile();
-            check(control.view(one,target.id()).stream().anyMatch(v->v.toLowerCase(java.util.Locale.ROOT).contains("under siege")),"native started siege recorded after provider save"); // control views read as words, not enum names
+            check(control.view(one,target.id()).stream().anyMatch(v->dev.otectus.mcakingdoms.interaction.Keyed.english(v).toLowerCase(java.util.Locale.ROOT).contains("under siege")),"native started siege recorded after provider save"); // control views read as words, not enum names
             int health=(Integer)call(claim,"getHealth");online.remove(two.getUUID());nativeTick.invoke(nativeEvents,level);
             check((Integer)call(claim,"getHealth")==health,"offline defender freezes native siege damage");online.put(two.getUUID(),two);
             online.remove(two.getUUID());call(claim,"setHealth",0);nativeTick.invoke(nativeEvents,level);nativeTick.invoke(nativeEvents,level);

@@ -30,7 +30,7 @@ public final class RecruitTransferCommands {
         }
         for (String verb : List.of("inspect", "confirm", "restore")) root.then(Commands.literal(verb).then(dev.otectus.mcakingdoms.interaction.NamedTargets.argument("transfer","transfer").executes(c -> run(c, () -> {
             var s = new RecruitTransferService(c.getSource().getServer()); var p = c.getSource().getPlayerOrException(); var id = dev.otectus.mcakingdoms.interaction.NamedTargets.uuid(c,"transfer","transfer");
-            if (verb.equals("inspect")) { s.inspect(p, id).forEach(line -> p.sendSystemMessage(Component.literal(line))); return "Private transfer inspection complete."; }
+            if (verb.equals("inspect")) { s.inspect(p, id).forEach(line -> p.sendSystemMessage(dev.otectus.mcakingdoms.interaction.Keyed.component(line))); return dev.otectus.mcakingdoms.interaction.Keyed.text("evolution.mcakingdoms.transfer.inspected", "Private transfer details shown above."); }
             return verb.equals("confirm") ? s.confirm(p, id) : s.restore(p, id);
         }))));
         var node = event.getDispatcher().register(root); // "/kingdoms transfer ..." is the same command tree under the shared root
@@ -38,8 +38,8 @@ public final class RecruitTransferCommands {
     }
     private interface Work { String run() throws com.mojang.brigadier.exceptions.CommandSyntaxException; }
     private static int run(CommandContext<CommandSourceStack> c, Work work) {
-        try { var result = work.run(); c.getSource().sendSuccess(() -> Component.literal(result), false); return 1; }
-        catch (IllegalArgumentException | IllegalStateException | com.mojang.brigadier.exceptions.CommandSyntaxException failure) { c.getSource().sendFailure(Component.literal(failure.getMessage())); return 0; }
+        try { var result = work.run(); c.getSource().sendSuccess(() -> dev.otectus.mcakingdoms.interaction.Keyed.component(result), false); return 1; }
+        catch (IllegalArgumentException | IllegalStateException | com.mojang.brigadier.exceptions.CommandSyntaxException failure) { c.getSource().sendFailure(dev.otectus.mcakingdoms.interaction.Keyed.component(failure)); return 0; }
     }
     private RecruitTransferCommands() { }
 }

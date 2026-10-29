@@ -8,6 +8,71 @@ together: the main network channel is now protocol 7. Upgrade, downgrade and rec
 [Upgrade and recovery](docs/Upgrade-and-Recovery.md). Every finding's disposition and tests are in the
 [completion ledger](docs/Completion-Ledger.md).
 
+### Dynasty, heraldry, MCA Capitals and development (audit handoff)
+
+Everything here is off or inert on upgraded worlds until a leader, official or operator chooses it; see
+[Migrating to 0.3.0](docs/migration-0.3.0.md) and the [audit implementation status](docs/audit-implementation-status.md).
+
+- **Laws of succession** (new Succession tab on the Kingdom page, *Adopt a law of succession*). Every government
+  starts with **Manual only**, the 0.2.0 behaviour. The other laws: the named heir, then children, grandchildren and
+  siblings from MCA's family tree; equal primogeniture; council confirmation of the heir; elective monarchy, which
+  leaves the throne to an election; or a data-pack law. A vacancy
+  opens one succession that survives restarts. Adult NPC heirs are seated, player heirs accept or decline the crown, and
+  minor heirs wait under a regency until their adulthood is verified. An elected ruler or elected successor is never
+  replaced by lineage, and evidence that cannot be verified waits for review instead of being guessed.
+- **The court**: ceremonial ranks that each kingdom names in its own style; claims to contest the order, be
+  recognized in the ruling house or be restored after renouncing, decided by an official and kept; an explainable
+  legitimacy reading that changes no authority; memorials, and a day of mourning shown on pages and darkened banners.
+- **Physical heraldry**: kingdom banners, heraldic shields and court noticeboards that stand for the kingdom where they
+  are placed; a seal press and kingdom charters. A charter is official only while the ledger holds what it proves,
+  and reads as historical, revoked or unverified otherwise. It never grants authority by itself.
+- **MCA Capitals**: each kingdom whose village is a governing Capitals capital has its crown governed by Capitals;
+  its civic offices, agreements, guilds and honors continue here, and other kingdoms are unaffected. Capitals is only
+  read. Operators review mappings with `/kingdoms capitals report|accept|release`.
+- **Settlement development** (`development.mode`, **off** by default): public works funded with real deliveries,
+  taken once and refunded if a work is cancelled; small works built block by block on a surveyed plot in settlements
+  that allow it, never over protected land, beds, storage, doors, redstone or workstations, never loading a chunk, and
+  with rollback; an optional abstract goods ledger with capped abstract trade that never creates or moves a real item.
+  A Development tab, eleven Kingdom Tasks, and `/kingdoms development` and `/kingdoms economy` commands.
+- **Book and screens**: six diagrams with localized descriptions; history filters by kind, date and visibility; pin one
+  task to the top of the screen (with a key you can bind); the Ledger shows a known place's direction and a sketch of
+  the known places around you. On a short screen the Kingdom page's nine tabs become one Section picker, so the record
+  keeps its room.
+- **Data packs**: succession laws, court ranks and development templates; `heraldry_secondary` and `heraldry_motto`
+  kingdom metadata; `/kingdoms definitions diagnose|validate|explain`. The example pack shows each.
+- **Stabilization**: the R3 siege fixture no longer rewrites config mid-run (20 consecutive packaged runs); a Recruits
+  transfer's durability check now saves only the unit's chunk and Recruits' own files (p99 21 ms for 100 units, from
+  hundreds of milliseconds); a provider matrix is logged at every start; every store uses one atomic save policy.
+
+### Recruits: Living Villages integration
+
+Optional, and active only with Recruits 1.15.2 and the audited Recruits: Living Villages 1.1.0 jar (checked by SHA-256).
+Without it, or with another build, nothing changes and saved bridge records stay read-only. See
+[Living Villages integration](docs/Living-Villages-Integration.md).
+
+- **One settlement per village**: existing worlds are imported in bounded, resumable batches. A village inside an
+  existing settlement is that settlement, keeping its id, name, kingdom and history; two possible settlements wait for an
+  operator; nothing is matched by name. A player faction whose Ledger is not placed is a realm only.
+- **Realms**: each Living Villages faction is a realm that keeps its id when its capital falls. Control and the
+  recognized government are recorded separately, so a conquered village is occupied, not renamed or reassigned.
+- **Wars**: Living Villages still fights them. Before it declares, besieges, starts a battle or lets its AI choose a
+  target, one preflight applies MCA: Kingdoms' warfare switches, agreements, truces and protected capitals. A refused
+  target is passed over. Each war is one durable conflict; conquest is acknowledged after the save that wrote it, and a
+  war Living Villages forgets at a restart continues as an abstract siege.
+- **Agreements between realms**: peace, ceasefire, alliance and cession, spoken for by a player-led realm's leader, a
+  kingdom's ratifying officials through an explicit operator association, or an AI realm by a recorded policy. Living
+  Villages' relation step cannot overturn an agreement in force.
+- **Residents**: the people of integrated villages stay in the world when players leave, workers are promoted in place,
+  and the people Living Villages would trim, turn away as strays or clean up are kept. With MCA Reborn, new residents are
+  MCA people.
+- **Construction**: Living Villages does not found a natural village or place a new building on another settlement's
+  ground, a protected home or someone's standing bed, chest, furnace or other block entity (`protectExternalBuildings`).
+- Ordinary villages can be placed under Living Villages management deliberately, with construction held; supply
+  deliveries; 23 Kingdom Tasks, a War Room section, a Ledger link, a Book chapter, and `/kingdoms livingvillages`.
+- Server health and the provider matrix (`/kingdoms integrations`, the start-up log) report the integration. The Kingdom
+  Tasks index now sends each distinct unavailability reason once, which keeps the larger catalogue well inside its
+  payload budget.
+
 ### New for players
 
 - **Register my residence** and **Move my residence** in Kingdom Tasks (and `/kingdoms residence status|register|move`).
@@ -93,12 +158,17 @@ together: the main network channel is now protocol 7. Upgrade, downgrade and rec
   the maintainer's machine. Historical provider-patch verification moved to `tools/history/`.
 - The R3 acceptance fixture sets `militaryActions = false` before launch and asserts the native siege flag at once,
   instead of toggling the setting mid-run.
+- `tools/test/companions.json` lists Recruits: Living Villages 1.1.0 by SHA-256, and `verify_companions.py` reads a
+  `modId` followed by a TOML comment. The packaged `lv` phases of `tools/test/integration_runtime.py` cover the
+  integration, its restart, removal, reinstallation, a future-schema store and the refusal of an unaudited jar.
 
 ### Documentation
 
 - New: [completion ledger](docs/Completion-Ledger.md), [capacity and record maintenance](docs/Capacity-and-Maintenance.md),
   and the [upgrade and recovery runbook](docs/Upgrade-and-Recovery.md). The runbook covers runtime old-name aliases
   versus on-disk migration.
+- New: [Living Villages integration](docs/Living-Villages-Integration.md), and the `[livingVillages]` settings in the
+  configuration reference.
 - README, CurseForge text, configuration reference, compatibility table and MODMAP updated together. Historical reviews
   and audits are labelled as such.
 
@@ -106,8 +176,14 @@ together: the main network channel is now protocol 7. Upgrade, downgrade and rec
 
 - Collections other than transfers and opportunities still refuse new records at their bound. Their offline procedure
   is documented; reference-aware compaction is future work.
-- Some result sentences produced deep inside the political, mobilization and campaign services are still English.
 - Old-name runtime aliases remain until the companion contract is published and tested.
+- MCA Capitals is read only: delegating crown actions to Capitals waits for a public mutation API.
+- Living Villages: Overworld only, as the provider. Its live battle does not survive a restart (the war continues as an
+  abstract siege). Resident protection needs the production runtime. Living Villages 1.1.0 has no adoption API and no
+  food shortage, so adoption creates the provider record directly and supplies are its currency and materials. Its own
+  map markers still go to every player, and road grading between its own buildings is not checked.
+- Not included: a JEI recipe hand-off, a Map Atlases link, physical caravans, inter-house mediation and the optional
+  funeral contract (reasons in the [audit implementation status](docs/audit-implementation-status.md)).
 
 ## 0.2.0 — unreleased
 

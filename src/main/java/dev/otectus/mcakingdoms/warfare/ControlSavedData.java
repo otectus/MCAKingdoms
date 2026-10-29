@@ -8,7 +8,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.storage.LevelResource;
 
 /** Independent sidecar; existing settlement/political/provider payloads are never rewritten. */
-public final class ControlSavedData extends SavedData {
+public final class ControlSavedData extends dev.otectus.mcakingdoms.persistence.DurableSavedData {
     public static final String NAME = "mcakingdoms_control";
     private static final Gson JSON = new Gson();
     private ControlState state = new ControlState();

@@ -11,7 +11,19 @@
     "RecruitsSiegeSuccessMixin",
     "RecruitsDelayedExecutorMixin",
     "RecruitsTransferAccountingMixin",
-    "RecruitsTransferNativeWriteMixin"
+    "RecruitsTransferNativeWriteMixin",
+    "LvWarManagerMixin",
+    "LvRelationsMixin",
+    "LvCivilianMixin",
+    "LvMaterializationMixin",
+    "LvResidentGuardMixin",
+    "LvRecruitStateMixin",
+    "LvExpansionMixin",
+    "LvPlacementMixin",
+    "LvDeferredWorkMixin",
+    "LvLecternMixin",
+    "LvLivestockMixin",
+    "LvFoundingMixin"
   ],
   "injectors": {
     "defaultRequire": 1

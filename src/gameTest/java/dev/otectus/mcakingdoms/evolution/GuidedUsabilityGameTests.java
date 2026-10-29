@@ -77,6 +77,8 @@ public final class GuidedUsabilityGameTests {
             var transfer = byId.get("transfer.propose");
             check(transfer != null && transfer.has("a") && transfer.get("a").getAsString().equals("PROVIDER_MISSING"), "A missing provider is named in the index: " + transfer);
             check(transfer.get("l").getAsString().equals("recruit_transfer_workflow"), "The index names the Book topic to learn more");
+            String reason = json.getAsJsonArray("reasons").get(transfer.get("q").getAsInt()).getAsString();
+            check(reason.contains("unavailable.mcakingdoms.provider_missing"), "Each distinct reason is sent once and the entry names it: " + reason);
             var opened = start(player, "transfer.propose");
             check(opened.mode().equals("unavailable") && opened.learnOrEmpty().equals("recruit_transfer_workflow"), "Opening an unavailable task explains it instead of a form: " + opened.mode());
             check(opened.detailText().contains("Recruits"), "The explanation names the missing provider: " + opened.detailText());

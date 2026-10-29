@@ -38,11 +38,11 @@ final class WarfareScenario {
             }
             runtime.reconcile(); runtime.reconcile();
             var lines = runtime.view(actor, settlement.id());
-            check(lines.stream().anyMatch(s -> s.toLowerCase(java.util.Locale.ROOT).contains("occupied")), "occupation retained across restart/provider absence");
-            check(lines.stream().anyMatch(s -> s.contains("Observation #3.")), "one siege retains one control transition");
+            check(lines.stream().anyMatch(s -> english(s).toLowerCase(java.util.Locale.ROOT).contains("occupied")), "occupation retained across restart/provider absence");
+            check(lines.stream().anyMatch(s -> english(s).contains("Observation #3.")), "one siege retains one control transition");
             check(settlement.kingdomId().equals(A), "original civic kingdom preserved across restart");
             if (phase.equals("r3-absent"))
-                check(lines.stream().anyMatch(s -> s.contains("ABSENT")), "provider absence suspends and labels retained history");
+                check(lines.stream().anyMatch(s -> english(s).contains("Recruits is not installed")), "provider absence suspends and labels retained history");
             else check(RecruitsObservation.here(actor).ownerId().equals("r3_attacker"), "native and MCA: Kingdoms owners agree after restart");
             finish.accept("PASS integration " + phase); return;
         }
@@ -74,30 +74,36 @@ final class WarfareScenario {
         boolean denied = false;
         try { runtime.mapHere(observer, A); } catch (IllegalArgumentException expected) { denied = true; }
         check(denied, "civilian cannot create native mapping");
-        check(runtime.view(observer, settlement.id()).equals(List.of("Control information unavailable.")), "guessed settlement UUID hides control history");
+        check(keys(runtime.view(observer, settlement.id())).equals(List.of("warfare.mcakingdoms.control.info_unavailable")), "guessed settlement UUID hides control history");
         SettlementKnowledge.get(server).discover(observer.getUUID(), settlement.id());
-        check(runtime.view(observer, settlement.id()).stream().anyMatch(s -> s.toLowerCase(java.util.Locale.ROOT).contains("controlled")), "local discovered civilian can inspect control");
+        check(runtime.view(observer, settlement.id()).stream().anyMatch(s -> english(s).toLowerCase(java.util.Locale.ROOT).contains("controlled")), "local discovered civilian can inspect control");
         observer.setPos(500, 64, 500);
-        check(runtime.view(observer, settlement.id()).equals(List.of("Visit this settlement to inspect its control history.")), "discovery alone grants no remote live intelligence");
+        check(keys(runtime.view(observer, settlement.id())).equals(List.of("warfare.mcakingdoms.control.visit")), "discovery alone grants no remote live intelligence");
         observer.setPos(0, 64, 0);
         var forced = Set.copyOf(level.getForcedChunks());
         // This legacy observation fixture bypasses campaign policy (military actions are off in its config from launch);
         // military policy has its own all-enabled scenario. The native flag is checked at once, so a cancelled start is
         // reported as such instead of surfacing later as missing history.
+        breadcrumb(server, "before setUnderSiege", claim, claimType, runtime, settlement.id());
         call(claim, "setUnderSiege", true, level);
+        breadcrumb(server, "after setUnderSiege (native return)", claim, claimType, runtime, settlement.id());
         check(Boolean.TRUE.equals(claimType.getField("isUnderSiege").get(claim)), "native siege start was cancelled (military policy hook or provider refusal)");
         runtime.reconcile(); runtime.reconcile();
+        breadcrumb(server, "reconciled before the native save", claim, claimType, runtime, settlement.id());
         check(runtime.revision() == boundRevision, "unsaved native siege creates no durable control event");
         call(manager, "save", level); server.saveEverything(false, true, true);
+        breadcrumb(server, "native claim and world saved", claim, claimType, runtime, settlement.id());
         runtime.reconcile(); runtime.reconcile();
-        check(runtime.view(actor, settlement.id()).stream().anyMatch(s -> s.toLowerCase(java.util.Locale.ROOT).contains("under siege")), "saved native siege appears in history");
+        breadcrumb(server, "reconciled after the native save (Kingdoms receipt)", claim, claimType, runtime, settlement.id());
+        // A failure here after a TRUE native flag and a saved world is projection lag or a failed Kingdoms save, never a cancelled start.
+        check(runtime.view(actor, settlement.id()).stream().anyMatch(s -> english(s).toLowerCase(java.util.Locale.ROOT).contains("under siege")), "saved native siege appears in history");
         call(claim, "addParty", claimType.getField("attackingParties").get(claim), attacker);
         call(claim, "setSiegeSuccess", level);
         long beforeSave = runtime.revision(); runtime.reconcile(); runtime.reconcile();
         check(runtime.revision() == beforeSave, "native success event awaits provider disk confirmation");
         call(manager, "save", level); server.saveEverything(false, true, true);
         runtime.reconcile(); runtime.reconcile();
-        check(runtime.view(actor, settlement.id()).stream().anyMatch(s -> s.toLowerCase(java.util.Locale.ROOT).contains("occupied")), "saved native siege records provisional occupation");
+        check(runtime.view(actor, settlement.id()).stream().anyMatch(s -> english(s).toLowerCase(java.util.Locale.ROOT).contains("occupied")), "saved native siege records provisional occupation");
         long occupiedRevision = runtime.revision(); runtime.reconcile(); runtime.reconcile();
         check(occupiedRevision == runtime.revision(), "duplicate reconciliation does not repeat control transition");
         var after = kingdoms.getSettlement(settlement.id()).orElseThrow();
@@ -108,9 +114,9 @@ final class WarfareScenario {
         denied = false;
         try { kingdoms.setKingdom(settlement.id(), B); } catch (IllegalArgumentException | IllegalStateException expected) { denied = true; }
         check(denied, "bound settlement cannot silently change civic sovereignty");
-        WarfareConfig.ENABLED.set(false); runtime.reconcile();
+        WarfareConfig.overrideEnabledForTests(false); runtime.reconcile();
         check(runtime.revision() == occupiedRevision, "disabling retains control records");
-        WarfareConfig.ENABLED.set(true);
+        WarfareConfig.overrideEnabledForTests(null);
         // Exercise explicit administrative recovery independently of the occupied harbor retained for restart.
         var outpostPos = new BlockPos(128, 64, 0);
         var outpost = kingdoms.registerCandidate(level, SettlementCandidate.external(level.dimension(), outpostPos, 12,
@@ -123,18 +129,39 @@ final class WarfareScenario {
         denied = false;
         try { runtime.retire(observer, outpost.id(), retirementRevision); } catch (IllegalArgumentException expected) { denied = true; }
         check(denied, "civilian cannot retire a binding");
-        WarfareConfig.ENABLED.set(false);
+        WarfareConfig.overrideEnabledForTests(false);
         runtime.retire(actor, outpost.id(), retirementRevision);
-        check(runtime.view(actor, outpost.id()).stream().anyMatch(s -> s.toLowerCase(java.util.Locale.ROOT).contains("retired")), "disabled-feature retirement preserves history");
+        check(runtime.view(actor, outpost.id()).stream().anyMatch(s -> english(s).toLowerCase(java.util.Locale.ROOT).contains("retired")), "disabled-feature retirement preserves history");
         check(RecruitsObservation.here(actor).claimId().equals(call(second, "getUUID").toString()), "retirement leaves native claim unchanged");
         kingdoms.setKingdom(outpost.id(), A);
         check(kingdoms.getSettlement(outpost.id()).orElseThrow().kingdomId().equals(A), "explicit retirement releases civic migration preflight");
-        WarfareConfig.ENABLED.set(true);
+        WarfareConfig.overrideEnabledForTests(null);
         denied = false;
         try { runtime.bindHere(actor, outpost.id()); } catch (IllegalArgumentException expected) { denied = true; }
         check(denied, "retired native claim identity cannot be recycled");
         actor.setPos(0, 64, 0);
         server.saveEverything(false, true, true);
         finish.accept("PASS integration R3 native siege save fence, privacy, identity and replay");
+    }
+    /** A control line as an English reader sees it; lines are worded per reader since 0.3.0 (H03). */
+    private static String english(String line) { return dev.otectus.mcakingdoms.interaction.Keyed.english(line); }
+    private static List<String> keys(List<String> lines) { return lines.stream().map(dev.otectus.mcakingdoms.interaction.Keyed::key).toList(); }
+    private static final long STARTED = System.nanoTime();
+    /**
+     * H01 breadcrumb: elapsed time, phase, the military setting with its source line in the fixture config, the native
+     * siege flag and claim identity, and the Kingdoms control revision with the settlement's current line. A failure
+     * after these lines tells a cancelled start (flag false), a failed save (revision unchanged after the native save)
+     * and projection lag (revision moved, line not yet showing) apart.
+     */
+    private static void breadcrumb(net.minecraft.server.MinecraftServer server, String step, Object claim, Class<?> claimType, WarfareRuntime runtime, UUID settlement) {
+        String source = "";
+        try {
+            var config = server.getServerDirectory().toPath().resolve("config/mcakingdoms-warfare-common.toml");
+            source = java.nio.file.Files.readAllLines(config).stream().filter(l -> l.strip().startsWith("militaryActions")).findFirst().orElse("(not in file)");
+        } catch (java.io.IOException unreadable) { source = "(config unreadable)"; }
+        Object siege, id;
+        try { siege = claimType.getField("isUnderSiege").get(claim); id = call(claim, "getUUID"); } catch (Exception failure) { siege = "?"; id = failure.toString(); }
+        System.out.printf(java.util.Locale.ROOT, "R3 BREADCRUMB t=%dms step=\"%s\" militaryActions=%s source=\"%s\" isUnderSiege=%s claim=%s controlRevision=%d confirmed=%s%n",
+                (System.nanoTime() - STARTED) / 1_000_000, step, WarfareConfig.MILITARY.get(), source.strip(), siege, id, runtime.revision(), runtime.confirmed(settlement));
     }
 }

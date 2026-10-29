@@ -30,13 +30,13 @@ public final class WorldContextEvents {
 
     @SubscribeEvent public static void reload(AddReloadListenerEvent event){event.addListener(new WorldContextDefinitions());}
     @SubscribeEvent(priority=EventPriority.LOWEST) public static void started(ServerStartedEvent event){
-        if(!WarfareConfig.ENABLED.get()||!WarfareConfig.WORLD_CONTEXT.get())return;
+        if(!WarfareConfig.enabled()||!WarfareConfig.WORLD_CONTEXT.get())return;
         var service=new WorldContextService(event.getServer());SERVICES.put(event.getServer(),service);WorldContextApi.attach(event.getServer(),service);
     }
     @SubscribeEvent public static void stopped(ServerStoppedEvent event){SERVICES.remove(event.getServer());WorldContextApi.detach(event.getServer());DAMAGE.clear();}
 
     @SubscribeEvent public static void tick(TickEvent.PlayerTickEvent event){
-        if(!WarfareConfig.ENABLED.get()||!WarfareConfig.WORLD_CONTEXT.get()||event.phase!=TickEvent.Phase.END||!(event.player instanceof ServerPlayer player)||player.tickCount%20!=0)return;
+        if(!WarfareConfig.enabled()||!WarfareConfig.WORLD_CONTEXT.get()||event.phase!=TickEvent.Phase.END||!(event.player instanceof ServerPlayer player)||player.tickCount%20!=0)return;
         WorldContextService service=SERVICES.get(player.getServer());if(service==null)return;
         service.discoverAuthoredNearby(player);service.progress(player);
         if(player.tickCount%40==0)discoverStructures(player,service);
@@ -58,7 +58,7 @@ public final class WorldContextEvents {
     }
 
     @SubscribeEvent(priority=EventPriority.LOWEST) public static void hurt(LivingHurtEvent event){
-        if(!WarfareConfig.ENABLED.get()||!WarfareConfig.WORLD_CONTEXT.get()||event.isCanceled()||event.getAmount()<=0||event.getEntity().level().isClientSide())return;
+        if(!WarfareConfig.enabled()||!WarfareConfig.WORLD_CONTEXT.get()||event.isCanceled()||event.getAmount()<=0||event.getEntity().level().isClientSide())return;
         Entity attacker=event.getSource().getEntity();if(!(attacker instanceof ServerPlayer player))return;
         ResourceLocation type=BuiltInRegistries.ENTITY_TYPE.getKey(event.getEntity().getType());var rule=WorldContextDefinitions.get().encounters().get(type);if(rule==null)return;
         if(DAMAGE.size()>=4096&&!DAMAGE.containsKey(event.getEntity().getUUID()))return;
@@ -68,7 +68,7 @@ public final class WorldContextEvents {
     }
 
     @SubscribeEvent(priority=EventPriority.LOWEST) public static void death(LivingDeathEvent event){
-        if(!WarfareConfig.ENABLED.get()||!WarfareConfig.WORLD_CONTEXT.get()||event.isCanceled()||event.getEntity().level().isClientSide()||!(event.getEntity() instanceof Mob mob))return;
+        if(!WarfareConfig.enabled()||!WarfareConfig.WORLD_CONTEXT.get()||event.isCanceled()||event.getEntity().level().isClientSide()||!(event.getEntity() instanceof Mob mob))return;
         ResourceLocation type=BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType());var rule=WorldContextDefinitions.get().encounters().get(type);if(rule==null)return;
         if(excluded(mob))return;DamageWindow window=DAMAGE.remove(mob.getUUID());if(window==null)return;long now=mob.level().getGameTime();
         Map<ServerPlayer,Integer> contributors=new HashMap<>();for(var hit:window.players.entrySet())if(now-hit.getValue().at()<=rule.contributionWindow()){

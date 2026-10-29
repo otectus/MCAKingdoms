@@ -29,6 +29,9 @@ A definition never implements a provider operation by itself: naming an outcome,
 | `data/<ns>/warfare/world/` | world-site and encounter selectors | none | that domain keeps its previous selectors |
 | `data/<ns>/evolution/scenarios/` | evolving-world opportunities | `"schema": 1` required | reload fails |
 | `data/<ns>/evolution/drama/` | world event templates | none | reload fails |
+| `data/<ns>/mcakingdoms/succession_laws/` | laws of succession built on a lineage law | `"schema": 1` required | that domain keeps its previous laws and ranks |
+| `data/<ns>/mcakingdoms/noble_ranks/` | court ranks and their per-kingdom styles | `"schema": 1` required | that domain keeps its previous laws and ranks |
+| `data/<ns>/mcakingdoms/development_templates/` | public works for settlement development | `"schema": 1` required | that domain keeps its previous templates |
 
 Any other folder under `data/<ns>/mcakingdoms/` is an error ("unknown definition folder").
 
@@ -58,7 +61,7 @@ Saved records are not rewritten by a reload. Settlements keep their names and ki
 | `heraldry.icon` | yes | id of a heraldry icon; the client draws `<namespace>:textures/gui/heraldry/<path>.png`, so a new icon needs a resource pack texture (the example reuses `mcakingdoms:shimaguni`) |
 | `heraldry.color` | yes | `"#RRGGBB"` or an integer from 0 to 16777215 |
 | `style_hints` | no | structure style ids used when no structure-style rule matches |
-| `metadata` | no | string-to-string map; `petition_honor` names the honor an approved honor petition grants (default `mcakingdoms:open_bell`) |
+| `metadata` | no | string-to-string map; `petition_honor` names the honor an approved honor petition grants (default `mcakingdoms:open_bell`); `heraldry_secondary` (`"#RRGGBB"`) is the second tincture of the kingdom's banners and shields (default: a darker shade of `heraldry.color`); `heraldry_motto` is a translation key shown when a banner is used |
 | `fallback` | no | `true` on exactly one kingdom across all packs; it receives settlements no rule matches |
 
 At least one kingdom must exist, and exactly one must be the fallback (the built-in fallback is Serenum).
@@ -207,6 +210,72 @@ At most 32. No schema field; field names are camelCase.
 | `operationBudget` | 1–16 |
 | `requiresOccupation` | must be `true` for `REBELLION` |
 | `organizationTemplate`, `organizationName` | required for `SCHISM` |
+
+## Succession laws — `mcakingdoms/succession_laws/`
+
+A government starts with `mcakingdoms:manual_only` and changes law only when its leader or an operator adopts one. Five
+laws are built in (`manual_only`, `designated_then_lineage`, `equal_primogeniture`, `elective_monarchy`,
+`council_confirmation`) and cannot be replaced. A data-pack law is built on one of the two lineage laws:
+
+| Field | Required | Meaning |
+| --- | --- | --- |
+| `schema` | yes | `1` |
+| `base` | yes | `designated_then_lineage` (the named successor first) or `equal_primogeniture` |
+| `title` | yes | translation key of the law's name |
+| `relations` | yes | at least one of `child`, `grandchild`, `sibling`, and optionally `recognized` (members the crown recognized); the order is always children, grandchildren, siblings, recognized, each by stable person id |
+| `confirmation` | no | `none` (default) or `council`: a majority of the council confirms the heir |
+| `minor_regency` | no | `true` (default): a minor heir waits under a regency until verified adulthood; `false`: such a succession waits for review |
+| `players_eligible`, `npcs_eligible` | no | `true` (default): whether players and villagers may inherit |
+
+An elected successor always comes first and an elected ruler's office is never decided by lineage, whatever the law.
+Example: `data/example/mcakingdoms/succession_laws/harbor_council.json`.
+
+## Court ranks — `mcakingdoms/noble_ranks/`
+
+A rank is ceremonial: it grants no office, permission, Recruits command or Crime privilege. Four ranks ship
+(`first_rank`, `second_rank`, `companion`, `courtier`), each with a style for every built-in kingdom.
+
+| Field | Required | Meaning |
+| --- | --- | --- |
+| `schema` | yes | `1` |
+| `tier` | yes | 1 to 16; lower tiers are listed first |
+| `title` | yes | translation key of the rank's general name |
+| `address` | no | translation key of its form of address |
+| `landed` | no | `true`: granted for one settlement of the kingdom |
+| `court` | no | `true`: a court function rather than a rank of nobility |
+| `styles` | no | kingdom id to translation key: what that kingdom calls the rank (at most 64) |
+
+Example: `data/example/mcakingdoms/noble_ranks/harbor_warden.json`.
+
+## Development templates — `mcakingdoms/development_templates/`
+
+A public work a settlement can undertake when `development.mode` allows it. Eight ship: `lamp_post`, `noticeboard`,
+`garden`, `path_segment`, `market_stall`, `wall_segment` (buildable), `workshop_upgrade` and `civic_hall` (funded
+milestones, never built).
+
+| Field | Required | Meaning |
+| --- | --- | --- |
+| `schema` | yes | `1` |
+| `role` | yes | `road`, `noticeboard`, `lighting`, `workshop`, `market`, `wall`, `garden` or `civic_hall` |
+| `title` | yes | translation key of the work's name |
+| `demand` | yes | 1 to 8 entries, each `{"item": "<id>", "count": n}` or `{"tag": "<item tag>", "count": n}` (1 to 256); players deliver real items |
+| `kingdoms` | no | kingdom ids that may undertake it (default: all) |
+| `minimum_mode` | no | `projects` (default), `managed_growth` or `full_economy` |
+| `blocks` | no | at most 64 `{"x", "y", "z", "state"}` entries inside a 5 x 5 x 5 box (x and z from -4 to 4, y from 0 to 4). No block entity (except the court noticeboard), bed, door, gate, redstone component, point of interest, air or fluid. Without blocks the work is a milestone |
+| `placement` | no | `air` (default): each block goes where there is air or a replaceable plant; `ground`: each block replaces natural ground with air above |
+| `tier_points` | no | 0 to 10 (default 1) towards the settlement's development tier |
+| `abstract_output` | no | commodity name to 1–16 abstract units a day, in `FULL_ECONOMY` only; abstract units are never items |
+
+Example: `data/example/mcakingdoms/development_templates/harbor_beacon.json`.
+
+## Authoring commands
+
+| Command | What it does |
+| --- | --- |
+| `/kingdoms reload` | Reloads all data packs and reports each domain (above). |
+| `/kingdoms definitions diagnose` | Shows the last reload attempt domain by domain, with the first problems of a rejected domain. |
+| `/kingdoms definitions validate` | Checks the succession laws, court ranks and development templates of the data packs now loaded, without installing them. Other domains are validated by `/kingdoms reload`. |
+| `/kingdoms definitions explain <id>` | Shows one active succession law, court rank or development template as the server reads it. |
 
 ## Names and translations
 

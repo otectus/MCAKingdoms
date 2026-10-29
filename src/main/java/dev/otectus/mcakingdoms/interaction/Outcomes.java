@@ -318,7 +318,7 @@ public final class Outcomes {
                         : Outcome.pending(t("politics.petition_under_review", "Under review by the government; nothing is granted until it is approved."), recordId);
                 case "APPROVED" -> Outcome.applied(t("politics.petition_approved", "Approved and in effect."), recordId);
                 case "DECLINED" -> action.equals("reject") ? Outcome.applied(t("politics.petition_rejected", "Rejected; the requester sees your reason."), recordId)
-                        : Outcome.refused(t("politics.petition_declined", "The government rejected this petition: %s", s.detail()), recordId);
+                        : Outcome.refused(t("politics.petition_declined", "The government rejected this petition: %s", Keyed.component(s.detail())), recordId);
                 case "WITHDRAWN" -> action.equals("withdraw") ? Outcome.applied(t("politics.withdrawn", "Withdrawn; it will not take effect."), recordId)
                         : Outcome.refused(t("politics.petition_withdrawn", "This petition was withdrawn."), recordId);
                 default -> Outcome.refused(t("politics.petition_expired", "This petition expired before a decision."), recordId);

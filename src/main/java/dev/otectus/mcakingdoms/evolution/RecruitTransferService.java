@@ -1,5 +1,7 @@
 package dev.otectus.mcakingdoms.evolution;
 
+import dev.otectus.mcakingdoms.interaction.Keyed;
+
 import dev.otectus.mcakingdoms.compat.recruits.*;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -22,77 +24,78 @@ public final class RecruitTransferService {
     public List<TransferView> transfers(ServerPlayer viewer) { actor(viewer); return data.all().stream()
             .filter(t->t.owner().equals(viewer.getUUID())||t.recipient().equals(viewer.getUUID()))
             .sorted(Comparator.comparingLong(Transfer::deadline).reversed()).map(this::view).toList(); }
-    public List<TransferView> operatorTransfers(ServerPlayer viewer) { actor(viewer); if(!viewer.hasPermissions(2))throw new IllegalArgumentException("Operator reconciliation authority required");
+    public List<TransferView> operatorTransfers(ServerPlayer viewer) { actor(viewer); if(!viewer.hasPermissions(2))throw Keyed.refuse("evolution.mcakingdoms.transfer.operator_required","Only an operator can review or reconcile transfers.");
         return data.all().stream().sorted(Comparator.comparingLong(Transfer::deadline).reversed()).map(this::view).toList(); }
-    public ReconciliationReview reconciliationReview(ServerPlayer actor,UUID id) { actor(actor);if(!actor.hasPermissions(2))throw new IllegalArgumentException("Operator reconciliation authority required");
-        var t=data.get(id).orElseThrow(()->new IllegalArgumentException("Transfer unavailable"));if(t.terminal()||t.snapshot()==null)throw new IllegalArgumentException("No pending native intent to reconcile");
+    public ReconciliationReview reconciliationReview(ServerPlayer actor,UUID id) { actor(actor);if(!actor.hasPermissions(2))throw Keyed.refuse("evolution.mcakingdoms.transfer.operator_required","Only an operator can review or reconcile transfers.");
+        var t=data.get(id).orElseThrow(()->Keyed.refuse("evolution.mcakingdoms.transfer.unavailable","That transfer is not available."));if(t.terminal()||t.snapshot()==null)throw Keyed.refuse("evolution.mcakingdoms.transfer.nothing_to_reconcile","This transfer has no pending Recruits change to reconcile.");
         var review=RecruitsTransfer.review(loaded(t.unit()),t.snapshot(),false);return new ReconciliationReview(t.id(),t.revision(),review.fingerprint(),review.observation()); }
     public String version(ServerPlayer viewer) { return transfers(viewer).stream().map(v->v.id()+":"+v.revision()+":"+v.phase()).collect(java.util.stream.Collectors.joining("|")); }
     private TransferView view(Transfer t) { return new TransferView(t.id(),t.unit(),t.owner(),t.recipient(),t.recipientGroup(),t.equipment(),t.family(),t.noticeUntil(),t.deadline(),t.revision(),t.phase(),t.detail(),t.accountingDiverged()); }
-    private void actor(ServerPlayer actor) { if (actor.getServer() != server || actor.hasDisconnected() || !server.isSameThread()) throw new IllegalArgumentException("Connected server player required"); }
-    private void enabled() { if (!EvolutionRuntime.dramaEnabled(server)) throw new IllegalArgumentException("This world must explicitly enable political drama"); RecruitsMilitary.ready(server); }
+    private void actor(ServerPlayer actor) { if (actor.getServer() != server || actor.hasDisconnected() || !server.isSameThread()) throw Keyed.refuse("evolution.mcakingdoms.transfer.connected","You must be connected to this server."); }
+    private void enabled() { if (!EvolutionRuntime.dramaEnabled(server)) throw Keyed.refuse("evolution.mcakingdoms.transfer.drama_off","Recruit transfers need world events (political drama) turned on for this world."); RecruitsMilitary.ready(server); }
     private Entity loaded(UUID id) {
         for (var level : server.getAllLevels()) { var entity = level.getEntity(id); if (entity != null) return entity; }
-        throw new IllegalArgumentException("Recruit unloaded; its chunk was not loaded and its ownership was not inferred");
+        throw Keyed.refuse("evolution.mcakingdoms.transfer.unit_unloaded","The recruit is not loaded. Its area was not loaded and its owner was not guessed; try again near it.");
     }
-    private void put(Transfer t) { if (!data.put(server, t)) throw new IllegalArgumentException("Transfer save unavailable; operation refused"); }
+    private void put(Transfer t) { if (!data.put(server, t)) throw Keyed.refuse("evolution.mcakingdoms.transfer.save_unavailable","The transfer could not be saved, so nothing changed."); }
     private Transfer own(ServerPlayer actor, UUID id) {
-        actor(actor); var t = data.get(id).orElseThrow(() -> new IllegalArgumentException("Transfer unavailable"));
-        if (!t.owner().equals(actor.getUUID()) && !t.recipient().equals(actor.getUUID())) throw new IllegalArgumentException("Transfer unavailable"); return t;
+        actor(actor); var t = data.get(id).orElseThrow(() -> Keyed.refuse("evolution.mcakingdoms.transfer.unavailable","That transfer is not available."));
+        if (!t.owner().equals(actor.getUUID()) && !t.recipient().equals(actor.getUUID())) throw Keyed.refuse("evolution.mcakingdoms.transfer.unavailable","That transfer is not available."); return t;
     }
     private void family(Transfer t) {
         if (t.family() && dev.otectus.mcakingdoms.compat.mca.McaFamilyEvidence.marriage(server, t.owner()).filter(m -> m.second().equals(t.recipient())).isEmpty())
-            throw new IllegalArgumentException("Reciprocal native family relationship unavailable; agreement suspended");
+            throw Keyed.refuse("evolution.mcakingdoms.transfer.family_unavailable","MCA no longer shows the marriage this transfer relies on, so the agreement is suspended.");
     }
     public String propose(ServerPlayer owner, UUID unitId, UUID recipientId, UUID group, boolean family) {
         actor(owner); enabled(); var recipient = server.getPlayerList().getPlayer(recipientId);
-        if (recipient == null) throw new IllegalArgumentException("Recipient must be online to preview the agreement");
+        if (recipient == null) throw Keyed.refuse("evolution.mcakingdoms.transfer.recipient_offline","The recipient must be online to see the offer.");
         var unit = loaded(unitId); var snapshot = RecruitsTransfer.snapshot(unit, owner, recipient, group);
         long now = server.overworld().getGameTime();
         var t = new Transfer(UUID.randomUUID(), unitId, owner.getUUID(), recipientId, group, snapshot.equipment(), family,
-                now + 1200, now + 72000, 1, Phase.OFFERED, null, "Employment transfer: equipment travels with this recruit; native wages retain their remaining timer; no payment or troop levy is invented");
+                now + 1200, now + 72000, 1, Phase.OFFERED, null, Keyed.text("evolution.mcakingdoms.transfer.terms","Employment transfer: the recruit's equipment travels with it and its Recruits wage timer keeps running. No payment or troop levy is involved."));
         family(t); put(t);
-        dev.otectus.mcakingdoms.interaction.Notify.player(owner.getServer(), recipientId, owner.getUUID(), net.minecraft.network.chat.Component.translatableWithFallback("notice.mcakingdoms.transfer_offered", "%s offers you the recruit %s; your consent is required.", owner.getGameProfile().getName(), dev.otectus.mcakingdoms.interaction.Names.entity(owner.getServer(), unitId)), "transfer.inspect");
-        return "Private transfer proposal for " + dev.otectus.mcakingdoms.interaction.Names.entity(owner.getServer(), unitId) + " to " + dev.otectus.mcakingdoms.interaction.Names.player(owner.getServer(), recipientId) + "; the recipient must consent and " + dev.otectus.mcakingdoms.interaction.Names.duration(1200) + " of notice must elapse.";
+        dev.otectus.mcakingdoms.interaction.Notify.player(owner.getServer(), recipientId, owner.getUUID(), net.minecraft.network.chat.Component.translatableWithFallback("notice.mcakingdoms.transfer_offered", "%s offers you the recruit %s; your consent is required.", owner.getGameProfile().getName(), dev.otectus.mcakingdoms.interaction.Names.unitText(owner.getServer(), unitId)), "transfer.inspect");
+        return Keyed.text("evolution.mcakingdoms.transfer.proposed", "Private transfer offer sent: %s to %s. The recipient must consent, and %s of notice must pass before you can apply it.",
+                dev.otectus.mcakingdoms.interaction.Names.unitText(owner.getServer(), unitId), dev.otectus.mcakingdoms.interaction.Names.player(owner.getServer(), recipientId), dev.otectus.mcakingdoms.interaction.Names.durationText(1200));
     }
     public String consent(ServerPlayer recipient, UUID id, long revision) {
         enabled(); var t = own(recipient, id); family(t);
-        if (!RecruitsTransfer.equipment(loaded(t.unit())).equals(t.equipment())) throw new IllegalArgumentException("Equipment changed; decline and negotiate fresh terms");
-        put(t.consent(recipient.getUUID(), revision, server.overworld().getGameTime())); return "Recipient consent recorded; source owner must explicitly apply after notice.";
+        if (!RecruitsTransfer.equipment(loaded(t.unit())).equals(t.equipment())) throw Keyed.refuse("evolution.mcakingdoms.transfer.equipment_changed_decline","The recruit's equipment changed since the offer; decline it and agree fresh terms.");
+        put(t.consent(recipient.getUUID(), revision, server.overworld().getGameTime())); return Keyed.text("evolution.mcakingdoms.transfer.consented","Your consent is recorded. The current owner applies the transfer after the notice period.");
     }
     public String cancel(ServerPlayer actor, UUID id, long revision) {
         var t = own(actor, id);
-        if (t.revision() != revision || t.phase() != Phase.OFFERED && t.phase() != Phase.CONSENTED) throw new IllegalArgumentException("Transfer already began; use restore for recoverable native intent");
-        put(t.phase(Phase.CANCELLED, null, "Party declined before native release")); return "Transfer cancelled; native ownership is unchanged.";
+        if (t.revision() != revision || t.phase() != Phase.OFFERED && t.phase() != Phase.CONSENTED) throw Keyed.refuse("evolution.mcakingdoms.transfer.already_began","This transfer has already begun; use Restore to recover the original state.");
+        put(t.phase(Phase.CANCELLED, null, Keyed.text("evolution.mcakingdoms.transfer.declined","A party declined before anything changed in Recruits."))); return Keyed.text("evolution.mcakingdoms.transfer.cancelled","Transfer cancelled; ownership is unchanged.");
     }
     public String apply(ServerPlayer owner, UUID id, long revision) {
         var t = own(owner, id); enabled(); family(t);
         if (!t.owner().equals(owner.getUUID()) || t.revision() != revision || t.phase() != Phase.CONSENTED
                 || server.overworld().getGameTime() < t.noticeUntil() || server.overworld().getGameTime() >= t.deadline())
-            throw new IllegalArgumentException("Source owner, current consent and elapsed notice required");
-        var recipient = server.getPlayerList().getPlayer(t.recipient()); if (recipient == null) throw new IllegalArgumentException("Recipient must remain online");
+            throw Keyed.refuse("evolution.mcakingdoms.transfer.apply_conditions","Only the current owner can apply this, after the recipient's consent and the notice period, and before the deadline.");
+        var recipient = server.getPlayerList().getPlayer(t.recipient()); if (recipient == null) throw Keyed.refuse("evolution.mcakingdoms.transfer.recipient_must_stay","The recipient must stay online.");
         var unit = loaded(t.unit()); var before = RecruitsTransfer.snapshot(unit, owner, recipient, t.recipientGroup());
-        if (!before.equipment().equals(t.equipment())) throw new IllegalArgumentException("Equipment changed; negotiate fresh terms");
+        if (!before.equipment().equals(t.equipment())) throw Keyed.refuse("evolution.mcakingdoms.transfer.equipment_changed","The recruit's equipment changed; agree fresh terms.");
         if (!RecruitsTransfer.saveAndConfirm(unit, before, false))
-            throw new IllegalArgumentException("Native baseline could not be saved and verified; ownership is unchanged");
-        t = t.phase(Phase.APPLYING, before, "Durable intent precedes native release/hire"); put(t);
+            throw Keyed.refuse("evolution.mcakingdoms.transfer.baseline_failed","Recruits could not save and verify the recruit's current state, so ownership is unchanged.");
+        t = t.phase(Phase.APPLYING, before, Keyed.text("evolution.mcakingdoms.transfer.intent_saved","The transfer intent is saved before anything changes in Recruits.")); put(t);
         try {
             if (RecruitsTransfer.apply(unit, owner, recipient, before)) {
-                t = t.phase(Phase.CONFIRMING, before, "Native ownership changed; disk acknowledgment pending"); put(t);
-                if (RecruitsTransfer.saveAndConfirm(unit, before, true)) { put(t.phase(Phase.COMPLETE, before, "Native entity, equipment, group, owner counts and scoreboard saves acknowledged")); return "Negotiated transfer completed and durably confirmed."; }
-                return "Transfer remains pending native save confirmation; use confirm.";
+                t = t.phase(Phase.CONFIRMING, before, Keyed.text("evolution.mcakingdoms.transfer.ownership_changed","Ownership changed in Recruits; waiting for the save to be confirmed.")); put(t);
+                if (RecruitsTransfer.saveAndConfirm(unit, before, true)) { put(t.phase(Phase.COMPLETE, before, Keyed.text("evolution.mcakingdoms.transfer.saves_acknowledged","Recruits saved the recruit, its equipment, group, owner counts and team."))); return Keyed.text("evolution.mcakingdoms.transfer.completed","Transfer completed, and the save is confirmed."); }
+                return Keyed.text("evolution.mcakingdoms.transfer.pending_confirm","The transfer still waits for Recruits to confirm its save; use Confirm.");
             }
-            t = t.phase(Phase.RESTORING, before, "Native transfer refused; original ownership restoration awaiting disk acknowledgment"); put(t);
-            if (RecruitsTransfer.saveAndConfirm(unit, before, false)) put(t.phase(Phase.CANCELLED, before, "Native refusal preserved original ownership and equipment"));
-            return "Native transfer refused; inspect the retained restoration receipt.";
+            t = t.phase(Phase.RESTORING, before, Keyed.text("evolution.mcakingdoms.transfer.refused_restoring","Recruits refused the transfer; restoring the original ownership awaits a confirmed save.")); put(t);
+            if (RecruitsTransfer.saveAndConfirm(unit, before, false)) put(t.phase(Phase.CANCELLED, before, Keyed.text("evolution.mcakingdoms.transfer.refusal_preserved","Recruits refused the transfer and kept the original owner and equipment.")));
+            return Keyed.text("evolution.mcakingdoms.transfer.refused","Recruits refused the transfer; inspect the transfer for its restoration record.");
         } catch (RuntimeException failure) {
             // Durable APPLYING/CONFIRMING survives a failure even if recording this diagnostic also fails.
             var pending = data.get(id).orElseThrow();
-            var recovery = pending.phase(Phase.RESTORING, before, "Native application interrupted; use restore with both parties present");
+            var recovery = pending.phase(Phase.RESTORING, before, Keyed.text("evolution.mcakingdoms.transfer.interrupted_detail","Applying the transfer was interrupted; use Restore with both players present."));
             put(recovery);
             if (RecruitsTransfer.matches(unit, before, false) && RecruitsTransfer.saveAndConfirm(unit, before, false))
-                put(recovery.phase(Phase.CANCELLED, before, "Native exception rolled back and original ownership saved"));
-            return "Transfer interrupted: " + failure.getMessage() + ". Original-state recovery intent retained.";
+                put(recovery.phase(Phase.CANCELLED, before, Keyed.text("evolution.mcakingdoms.transfer.rolled_back","The failure was rolled back and the original ownership saved.")));
+            return Keyed.text("evolution.mcakingdoms.transfer.interrupted", "The transfer was interrupted (%s). The record to restore the original state is kept.", Keyed.component(failure));
         }
     }
     /** Disk verification is bounded per transfer so repeated confirm/restore requests cannot flood the server with flushes. */
@@ -103,7 +106,7 @@ public final class RecruitTransferService {
         var attempts = LAST_VERIFICATION.computeIfAbsent(server, ignored -> new HashMap<>());
         Long last = attempts.get(id);
         if (last != null && now - last < VERIFICATION_COOLDOWN && now >= last)
-            throw new IllegalArgumentException("Native verification was attempted moments ago; wait a few seconds, then inspect or retry.");
+            throw Keyed.refuse("evolution.mcakingdoms.transfer.throttled","The save was checked moments ago; wait a few seconds, then inspect or try again.");
         attempts.put(id, now);
     }
     public String confirm(ServerPlayer actor, UUID id) {
@@ -113,19 +116,19 @@ public final class RecruitTransferService {
     }
     private String confirmVerified(ServerPlayer actor, UUID id) {
         var t = own(actor, id); if (t.terminal()) return t.detail();
-        if (t.snapshot() == null) throw new IllegalArgumentException("No native transfer to confirm");
+        if (t.snapshot() == null) throw Keyed.refuse("evolution.mcakingdoms.transfer.nothing_to_confirm","There is no Recruits change to confirm for this transfer.");
         var unit = loaded(t.unit());
         boolean changed = t.phase() != Phase.RESTORING;
-        if (!RecruitsTransfer.saveAndConfirm(unit, t.snapshot(), changed)) return "Native persistence or identity not confirmed; intent retained for recovery.";
-        put(t.phase(changed ? Phase.COMPLETE : Phase.CANCELLED, t.snapshot(), "Native saved state acknowledged")); return "Native transfer outcome durably confirmed.";
+        if (!RecruitsTransfer.saveAndConfirm(unit, t.snapshot(), changed)) return Keyed.text("evolution.mcakingdoms.transfer.not_confirmed","Recruits has not confirmed the save or the recruit's identity; the transfer is kept for recovery.");
+        put(t.phase(changed ? Phase.COMPLETE : Phase.CANCELLED, t.snapshot(), Keyed.text("evolution.mcakingdoms.transfer.saved_acknowledged","Recruits' saved state is confirmed."))); return Keyed.text("evolution.mcakingdoms.transfer.outcome_confirmed","The transfer outcome is saved and confirmed.");
     }
     public String restore(ServerPlayer actor, UUID id) {
         var t = own(actor, id);
-        if (t.terminal() || t.snapshot() == null) throw new IllegalArgumentException("No pending native transfer to restore");
+        if (t.terminal() || t.snapshot() == null) throw Keyed.refuse("evolution.mcakingdoms.transfer.nothing_to_restore","There is no pending Recruits change to restore.");
         var owner = server.getPlayerList().getPlayer(t.owner()); var recipient = server.getPlayerList().getPlayer(t.recipient());
-        if (owner == null || recipient == null) throw new IllegalArgumentException("Both original parties must be online for guarded recovery");
+        if (owner == null || recipient == null) throw Keyed.refuse("evolution.mcakingdoms.transfer.both_online","Both original players must be online to restore.");
         throttleVerification(id);
-        var unit = loaded(t.unit()); put(t.phase(Phase.RESTORING, t.snapshot(), "Explicit original-state recovery requested"));
+        var unit = loaded(t.unit()); put(t.phase(Phase.RESTORING, t.snapshot(), Keyed.text("evolution.mcakingdoms.transfer.restore_requested","Restoring the original state was requested.")));
         RecruitsTransfer.restore(unit, owner, recipient, t.snapshot());
         return confirmVerified(actor, id);
     }
@@ -145,36 +148,39 @@ public final class RecruitTransferService {
         int expired = 0;
         for (var t : data.all().stream().filter(t -> t.expirable(now))
                 .sorted(Comparator.comparingLong(Transfer::deadline).thenComparing(Transfer::id)).limit(EXPIRY_BUDGET).toList()) {
-            if (!data.put(server, t.phase(Phase.EXPIRED, null, "Offer expired before any native change; ownership and equipment are unchanged"))) break;
+            if (!data.put(server, t.phase(Phase.EXPIRED, null, Keyed.text("evolution.mcakingdoms.transfer.expired","The offer expired before anything changed; ownership and equipment are unchanged.")))) break;
             expired++;
             var notice = net.minecraft.network.chat.Component.translatableWithFallback("notice.mcakingdoms.transfer_expired",
                     "The recruit transfer offer for %s expired before anything changed; native ownership is unchanged.",
-                    dev.otectus.mcakingdoms.interaction.Names.entity(server, t.unit()));
+                    dev.otectus.mcakingdoms.interaction.Names.unitText(server, t.unit()));
             dev.otectus.mcakingdoms.interaction.Notify.players(server, List.of(t.owner(), t.recipient()), null, notice, "transfer.inspect");
         }
         return expired;
     }
 
     public List<String> inspect(ServerPlayer actor, UUID id) {
-        var t = own(actor, id); return List.of(t.id() + " | " + t.phase() + " | revision " + t.revision(),
-                "Recruit " + t.unit() + " to player " + t.recipient() + " group " + t.recipientGroup(),
-                "Notice " + t.noticeUntil() + "; deadline " + t.deadline() + "; family introduction " + t.family(), t.detail());
+        var t = own(actor, id);
+        return List.of(Keyed.text("evolution.mcakingdoms.transfer.inspect.head", "Transfer #%s · %s · revision %s", t.id().toString().substring(0, 4), t.phase(), t.revision()),
+                Keyed.text("evolution.mcakingdoms.transfer.inspect.parties", "%s from %s to %s (their group #%s)", dev.otectus.mcakingdoms.interaction.Names.unitText(server, t.unit()),
+                        dev.otectus.mcakingdoms.interaction.Names.player(server, t.owner()), dev.otectus.mcakingdoms.interaction.Names.player(server, t.recipient()), t.recipientGroup().toString().substring(0, 4)),
+                Keyed.text("evolution.mcakingdoms.transfer.inspect.times", "Notice ends in %s; deadline in %s; family introduction: %s", dev.otectus.mcakingdoms.interaction.Names.remainingText(server, t.noticeUntil()),
+                        dev.otectus.mcakingdoms.interaction.Names.remainingText(server, t.deadline()), net.minecraft.network.chat.Component.translatable(t.family() ? "gui.yes" : "gui.no")), t.detail());
     }
     public String reconciliationPreview(ServerPlayer actor,UUID id) {
         var review=reconciliationReview(actor,id);
-        return "Revision "+review.revision()+"; native fingerprint "+review.fingerprint()+"; "+review.observation()+". Verify native accounting before attesting; this does not repair counts.";
+        return Keyed.text("evolution.mcakingdoms.transfer.preview","Revision %s; Recruits fingerprint %s; %s. Check Recruits' own counts before attesting: this records your review and repairs nothing.",review.revision(),review.fingerprint(),review.observation());
     }
     public String reconcile(ServerPlayer actor,UUID id,long revision,String fingerprint,String reason) {
-        actor(actor);if(!actor.hasPermissions(2))throw new IllegalArgumentException("Operator reconciliation authority required");
-        var t=data.get(id).orElseThrow(()->new IllegalArgumentException("Transfer unavailable"));
-        if(t.terminal()||t.snapshot()==null||t.revision()!=revision)throw new IllegalArgumentException("Pending intent changed; preview again");
+        actor(actor);if(!actor.hasPermissions(2))throw Keyed.refuse("evolution.mcakingdoms.transfer.operator_required","Only an operator can review or reconcile transfers.");
+        var t=data.get(id).orElseThrow(()->Keyed.refuse("evolution.mcakingdoms.transfer.unavailable","That transfer is not available."));
+        if(t.terminal()||t.snapshot()==null||t.revision()!=revision)throw Keyed.refuse("evolution.mcakingdoms.transfer.intent_changed","The pending transfer changed; preview it again.");
         throttleVerification(id);
         var unit=loaded(t.unit());var review=RecruitsTransfer.review(unit,t.snapshot(),false);
-        if(!review.fingerprint().equals(fingerprint))throw new IllegalArgumentException("Native state changed; preview and review again");
+        if(!review.fingerprint().equals(fingerprint))throw Keyed.refuse("evolution.mcakingdoms.transfer.native_changed","Recruits' state changed; preview and review again.");
         var receipt=new Reconciliation(actor.getUUID(),fingerprint,reason,server.overworld().getGameTime(),review.observation());
         RecruitsTransfer.review(unit,t.snapshot(),true);
         put(new Transfer(t.id(),t.unit(),t.owner(),t.recipient(),t.recipientGroup(),t.equipment(),t.family(),t.noticeUntil(),t.deadline(),t.revision()+1,
-                Phase.RECONCILED,t.snapshot(),"Operator acknowledged reviewed native state without ownership or accounting writes",t.accountingDiverged(),receipt));
-        return "Native state durably acknowledged as RECONCILED; original transfer and divergence evidence retained.";
+                Phase.RECONCILED,t.snapshot(),Keyed.text("evolution.mcakingdoms.transfer.reconciled_detail","An operator acknowledged the reviewed Recruits state; no ownership or count was written."),t.accountingDiverged(),receipt));
+        return Keyed.text("evolution.mcakingdoms.transfer.reconciled","Recorded as reconciled. The original transfer and the evidence of the difference are kept.");
     }
 }

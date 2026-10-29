@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "mcakingdoms:block/heraldic_shield"
+    },
+    "facing=east": {
+      "model": "mcakingdoms:block/heraldic_shield",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "mcakingdoms:block/heraldic_shield",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "mcakingdoms:block/heraldic_shield",
+      "y": 270
+    }
+  }
+}

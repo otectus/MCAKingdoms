@@ -45,7 +45,7 @@ public final class ProtectionState {
                              UUID performer, String receipt, String explanation) {
         public Obligation {
             Objects.requireNonNull(id); Objects.requireNonNull(pact); Objects.requireNonNull(duty); Objects.requireNonNull(beneficiary);
-            Objects.requireNonNull(requestedBy); Objects.requireNonNull(status); EvolutionState.text(receipt, 256); EvolutionState.text(explanation, 512);
+            Objects.requireNonNull(requestedBy); Objects.requireNonNull(status); EvolutionState.text(receipt, 256); EvolutionState.text(explanation, dev.otectus.mcakingdoms.interaction.Keyed.LIMIT);
             if (created < 0 || deadline <= created || revision < 1 || status == Status.SATISFIED && (performer == null || receipt.isBlank()))
                 throw new IllegalArgumentException("Invalid obligation");
         }

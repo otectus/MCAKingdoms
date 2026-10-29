@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "tier": 2,
+  "landed": true,
+  "title": "dynasty.mcakingdoms.rank.second_rank",
+  "address": "dynasty.mcakingdoms.rank.second_rank.address",
+  "styles": {
+    "mcakingdoms:serenum": "dynasty.mcakingdoms.rank.serenum.second_rank",
+    "mcakingdoms:lunari": "dynasty.mcakingdoms.rank.lunari.second_rank",
+    "mcakingdoms:madera": "dynasty.mcakingdoms.rank.madera.second_rank",
+    "mcakingdoms:anemosia": "dynasty.mcakingdoms.rank.anemosia.second_rank",
+    "mcakingdoms:shimaguni": "dynasty.mcakingdoms.rank.shimaguni.second_rank",
+    "mcakingdoms:yew": "dynasty.mcakingdoms.rank.yew.second_rank"
+  }
+}

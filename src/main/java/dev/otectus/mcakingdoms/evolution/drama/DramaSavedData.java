@@ -8,7 +8,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.storage.LevelResource;
 
 /** Independent save domain so unsupported drama data stays preserved read-only. */
-public final class DramaSavedData extends SavedData {
+public final class DramaSavedData extends dev.otectus.mcakingdoms.persistence.DurableSavedData {
     public static final String NAME = "mcakingdoms_evolution_drama";
     static final Gson JSON = new Gson();
     private DramaState state = new DramaState();

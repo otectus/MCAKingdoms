@@ -1,0 +1,46 @@
+{
+  "schema": 1,
+  "role": "garden",
+  "title": "development.mcakingdoms.template.garden",
+  "minimum_mode": "projects",
+  "demand": [
+    {
+      "tag": "minecraft:small_flowers",
+      "count": 5
+    }
+  ],
+  "blocks": [
+    {
+      "x": -1,
+      "y": 0,
+      "z": -1,
+      "state": "minecraft:poppy"
+    },
+    {
+      "x": 1,
+      "y": 0,
+      "z": -1,
+      "state": "minecraft:dandelion"
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "state": "minecraft:azure_bluet"
+    },
+    {
+      "x": -1,
+      "y": 0,
+      "z": 1,
+      "state": "minecraft:cornflower"
+    },
+    {
+      "x": 1,
+      "y": 0,
+      "z": 1,
+      "state": "minecraft:oxeye_daisy"
+    }
+  ],
+  "placement": "air",
+  "tier_points": 1
+}

@@ -11,7 +11,7 @@ import net.minecraft.world.level.storage.LevelResource;
 import java.util.*;
 
 /** Bounded R3 place, route and encounter evidence. A future/corrupt schema is preserved read-only. */
-public final class WorldContextSavedData extends SavedData {
+public final class WorldContextSavedData extends dev.otectus.mcakingdoms.persistence.DurableSavedData {
     public static final String NAME = "mcakingdoms_world_context";
     public static final int SCHEMA = 1;
     static final int SITE_LIMIT = 8192, ROUTE_LIMIT = 2048, JOURNEY_LIMIT = 16384, RECEIPT_LIMIT = 32768;

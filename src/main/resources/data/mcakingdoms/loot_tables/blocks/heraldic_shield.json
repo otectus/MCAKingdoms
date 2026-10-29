@@ -1,0 +1,43 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "mcakingdoms:heraldic_shield",
+          "functions": [
+            {
+              "function": "minecraft:copy_nbt",
+              "source": "block_entity",
+              "ops": [
+                {
+                  "source": "Heraldry.Kingdom",
+                  "target": "BlockEntityTag.Heraldry.Kingdom",
+                  "op": "replace"
+                },
+                {
+                  "source": "Heraldry.Primary",
+                  "target": "BlockEntityTag.Heraldry.Primary",
+                  "op": "replace"
+                },
+                {
+                  "source": "Heraldry.Secondary",
+                  "target": "BlockEntityTag.Heraldry.Secondary",
+                  "op": "replace"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ]
+    }
+  ],
+  "random_sequence": "mcakingdoms:blocks/heraldic_shield"
+}

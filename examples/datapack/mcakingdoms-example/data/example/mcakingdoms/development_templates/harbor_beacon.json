@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "role": "lighting",
+  "title": "development.example.template.harbor_beacon",
+  "kingdoms": [
+    "example:harbor_league"
+  ],
+  "minimum_mode": "projects",
+  "demand": [
+    {
+      "item": "minecraft:cobblestone_wall",
+      "count": 2
+    },
+    {
+      "item": "minecraft:lantern",
+      "count": 1
+    }
+  ],
+  "blocks": [
+    {
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "state": "minecraft:cobblestone_wall"
+    },
+    {
+      "x": 0,
+      "y": 1,
+      "z": 0,
+      "state": "minecraft:cobblestone_wall"
+    },
+    {
+      "x": 0,
+      "y": 2,
+      "z": 0,
+      "state": "minecraft:lantern[hanging=false]"
+    }
+  ],
+  "placement": "air",
+  "tier_points": 1
+}

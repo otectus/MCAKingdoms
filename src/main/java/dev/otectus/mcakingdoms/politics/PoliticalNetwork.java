@@ -67,23 +67,12 @@ public final class PoliticalNetwork {
                     } catch (IllegalArgumentException | IllegalStateException ignored) { }
                 }).add();
         CHANNEL.messageBuilder(Reply.class, 1, NetworkDirection.PLAY_TO_CLIENT)
-                .encoder((r, b) -> b.writeUtf(bounded(r), LIMIT))
+                .encoder((r, b) -> b.writeUtf(PoliticalPacking.bounded(r), LIMIT))
                 .decoder(b -> PoliticalSavedData.JSON.fromJson(b.readUtf(60000), Reply.class))
                 .consumerMainThread((r, ctx) -> receiver.accept(r)).add();
         net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(PoliticalNetwork.class);
     }
     static final int LIMIT = 60000;
-    /**
-     * The reply within the packet bound. Fields repeat what details say, so details go first, then fields; the rows and
-     * titles always stay, so a long page still reads (with less detail) instead of failing to arrive.
-     */
-    static String bounded(Reply r) {
-        String json = PoliticalSavedData.JSON.toJson(r);
-        if (json.length() <= LIMIT) return json;
-        json = PoliticalSavedData.JSON.toJson(new Reply(r.page(), r.result(), r.titles(), List.of(), r.kingdomName(), r.fields(), r.header(), r.heraldry(), r.color(), r.governed()));
-        if (json.length() <= LIMIT) return json;
-        return PoliticalSavedData.JSON.toJson(new Reply(r.page(), r.result(), r.titles(), List.of(), r.kingdomName(), List.of(), r.header(), r.heraldry(), r.color(), r.governed()));
-    }
     public static void receiver(Consumer<Reply> value) { receiver = value; }
     public static void send(Query query) { CHANNEL.sendToServer(query); }
     @SubscribeEvent public static void logout(PlayerEvent.PlayerLoggedOutEvent event) { LAST_REQUEST.remove(event.getEntity().getUUID()); }

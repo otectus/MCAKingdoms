@@ -1,0 +1,57 @@
+{
+  "schema": 1,
+  "id": "example:harbor_archivists",
+  "kind": "institution",
+  "military": false,
+  "name_key": "organization.example.harbor_archivists",
+  "description_key": "organization.example.harbor_archivists.description",
+  "membership": {
+    "exclusive_group": null,
+    "conflicts": []
+  },
+  "ranks": [
+    {
+      "id": "example:archive_reader",
+      "minimum_standing": 0,
+      "permissions": [
+        "example:reading_room"
+      ]
+    },
+    {
+      "id": "example:archivist",
+      "minimum_standing": 50,
+      "permissions": [
+        "example:reading_room",
+        "example:copying_desk"
+      ]
+    }
+  ],
+  "services": [
+    {
+      "permission": "example:reading_room",
+      "minimum_rank": "example:archive_reader",
+      "minimum_standing": 10,
+      "required_deeds": 1,
+      "neutral_minimum_standing": 20,
+      "neutral_required_deeds": 2
+    },
+    {
+      "permission": "example:copying_desk",
+      "minimum_rank": "example:archivist",
+      "minimum_standing": 50,
+      "required_deeds": 2,
+      "neutral_minimum_standing": 80,
+      "neutral_required_deeds": 4
+    }
+  ],
+  "deeds": [
+    {
+      "quest_id": "example:archives/catalogue_the_tide_ledgers",
+      "credit": 10
+    },
+    {
+      "quest_id": "example:archives/copy_the_harbor_charter",
+      "credit": 20
+    }
+  ]
+}

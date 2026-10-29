@@ -49,8 +49,12 @@ public final class CivicNetwork {
         CHANNEL.messageBuilder(Reply.class,1,NetworkDirection.PLAY_TO_CLIENT)
                 .encoder((r,b) -> { b.writeUUID(r.request()); var v=r.view(); b.writeUtf(v.organization(),128); b.writeUtf(v.nameKey(),256);
                     b.writeVarInt(v.index()); b.writeVarInt(v.total()); b.writeBoolean(v.active());
-                    b.writeCollection(v.lines(),(out,s) -> out.writeUtf(net.minecraft.network.chat.Component.Serializer.toJson(s),2048)); b.writeUtf(r.outcome(),512);
-                    b.writeUtf(v.guild()==null?"":JSON.toJson(v.guild()),60000); })
+                    // H08: a line that would not fit its slot is sent clipped; a guild view over the budget is left out and the
+                    // client shows the lines, so an oversized view never fails to send.
+                    b.writeCollection(v.lines(),(out,s) -> { String json=net.minecraft.network.chat.Component.Serializer.toJson(s);
+                        out.writeUtf(json.length()<=2048?json:net.minecraft.network.chat.Component.Serializer.toJson(dev.otectus.mcakingdoms.network.PayloadBudget.clip(s,500)),2048); });
+                    b.writeUtf(dev.otectus.mcakingdoms.network.PayloadBudget.clip(r.outcome(),512),512);
+                    String guild=v.guild()==null?"":JSON.toJson(v.guild()); b.writeUtf(dev.otectus.mcakingdoms.network.PayloadBudget.fits(guild)?guild:"",60000); })
                 .decoder(b -> { UUID id=b.readUUID(); String org=b.readUtf(128), name=b.readUtf(256); int index=b.readVarInt(), total=b.readVarInt();
                     boolean active=b.readBoolean(); int count=b.readVarInt(); if(count<0||count>32) throw new IllegalArgumentException("Oversized guild view");
                     List<net.minecraft.network.chat.Component> lines=new ArrayList<>(); for(int i=0;i<count;i++) lines.add(Objects.requireNonNull(net.minecraft.network.chat.Component.Serializer.fromJson(b.readUtf(2048))));

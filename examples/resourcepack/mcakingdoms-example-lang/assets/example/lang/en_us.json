@@ -1,4 +1,12 @@
 {
   "kingdom.example.harbor_league": "Harbor League",
-  "politics.example.harbor_league_charter": "Harbor League Charter"
+  "politics.example.harbor_league_charter": "Harbor League Charter",
+  "kingdom.example.harbor_league.motto": "By tide and ledger",
+  "dynasty.example.law.harbor_council": "Harbor council succession",
+  "dynasty.example.rank.harbor_warden": "Harbor Warden",
+  "dynasty.example.rank.harbor_warden.address": "Warden",
+  "dynasty.example.rank.harbor_warden.league": "Warden of the Quays",
+  "development.example.template.harbor_beacon": "Harbor beacon",
+  "organization.example.harbor_archivists": "Harbor Archivists",
+  "organization.example.harbor_archivists.description": "Keepers of the League's tide ledgers and charters; open to members of any kingdom."
 }

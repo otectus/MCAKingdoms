@@ -1,4 +1,5 @@
 {
+  "MCAKINGDOMS_ACCEPT_EULA": "true (only if you accept https://aka.ms/MinecraftEULA for the temporary test servers)",
   "MCAKINGDOMS_EULA": "/path/to/an/eula.txt containing eula=true that you accepted",
   "MCAKINGDOMS_MC_INSTALL": "/path/to/minecraft/launcher/install (versions/, libraries/, assets/)",
   "MCAKINGDOMS_PACK": "/path/to/a/modpack/instance (with mods/)",

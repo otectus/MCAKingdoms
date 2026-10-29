@@ -32,6 +32,8 @@ public final class ClientState {
     private final LinkedList<String> recentTopics = new LinkedList<>();
     private final LinkedList<String> recentTasks = new LinkedList<>();
     private final LinkedHashSet<String> favoriteTasks = new LinkedHashSet<>();
+    /** The one pinned task (H10), shown on the HUD; a task id only, never a record. */
+    private String pinnedTask;
 
     ClientState(Path file) {
         this.file = file;
@@ -56,6 +58,7 @@ public final class ClientState {
             recentTopics.addAll(read(json, "recent_topics", TOPIC, MAX_RECENT));
             recentTasks.addAll(read(json, "recent_tasks", TASK, MAX_RECENT));
             read(json, "favorite_tasks", TASK, MAX_FAVORITES).forEach(favoriteTasks::add);
+            if (json.has("pinned_task") && TASK.matcher(json.get("pinned_task").getAsString()).matches()) pinnedTask = json.get("pinned_task").getAsString();
         } catch (IOException | RuntimeException failure) {
             LogUtils.getLogger().warn("[MCA: Kingdoms] Ignoring unreadable local state {}: {}", file, failure.getMessage());
             lastRead = "start_here";
@@ -63,6 +66,7 @@ public final class ClientState {
             recentTopics.clear();
             recentTasks.clear();
             favoriteTasks.clear();
+            pinnedTask = null;
         }
     }
 
@@ -87,6 +91,7 @@ public final class ClientState {
         json.add("recent_topics", array(recentTopics));
         json.add("recent_tasks", array(recentTasks));
         json.add("favorite_tasks", array(favoriteTasks));
+        if (pinnedTask != null) json.addProperty("pinned_task", pinnedTask);
         try {
             Files.createDirectories(file.getParent());
             Path temporary = file.resolveSibling(file.getFileName() + ".tmp");
@@ -187,6 +192,24 @@ public final class ClientState {
     }
 
     /** Settings › "Clear bookmarks and history": forgets bookmarks, recent topics and recent and favourite tasks. */
+    public Optional<String> pinnedTask() {
+        return Optional.ofNullable(pinnedTask);
+    }
+
+    /** Pins {@code task}, replacing any other, or unpins it when it is the pinned one; true when it is now pinned. */
+    public boolean togglePin(String task) {
+        if (task == null || !TASK.matcher(task).matches()) return false;
+        pinnedTask = task.equals(pinnedTask) ? null : task;
+        save();
+        return pinnedTask != null;
+    }
+
+    public void unpin() {
+        if (pinnedTask == null) return;
+        pinnedTask = null;
+        save();
+    }
+
     public void clearHistory() {
         bookmarks.clear();
         recentTopics.clear();

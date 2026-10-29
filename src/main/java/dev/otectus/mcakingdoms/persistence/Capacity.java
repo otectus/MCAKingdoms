@@ -50,7 +50,11 @@ public record Capacity(String store, String collection, long used, long limit, R
                 dev.otectus.mcakingdoms.evolution.drama.DramaSavedData::capacity,
                 dev.otectus.mcakingdoms.evolution.ProtectionSavedData::capacity,
                 dev.otectus.mcakingdoms.civic.CivicRuntime::capacity,
-                dev.otectus.mcakingdoms.knowledge.SettlementKnowledge::capacity);
+                dev.otectus.mcakingdoms.knowledge.SettlementKnowledge::capacity,
+                dev.otectus.mcakingdoms.document.DocumentLedger::capacity,
+                dev.otectus.mcakingdoms.politics.dynasty.DynastySavedData::capacity,
+                dev.otectus.mcakingdoms.development.DevelopmentSavedData::capacity,
+                dev.otectus.mcakingdoms.compat.livingvillages.LvBridgeSavedData::capacity);
         List<Capacity> out = new ArrayList<>();
         for (var store : stores) {
             try {

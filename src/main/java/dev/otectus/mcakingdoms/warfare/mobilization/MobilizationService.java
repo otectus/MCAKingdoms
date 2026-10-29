@@ -1,5 +1,8 @@
 package dev.otectus.mcakingdoms.warfare.mobilization;
 
+import dev.otectus.mcakingdoms.interaction.Keyed;
+import dev.otectus.mcakingdoms.interaction.Names;
+
 import dev.otectus.mcakingdoms.api.politics.Politics;
 import dev.otectus.mcakingdoms.api.politics.KingdomsPoliticsApi;
 import dev.otectus.mcakingdoms.compat.recruits.*;
@@ -22,58 +25,58 @@ public final class MobilizationService {
     private void thread(){if(!server.isSameThread())throw new IllegalStateException("Mobilization requires server thread");}
     private record Authority(String faction,String kingdom){ }
     private Authority authorize(ServerPlayer actor){
-        thread();if(actor.getServer()!=server||!WarfareConfig.ENABLED.get()||!WarfareConfig.MILITARY.get()||!data.writable())throw new IllegalArgumentException("Mobilization unavailable.");
+        thread();if(actor.getServer()!=server||!WarfareConfig.enabled()||!WarfareConfig.MILITARY.get()||!data.writable())throw Keyed.refuse("warfare.mcakingdoms.mobilization.unavailable","Deployments are unavailable: military actions are off on this server or deployment records are read-only.");
         RecruitsMilitary.ready(server);String faction=RecruitsMilitary.commandedFaction(actor);var mapping=WarfareRuntime.get(server).mapping(faction)
-                .orElseThrow(()->new IllegalArgumentException("Native faction is not mapped to a recognized kingdom."));
+                .orElseThrow(()->Keyed.refuse("warfare.mcakingdoms.mobilization.faction_unmapped","Your Recruits faction is not linked to a recognized kingdom."));
         if(!KingdomsPoliticsApi.get(server).authorized(actor,mapping.kingdom(),Politics.Permission.PROPOSE))
-            throw new IllegalArgumentException("Kingdom military mandate unavailable.");return new Authority(faction,mapping.kingdom());
+            throw Keyed.refuse("warfare.mcakingdoms.mobilization.mandate","You need the Propose agreements responsibility in your faction's kingdom to deploy recruits.");return new Authority(faction,mapping.kingdom());
     }
     private void authorizeRestoration(ServerPlayer actor,MobilizationSavedData.Lease lease){
-        thread();if(actor.getServer()!=server||actor.hasDisconnected()||!data.writable())throw new IllegalArgumentException("Mobilization restoration unavailable.");
-        if(!actor.hasPermissions(2)&&!lease.actor().equals(actor.getUUID()))throw new IllegalArgumentException("Lease belongs to another commander.");
+        thread();if(actor.getServer()!=server||actor.hasDisconnected()||!data.writable())throw Keyed.refuse("warfare.mcakingdoms.mobilization.restoration_unavailable","Restoring deployments is unavailable right now: deployment records are read-only or you are not connected.");
+        if(!actor.hasPermissions(2)&&!lease.actor().equals(actor.getUUID()))throw Keyed.refuse("warfare.mcakingdoms.mobilization.other_commander","This deployment belongs to another commander.");
     }
     public String muster(ServerPlayer actor,UUID unitId,MobilizationDoctrine doctrine){
-        Authority authority=authorize(actor);Entity unit=findLoaded(unitId);if(unit==null)return "Unit is not loaded; no chunk was loaded for this request.";
-        if(unit.level()!=actor.level()||actor.distanceToSqr(unit)>32*32)return "Unit must be loaded within 32 blocks of its owner.";
+        Authority authority=authorize(actor);Entity unit=findLoaded(unitId);if(unit==null)return Keyed.text("warfare.mcakingdoms.mobilization.unit_unloaded","That recruit is not loaded, and its area was not loaded for this request.");
+        if(unit.level()!=actor.level()||actor.distanceToSqr(unit)>32*32)return Keyed.text("warfare.mcakingdoms.mobilization.unit_distance","The recruit must be loaded within 32 blocks of you.");
         return muster(actor,unit,doctrine,authority);
     }
     public List<String> musterNearby(ServerPlayer actor,MobilizationDoctrine doctrine){
         Authority authority=authorize(actor);long active=data.leases().stream().filter(l->l.actor().equals(actor.getUUID())&&!l.terminal()).count();
-        int room=(int)Math.max(0,WarfareConfig.UNIT_BUDGET.get()-active);if(room==0)return List.of("Mobilization budget reached.");
+        int room=(int)Math.max(0,WarfareConfig.UNIT_BUDGET.get()-active);if(room==0)return List.of(Keyed.text("warfare.mcakingdoms.mobilization.budget","You already have as many deployments as this server allows."));
         List<String> result=new ArrayList<>();for(Entity unit:RecruitsMobilization.nearbyOwned(actor,room))result.add(muster(actor,unit,doctrine,authority));
-        return result.isEmpty()?List.of("No loaded self-owned recruits within 32 blocks."):List.copyOf(result);
+        return result.isEmpty()?List.of(Keyed.text("warfare.mcakingdoms.mobilization.none_nearby","None of your recruits is loaded within 32 blocks.")):List.copyOf(result);
     }
     private String muster(ServerPlayer actor,Entity unit,MobilizationDoctrine doctrine,Authority authority){
-        if(!RecruitsMobilization.ownedBy(unit,actor))return "Unit "+unit.getUUID()+" is not currently owned by the commander.";
-        if(data.activeUnit(unit.getUUID()).isPresent())return "Unit "+unit.getUUID()+" already has a retained lease.";
-        if(dev.otectus.mcakingdoms.evolution.RecruitTransferService.blocksMobilization(server,unit.getUUID()))return "Unit has a pending negotiated transfer; cancel or complete it before mustering.";
-        long active=data.leases().stream().filter(l->l.actor().equals(actor.getUUID())&&!l.terminal()).count();if(active>=WarfareConfig.UNIT_BUDGET.get())return "Mobilization budget reached.";
-        var before=RecruitsMobilization.snapshot(unit);if(before.owner()==null)return "Unit ownership identity is incomplete.";
+        if(!RecruitsMobilization.ownedBy(unit,actor))return Keyed.text("warfare.mcakingdoms.mobilization.not_owned","%s is not currently yours to deploy.",Names.unitText(server,unit.getUUID()));
+        if(data.activeUnit(unit.getUUID()).isPresent())return Keyed.text("warfare.mcakingdoms.mobilization.already_deployed","%s already has a deployment on record.",Names.unitText(server,unit.getUUID()));
+        if(dev.otectus.mcakingdoms.evolution.RecruitTransferService.blocksMobilization(server,unit.getUUID()))return Keyed.text("warfare.mcakingdoms.mobilization.transfer_pending","This recruit has a pending negotiated transfer; cancel or complete it before deploying.");
+        long active=data.leases().stream().filter(l->l.actor().equals(actor.getUUID())&&!l.terminal()).count();if(active>=WarfareConfig.UNIT_BUDGET.get())return Keyed.text("warfare.mcakingdoms.mobilization.budget","You already have as many deployments as this server allows.");
+        var before=RecruitsMobilization.snapshot(unit);if(before.owner()==null)return Keyed.text("warfare.mcakingdoms.mobilization.identity_incomplete","Recruits does not report a complete owner for this recruit, so it cannot be deployed.");
         var applied=RecruitsMobilization.planned(unit,actor,doctrine);long now=actor.level().getGameTime();UUID leaseId=UUID.randomUUID();
         var lease=new MobilizationSavedData.Lease(leaseId,unit.getUUID(),actor.getUUID(),authority.faction(),authority.kingdom(),doctrine,before,applied,now,
-                now+WarfareConfig.MOBILIZATION_TICKS.get(),MobilizationSavedData.Phase.PREPARED,"Lease durable; native order write not yet applied.");
-        var next=data.snapshot();next.leases.put(leaseId.toString(),lease);next.revision++;if(!data.commit(server,next))return "Lease save failed; native orders unchanged.";
+                now+WarfareConfig.MOBILIZATION_TICKS.get(),MobilizationSavedData.Phase.PREPARED,Keyed.text("warfare.mcakingdoms.mobilization.prepared","The deployment is saved; the recruit's orders have not been changed yet."));
+        var next=data.snapshot();next.leases.put(leaseId.toString(),lease);next.revision++;if(!data.commit(server,next))return Keyed.text("warfare.mcakingdoms.mobilization.save_failed","The deployment could not be saved, so the recruit's orders are unchanged.");
         try{
             if(!RecruitsMobilization.identity(unit,before)||!RecruitsMobilization.apply(unit,applied))return failedApply(lease,unit);
             return phase(lease,MobilizationSavedData.Phase.ACTIVE_PENDING_NATIVE_SAVE,
-                    "Mobilized "+unit.getUUID()+" as "+doctrine+"; lease is durable, native entity save pending.");
+                    Keyed.text("warfare.mcakingdoms.mobilization.mobilized","Deployed %s for %s. The deployment is saved; Recruits has not saved the new orders yet.",Names.unitText(server,unit.getUUID()),doctrine));
         }catch(RuntimeException failure){return failedApply(lease,unit);}
     }
     private String failedApply(MobilizationSavedData.Lease lease,Entity unit){
         MobilizationSavedData.Phase phase;String detail;try{var current=RecruitsMobilization.snapshot(unit);
-            if(current.equals(lease.before())){phase=MobilizationSavedData.Phase.RESTORED;detail="Native order write refused; original orders retained.";}
-            else{phase=MobilizationSavedData.Phase.DIVERGED;detail="Native order write diverged; explicit recovery required.";}}
-        catch(RuntimeException unavailable){phase=MobilizationSavedData.Phase.SUSPENDED;detail="Native provider unavailable after durable preparation.";}
+            if(current.equals(lease.before())){phase=MobilizationSavedData.Phase.RESTORED;detail=Keyed.text("warfare.mcakingdoms.mobilization.write_refused","Recruits refused the new orders; the original orders were kept.");}
+            else{phase=MobilizationSavedData.Phase.DIVERGED;detail=Keyed.text("warfare.mcakingdoms.mobilization.write_diverged","The recruit's orders differ from both the old and the new ones; use Recover to restore the saved orders.");}}
+        catch(RuntimeException unavailable){phase=MobilizationSavedData.Phase.SUSPENDED;detail=Keyed.text("warfare.mcakingdoms.mobilization.provider_lost","Recruits became unavailable after the deployment was saved; it is kept for a later retry.");}
         return phase(lease,phase,detail);
     }
-    public String dismiss(ServerPlayer actor,UUID leaseId){thread();var lease=data.lease(leaseId).orElseThrow(()->new IllegalArgumentException("Lease unavailable."));authorizeRestoration(actor,lease);
-        if(lease.terminal())return "Lease already restored; native orders were not changed.";
-        Entity unit=findLoaded(lease.unit());if(unit==null)return phase(lease,MobilizationSavedData.Phase.RESTORE_PENDING,"Dismissed; restoration awaits the unit loading.");
+    public String dismiss(ServerPlayer actor,UUID leaseId){thread();var lease=data.lease(leaseId).orElseThrow(()->Keyed.refuse("warfare.mcakingdoms.mobilization.lease_unavailable","That deployment is not available."));authorizeRestoration(actor,lease);
+        if(lease.terminal())return Keyed.text("warfare.mcakingdoms.mobilization.already_restored","This deployment was already ended; the recruit's orders were not changed again.");
+        Entity unit=findLoaded(lease.unit());if(unit==null)return phase(lease,MobilizationSavedData.Phase.RESTORE_PENDING,Keyed.text("warfare.mcakingdoms.mobilization.dismissed_pending","Dismissed. The original orders return when the recruit is next loaded."));
         return restore(lease,unit,false);
     }
-    public String recover(ServerPlayer actor,UUID leaseId){thread();var lease=data.lease(leaseId).orElseThrow(()->new IllegalArgumentException("Lease unavailable."));authorizeRestoration(actor,lease);
-        if(lease.terminal())return "Lease already restored; native orders were not changed.";
-        Entity unit=findLoaded(lease.unit());if(unit==null)return "Unit is unloaded; recovery did not load its chunk.";return restore(lease,unit,true);
+    public String recover(ServerPlayer actor,UUID leaseId){thread();var lease=data.lease(leaseId).orElseThrow(()->Keyed.refuse("warfare.mcakingdoms.mobilization.lease_unavailable","That deployment is not available."));authorizeRestoration(actor,lease);
+        if(lease.terminal())return Keyed.text("warfare.mcakingdoms.mobilization.already_restored","This deployment was already ended; the recruit's orders were not changed again.");
+        Entity unit=findLoaded(lease.unit());if(unit==null)return Keyed.text("warfare.mcakingdoms.mobilization.recover_unloaded","The recruit is not loaded; recovery does not load its area. Try again near the recruit.");return restore(lease,unit,true);
     }
     /** One bounded pass catches lease units that joined before ServerStarted installed the event queue. */
     public int recoverLoadedAtStartup(int budget){
@@ -93,7 +96,7 @@ public final class MobilizationService {
                 .sorted(Comparator.comparing(MobilizationSavedData.Lease::expiresAt).thenComparing(MobilizationSavedData.Lease::id)).toList();
         if(expired.isEmpty())return;int count=Math.min(budget,expired.size()),start=Math.floorMod(expirationCursor,expired.size());expirationCursor+=count;
         for(int i=0;i<count;i++){var lease=expired.get((start+i)%expired.size());Entity unit=findLoaded(lease.unit());if(unit==null){
-                phase(lease,MobilizationSavedData.Phase.RESTORE_PENDING,"Expired; restoration awaits the unit loading.");continue;}restore(lease,unit,false);
+                phase(lease,MobilizationSavedData.Phase.RESTORE_PENDING,Keyed.text("warfare.mcakingdoms.mobilization.expired_pending","The deployment ended. The original orders return when the recruit is next loaded."));continue;}restore(lease,unit,false);
         }
     }
     public void loaded(Entity unit,long observedAt,boolean startupRecovery){
@@ -103,48 +106,48 @@ public final class MobilizationService {
         try{RecruitsMilitary.ready(server);var current=RecruitsMobilization.snapshot(unit);long now=unit.level().getGameTime();
             if(lease.phase()==MobilizationSavedData.Phase.RESTORE_PENDING_NATIVE_SAVE){
                 if(current.equals(lease.before())&&!restorationPendingSince.containsKey(lease.id())){
-                    restorationPendingSince.remove(lease.id());phase(lease,MobilizationSavedData.Phase.RESTORED,"Entity reload confirmed the original orders persisted.");
+                    restorationPendingSince.remove(lease.id());phase(lease,MobilizationSavedData.Phase.RESTORED,Keyed.text("warfare.mcakingdoms.mobilization.reload_confirmed","Reloading the recruit confirmed that its original orders are saved."));
                 }else if(current.equals(lease.applied()))restore(lease,unit,false);
-                else if(!current.equals(lease.before()))phase(lease,MobilizationSavedData.Phase.DIVERGED,"Reloaded orders diverged while restoration awaited native persistence.");
+                else if(!current.equals(lease.before()))phase(lease,MobilizationSavedData.Phase.DIVERGED,Keyed.text("warfare.mcakingdoms.mobilization.reload_diverged","The recruit's orders changed while the restoration waited to be saved; use Recover."));
                 return;
             }
             if(now>=lease.expiresAt()||lease.phase()==MobilizationSavedData.Phase.RESTORE_PENDING){restore(lease,unit,false);return;}
-            if(current.equals(lease.applied()))phase(lease,MobilizationSavedData.Phase.DURABLE_ACTIVE,"Lease and native persisted orders confirmed after entity load.");
+            if(current.equals(lease.applied()))phase(lease,MobilizationSavedData.Phase.DURABLE_ACTIVE,Keyed.text("warfare.mcakingdoms.mobilization.durable_active","The deployment and the recruit's new orders are both saved."));
             else if((lease.phase()==MobilizationSavedData.Phase.PREPARED||lease.phase()==MobilizationSavedData.Phase.ACTIVE_PENDING_NATIVE_SAVE
                     ||lease.phase()==MobilizationSavedData.Phase.SUSPENDED)&&current.equals(lease.before()))
-                phase(lease,MobilizationSavedData.Phase.RESTORED,"Lease recovered with original orders before native mutation became durable.");
-            else phase(lease,MobilizationSavedData.Phase.DIVERGED,"Loaded native orders differ; explicit recovery is available.");
+                phase(lease,MobilizationSavedData.Phase.RESTORED,Keyed.text("warfare.mcakingdoms.mobilization.recovered_original","The deployment ended before the new orders were saved; the recruit kept its original orders."));
+            else phase(lease,MobilizationSavedData.Phase.DIVERGED,Keyed.text("warfare.mcakingdoms.mobilization.loaded_diverged","The recruit's current orders differ from the deployment; you can use Recover."));
         }catch(RuntimeException unavailable){if(lease.phase()==MobilizationSavedData.Phase.RESTORE_PENDING_NATIVE_SAVE)
-                phase(lease,MobilizationSavedData.Phase.RESTORE_PENDING_NATIVE_SAVE,"Native provider unavailable; restoration still awaits entity persistence.");
-            else phase(lease,MobilizationSavedData.Phase.SUSPENDED,"Native provider unavailable; lease retained without invented restoration.");}
+                phase(lease,MobilizationSavedData.Phase.RESTORE_PENDING_NATIVE_SAVE,Keyed.text("warfare.mcakingdoms.mobilization.provider_wait","Recruits is unavailable; the restoration still waits for the recruit to be saved."));
+            else phase(lease,MobilizationSavedData.Phase.SUSPENDED,Keyed.text("warfare.mcakingdoms.mobilization.provider_retained","Recruits is unavailable; the deployment is kept unchanged until it returns."));}
     }
     private String restore(MobilizationSavedData.Lease lease,Entity unit,boolean explicit){
-        var retained=data.restorableLease(lease.id());if(retained.isEmpty())return "Lease already restored; native orders were not changed.";lease=retained.get();
+        var retained=data.restorableLease(lease.id());if(retained.isEmpty())return Keyed.text("warfare.mcakingdoms.mobilization.already_restored","This deployment was already ended; the recruit's orders were not changed again.");lease=retained.get();
         try{
-            if(!RecruitsMobilization.identity(unit,lease.before()))return phase(lease,MobilizationSavedData.Phase.DIVERGED,"Owner/group identity changed; restoration refused.");
+            if(!RecruitsMobilization.identity(unit,lease.before()))return phase(lease,MobilizationSavedData.Phase.DIVERGED,Keyed.text("warfare.mcakingdoms.mobilization.identity_changed","The recruit's owner or group changed, so the original orders were not restored."));
             var current=RecruitsMobilization.snapshot(unit);
             if(lease.phase()==MobilizationSavedData.Phase.RESTORE_PENDING_NATIVE_SAVE&&current.equals(lease.before())
-                    &&!restorationPendingSince.containsKey(lease.id()))return phase(lease,MobilizationSavedData.Phase.RESTORED,"Entity reload confirmed the original orders persisted.");
+                    &&!restorationPendingSince.containsKey(lease.id()))return phase(lease,MobilizationSavedData.Phase.RESTORED,Keyed.text("warfare.mcakingdoms.mobilization.reload_confirmed","Reloading the recruit confirmed that its original orders are saved."));
             if(lease.phase()==MobilizationSavedData.Phase.RESTORE_PENDING_NATIVE_SAVE&&!current.equals(lease.applied())&&!current.equals(lease.before()))
-                return phase(lease,MobilizationSavedData.Phase.DIVERGED,"Orders changed while restoration awaited persistence; pending restoration did not overwrite them.");
+                return phase(lease,MobilizationSavedData.Phase.DIVERGED,Keyed.text("warfare.mcakingdoms.mobilization.changed_while_pending","The orders changed while the restoration waited to be saved; the pending restoration did not overwrite them."));
             if(!explicit&&!current.equals(lease.applied())&&!current.equals(lease.before()))
-                return phase(lease,MobilizationSavedData.Phase.DIVERGED,"Commander orders changed after mobilization; automatic restoration refused. Use explicit recovery to restore the saved orders.");
-            String pending=phase(lease,MobilizationSavedData.Phase.RESTORE_PENDING_NATIVE_SAVE,"Original orders applied in memory; awaiting a confirming entity reload.");
+                return phase(lease,MobilizationSavedData.Phase.DIVERGED,Keyed.text("warfare.mcakingdoms.mobilization.commander_changed","You changed the orders after deploying, so they were not restored automatically. Use Recover to restore the saved orders."));
+            String pending=phase(lease,MobilizationSavedData.Phase.RESTORE_PENDING_NATIVE_SAVE,Keyed.text("warfare.mcakingdoms.mobilization.restore_pending","The original orders are back in place; waiting for the recruit to be saved to confirm them."));
             var durable=data.restorableLease(lease.id());if(durable.isEmpty()||durable.get().phase()!=MobilizationSavedData.Phase.RESTORE_PENDING_NATIVE_SAVE)
-                return "Restoration intent save failed; native orders were not changed.";
+                return Keyed.text("warfare.mcakingdoms.mobilization.restore_save_failed","The restoration could not be saved, so the recruit's orders were not changed.");
             lease=durable.get();restorationPendingSince.put(lease.id(),unit.level().getGameTime());
             if(!current.equals(lease.before())&&!RecruitsMobilization.apply(unit,lease.before()))
-                return phase(lease,MobilizationSavedData.Phase.DIVERGED,"Native provider refused restoration; explicit recovery remains available.");
+                return phase(lease,MobilizationSavedData.Phase.DIVERGED,Keyed.text("warfare.mcakingdoms.mobilization.restore_refused","Recruits refused the restoration; Recover stays available."));
             return pending;
         }catch(RuntimeException unavailable){return lease.phase()==MobilizationSavedData.Phase.RESTORE_PENDING_NATIVE_SAVE
-                ?phase(lease,MobilizationSavedData.Phase.RESTORE_PENDING_NATIVE_SAVE,"Native provider unavailable; restoration still awaits entity persistence.")
-                :phase(lease,MobilizationSavedData.Phase.SUSPENDED,"Native provider unavailable; restoration retained for retry.");}
+                ?phase(lease,MobilizationSavedData.Phase.RESTORE_PENDING_NATIVE_SAVE,Keyed.text("warfare.mcakingdoms.mobilization.provider_wait","Recruits is unavailable; the restoration still waits for the recruit to be saved."))
+                :phase(lease,MobilizationSavedData.Phase.SUSPENDED,Keyed.text("warfare.mcakingdoms.mobilization.restore_retry","Recruits is unavailable; the restoration is kept for a retry."));}
     }
     private String phase(MobilizationSavedData.Lease lease,MobilizationSavedData.Phase phase,String detail){var next=data.snapshot();var current=next.leases.get(lease.id().toString());
-        if(current==null)return "Lease unavailable.";if(current.phase()==phase&&current.detail().equals(detail))return detail;
-        next.leases.put(lease.id().toString(),current.phase(phase,detail));next.revision++;return data.commit(server,next)?detail:"Lease status save failed; inspect before retrying.";}
+        if(current==null)return Keyed.text("warfare.mcakingdoms.mobilization.lease_unavailable","That deployment is not available.");if(current.phase()==phase&&current.detail().equals(detail))return detail;
+        next.leases.put(lease.id().toString(),current.phase(phase,detail));next.revision++;return data.commit(server,next)?detail:Keyed.text("warfare.mcakingdoms.mobilization.status_save_failed","The deployment status could not be saved; inspect it before retrying.");}
     private Entity findLoaded(UUID id){for(var level:server.getAllLevels()){Entity entity=level.getEntity(id);if(entity!=null)return entity;}return null;}
-    public List<MobilizationSavedData.Lease> deployments(ServerPlayer viewer,int offset,int limit){thread();if(viewer.getServer()!=server||viewer.hasDisconnected()||offset<0||offset>8192||limit<1||limit>64)throw new IllegalArgumentException("Invalid deployment query.");return data.leases().stream().filter(l->viewer.hasPermissions(2)||l.actor().equals(viewer.getUUID())).sorted(Comparator.comparing(MobilizationSavedData.Lease::createdAt).reversed().thenComparing(MobilizationSavedData.Lease::id)).skip(offset).limit(limit).toList();}
+    public List<MobilizationSavedData.Lease> deployments(ServerPlayer viewer,int offset,int limit){thread();if(viewer.getServer()!=server||viewer.hasDisconnected()||offset<0||offset>8192||limit<1||limit>64)throw Keyed.refuse("warfare.mcakingdoms.mobilization.invalid_query","That deployment list request is not valid.");return data.leases().stream().filter(l->viewer.hasPermissions(2)||l.actor().equals(viewer.getUUID())).sorted(Comparator.comparing(MobilizationSavedData.Lease::createdAt).reversed().thenComparing(MobilizationSavedData.Lease::id)).skip(offset).limit(limit).toList();}
     /** The viewer's own temporary orders as translatable lines: order, stage, recruit and time left on the game clock. */
     public List<net.minecraft.network.chat.Component> statusLines(ServerPlayer viewer){thread();return data.leases().stream().filter(l->viewer.hasPermissions(2)||l.actor().equals(viewer.getUUID()))
             .sorted(Comparator.comparing(MobilizationSavedData.Lease::createdAt).reversed()).limit(8)
@@ -153,5 +156,5 @@ public final class MobilizationService {
                     dev.otectus.mcakingdoms.interaction.Names.entity(server,l.unit()),dev.otectus.mcakingdoms.interaction.Names.remainingText(server,l.expiresAt()))).toList();}
     public List<String> status(ServerPlayer viewer){thread();return data.leases().stream().filter(l->viewer.hasPermissions(2)||l.actor().equals(viewer.getUUID()))
             .sorted(Comparator.comparing(MobilizationSavedData.Lease::createdAt).reversed()).limit(32)
-            .map(l->dev.otectus.mcakingdoms.interaction.Names.words(l.doctrine())+" · "+dev.otectus.mcakingdoms.interaction.Names.words(l.phase())+" · "+dev.otectus.mcakingdoms.interaction.Names.entity(server,l.unit())+" · expires "+dev.otectus.mcakingdoms.interaction.Names.remaining(server,l.expiresAt())+" · "+l.detail()).toList();}
+            .map(l->Keyed.text("warfare.mcakingdoms.mobilization.status_line","%s · %s · %s · ends in %s · %s",l.doctrine(),l.phase(),Names.unitText(server,l.unit()),Names.remainingText(server,l.expiresAt()),Keyed.component(l.detail()))).toList();}
 }

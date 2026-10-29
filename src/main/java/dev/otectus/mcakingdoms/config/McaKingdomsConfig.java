@@ -32,6 +32,20 @@ public final class McaKingdomsConfig {
     public static final ForgeConfigSpec.BooleanValue POLITICAL_NOTICES;
     public static final ForgeConfigSpec.BooleanValue OFFICE_BADGES;
     public static final ForgeConfigSpec.IntValue RESIDENCE_MOVE_COOLDOWN;
+    public static final ForgeConfigSpec.BooleanValue LEGACY_PROGRESS;
+    public static final ForgeConfigSpec.EnumValue<CapitalsInterop> CAPITALS_INTEROP;
+    public static final ForgeConfigSpec.BooleanValue PHYSICAL_HERALDRY;
+    public static final ForgeConfigSpec.BooleanValue DYNASTY, DYNASTY_ANNOUNCEMENTS;
+    public static final ForgeConfigSpec.EnumValue<dev.otectus.mcakingdoms.development.DevelopmentMode> DEVELOPMENT_MODE;
+    public static final ForgeConfigSpec.BooleanValue DEVELOPMENT_CONSTRUCTION_PAUSED, DEVELOPMENT_ECONOMY_PAUSED;
+    public static final ForgeConfigSpec.IntValue DEVELOPMENT_BLOCKS_PER_PASS, DEVELOPMENT_MAX_PROJECTS, DEVELOPMENT_PROJECTS_PER_SETTLEMENT,
+            DEVELOPMENT_TRADE_CAP, DEVELOPMENT_HOME_RADIUS;
+    public static final ForgeConfigSpec.ConfigValue<List<? extends String>> DEVELOPMENT_DIMENSIONS;
+    public static final ForgeConfigSpec.IntValue DYNASTY_ACCEPTANCE, DYNASTY_MOURNING, DYNASTY_CLAIM_COOLDOWN;
+    public static final ForgeConfigSpec.IntValue LEGITIMACY_LAW, LEGITIMACY_ELECTION, LEGITIMACY_COUNCIL, LEGITIMACY_LINEAGE,
+            LEGITIMACY_APPOINTMENT, LEGITIMACY_RECOGNITION, LEGITIMACY_GOVERNANCE, LEGITIMACY_CONTEST;
+    /** How MCA Capitals and MCA: Kingdoms share kingdoms (C2). */
+    public enum CapitalsInterop { PER_KINGDOM, ALL_READ_ONLY }
 
     static {
         ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
@@ -114,6 +128,84 @@ public final class McaKingdomsConfig {
                 .comment("Game ticks after any residence change before a player may move their residence again (24000 = one",
                         "Minecraft day of server ticks, not wall time). Operators can override it. 0 turns the wait off.")
                 .defineInRange("residenceMoveCooldown", 24_000, 0, 2_400_000);
+        builder.pop();
+        builder.push("migration");
+        LEGACY_PROGRESS = builder
+                .comment("Opt-in, once per world: before players load, move advancement and statistic progress recorded under the",
+                        "pre-rename namespace ultima_kingdoms: to mcakingdoms:. Each changed player file is kept as <file>.ultima-bak first.",
+                        "Recipe-book entries are not rewritten; those recipes unlock again when their ingredients are held. Off by default.")
+                .define("legacyProgress", false);
+        builder.pop();
+        builder.push("capitals");
+        CAPITALS_INTEROP = builder
+                .comment("With MCA Capitals installed: PER_KINGDOM lets Capitals govern the crown of each kingdom whose village is one of its",
+                        "governing capitals (MCA: Kingdoms then refuses crown actions there and keeps its civic layer), while kingdoms without a",
+                        "Capitals capital keep MCA: Kingdoms governments. ALL_READ_ONLY keeps every MCA: Kingdoms crown action read-only, as",
+                        "before 0.3.0. Capitals is only read, never written. Ignored when Capitals is not installed.")
+                .defineEnum("interop", CapitalsInterop.PER_KINGDOM);
+        builder.pop();
+        builder.push("heraldry");
+        PHYSICAL_HERALDRY = builder
+                .comment("Physical heraldry: kingdom banners, shields and noticeboards bind to a kingdom when placed, and authorized officials",
+                        "seal charters at a seal press. Off: new placements stand for no kingdom and no charter is sealed or revoked; existing",
+                        "records stay readable. The items exist either way, so worlds keep loading.")
+                .define("enabled", true);
+        builder.pop();
+        builder.push("dynasty");
+        DYNASTY = builder
+                .comment("Dynastic succession and the court. Every government starts with the law Manual only, which changes nothing: until",
+                        "its leader or an operator adopts another law, a vacant leadership waits for officials exactly as before 0.3.0. Off: no",
+                        "law is adopted, no succession case opens or advances and no title is granted; existing records stay readable.")
+                .define("enabled", true);
+        DYNASTY_ACCEPTANCE = builder
+                .comment("Game ticks a player heir has to accept or decline the crown before the succession waits for review (72000 = three",
+                        "Minecraft days).")
+                .defineInRange("acceptanceTicks", 72_000, 1_200, 2_400_000);
+        DYNASTY_MOURNING = builder
+                .comment("Game ticks a kingdom mourns a ruler whose death was observed: its pages say so and its banners darken. Shown only;",
+                        "no villager or player is changed. 0 turns mourning off.")
+                .defineInRange("mourningTicks", 24_000, 0, 2_400_000);
+        DYNASTY_CLAIM_COOLDOWN = builder
+                .comment("Game ticks after a claim is decided before the same person may file the same kind of claim again (an appeal).",
+                        "0 turns the wait off.")
+                .defineInRange("claimCooldownTicks", 24_000, 0, 2_400_000);
+        DYNASTY_ANNOUNCEMENTS = builder
+                .comment("Herald announcements: tell a kingdom's connected officials when its succession law changes, a succession opens under it,",
+                        "someone renounces or declines, and a succession waits for review. The death or abdication itself is already a",
+                        "political notice; the request to an heir or a council is sent either way.")
+                .define("announcements", true);
+        builder.comment("How much each fact counts in a ruler's legitimacy reading. Legitimacy only explains a claim; it changes no authority.")
+                .push("legitimacy");
+        LEGITIMACY_LAW = builder.comment("Seated under the kingdom's law of succession.").defineInRange("lawWeight", 2, 0, 10);
+        LEGITIMACY_ELECTION = builder.comment("Chosen by the government's election.").defineInRange("electionWeight", 2, 0, 10);
+        LEGITIMACY_COUNCIL = builder.comment("Confirmed by the council.").defineInRange("councilWeight", 1, 0, 10);
+        LEGITIMACY_LINEAGE = builder.comment("Heir by a family relation MCA records.").defineInRange("lineageWeight", 1, 0, 10);
+        LEGITIMACY_APPOINTMENT = builder.comment("Seated by the officials or as the founder.").defineInRange("appointmentWeight", 1, 0, 10);
+        LEGITIMACY_RECOGNITION = builder.comment("Party to an agreement in force with another kingdom.").defineInRange("recognitionWeight", 1, 0, 10);
+        LEGITIMACY_GOVERNANCE = builder.comment("Governs with at least two other officials seated.").defineInRange("governanceWeight", 1, 0, 10);
+        LEGITIMACY_CONTEST = builder.comment("Subtracted for each open contest of the succession, at most two.").defineInRange("contestWeight", 2, 0, 10);
+        builder.pop();
+        builder.pop();
+        builder.push("development");
+        DEVELOPMENT_MODE = builder
+                .comment("Settlement development and economy. OFF (the default, also for upgraded worlds): nothing is planned, saved or built.",
+                        "OBSERVE: settlement pages explain development from verified buildings and completed works; nothing is debited or built.",
+                        "PROJECTS: officials post public works that players fund with real deliveries; finishing one is a recorded milestone,",
+                        "and no block is placed. MANAGED_GROWTH: as PROJECTS, and a funded work with a small template is built on its surveyed",
+                        "plot in settlements that opted in, a few blocks at a time, in loaded chunks only. FULL_ECONOMY: as MANAGED_GROWTH, plus",
+                        "an abstract, clearly labelled goods ledger and capped abstract trade between settlements of kingdoms with an",
+                        "agreement in force; no real item or currency is ever created by it. Lowering the mode pauses work and keeps every record.")
+                .defineEnum("mode", dev.otectus.mcakingdoms.development.DevelopmentMode.OFF);
+        DEVELOPMENT_CONSTRUCTION_PAUSED = builder.comment("Pause all construction; funding and records continue.").define("constructionPaused", false);
+        DEVELOPMENT_ECONOMY_PAUSED = builder.comment("Pause deliveries, abstract production and abstract trade; construction continues.").define("economyPaused", false);
+        DEVELOPMENT_BLOCKS_PER_PASS = builder.comment("Most blocks construction places each second, across the whole server.").defineInRange("blocksPerPass", 4, 1, 32);
+        DEVELOPMENT_MAX_PROJECTS = builder.comment("Most open works on the server at once.").defineInRange("maxProjects", 64, 1, 512);
+        DEVELOPMENT_PROJECTS_PER_SETTLEMENT = builder.comment("Most open works in one settlement at once.").defineInRange("projectsPerSettlement", 4, 1, 16);
+        DEVELOPMENT_TRADE_CAP = builder.comment("Most abstract units of one commodity two settlements trade per Minecraft day (FULL_ECONOMY). 0 turns trade off.")
+                .defineInRange("tradeCap", 8, 0, 64);
+        DEVELOPMENT_HOME_RADIUS = builder.comment("Blocks around a player's protected home (their bed) that no construction touches.").defineInRange("homeProtectionRadius", 8, 0, 32);
+        DEVELOPMENT_DIMENSIONS = builder.comment("Dimensions where construction may happen. Other dimensions are never built in.")
+                .defineListAllowEmpty(List.of("dimensions"), () -> List.of("minecraft:overworld"), value -> value instanceof String text && ResourceLocation.tryParse(text) != null);
         builder.pop();
         SPEC = builder.build();
     }

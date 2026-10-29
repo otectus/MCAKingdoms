@@ -27,7 +27,9 @@ def mod_id(jar):
     for line in text.splitlines():
         line = line.strip()
         if line.startswith('modId'):
-            return line.split('=', 1)[1].strip().strip('"')
+            value = line.split('=', 1)[1].strip()
+            # A quoted value may be followed by a TOML comment (modId="x" #mandatory).
+            return value[1:].split('"', 1)[0] if value.startswith('"') else value.split('#', 1)[0].strip()
     return None
 
 

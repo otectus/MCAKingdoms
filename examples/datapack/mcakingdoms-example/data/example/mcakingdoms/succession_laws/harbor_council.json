@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "base": "designated_then_lineage",
+  "title": "dynasty.example.law.harbor_council",
+  "confirmation": "council",
+  "relations": [
+    "child",
+    "sibling",
+    "recognized"
+  ],
+  "minor_regency": true,
+  "players_eligible": true,
+  "npcs_eligible": true
+}

@@ -53,8 +53,11 @@ public final class SettlementReconciler {
         Optional<VillageFootprint> read(SettlementRecord record, VillageFootprints.Budget budget);
     }
 
-    /** A merge refused this session, with the preflight's reason and the command that retries it. */
-    public record Refusal(UUID source, String sourceName, UUID target, String targetName, String reason) {
+    /**
+     * A merge refused this session, with the preflight's reason (English, for logs) and the same reason encoded for each
+     * reader's language (H03), and the command that retries it.
+     */
+    public record Refusal(UUID source, String sourceName, UUID target, String targetName, String reason, String encodedReason) {
         public String command() {
             return "/kingdoms village merge " + source + " " + target;
         }
@@ -157,7 +160,7 @@ public final class SettlementReconciler {
                 report.villages.add(target.id);
             } catch (IllegalArgumentException | IllegalStateException refused) {
                 Refusal refusal = new Refusal(record.id, record.displayName, target.id, target.displayName,
-                        String.valueOf(refused.getMessage()));
+                        String.valueOf(refused.getMessage()), dev.otectus.mcakingdoms.interaction.Keyed.text(refused));
                 refusals.put(pair, refusal);
                 report.refused.put(pair, refusal);
                 report.newRefusals++;

@@ -117,7 +117,7 @@ public final class WorldContextService implements WorldContextApi.Provider {
     }
 
     @Override public WorldContextApi.Action requestNeutralResourceAccess(ServerPlayer player,UUID siteId,ResourceLocation commodity){
-        thread();if(!dev.otectus.mcakingdoms.warfare.WarfareConfig.ENABLED.get()||!dev.otectus.mcakingdoms.warfare.WarfareConfig.WORLD_CONTEXT.get())return WorldContextApi.Action.deny("disabled");var policy=data.resource(siteId);if(policy.isEmpty())return WorldContextApi.Action.deny("resource_site_unknown");
+        thread();if(!dev.otectus.mcakingdoms.warfare.WarfareConfig.enabled()||!dev.otectus.mcakingdoms.warfare.WarfareConfig.WORLD_CONTEXT.get())return WorldContextApi.Action.deny("disabled");var policy=data.resource(siteId);if(policy.isEmpty())return WorldContextApi.Action.deny("resource_site_unknown");
         var p=policy.get();if(!known(player,p.site())||!known(player,p.returnSite()))return WorldContextApi.Action.deny("return_path_unknown");
         if(p.exclusions().contains(commodity.toString()))return WorldContextApi.Action.deny("commodity_excluded");
         if(!p.commodities().contains(commodity.toString()))return WorldContextApi.Action.deny("commodity_unrecognized");
@@ -182,7 +182,7 @@ public final class WorldContextService implements WorldContextApi.Provider {
                 Math.min(next,route.checkpoints().size()-1),active,status.equals("available"),journey.filter(WorldContextSavedData.Journey::complete).isPresent()?"complete":status);
     }
     private String access(ServerPlayer player,WorldContextSavedData.Route route){
-        if(!dev.otectus.mcakingdoms.warfare.WarfareConfig.ENABLED.get()||!dev.otectus.mcakingdoms.warfare.WarfareConfig.WORLD_CONTEXT.get())return "disabled";
+        if(!dev.otectus.mcakingdoms.warfare.WarfareConfig.enabled()||!dev.otectus.mcakingdoms.warfare.WarfareConfig.WORLD_CONTEXT.get())return "disabled";
         var warfare=WarfareApi.get(server);if(warfare.isEmpty())return "warfare_unavailable";
         if(!warfare.get().safeConduct(player,route.fromSettlement())||!warfare.get().safeConduct(player,route.toSettlement()))return "safe_conduct_denied";
         try{var politics=KingdomsPoliticsApi.get(server);if(politics.institution(route.fromInstitution()).filter(InstitutionView::operational).isEmpty()
@@ -213,7 +213,7 @@ public final class WorldContextService implements WorldContextApi.Provider {
     private ServerLevel level(String dimension){return server.getLevel(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION,new ResourceLocation(dimension)));}
     private static BlockPos pos(WorldContextSavedData.Site site){return new BlockPos(site.x(),site.y(),site.z());}
     private static WorldContextSavedData.Point point(String dimension,BlockPos pos,String label){return new WorldContextSavedData.Point(dimension,pos.getX(),pos.getY(),pos.getZ(),label);}
-    private static boolean enabled(){return dev.otectus.mcakingdoms.warfare.WarfareConfig.ENABLED.get()
+    private static boolean enabled(){return dev.otectus.mcakingdoms.warfare.WarfareConfig.enabled()
             &&dev.otectus.mcakingdoms.warfare.WarfareConfig.WORLD_CONTEXT.get();}
     private static void bounds(int offset,int limit){if(offset<0||offset>100000||limit<1||limit>64)throw new IllegalArgumentException("invalid page");}
 }

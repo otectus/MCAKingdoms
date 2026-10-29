@@ -79,7 +79,12 @@ public final class PoliticalTasks {
         action(Action.SEAT,"Move the capital",false,List.of(kingdom(),pick("target","New capital","settlement")));
         var scope=pick("target","Office jurisdiction",c->{var list=new ArrayList<ActionRegistry.Choice>();list.add(ActionRegistry.Choice.of("",tr("politics.mcakingdoms.scope.kingdom_wide","Kingdom-wide office")));list.addAll(c.choices("settlement"));return list;});
         action(Action.APPOINT,"Appoint an official",false,List.of(kingdom(),definition("office"),person(),scope));
-        action(Action.REMOVE_OFFICE,"Remove an official",false,List.of(kingdom(),definition("office"),scope));
+        // The removal form lists the offices actually held, each with this player's decision from the same policy the
+        // service enforces (H02): an elected leader's office stays listed with its reason but cannot be chosen.
+        targets("occupied_office",PoliticalTasks::occupiedOffices);
+        targetHint("occupied_office",tr("politics.mcakingdoms.office.none_occupied","No office of this kingdom is occupied."));
+        task("remove_office","Remove an official",false,true,List.of(kingdom(),pick("office","Office to vacate","occupied_office").after("kingdom")),
+                c->result(c,"remove_office",service(c).execute(c.player,new Request(UUID.randomUUID(),service(c).revision(),Action.REMOVE_OFFICE,c.text("kingdom"),c.meta("office","definition"),c.meta("office","scope"),null,"","","",0,0,0))));
         action(Action.DELEGATE,"Authorize a political responsibility",false,List.of(kingdom(),pick("person","Player","player"),pick("definition","Responsibility",c->enums(Arrays.stream(Permission.values()).filter(p->p!=Permission.DELEGATE).toArray(Permission[]::new)))));
         action(Action.REVOKE,"Revoke a player's mandates",false,List.of(kingdom(),pick("person","Player","player")));
         action(Action.PROPOSE,"Propose an agreement",false,List.of(kingdom(),pick("counterpart","Other kingdom","kingdom"),definition("agreement"),text("text","Agreement terms")));
@@ -115,26 +120,44 @@ public final class PoliticalTasks {
         task("end_regency","End a regency",false,true,List.of(kingdom()),c->result(c,"end_regency",service(c).endRegency(c.player,UUID.randomUUID(),service(c).revision(),c.text("kingdom"))));
         probes();
     }
+    private static List<ActionRegistry.Choice> occupiedOffices(Context c){
+        if(!(service(c) instanceof dev.otectus.mcakingdoms.politics.GovernmentService government)||c.text("kingdom").isBlank())return List.of();
+        String kingdom=c.text("kingdom");var knowledge=dev.otectus.mcakingdoms.knowledge.SettlementKnowledge.get(c.server());var out=new ArrayList<ActionRegistry.Choice>();
+        for(var o:government.occupiedOffices(c.player,kingdom)){
+            Component scope=o.settlement()==null?tr("politics.mcakingdoms.scope.kingdom_wide","Kingdom-wide office")
+                    :knowledge.visible(c.player,o.settlement())?dev.otectus.mcakingdoms.api.McaKingdomsApi.get(c.server()).getSettlement(o.settlement()).<Component>map(v->Component.literal(v.displayName())).orElse(tr("politics.mcakingdoms.scope.unknown_settlement","A settlement you have not discovered"))
+                    :tr("politics.mcakingdoms.scope.unknown_settlement","A settlement you have not discovered");
+            Component holder=tr("politics.mcakingdoms.office.holder","Held by %s",o.holderName());
+            var meta=new HashMap<String,String>(Map.of("definition",o.definitionId(),"scope",o.scope(),"kingdom",kingdom,"revision",Long.toString(service(c).revision())));
+            Component detail;
+            if(o.removal().isPresent()){meta.put(ActionRegistry.UNAVAILABLE,"true");detail=tr("politics.mcakingdoms.office.cannot_remove","%s. You cannot vacate it: %s",holder,PlayerWords.component(o.removal().get()));}
+            else detail=tr("politics.mcakingdoms.office.can_remove","%s. You can vacate this office.",holder);
+            out.add(ActionRegistry.Choice.of(o.key(),tr("politics.mcakingdoms.office.choice","%s · %s",definitionTitle(o.title()),scope),detail,meta));
+        }
+        return out;
+    }
     private static Optional<dev.otectus.mcakingdoms.api.SettlementView> residence(Context c){
         var api=dev.otectus.mcakingdoms.api.McaKingdomsApi.get(c.server());
         return api.getCivicIdentity(c.player).flatMap(dev.otectus.mcakingdoms.api.CivicIdentityView::residenceSettlement).map(api::resolveSettlementId).flatMap(api::getSettlement);
     }
     private static boolean governed(Context c,String kingdom){return service(c).government(kingdom).isPresent();}
-    private static boolean capitalsConflict(){return net.minecraftforge.fml.ModList.get().isLoaded("mcacapitals");}
+    /** Who governs a kingdom's crown (C2); founding is refused where MCA Capitals governs or may govern it. */
+    private static dev.otectus.mcakingdoms.politics.Sovereignty crown(Context c,String kingdom){return service(c) instanceof dev.otectus.mcakingdoms.politics.GovernmentService government?government.sovereignty(kingdom):dev.otectus.mcakingdoms.politics.Sovereignty.NATIVE;}
     /** Why this player cannot found a government now, or empty when the founding task can offer them a kingdom. */
     private static Optional<Object> foundingRefusal(Context c){
-        if(capitalsConflict())return Optional.of(tr("politics.mcakingdoms.founding.capitals","MCA: Capitals governs kingdoms on this server, so MCA: Kingdoms governments cannot be founded. Use the Capitals government system."));
+
         if(c.player.hasPermissions(2))return foundingKingdoms(c).isEmpty()?Optional.of(tr("politics.mcakingdoms.founding.all_governed","Every kingdom already has a government. Read a kingdom's Overview for its leader and capital.")):Optional.empty();
         if(!dev.otectus.mcakingdoms.config.McaKingdomsConfig.OPEN_FOUNDING.get())return Optional.of(tr("politics.mcakingdoms.founding.closed","Resident founding is turned off on this server (politics.openFounding = false). Only an operator can establish a government."));
         var home=residence(c);
         if(home.isEmpty())return Optional.of(tr("politics.mcakingdoms.founding.no_residence","You have no recorded civic residence. Resident founding needs one: set your respawn bed in a house of the settlement, stand there and use Register my residence. Walking through, sleeping or trading alone records nothing."));
         String kingdom=home.get().kingdomId().toString();
+        var sovereign=crown(c,kingdom);
+        if(!sovereign.native_())return Optional.of(PlayerWords.component(sovereign.statusKey()));
         if(governed(c,kingdom))return Optional.of(tr("politics.mcakingdoms.founding.governed","%s, the kingdom of your residence %s, already has a government. Read its Overview, or ask its leader about offices.",kingdomLabel(c,kingdom),home.get().displayName()));
         return Optional.empty();
     }
     private static List<ActionRegistry.Choice> foundingKingdoms(Context c){
-        if(capitalsConflict())return List.of();
-        var ungoverned=c.choices("kingdom").stream().filter(k->!governed(c,k.value())).toList();
+        var ungoverned=c.choices("kingdom").stream().filter(k->!governed(c,k.value())&&crown(c,k.value()).native_()).toList();
         if(c.player.hasPermissions(2))return ungoverned.stream().map(k->ActionRegistry.Choice.of(k.value(),k.shown(),tr("politics.mcakingdoms.founding.ungoverned","No government yet"))).toList();
         if(!dev.otectus.mcakingdoms.config.McaKingdomsConfig.OPEN_FOUNDING.get())return List.of();
         var home=residence(c);if(home.isEmpty())return List.of();String kingdom=home.get().kingdomId().toString();

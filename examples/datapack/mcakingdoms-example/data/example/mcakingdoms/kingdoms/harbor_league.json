@@ -3,7 +3,14 @@
   "id": "example:harbor_league",
   "translation_key": "kingdom.example.harbor_league",
   "name_pool": "example:harbor_league",
-  "heraldry": {"icon": "mcakingdoms:shimaguni", "color": "#2E86AB"},
+  "heraldry": {
+    "icon": "mcakingdoms:shimaguni",
+    "color": "#2E86AB"
+  },
   "style_hints": [],
-  "metadata": {"petition_honor": "mcakingdoms:open_road"}
+  "metadata": {
+    "petition_honor": "mcakingdoms:open_road",
+    "heraldry_secondary": "#F2E3C6",
+    "heraldry_motto": "kingdom.example.harbor_league.motto"
+  }
 }

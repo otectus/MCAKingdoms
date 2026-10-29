@@ -215,13 +215,46 @@
       "category": "civic",
       "title": "Completa un encargo de taller remunerado",
       "summary": "El trabajo institucional reconocido puede pagarse con normalidad y registrar una distinción cívica.",
-      "body": [
-        "Esta ruta necesita una institución reconocida en funcionamiento, una sede con carta, un contacto nombrado, la integración de misiones nativa correspondiente y la opción de servicios institucionales del servidor. Es más específica que el trabajo gremial seleccionado corriente.",
-        "1. Visita al contacto real y elige Taller remunerado (en Tareas del reino, Ver trabajos de taller remunerados). Lee la oferta nativa antes de aceptarla. La aceptación fija el jugador, quien ofrece el trabajo, la institución, el edificio, la instancia de la misión, los objetivos, las recompensas y las condiciones de la distinción. En el ejemplo de taller incluido, cuatro faroles se pagan con seis esmeraldas mediante MCA Quests; no supongas que todos los encargos usan esa recompensa.",
-        "2. Haz el trabajo indicado. Vuelve con quien te lo encargó y complétalo mediante MCA Quests. El mod de misiones consume los objetos requeridos y paga la recompensa. Después, MCA: Kingdoms registra la distinción cívica verificada a partir de la finalización guardada. La distinción no es un cargo nuevo y no cambia automáticamente la reputación soberana.",
-        "3. Tras completarlo, actualiza el historial y las distinciones correspondientes. Un justificante repetido no puede pagar ni conceder otra vez esa distinción. Cambiar de afiliación gremial no reescribe en silencio las condiciones del trabajo aceptado.",
-        "Si el edificio, quien lo ofrece, la definición o la legalidad dejan de estar disponibles, el trabajo institucional aceptado puede quedar suspendido en lugar de redirigirse en silencio. Restaura el requisito real o usa la cancelación admitida de la misión nativa. No borres un registro de finalización para volver a intentar una recompensa; los guardados sin resolver requieren que un operador investigue.",
-        "Debes cumplir los requisitos para los encargos de los Faroleros en una sede de los Faroleros, y el servicio admitido de MCA Crime debe confirmar que puedes recibir servicios institucionales. Que falte la integración con Crime no anula este requisito."
+      "blocks": [
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "Esta ruta necesita una institución reconocida en funcionamiento, una sede con carta, un contacto nombrado, la integración de misiones nativa correspondiente y la opción de servicios institucionales del servidor. Es más específica que el trabajo gremial seleccionado corriente."
+        },
+        {
+          "id": "diagram",
+          "type": "image",
+          "texture": "mcakingdoms:textures/gui/guide/commissions.png",
+          "width": 192,
+          "height": 96,
+          "alt": "Un yunque, luego un pergamino de encargo y después una estrella dorada: el encargo de un taller, una vez cumplido y confirmado, aporta prestigio en el gremio.",
+          "caption": "Taller, encargo, prestigio."
+        },
+        {
+          "id": "p2",
+          "type": "paragraph",
+          "text": "1. Visita al contacto real y elige Taller remunerado (en Tareas del reino, Ver trabajos de taller remunerados). Lee la oferta nativa antes de aceptarla. La aceptación fija el jugador, quien ofrece el trabajo, la institución, el edificio, la instancia de la misión, los objetivos, las recompensas y las condiciones de la distinción. En el ejemplo de taller incluido, cuatro faroles se pagan con seis esmeraldas mediante MCA Quests; no supongas que todos los encargos usan esa recompensa."
+        },
+        {
+          "id": "p3",
+          "type": "paragraph",
+          "text": "2. Haz el trabajo indicado. Vuelve con quien te lo encargó y complétalo mediante MCA Quests. El mod de misiones consume los objetos requeridos y paga la recompensa. Después, MCA: Kingdoms registra la distinción cívica verificada a partir de la finalización guardada. La distinción no es un cargo nuevo y no cambia automáticamente la reputación soberana."
+        },
+        {
+          "id": "p4",
+          "type": "paragraph",
+          "text": "3. Tras completarlo, actualiza el historial y las distinciones correspondientes. Un justificante repetido no puede pagar ni conceder otra vez esa distinción. Cambiar de afiliación gremial no reescribe en silencio las condiciones del trabajo aceptado."
+        },
+        {
+          "id": "p5",
+          "type": "paragraph",
+          "text": "Si el edificio, quien lo ofrece, la definición o la legalidad dejan de estar disponibles, el trabajo institucional aceptado puede quedar suspendido en lugar de redirigirse en silencio. Restaura el requisito real o usa la cancelación admitida de la misión nativa. No borres un registro de finalización para volver a intentar una recompensa; los guardados sin resolver requieren que un operador investigue."
+        },
+        {
+          "id": "p6",
+          "type": "paragraph",
+          "text": "Debes cumplir los requisitos para los encargos de los Faroleros en una sede de los Faroleros, y el servicio admitido de MCA Crime debe confirmar que puedes recibir servicios institucionales. Que falte la integración con Crime no anula este requisito."
+        }
       ],
       "commands": [
         "/kingdoms guild workshop <organization definition id>",

@@ -224,8 +224,11 @@ final class IntegrationScenario {
         var kingdoms=McaKingdomsApi.get(server);var factions=(FactionServiceImpl)KingdomsFactionsApi.get(server);
         String phase=System.getProperty("mcakingdoms.acceptance.integration","initial");
         if(phase.startsWith("split-village")){SplitVillageScenario.run(server,phase,schedule,finish);return;}
+        if(phase.equals("lv")||phase.startsWith("lv-")){LivingVillagesScenario.run(server,phase,schedule,finish);return;}
         if(phase.equals("r4")||phase.equals("r4-crash")){schedule.accept(2L,()->{try{EvolutionScenario.run(server,finish);}catch(Throwable failure){failure.printStackTrace();finish.accept("FAIL "+failure);}});return;}
         if(phase.equals("r4-service")){R4ServiceScenario.run(server,schedule,finish);return;}
+        if(phase.equals("capitals")){schedule.accept(2L,()->{try{CapitalsScenario.run(server,finish);}catch(Throwable failure){failure.printStackTrace();finish.accept("FAIL integration capitals: "+failure);}});return;}
+        if(phase.equals("r4-fence")){schedule.accept(2L,()->{try{TransferFenceProfileScenario.run(server,finish);}catch(Throwable failure){failure.printStackTrace();finish.accept("FAIL integration transfer fence profile: "+failure);}});return;}
         if(phase.equals("r4-extensions")){R4PoliticalExtensionsScenario.run(server,finish);return;}
         if(phase.equals("r4-family")){R4FamilyScenario.run(server,finish);return;}
         if(phase.startsWith("r4-")){schedule.accept(100L,()->{try{EvolutionScenario.restart(server,phase,finish);}catch(Throwable failure){failure.printStackTrace();finish.accept("FAIL "+failure);}});return;}

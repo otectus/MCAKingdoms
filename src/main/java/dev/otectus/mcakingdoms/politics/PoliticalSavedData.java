@@ -12,7 +12,7 @@ import java.io.File;
 import java.util.*;
 
 /** Copy-on-write transactions. Future/malformed payloads remain untouched and read-only. */
-public final class PoliticalSavedData extends SavedData {
+public final class PoliticalSavedData extends dev.otectus.mcakingdoms.persistence.DurableSavedData {
     public static final Gson JSON = new GsonBuilder().disableHtmlEscaping().create();
     public static final String NAME = "mcakingdoms_politics";
     static final int SCHEMA = 1;

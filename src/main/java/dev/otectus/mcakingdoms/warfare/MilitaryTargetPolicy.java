@@ -64,7 +64,7 @@ public final class MilitaryTargetPolicy {
         return key != null && key.getNamespace().equals("mca") && (key.getPath().equals("male_villager") || key.getPath().equals("female_villager"));
     }
     public static boolean allowed(Entity attacker, LivingEntity target) {
-        if (!WarfareConfig.ENABLED.get() || !WarfareConfig.TARGET_POLICY.get() || attacker == null || !(target.level() instanceof ServerLevel level)
+        if (!WarfareConfig.enabled() || !WarfareConfig.TARGET_POLICY.get() || attacker == null || !(target.level() instanceof ServerLevel level)
                 || attacker.level() != target.level()) return true;
         Entity source = principal(attacker), victim = principal(target);
         String a = faction(source), b = faction(victim);
@@ -72,6 +72,8 @@ public final class MilitaryTargetPolicy {
         if (b.isEmpty()) b = faction(target);
         boolean army = recruit(attacker) || !a.isEmpty() && WarfareRuntime.get(level.getServer()).mapping(a).isPresent();
         if (!army) return true;
+        // Realms bound by a Living Villages peace, ceasefire or alliance do not fight, whatever their native relation reads.
+        if (dev.otectus.mcakingdoms.compat.livingvillages.LvWarBridge.combatForbidden(level.getServer(), source, victim)) return false;
         if (source == victim || source.getUUID().equals(victim.getUUID())) return false;
         if (!a.isEmpty() && a.equals(b)) return false;
         // Civilians retain local law even if a provider puts their household on an enemy team.

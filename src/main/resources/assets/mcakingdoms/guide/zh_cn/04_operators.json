@@ -43,6 +43,21 @@
       "player_task": "help.available"
     },
     {
+      "id": "capitals_interop",
+      "category": "operators",
+      "title": "同时安装 MCA Capitals",
+      "summary": "Capitals 管理其首都的王权；MCA: Kingdoms 保留公民层。",
+      "body": [
+        "安装 MCA Capitals 后，村庄为 Capitals 执政首都的王国，其王权由 Capitals 管理：建国、首都、领袖、继承、王室、选举和摄政都在那里处理，MCA: Kingdoms 会拒绝这些操作。其公民官职、协议、行会和荣誉在这里继续运作。其他王国保留其 MCA: Kingdoms 政府。",
+        "Capitals 只被读取，从不被写入。管理员可通过“审查 MCA Capitals 映射”或 /kingdoms capitals report 查看映射，接受某个首都作为王国的王权所在，或在其首都不再执政或 Capitals 被移除后解除映射。设置 capitals.interop = ALL_READ_ONLY 会像 0.3.0 之前一样使所有王权操作保持只读。"
+      ],
+      "commands": [
+        "/kingdoms capitals report"
+      ],
+      "task": "capitals.report",
+      "operator": true
+    },
+    {
       "id": "standing_sync",
       "category": "operators",
       "title": "王国声望与MCA声望",

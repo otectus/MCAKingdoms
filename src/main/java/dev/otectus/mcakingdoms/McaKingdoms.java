@@ -62,9 +62,17 @@ public final class McaKingdoms {
         IntegrationBootstrap.init(modBus);
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(dev.otectus.mcakingdoms.politics.PoliticalCommands.class);
+        MinecraftForge.EVENT_BUS.register(dev.otectus.mcakingdoms.compat.capitals.CapitalsCommands.class);
+        MinecraftForge.EVENT_BUS.register(dev.otectus.mcakingdoms.politics.dynasty.DynastyEvents.class);
+        MinecraftForge.EVENT_BUS.register(dev.otectus.mcakingdoms.development.DevelopmentEvents.class);
+        MinecraftForge.EVENT_BUS.register(dev.otectus.mcakingdoms.data.DefinitionCommands.class);
+        MinecraftForge.EVENT_BUS.register(dev.otectus.mcakingdoms.integration.ProviderMatrix.class);
         MinecraftForge.EVENT_BUS.register(dev.otectus.mcakingdoms.warfare.WarfareCommands.class);
         MinecraftForge.EVENT_BUS.register(dev.otectus.mcakingdoms.warfare.WarfareRuntime.class);
         MinecraftForge.EVENT_BUS.register(dev.otectus.mcakingdoms.warfare.MilitaryTargetPolicy.class);
+        MinecraftForge.EVENT_BUS.register(dev.otectus.mcakingdoms.compat.livingvillages.LvHooks.class);
+        MinecraftForge.EVENT_BUS.register(dev.otectus.mcakingdoms.compat.livingvillages.LvBindings.class);
+        MinecraftForge.EVENT_BUS.register(dev.otectus.mcakingdoms.compat.livingvillages.LvCommands.class);
     }
 
     @SubscribeEvent
@@ -76,6 +84,8 @@ public final class McaKingdoms {
         event.addListener(dev.otectus.mcakingdoms.evolution.EvolutionDefinitions.INSTANCE);
         event.addListener(dev.otectus.mcakingdoms.evolution.drama.DramaRuntime.reloadListener());
         event.addListener(dev.otectus.mcakingdoms.civic.CivicDefinitions.INSTANCE);
+        event.addListener(dev.otectus.mcakingdoms.politics.dynasty.DynastyDefinitions.INSTANCE);
+        event.addListener(dev.otectus.mcakingdoms.development.DevelopmentDefinitions.INSTANCE);
         event.addListener(dev.otectus.mcakingdoms.factions.organization.OrganizationRuntime.reloadListener());
         event.addListener(IntegrationBootstrap.gateReloadListener());
     }
@@ -86,14 +96,22 @@ public final class McaKingdoms {
         // over before anything reads the new file names.
         // A failed copy stops the world here, before any store exists, so no empty store can be saved in its place.
         java.nio.file.Path dataDirectory = event.getServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).resolve("data");
+        // Each session keeps the store files it loaded as .bak before first replacing them (H06).
+        dev.otectus.mcakingdoms.persistence.AtomicSavedDataWriter.newSession();
+        dev.otectus.mcakingdoms.compat.recruits.TransferFenceMetrics.reset();
+        dev.otectus.mcakingdoms.development.DevelopmentMetrics.reset();
         dev.otectus.mcakingdoms.persistence.LegacyRename.migrateSavedData(dataDirectory);
         dev.otectus.mcakingdoms.persistence.LegacyRename.writeReport(dataDirectory);
         dev.otectus.mcakingdoms.persistence.LegacyRename.requireMigrated();
+        if (McaKingdomsConfig.LEGACY_PROGRESS.get())
+            dev.otectus.mcakingdoms.persistence.LegacyProgress.migrate(event.getServer().getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT));
         dev.otectus.mcakingdoms.evolution.drama.DramaRuntime.commitPending();
         dev.otectus.mcakingdoms.evolution.EvolutionDefinitions.INSTANCE.commitPending();
         DEFINITIONS.commitPending();
         POLITICS.commitPending();
         dev.otectus.mcakingdoms.civic.CivicDefinitions.INSTANCE.commitPending();
+        dev.otectus.mcakingdoms.politics.dynasty.DynastyDefinitions.INSTANCE.commitPending();
+        dev.otectus.mcakingdoms.development.DevelopmentDefinitions.INSTANCE.commitPending();
         dev.otectus.mcakingdoms.factions.organization.OrganizationRuntime.commitPending();
         dev.otectus.mcakingdoms.data.ReloadReport.committed();
         PENDING_CHUNKS.computeIfAbsent(event.getServer(), ignored -> ConcurrentHashMap.newKeySet());
@@ -117,6 +135,8 @@ public final class McaKingdoms {
             var politics = new dev.otectus.mcakingdoms.politics.GovernmentService(server, service, POLITICS);
             dev.otectus.mcakingdoms.api.politics.KingdomsPoliticsApi.attach(server, politics);
             dev.otectus.mcakingdoms.warfare.CampaignService.attach(server);
+            // Recruits: Living Villages bridge; refuses to start a world whose integrated residents it could not protect.
+            dev.otectus.mcakingdoms.compat.livingvillages.LvRuntime.attach(server);
             dev.otectus.mcakingdoms.compat.crime.JurisdictionPolicyBridge.attach(server);
             MinecraftForge.EVENT_BUS.register(politics);
             // A02: notices and office badges, derived from committed authority only.
@@ -142,6 +162,7 @@ public final class McaKingdoms {
             dev.otectus.mcakingdoms.api.politics.KingdomsPoliticsApi.detach(server);
             dev.otectus.mcakingdoms.compat.crime.JurisdictionPolicyBridge.detach(server);
             dev.otectus.mcakingdoms.warfare.CampaignService.clear(server);
+            dev.otectus.mcakingdoms.compat.livingvillages.LvRuntime.detach(server);
             try {
                 mca.close();
             } finally {
@@ -164,6 +185,8 @@ public final class McaKingdoms {
         DEFINITIONS.commitPending();
         POLITICS.commitPending();
         dev.otectus.mcakingdoms.civic.CivicDefinitions.INSTANCE.commitPending();
+        dev.otectus.mcakingdoms.politics.dynasty.DynastyDefinitions.INSTANCE.commitPending();
+        dev.otectus.mcakingdoms.development.DevelopmentDefinitions.INSTANCE.commitPending();
         dev.otectus.mcakingdoms.factions.organization.OrganizationRuntime.commitPending();
         RuntimeState runtime = RUNTIMES.get(server);
         if (runtime != null) {
@@ -309,6 +332,8 @@ public final class McaKingdoms {
         dev.otectus.mcakingdoms.compat.crime.JurisdictionPolicyBridge.detach(event.getServer());
         dev.otectus.mcakingdoms.warfare.CampaignService.clear(event.getServer());
         dev.otectus.mcakingdoms.warfare.WarfareRuntime.clear(event.getServer());
+        dev.otectus.mcakingdoms.compat.livingvillages.LvRuntime.detach(event.getServer());
+        dev.otectus.mcakingdoms.compat.capitals.CapitalsInterop.clear(event.getServer());
         PENDING_CHUNKS.remove(event.getServer());
         RuntimeState runtime = RUNTIMES.remove(event.getServer());
         dev.otectus.mcakingdoms.politics.OfficePresentation.stop(event.getServer());

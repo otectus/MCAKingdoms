@@ -29,7 +29,7 @@ dev.otectus.mcakingdoms.api.factions                 11 files
 dev.otectus.mcakingdoms.api.factions.event           1 file
 dev.otectus.mcakingdoms.api.factions.organization    18 files
 dev.otectus.mcakingdoms.api.gating                   7 files
-dev.otectus.mcakingdoms.api.politics                 8 files
+dev.otectus.mcakingdoms.api.politics                 9 files
 dev.otectus.mcakingdoms.api.progression              3 files
 dev.otectus.mcakingdoms.api.townstead                19 files
 dev.otectus.mcakingdoms.api.townstead.event          1 file
@@ -37,25 +37,29 @@ dev.otectus.mcakingdoms.api.warfare                  1 file
 dev.otectus.mcakingdoms.api.worldcontext             1 file
 dev.otectus.mcakingdoms.citizen                      2 files
 dev.otectus.mcakingdoms.civic                        11 files
-dev.otectus.mcakingdoms.client                       18 files
+dev.otectus.mcakingdoms.client                       21 files
 dev.otectus.mcakingdoms.client.book                  9 files
 dev.otectus.mcakingdoms.client.guide                 4 files
 dev.otectus.mcakingdoms.client.politics              1 file
 dev.otectus.mcakingdoms.client.rich                  2 files
 dev.otectus.mcakingdoms.client.townstead             1 file
 dev.otectus.mcakingdoms.command                      6 files
+dev.otectus.mcakingdoms.compat.capitals              5 files
 dev.otectus.mcakingdoms.compat.crime                 2 files
+dev.otectus.mcakingdoms.compat.livingvillages        23 files
 dev.otectus.mcakingdoms.compat.mca                   3 files
 dev.otectus.mcakingdoms.compat.progression           1 file
 dev.otectus.mcakingdoms.compat.quests                2 files
 dev.otectus.mcakingdoms.compat.quests.receipts       2 files
-dev.otectus.mcakingdoms.compat.recruits              9 files
+dev.otectus.mcakingdoms.compat.recruits              10 files
 dev.otectus.mcakingdoms.compat.reputation            2 files
 dev.otectus.mcakingdoms.compat.townstead             6 files
 dev.otectus.mcakingdoms.compat.townstead.network     3 files
 dev.otectus.mcakingdoms.config                       1 file
 dev.otectus.mcakingdoms.core                         10 files
-dev.otectus.mcakingdoms.data                         5 files
+dev.otectus.mcakingdoms.data                         6 files
+dev.otectus.mcakingdoms.development                  10 files
+dev.otectus.mcakingdoms.document                     2 files
 dev.otectus.mcakingdoms.evolution                    15 files
 dev.otectus.mcakingdoms.evolution.drama              6 files
 dev.otectus.mcakingdoms.factions                     12 files
@@ -63,17 +67,19 @@ dev.otectus.mcakingdoms.factions.command             1 file
 dev.otectus.mcakingdoms.factions.config              1 file
 dev.otectus.mcakingdoms.factions.organization        9 files
 dev.otectus.mcakingdoms.guide                        2 files
-dev.otectus.mcakingdoms.integration                  2 files
+dev.otectus.mcakingdoms.heraldry                     7 files
+dev.otectus.mcakingdoms.integration                  3 files
 dev.otectus.mcakingdoms.integration.gating           1 file
-dev.otectus.mcakingdoms.interaction                  26 files
-dev.otectus.mcakingdoms.item                         3 files
+dev.otectus.mcakingdoms.interaction                  32 files
+dev.otectus.mcakingdoms.item                         5 files
 dev.otectus.mcakingdoms.kingdom                      3 files
 dev.otectus.mcakingdoms.knowledge                    1 file
-dev.otectus.mcakingdoms.mixin                        9 files
+dev.otectus.mcakingdoms.mixin                        22 files
 dev.otectus.mcakingdoms.naming                       3 files
-dev.otectus.mcakingdoms.network                      9 files
-dev.otectus.mcakingdoms.persistence                  5 files
-dev.otectus.mcakingdoms.politics                     7 files
+dev.otectus.mcakingdoms.network                      10 files
+dev.otectus.mcakingdoms.persistence                  7 files
+dev.otectus.mcakingdoms.politics                     11 files
+dev.otectus.mcakingdoms.politics.dynasty             12 files
 dev.otectus.mcakingdoms.presentation                 5 files
 dev.otectus.mcakingdoms.settlement                   4 files
 dev.otectus.mcakingdoms.warfare                      11 files
@@ -82,14 +88,34 @@ dev.otectus.mcakingdoms.warfare.mobilization         5 files
 dev.otectus.mcakingdoms.worldcontext                 6 files
 ```
 
-## Registered content (3 entries)
+## Registered content (13 entries)
 
-### Items (2)
+### Blocks (4)
+
+| id | field | type | declared in |
+|---|---|---|---|
+| `court_noticeboard` | `COURT_NOTICEBOARD` | `Block` | src/main/java/dev/otectus/mcakingdoms/heraldry/HeraldicBlocks.java |
+| `heraldic_shield` | `HERALDIC_SHIELD` | `Block` | src/main/java/dev/otectus/mcakingdoms/heraldry/HeraldicBlocks.java |
+| `kingdom_banner` | `KINGDOM_BANNER` | `Block` | src/main/java/dev/otectus/mcakingdoms/heraldry/HeraldicBlocks.java |
+| `seal_press` | `SEAL_PRESS` | `Block` | src/main/java/dev/otectus/mcakingdoms/heraldry/HeraldicBlocks.java |
+
+### Items (7)
 
 | id | field | type | declared in |
 |---|---|---|---|
 | `book_of_kingdoms` | `BOOK_OF_KINGDOMS` | `Item` | src/main/java/dev/otectus/mcakingdoms/item/ModItems.java |
+| `court_noticeboard` | `COURT_NOTICEBOARD` | `Item` | src/main/java/dev/otectus/mcakingdoms/item/ModItems.java |
+| `heraldic_shield` | `HERALDIC_SHIELD` | `Item` | src/main/java/dev/otectus/mcakingdoms/item/ModItems.java |
+| `kingdom_banner` | `KINGDOM_BANNER` | `Item` | src/main/java/dev/otectus/mcakingdoms/item/ModItems.java |
+| `kingdom_charter` | `KINGDOM_CHARTER` | `Item` | src/main/java/dev/otectus/mcakingdoms/item/ModItems.java |
+| `seal_press` | `SEAL_PRESS` | `Item` | src/main/java/dev/otectus/mcakingdoms/item/ModItems.java |
 | `village_ledger` | `VILLAGE_LEDGER` | `Item` | src/main/java/dev/otectus/mcakingdoms/item/ModItems.java |
+
+### Block entities (1)
+
+| id | field | type | declared in |
+|---|---|---|---|
+| `heraldic` | `HERALDIC` | `BlockEntityType<HeraldicBlockEntity>` | src/main/java/dev/otectus/mcakingdoms/heraldry/HeraldicBlocks.java |
 
 ### Command Argument Type (1)
 
@@ -105,13 +131,13 @@ _No datagen providers detected — assets and data JSON are hand-written._
 
 | kind | count |
 |---|---|
-| blockstates | 0 |
-| block models | 0 |
-| item models | 2 |
-| block textures | 0 |
-| item textures | 2 |
-| recipes | 2 |
-| block loot tables | 0 |
+| blockstates | 4 |
+| block models | 4 |
+| item models | 8 |
+| block textures | 9 |
+| item textures | 9 |
+| recipes | 7 |
+| block loot tables | 4 |
 | block tags | 0 |
 | item tags | 0 |
 | biome modifiers | 0 |
@@ -121,12 +147,22 @@ Run `check_mod.py` for a full consistency check (missing models, lang keys, text
 
 <!-- MODMAP:AUTO:END — everything below is hand-maintained and preserved -->
 
+
 ## Current focus
 
-0.3.0 on the local `release/0.3.0` branch (not pushed) implements the 2026-10-27 review handoff (F01–F17, A01, A02).
-`docs/Completion-Ledger.md` maps every finding, and every historical audit item, to its commit, tests and disposition.
-`build/v030-evidence/` holds the work plan, Gradle logs, the F13 profile, the language and Book update scripts and the
-runtime evidence. Companion publishing (MCA Quests 1.7.2, the MCA Reputation outbox handoff) waits for its owner.
+0.3.0 on the local `release/0.3.0` branch (not pushed) implements two handoffs of 2026-10-27: the review findings
+(F01–F17, A01, A02; `docs/Completion-Ledger.md`) and the audit handoff (`MCAKingdoms_Audit_and_Implementation_Handoff_2026-10-27.md`):
+H01–H12, the P01–P08 reconciliation (`docs/Roadmap-Delta-Ledger.md`), and the approved A dynasty (`politics/dynasty/`),
+B heraldry and charters (`heraldry/`, `document/`), C MCA Capitals read bridge (`compat/capitals/`) and D development
+(`development/`). Status per item: `docs/audit-implementation-status.md`; tests: `docs/testing/0.3.0/`. The audit work is
+uncommitted on top of `b0b40b4`. `build/v030-evidence/` holds the work plans, logs, language tables
+(`audit/lang/t_*.py` applied by `audit/lang/apply.py`) and runtime evidence. Companion publishing (MCA Quests 1.7.2,
+the MCA Reputation outbox handoff) waits for its owner. NeoForge (E) is out of scope.
+
+The Recruits: Living Villages integration (`MCAKingdoms_Recruits_Living_Villages_Integration_Plan.md`, requested as
+"0.2.1" and shipped inside 0.3.0) is also uncommitted on that branch: `compat/livingvillages/`, the `Lv*` mixins,
+`interaction/LivingVillagesTasks`, `docs/Living-Villages-Integration.md`. `build/lv-evidence/` holds the audited jar, its
+decompiled source and symbol map, the language and Book tables, and the packaged runs (`runtime/lv-*`, `logs/`).
 
 The 0.2.0 manuscript interface (`docs/Book-Interface-Design.md`) and the usability record
 (`docs/Usability-Implementation-Record.md`) remain the design references for every screen.
@@ -138,7 +174,10 @@ The 0.2.0 manuscript interface (`docs/Book-Interface-Design.md`) and the usabili
 - [ ] After that, remove the runtime `ultima_kingdoms` aliases here and in the companions in one coordinated release. The
   on-disk migration (`persistence/LegacyRename`) stays.
 - [ ] Reference-aware compaction for the collections that still refuse at their bound (`docs/Capacity-and-Maintenance.md`).
-- [ ] Key the remaining English result sentences produced inside the political, mobilization and campaign services.
+- [x] Key the remaining English result sentences produced inside the political, mobilization and campaign services (H03).
+- [ ] Delegated crown actions with MCA Capitals, once Capitals publishes a mutation API (`docs/Capitals-Upstream-API-Proposal.md`).
+- [ ] Deferred from the audit handoff: JEI hand-off, Map Atlases link, physical caravans, inter-house mediation, the
+  optional funeral contract; human usability sessions and the D performance matrix (`docs/audit-implementation-status.md`).
 
 ## Decisions
 
@@ -166,10 +205,11 @@ The 0.2.0 manuscript interface (`docs/Book-Interface-Design.md`) and the usabili
 - **Village identity is the structure start; reconciliation merges fragments** into the record holding it (D1–D6 in
   `docs/MCAKingdoms-Village-Identity-Diagnosis-and-Plan.md`); compare stored settlement ids through `resolveSettlementId`.
 - **Reload outcomes belong to one attempt** (`data/ReloadReport`). Six domains validate while the reload prepares, so a
-  rejection there fails the whole reload; civic rules and world-context selectors reject domain-locally at apply and keep
-  their previous snapshot. `/kingdoms reload`, Reload server definitions and Server health all read the same attempt.
+  rejection there fails the whole reload; civic rules, world-context selectors, dynasty definitions (succession laws and
+  court ranks) and development templates reject domain-locally at apply and keep their previous snapshot. `/kingdoms reload`, Reload server definitions and Server health all read the same attempt.
 - **Kingdom Tasks protocol 4** (`interaction/InteractionNetwork`): the authorized task index (`INDEX`, now with group and
-  availability) is searched on the client in the player's language; record choices (`FILTER`) on the server in the three
+  availability; each distinct unavailability reason is sent once in `reasons`, without the English fallbacks the client
+  translates itself, and entries name it by position `q`) is searched on the client in the player's language; record choices (`FILTER`) on the server in the three
   bundled languages. `START` returns the start view (`interaction/Suggestions`); replies carry the confirm label, a status
   (`done`, `waiting`, `refused`, `unknown`, or `read` for read-only tasks) and a Book topic. Handlers return a typed
   `ActionRegistry.Outcome` (applied, pending, refused, unknown, read); `CHECK` asks the task's registered `Probe` and never
@@ -226,6 +266,14 @@ The 0.2.0 manuscript interface (`docs/Book-Interface-Design.md`) and the usabili
 - **Political presentation** (A02): `politics/OfficePresentation` diffs offices on `PoliticalCommittedEvent`; notices are
   bounded (16 queued, 20 ticks apart) and audience-filtered; badges go `TRACKING_ENTITY_AND_SELF` only.
   `client/PoliticalPresentation` draws an additive line above the name tag and never touches names.
+- **Living Villages is reflection-only** (`compat/livingvillages/LvAccess` resolves every member by exact name and
+  signature; nothing is on the compile classpath). `mixin/LvGate` applies the `@Pseudo` `Lv*` mixins only to the audited
+  1.1.0 jar (SHA-256) with Recruits 1.15.2, and `LvResidentGuardMixin` only in production, because its redirects name
+  SRG methods. `LvCompat` is the one capability snapshot for tasks, the Book, status and every service. The bridge store
+  (`mcakingdoms_living_villages`, JSON schema 1 in NBT, atomic) journals intent before a provider write and acknowledges
+  it at the next Overworld save, once Living Villages' own data is no longer dirty. Realms are not kingdoms: a realm is a
+  provider faction with a stable id, a kingdom represents one only through an operator association
+  (`api/politics/PoliticalPartyRef`). Policies are pure functions in `LvPolicy` (unit-tested).
 - **Portable acceptance** (F16): `tools/test/environment.py` resolves the EULA, installation, pack, Java, Xvfb and
   wrapper from `MCAKINGDOMS_*` variables or the ignored `tools/test/local-environment.json`. Historical provider-patch
   checks live in `tools/history/`.
@@ -238,12 +286,28 @@ The 0.2.0 manuscript interface (`docs/Book-Interface-Design.md`) and the usabili
   isolated fixture config before launch, the scenario no longer toggles it, and it asserts the native `isUnderSiege` flag
   immediately after `setUnderSiege`. On 2026-10-27 the packaged R3 sequence passed all five boots (r3, restart, Recruits absent, reinstalled,
   future schema) in three runs on jar `812e3e41`, three on the pre-fix `d0f578bd` and one on the release jar `0dd679e4`; the
-  saved native siege reached history every time (`build/v030-evidence/runtime/`). The earlier failure was intermittent, so these passes support the
-  race explanation rather than prove it; keep the immediate siege-flag assertion.
+  saved native siege reached history every time (`build/v030-evidence/runtime/`). The audit handoff (H01) also routed
+  warfare reads through `WarfareConfig.enabled()`, and on 2026-10-28 `r3` passed 20 consecutive packaged runs on one
+  build, five boots each (`build/v030-evidence/audit/runtime/final-r3-*`). The earlier failure was intermittent, so these
+  passes support the race explanation rather than prove it; keep the immediate siege-flag assertion.
 - **Companion contract unpublished.** The public MCA Quests 1.7.1 source lacks `institutionalCompletionConsumer()`; the
   validated pack jar was built from local work. Kingdoms reports `legacy_consumer_contract` and refuses paid workshop jobs.
-- Advancement, recipe-book and statistics progress recorded under `ultima_kingdoms:` is not migrated (the
-  welcome advancement can repeat once; recipes unlock again on holding the items).
+- Advancement and statistics progress recorded under `ultima_kingdoms:` is migrated only when an operator turns on
+  `migration.legacyProgress` (H09, `persistence/LegacyProgress`); recipe-book entries are never rewritten and unlock
+  again when the items are held.
 - The R1–R3 provider patches under `docs/history/provider-patches/` still name `ultima_kingdoms`; they are a record and
   must not be applied. Their old verification lives in `tools/history/verify_r2_provider_exports.py`.
-- Some result sentences inside the political, mobilization and campaign services are still English (F14 residual).
+- **Living Villages limits.** Its live wars and abstract sieges exist only in memory, so after a restart the bridge
+  continues a recorded war as an abstract siege. Its map markers go to every player. Road grading between its own
+  buildings and the fixed layout of command-founded villages are not checked by `protectExternalBuildings`. Development
+  runs cannot apply the resident guard (SRG names); use the packaged `lv` phases.
+- Generated-section heuristics: the language row counts only `en_us`, `es_es`, `zh_cn` files (each holds every key), and
+  "Mixins: no" is a miss (see Decisions).
+- **0.3.0 audit decisions.** Every A–D feature defaults to doing nothing on upgraded worlds (law Manual only,
+  `development.mode = OFF`); Capitals is read-only; the development store is written only above `OFF`, and under Manual
+  only the dynasty store records just each throne's ruler and, for a vacancy, a case left to officials (with a memorial
+  after a death); test seams
+  `DevelopmentMode.overrideForTests`, `WarfareConfig.overrideEnabledForTests` and `DynastyService`'s explicit constructor
+  replace config rewrites in tests. GameTest worlds generate no natural villages
+  (`src/gameTest/resources/data/minecraft/worldgen/structure_set/villages.json`, frequency 0): the village identity
+  tests use random coordinates, and a real village beside one once took its record.

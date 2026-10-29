@@ -6,7 +6,7 @@ import net.minecraftforge.fml.ModList;
 public final class InteractionTasks {
     private static boolean initialized;
     public static synchronized void init(){if(initialized)return;initialized=true;
-        hints();BasicTargets.init();HelpTasks.init();CoreTasks.init();ResidenceTasks.init();PoliticalTasks.init();CivicTasks.init();StandingTasks.init();WarfareTasks.init();EvolutionTasks.init();ActionRegistry.targets("scope",c->{var values=new java.util.ArrayList<>(c.choices("scenario"));values.addAll(c.choices("obligation"));return values;});
+        hints();BasicTargets.init();HelpTasks.init();CoreTasks.init();ResidenceTasks.init();PoliticalTasks.init();CivicTasks.init();StandingTasks.init();WarfareTasks.init();EvolutionTasks.init();CapitalsTasks.init();DocumentTasks.init();DynastyTasks.init();DevelopmentTasks.init();LivingVillagesTasks.init();ActionRegistry.targets("scope",c->{var values=new java.util.ArrayList<>(c.choices("scenario"));values.addAll(c.choices("obligation"));return values;});
         NextSteps.init();Requirements.init();}
     private InteractionTasks(){}
     private static Component hint(String kind,String fallback,Object... args){return ActionRegistry.tr("interaction.mcakingdoms.hint."+kind,fallback,args);}
@@ -15,7 +15,7 @@ public final class InteractionTasks {
         var version=ModList.get().getModContainerById("recruits").map(m->m.getModInfo().getVersion().toString());
         if(version.isEmpty())return java.util.Optional.of(Unavailable.PROVIDER_MISSING.explain(hint("recruits","Recruits 1.15.2")));
         if(!version.get().equals("1.15.2"))return java.util.Optional.of(Unavailable.PROVIDER_UNSUPPORTED.explain(hint("recruits.version","Recruits %s (the integration is audited for 1.15.2)",version.get())));
-        if(!dev.otectus.mcakingdoms.warfare.WarfareConfig.ENABLED.get()||!dev.otectus.mcakingdoms.warfare.WarfareConfig.MILITARY.get())
+        if(!dev.otectus.mcakingdoms.warfare.WarfareConfig.enabled()||!dev.otectus.mcakingdoms.warfare.WarfareConfig.MILITARY.get())
             return java.util.Optional.of(Unavailable.DISABLED.explain(hint("military","military actions")));
         return java.util.Optional.empty();
     }
@@ -31,9 +31,9 @@ public final class InteractionTasks {
         ActionRegistry.targetHint("nearby_npc",c->hint("nearby_npc","No contact is close enough. Stand within %s blocks of them with a clear line of sight.",dev.otectus.mcakingdoms.civic.CivicConfig.CONTACT_RANGE.get()));
         ActionRegistry.targetHint("organization",c->Unavailable.CONTENT_MISSING.explain(hint("organization","no guild or organization definitions are loaded from data packs")));
         ActionRegistry.targetHint("native_faction",c->recruitsUnavailable().<Object>map(r->r).orElse(hint("native_faction","No native factions are known. A Recruits faction team must exist.")));
-        ActionRegistry.targetHint("campaign",c->!dev.otectus.mcakingdoms.warfare.WarfareConfig.ENABLED.get()?Unavailable.DISABLED.explain(hint("warfare","warfare"))
+        ActionRegistry.targetHint("campaign",c->!dev.otectus.mcakingdoms.warfare.WarfareConfig.enabled()?Unavailable.DISABLED.explain(hint("warfare","warfare"))
                 :hint("campaign","No campaigns are known to you. Declare one from the War Room of a settlement you can see."));
-        ActionRegistry.targetHint("accord",c->!dev.otectus.mcakingdoms.warfare.WarfareConfig.ENABLED.get()?Unavailable.DISABLED.explain(hint("warfare","warfare"))
+        ActionRegistry.targetHint("accord",c->!dev.otectus.mcakingdoms.warfare.WarfareConfig.enabled()?Unavailable.DISABLED.explain(hint("warfare","warfare"))
                 :hint("accord","No accords are known to you. Accords are proposed from a settlement's War Room."));
         ActionRegistry.targetHint("deployment",c->recruitsUnavailable().<Object>map(r->r).orElse(hint("deployment","You have no native deployments. Deploy a recruit first.")));
         ActionRegistry.targetHint("site",c->!dev.otectus.mcakingdoms.warfare.WarfareConfig.WORLD_CONTEXT.get()?Unavailable.DISABLED.explain(hint("world","world sites and routes"))

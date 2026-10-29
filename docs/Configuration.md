@@ -16,7 +16,7 @@ Presets for a peaceful and a warfare-focused pack are in [docs/presets](presets/
 
 ## `mcakingdoms-common.toml` — discovery, identity, founding, residence and political presentation
 
-Owner: `config/McaKingdomsConfig`. 22 keys.
+Owner: `config/McaKingdomsConfig`. 47 keys.
 
 | Key | Default | Allowed | Applies | Meaning |
 | --- | --- | --- | --- | --- |
@@ -42,6 +42,41 @@ Owner: `config/McaKingdomsConfig`. 22 keys.
 | `politics.openFounding` | `true` | — | live | A player whose recorded civic residence is in a kingdom may found that kingdom's first government, with the residence as capital and themselves as leader. Operators can always found. Players record a residence themselves with Register my residence (see `civicIdentity.playerRegistration`); operators (`/kingdoms citizen setresidence`, Set civic residence) and addons can also set one. Visiting, sleeping and trading alone do not. |
 | `politics.politicalNotices` | `true` | — | live | Send committed foundings, accessions, vacancies and confirmed-death memorials to players who turned notices on in their own settings (off by default on each client). Only public facts are announced, once each; a local office is announced only to players who know its settlement; private mandates and proposals are never announced. Off: nothing is sent. |
 | `politics.officeBadges` | `true` | — | live | Send each player the public offices of holders their client is tracking, for the badge line above them. Nothing is sent for entities a player is not tracking. Off: no badges are sent. Person pickers in Kingdom Tasks name public offices either way. |
+
+### 0.3.0 additions: migration, MCA Capitals, heraldry, dynasty and development
+
+Every one of these is safe by default on new and upgraded worlds: no law of succession, construction, economy or Capitals
+mapping changes anything until an operator or a kingdom's leader turns it on.
+
+| Key | Default | Allowed | Applies | Meaning |
+| --- | --- | --- | --- | --- |
+| `migration.legacyProgress` | `false` | — | start | Once per world, before players load: move advancement and statistic progress recorded under the pre-rename namespace `ultima_kingdoms:` to `mcakingdoms:`. Each changed player file is kept as `<file>.ultima-bak` first. Recipe-book entries are not rewritten. |
+| `capitals.interop` | `PER_KINGDOM` | `PER_KINGDOM`, `ALL_READ_ONLY` | live | With MCA Capitals installed: `PER_KINGDOM` lets Capitals govern the crown of each kingdom whose village is one of its governing capitals (MCA: Kingdoms then refuses crown actions there and keeps the civic layer); other kingdoms keep their MCA: Kingdoms governments. `ALL_READ_ONLY` keeps every crown action read-only, as before 0.3.0. Capitals is only read. Ignored without Capitals. See [Capitals interoperability](Capitals-Interoperability.md). |
+| `heraldry.enabled` | `true` | — | live | Kingdom banners, shields and noticeboards bind to a kingdom when placed, and officials seal charters at a seal press. Off: new placements stand for no kingdom and no charter is sealed or revoked; existing records stay readable and the items still exist. |
+| `dynasty.enabled` | `true` | — | live | Dynastic succession and the court. Every government starts with the law Manual only, which changes nothing; nothing happens until a leader or operator adopts another law. Off: no law is adopted, no succession case opens or advances and no title is granted; records stay readable. |
+| `dynasty.acceptanceTicks` | 72000 | 1200–2400000 | live | Game ticks a player heir has to accept or decline the crown before the succession waits for review (three Minecraft days). |
+| `dynasty.mourningTicks` | 24000 | 0–2400000 | live | Game ticks a kingdom mourns a ruler whose death was observed: its pages say so and its banners darken. Shown only; nobody is changed. 0 turns mourning off. |
+| `dynasty.claimCooldownTicks` | 24000 | 0–2400000 | live | Game ticks after a claim is decided before the same person may file the same kind of claim again (an appeal). |
+| `dynasty.announcements` | `true` | — | live | Tell a kingdom's connected officials when its succession law changes, a succession opens under it, someone renounces or declines, and a succession waits for review. The death or abdication itself is already a political notice; the request to an heir or a council is sent either way. |
+| `dynasty.legitimacy.lawWeight` | 2 | 0–10 | live | Legitimacy points for a ruler seated under the kingdom's law of succession. Legitimacy is a reading only; it changes no authority. |
+| `dynasty.legitimacy.electionWeight` | 2 | 0–10 | live | Points for a ruler chosen by the government's election. |
+| `dynasty.legitimacy.councilWeight` | 1 | 0–10 | live | Points for a ruler the council confirmed. |
+| `dynasty.legitimacy.lineageWeight` | 1 | 0–10 | live | Points for an heir by a family relation MCA records. |
+| `dynasty.legitimacy.appointmentWeight` | 1 | 0–10 | live | Points for a ruler seated by the officials or as the founder. |
+| `dynasty.legitimacy.recognitionWeight` | 1 | 0–10 | live | Points when the kingdom is party to an agreement in force. |
+| `dynasty.legitimacy.governanceWeight` | 1 | 0–10 | live | Points when at least two other officials are seated. |
+| `dynasty.legitimacy.contestWeight` | 2 | 0–10 | live | Points subtracted for each open contest of the succession, at most two. |
+| `development.mode` | `OFF` | `OFF`, `OBSERVE`, `PROJECTS`, `MANAGED_GROWTH`, `FULL_ECONOMY` | live | How far settlement development may act; each mode includes the ones before it. `OFF`: nothing is planned, saved or built. `OBSERVE`: pages explain development from verified buildings and completed works. `PROJECTS`: officials post public works players fund with real deliveries; a funded work is a milestone, nothing is built. `MANAGED_GROWTH`: funded works with a small template are built on their surveyed plot in settlements that opted in, a few blocks at a time, in loaded chunks only. `FULL_ECONOMY`: adds an abstract, labelled goods ledger and capped abstract trade between settlements of kingdoms with an agreement in force; no real item or coin is created or moved. Lowering the mode pauses work and keeps every record. |
+| `development.constructionPaused` | `false` | — | live | Pause all construction; funding and records continue. |
+| `development.economyPaused` | `false` | — | live | Pause deliveries, abstract production and abstract trade; construction continues. |
+| `development.blocksPerPass` | 4 | 1–32 | live | Most blocks construction places each second across the whole server. |
+| `development.maxProjects` | 64 | 1–512 | live | Most open works on the server at once. |
+| `development.projectsPerSettlement` | 4 | 1–16 | live | Most open works in one settlement at once. |
+| `development.tradeCap` | 8 | 0–64 | live | Most abstract units of one commodity two settlements trade per Minecraft day (`FULL_ECONOMY`). 0 turns trade off. |
+| `development.homeProtectionRadius` | 8 | 0–32 | live | Blocks around a player's protected home (their bed) that no construction touches. |
+| `development.dimensions` | `["minecraft:overworld"]` | dimension ids | live | Dimensions where construction may happen; others are never built in. |
+
+There is no tax, wallet or currency setting: no payment provider is integrated, so works are funded with items only.
 
 With the defaults, a point-of-interest cluster counts only with at least five points, a bed or bell among them, and near the surface. Generated villages are recognized from their structure regardless of those three rules.
 
@@ -141,15 +176,48 @@ World evolution is **off for every world** until an operator opts that world in 
 | `digestInterval` | 24000 | 1200–240000 | Ticks between opportunity digests for subscribed players (default 20 minutes, one Minecraft day). |
 | `autoEligibleRegions` | `true` | — | Treat every settlement of a kingdom with a government as an eligible region unless an operator pauses it. It does not opt a world in. |
 
-## `mcakingdoms-integrations-common.toml` — kingdom gates for addon content
+## `mcakingdoms-integrations-common.toml` — kingdom gates and Living Villages
 
-Owner: `integration/IntegrationConfig`. 3 keys, section `kingdomGating`.
+Owner: `integration/IntegrationConfig`. 27 keys in two sections: `kingdomGating` (3) and `livingVillages` (24).
+
+### Section `kingdomGating`
 
 | Key | Default | Allowed | Applies | Meaning |
 | --- | --- | --- | --- | --- |
 | `enabled` | `true` | — | live | Kingdom gates for addon content: the `mcakingdoms:kingdom` MCA Quests condition and conversation `kingdom_gate` topics. Off makes every gate answer no. |
 | `unknownKingdomPolicy` | `DENY` | `DENY`, `ALLOW` | reload | What a gate answers when the kingdom cannot be determined, for MCA: Kingdoms datapack gates (`kingdom_gates/`) and MCA Quests conditions that omit `when_unknown`. A predicate that states `when_unknown` keeps it. Predicates an addon parses itself through `KingdomGateApi` keep that API's `DENY` default. |
 | `cacheBySettlementRevision` | `true` | — | — | Reserved. No current adapter caches settlement contexts, so it has no effect; every check reads current records. |
+
+### Section `livingVillages`
+
+The [Recruits: Living Villages integration](Living-Villages-Integration.md). It is active only with Recruits 1.15.2 and the audited Living Villages 1.1.0 jar; with any other build, saved bridge records stay read-only and nothing new is bound. Turning a switch off never erases bindings, wars, agreements or residents; it stops new operations of that kind.
+
+| Key | Default | Allowed | Applies | Meaning |
+| --- | --- | --- | --- | --- |
+| `enabled` | `true` | — | live | Use the integration when the supported versions are installed. Off: every hook leaves Living Villages to its own behaviour until it is turned on again. A server that started with it off starts the bridge at its next start. |
+| `autoBindNativeVillages` | `true` | — | live | Give every unambiguous Living Villages village one settlement, importing an existing world in bounded batches. Ambiguous matches wait for an operator. Off: villages with no record yet are not bound; existing bindings stay. |
+| `autoCreateRealmRecords` | `true` | — | live | Keep a realm record for every Living Villages faction, including a player faction whose Ledger is not placed yet (a realm only, with no settlement). |
+| `preserveExistingNames` | `true` | — | live | An existing settlement bound to a Living Villages village keeps its name, and the Living Villages name is kept on the binding. Off: an unlocked settlement takes the Living Villages name when no other settlement holds it, keeping its own as an alias. A locked name is always kept. |
+| `adoptOrdinaryVillagesAutomatically` | `false` | — | live | Place eligible generated villages under Living Villages management on their own, at most one per reconciliation interval, by the same preview as the operator task (no blockers, not a capital seat). Off: only through *Enable Living Villages management here*. |
+| `allowAiVsAiWars` | `true` | — | live | Let AI realms fight each other where Living Villages' rules and MCA: Kingdoms' warfare switches allow. |
+| `playerTargetPolicy` | `PROVIDER_AND_KINGDOMS` | `PROVIDER_AND_KINGDOMS`, `PROVIDER_ONLY` | live | `PROVIDER_AND_KINGDOMS`: Living Villages' own exclusions plus MCA: Kingdoms' offline-defender protection for player-led targets (`requireDefenderOnline` in the warfare file). `PROVIDER_ONLY`: Living Villages' exclusions alone. |
+| `aiRealmCapitalPolicy` | `ALLOW_UNLESS_PROTECTED` | `ALLOW_UNLESS_PROTECTED`, `PROTECT_ALL` | live | `ALLOW_UNLESS_PROTECTED`: an ordinary AI realm's capital can be attacked. `PROTECT_ALL`: no realm capital can be. |
+| `respectExistingCapitalProtection` | `true` | — | live | Honour the warfare file's `protectCapitals` for a kingdom's capital seat that is also a Living Villages village. |
+| `aiTreatyDecisions` | `true` | — | live | AI realms accept or refuse proposed agreements at once, by the recorded policy. Off: an AI realm does not answer by itself; only ratifying officials of a kingdom associated with it for diplomacy can sign for it. |
+| `nativeRelationArbitration` | `true` | — | live | Living Villages' periodic relation step cannot overturn an agreement in force; the held-back change is counted. |
+| `minimumTruceTicks` | 24000 | 0–2400000 | live | Game ticks after a peace or ceasefire before the same realms may fight again (one Minecraft day). |
+| `persistentResidents` | `true` | — | live | Keep the residents of integrated villages as the same people: Living Villages may not discard or respawn them when players leave, at promotion, at cleanup or to balance its counts. Also decides whether the start-up check below applies. |
+| `mcaResidents` | `true` | — | live | With MCA Reborn installed, new residents of integrated villages are created through MCA's villager factory (either sex, MCA genetics and names) instead of vanilla villagers. |
+| `automaticRecruitmentOfProtectedResidents` | `false` | — | live | Let Living Villages turn a protected resident (married, with family, holding an office, or named by a player) into a soldier or worker on its own. Off keeps them in their role. |
+| `constructionInAdoptedVillages` | `false` | — | live | Let Living Villages build, flatten, dig, place its lectern or restock livestock in a village placed under its management deliberately. Off keeps every existing building, field and animal as it is. |
+| `protectExternalBuildings` | `true` | — | live | Living Villages may not found a natural village, or choose a spot for a new building, on another settlement's ground, a player's protected home, or where a block entity of someone else's already stands (a bed, chest, barrel, furnace, lectern or sign); it tries another spot. Its existing buildings, their upgrades and its roads are its own. |
+| `companionContext` | `true` | — | live | Give installed MCA companions the verified village, realm and war context (MCA Conversations and Quests context values, MCA: Crime jurisdiction), and grant the kingdom standing a supply delivery earns. |
+| `deduplicateNotifications` | `true` | — | live | Living Villages announces its own wars, sieges, battles and conquests. On: MCA: Kingdoms does not repeat them and announces agreements, breaches, cessions, capital changes, defeats and adoptions. Off: it announces those too. Each announcement reaches a player once, after the save that made it durable. |
+| `changedRecordsPerBatch` | 8 | 1–64 | live | Changed village records reconciled per batch. |
+| `batchIntervalTicks` | 20 | 1–1200 | live | Ticks between change batches. |
+| `reconciliationIntervalTicks` | 200 | 20–24000 | live | Ticks between bounded checks of known bindings for missed changes, agreement upkeep and automatic adoption. |
+| `matchDistance` | 48 | 0–256 | live | How far, in blocks, an existing settlement's anchor may be from a village centre and still be taken for the same place, when its bounds do not already contain the centre. |
+| `allowUnprotectedResidents` | `false` | — | start | Operator acknowledgement: start a world that has residents of integrated villages even though their protection hooks are not active (another Living Villages build). Living Villages may then discard those residents. Off: such a world refuses to start, with the reason in the log. |
 
 ## `mcakingdoms-townstead-common.toml` — Townstead adapter
 

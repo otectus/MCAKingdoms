@@ -67,6 +67,9 @@ public final class WarfareNetwork {
         if(!SettlementKnowledge.get(server).visible(viewer,settlement.id()))throw new IllegalArgumentException("Settlement undiscovered");
         var campaigns=CampaignService.get(server);
         var sections=new LinkedHashMap<String,List<Component>>(campaigns.roomSections(viewer,settlement.id()));
+        // A Recruits: Living Villages village: the realm in control, the recognized government and the realms' own wars.
+        var realms=dev.otectus.mcakingdoms.compat.livingvillages.LvPresentation.warRoom(server,viewer,settlement.id());
+        if(!realms.isEmpty())sections.put("realms",realms);
         var orders=new ArrayList<Component>();
         try{var mobilization=MobilizationEvents.get(server).statusLines(viewer);
             orders.add(mobilization.isEmpty()?Component.translatableWithFallback("warfare.mcakingdoms.room.orders.none","You have no temporary troop orders. A temporary order restores the recruit's own orders when it ends.")
@@ -75,7 +78,7 @@ public final class WarfareNetwork {
         catch(IllegalArgumentException unavailable){orders.add(Component.translatableWithFallback("warfare.mcakingdoms.room.mobilization_unavailable","The Recruits deployment provider is unavailable; retained deployments are not reported as restored."));}
         sections.put("orders",orders);
         var civilian=new ArrayList<Component>();
-        civilian.add(WarfareConfig.ENABLED.get()&&WarfareConfig.CONTRACTS.get()
+        civilian.add(WarfareConfig.enabled()&&WarfareConfig.CONTRACTS.get()
                 ?Component.translatableWithFallback("warfare.mcakingdoms.room.contracts.on","Civilian recovery work is open here when the settlement needs it: Choose civilian recovery work.")
                 :Component.translatableWithFallback("warfare.mcakingdoms.room.contracts.off","Civilian recovery work is turned off on this server."));
         WorldContextApi.get(server).ifPresent(world->{var routes=world.routes(viewer,0,8);civilian.add(Component.translatableWithFallback("warfare.mcakingdoms.room.routes","Known institution routes: %s",routes.size()));
@@ -96,9 +99,11 @@ public final class WarfareNetwork {
         }
         long revision=campaigns.revision();
         var commands=new ArrayList<Command>();
-        for(var link:List.of(new Command("Declare campaign","warfare.declare","military"),
+        var links=new ArrayList<>(List.of(new Command("Declare campaign","warfare.declare","military"),
                 new Command("Propose control agreement","warfare.accord","military"),new Command("Deploy nearby recruits","warfare.muster_nearby","military"),
-                new Command("Choose civilian work","warfare.contract","civilian"),new Command("Browse routes","world.routes","civilian"),new Command("Request resource access","world.resource","civilian"))){
+                new Command("Choose civilian work","warfare.contract","civilian"),new Command("Browse routes","world.routes","civilian"),new Command("Request resource access","world.resource","civilian")));
+        if(!realms.isEmpty())links.add(new Command("War and peace with a realm","warfare.realm_peace","military"));
+        for(var link:links){
             // The same feature check Kingdom Tasks applies, so a link never leads into a form that cannot succeed here.
             var blocked=dev.otectus.mcakingdoms.interaction.ActionRegistry.find(link.value()).map(task->dev.otectus.mcakingdoms.interaction.TaskMeta.availability(task,server))
                     .filter(availability->!availability.available()).map(dev.otectus.mcakingdoms.interaction.TaskMeta.Availability::reason);

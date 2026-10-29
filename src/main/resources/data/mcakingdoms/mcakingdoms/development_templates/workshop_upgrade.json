@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "role": "workshop",
+  "title": "development.mcakingdoms.template.workshop_upgrade",
+  "minimum_mode": "projects",
+  "demand": [
+    {
+      "tag": "minecraft:planks",
+      "count": 32
+    },
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 4
+    }
+  ],
+  "tier_points": 2,
+  "abstract_output": {
+    "tools": 1
+  }
+}

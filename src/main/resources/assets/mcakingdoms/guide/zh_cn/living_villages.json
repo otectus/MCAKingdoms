@@ -1,0 +1,379 @@
+{
+  "schema": 2,
+  "entries": [
+    {
+      "id": "living_villages",
+      "category": "warfare",
+      "task": "villages.here",
+      "title": "Recruits: Living Villages 集成",
+      "summary": "Living Villages 自行运作村庄与军队；MCA: Kingdoms 为这些地方提供统一的身份、政治与历史。",
+      "keywords": [
+        "国度",
+        "living villages",
+        "占领",
+        "文化"
+      ],
+      "blocks": [
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "安装 Recruits 1.15.2 和 Recruits: Living Villages 1.1.0 后，每个 Living Villages 村庄都是一个 MCA: Kingdoms 定居点：它的到达标题、村庄账簿页面、战情室和 Living Villages 界面指的是同一个地方。Living Villages 继续运作其经济、建筑、军队和战斗；MCA: Kingdoms 记录谁掌控各村庄、那里被承认的政府、达成的协议以及发生的事件。"
+        },
+        {
+          "id": "three",
+          "type": "comparison",
+          "alt": "三个独立的事实：王国说明居民的身份；国度是统治的派系；军事控制是此刻掌握村庄的一方。征服只改变控制权。",
+          "columns": [
+            {
+              "title": "王国",
+              "points": [
+                "居民是谁：文化、名字、纹章。",
+                "征服永远不会改变它。"
+              ]
+            },
+            {
+              "title": "国度",
+              "points": [
+                "一个 Living Villages 派系：首都及其村庄。",
+                "两个国度可以同属一种文化，却依然是对手。"
+              ]
+            },
+            {
+              "title": "控制",
+              "points": [
+                "此刻谁掌握这个村庄。",
+                "被占领的村庄在议定割让前保留其被承认的政府。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "p2",
+          "type": "paragraph",
+          "text": "占领不会给城镇改名、替换居民、改变其家庭，也不会改写它的王国。账簿显示掌控它的国度，以及（若不同）被承认的政府；战情室显示该国度的战争，无论是在世界中进行还是在视野之外。"
+        },
+        {
+          "id": "callout",
+          "type": "callout",
+          "tone": "note",
+          "title": "支持的版本",
+          "text": "该集成针对 Recruits 1.15.2 与 Living Villages 1.1.0 发布版 JAR 进行了审计。若组合不同，已保存的记录保持不变，也不会绑定新的村庄；服务器状况与管理员状态会说明原因。"
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "task",
+              "target": "villages.here",
+              "label": "查看你所在的村庄"
+            },
+            {
+              "kind": "guide",
+              "target": "living_villages_wars"
+            },
+            {
+              "kind": "guide",
+              "target": "living_villages_players"
+            },
+            {
+              "kind": "guide",
+              "target": "living_villages_residents"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "living_villages_wars",
+      "category": "warfare",
+      "task": "villages.realm",
+      "title": "国度如何开战",
+      "summary": "AI 国度自行选择战争；服务器规则和生效中的协议决定哪些战争可以发生。",
+      "blocks": [
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "Living Villages 根据距离、实力和敌意为 AI 国度选择目标。在宣战、发起抽象围攻、开始战斗、围攻在世界与模型之间切换或占领村庄之前，MCA: Kingdoms 都会检查同样的规则：战争已开启；没有生效中的和平、停火或同盟；没有正在进行的停战期；受保护的首都不受攻击；由玩家领导的国度的村庄只有在其首领在线时才可被攻击。被拒绝的目标会被跳过，AI 会考虑下一个邻居。"
+        },
+        {
+          "id": "paths",
+          "type": "diagram",
+          "alt": "宣战先发出预告；附近有玩家时战争在世界中进行，否则在视野之外进行，并随玩家来去切换；最终以征服、击退或撤军结束，只记录一次。",
+          "nodes": [
+            {
+              "id": "declared",
+              "label": "宣战",
+              "item": "minecraft:bell"
+            },
+            {
+              "id": "live",
+              "label": "世界中",
+              "item": "minecraft:iron_sword"
+            },
+            {
+              "id": "abstract",
+              "label": "视野外",
+              "item": "minecraft:map"
+            },
+            {
+              "id": "outcome",
+              "label": "一个结果",
+              "item": "minecraft:writable_book"
+            }
+          ],
+          "edges": [
+            {
+              "from": "declared",
+              "to": "live"
+            },
+            {
+              "from": "declared",
+              "to": "abstract"
+            },
+            {
+              "from": "live",
+              "to": "abstract",
+              "label": "玩家离开"
+            },
+            {
+              "from": "abstract",
+              "to": "live",
+              "label": "玩家返回"
+            },
+            {
+              "from": "live",
+              "to": "outcome"
+            },
+            {
+              "from": "abstract",
+              "to": "outcome"
+            }
+          ]
+        },
+        {
+          "id": "p2",
+          "type": "paragraph",
+          "text": "无论在世界与模型之间切换多少次，一场战争始终只有一条记录，因此宣战、奖励和历史都不会重复。重启后，被 Living Villages 遗忘的战争会以其名册上的部队在视野之外继续；不会重新掷骰，也不会授予任何东西。普通的 AI 首都可以被攻击；只要服务器保护首都，王国受保护的首都所在地就不会被攻击。"
+        },
+        {
+          "id": "callout",
+          "type": "callout",
+          "tone": "tip",
+          "title": "服务器设置",
+          "text": "Living Villages 自身的 aiWarEnabled 和 aiWarRequiresEnemy 决定 AI 国度是否会寻找战争。MCA: Kingdoms 另有 political_warfare.enabled 和 militaryActions，以及 livingVillages.allowAiVsAiWars、playerTargetPolicy、aiRealmCapitalPolicy 和 minimumTruceTicks。"
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "task",
+              "target": "warfare.realm_peace",
+              "label": "提议和平或同盟"
+            },
+            {
+              "kind": "guide",
+              "target": "living_villages_players"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "living_villages_players",
+      "category": "warfare",
+      "task": "villages.supply",
+      "title": "以玩家身份参与",
+      "summary": "通过你熟悉的菜单加入军队、参与防守、代表你的国度或王国谈判，并为村庄提供补给。",
+      "blocks": [
+        {
+          "id": "steps",
+          "type": "steps",
+          "items": [
+            {
+              "text": "“打开村庄”会显示你所在村庄的 Living Villages 自带界面。",
+              "link": {
+                "kind": "task",
+                "target": "villages.open"
+              }
+            },
+            {
+              "text": "“加入军队”让你成为成员。成员不是指挥官，加入也绝不会让任何人成为统治者。",
+              "link": {
+                "kind": "task",
+                "target": "villages.join"
+              }
+            },
+            {
+              "text": "“与一个国度的战争与和平”可提议和平、停火、同盟或割让。AI 国度会按自身利益立即答复：它对你的看法、它的实力和损失。由玩家领导的一方必须签署。",
+              "link": {
+                "kind": "task",
+                "target": "warfare.realm_peace"
+              }
+            },
+            {
+              "text": "“提供补给”会把货币或锻造材料交给你所在的村庄；只收取其库存能容纳的数量，其余仍归你。",
+              "link": {
+                "kind": "task",
+                "target": "villages.supply"
+              }
+            },
+            {
+              "text": "“为什么停止增长了？”会告诉你村庄在等什么：床位、下一座建筑所需的钱、土地，或围攻结束。",
+              "link": {
+                "kind": "task",
+                "target": "villages.growth"
+              }
+            }
+          ]
+        },
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "生效的和平会通过 Living Villages 自身结束国度之间的战争：幸存者只返回家园一次，已有的伤亡不会撤销，也没有人会因未发生的征服而获得报酬。随后的停战期会让同样的国度在一段时间内不再交战。周期性的看法变化无法推翻生效中的协议；如果玩家仍在 Recruits 中设置敌对关系，该协议会被记录为违约，并通知双方。"
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "guide",
+              "target": "living_villages"
+            },
+            {
+              "kind": "guide",
+              "target": "living_villages_residents"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "living_villages_residents",
+      "category": "settlements",
+      "task": "villages.here",
+      "title": "Living Villages 村庄的居民",
+      "summary": "在你离开、他们升职以及村庄易主时，整合村庄的居民始终是原来的人。",
+      "blocks": [
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "单独运行时，Living Villages 会在玩家离开时把村庄折算回数字，在玩家返回时生成新的村民，每次升职都替换工人，并删除其计数之外的村民。在 MCA: Kingdoms 整合的村庄中，居民会留在世界里并随区块保存，工人原地升职并保留交易，提供方不再计入的人也会继续在那里生活。安装 MCA Reborn 后，新居民是由 MCA 自己创建的 MCA 人物。"
+        },
+        {
+          "id": "states",
+          "type": "comparison",
+          "alt": "未加载、外出和死亡是不同的：未加载的人依然存在，外出的人保留其住所和工作，只有确认的死亡才意味着一个人的终结。",
+          "columns": [
+            {
+              "title": "未加载",
+              "points": [
+                "其所在区域未加载；他们依然存在，也没有人替代他们。"
+              ]
+            },
+            {
+              "title": "外出",
+              "points": [
+                "跟随玩家或身处其他维度；住所和工作保留。"
+              ]
+            },
+            {
+              "title": "死亡",
+              "points": [
+                "仅限确认的死亡；不明原因的消失会被调查，而不是当作死亡。"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "p2",
+          "type": "paragraph",
+          "text": "已婚者、父母、家庭成员、官员和同伴不会被自动变成工人或士兵；村庄会改从其尚未生成的人力中招募。退回村庄名册的士兵除了装备外，还会保留名字、生命值和状态效果。"
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "guide",
+              "target": "living_villages"
+            },
+            {
+              "kind": "guide",
+              "target": "living_villages_operations"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "living_villages_operations",
+      "category": "operators",
+      "task": "villages.status",
+      "operator": true,
+      "player_task": "villages.here",
+      "title": "Living Villages：导入、收编与恢复",
+      "summary": "现有世界如何导入、如何有意将普通村庄纳入管理，以及如何恢复被中断的记录。",
+      "blocks": [
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "两个模组加载后，现有世界会分小批导入：每个真实村庄会匹配到它本来对应的定居点（先按提供方引用，再按位置，绝不按名称），或以 Living Villages 的名称成为新定居点。尚未放置账簿的玩家派系只算作国度。导入不发放奖励，并把现有控制记录为基准，而不是战斗。有歧义的匹配会列出候选项等你决定。"
+        },
+        {
+          "id": "steps",
+          "type": "steps",
+          "items": [
+            {
+              "text": "检查就绪情况：每项能力及其原因、生效的策略和队列。",
+              "link": {
+                "kind": "task",
+                "target": "villages.status",
+                "operator": true
+              }
+            },
+            {
+              "text": "预览导入，然后决定有歧义的村庄：把每个绑定到候选定居点，或保持独立。",
+              "link": {
+                "kind": "task",
+                "target": "villages.bind",
+                "operator": true
+              }
+            },
+            {
+              "text": "“在此启用 Living Villages 管理”会依据现有的居民和床位收编一个普通村庄，并暂停建造。",
+              "link": {
+                "kind": "task",
+                "target": "villages.adopt",
+                "operator": true
+              }
+            },
+            {
+              "text": "“等待管理员处理的记录”会列出被中断的操作和战争；在桥接层重新检查 Living Villages 后逐一恢复。",
+              "link": {
+                "kind": "task",
+                "target": "villages.recover",
+                "operator": true
+              }
+            }
+          ]
+        },
+        {
+          "id": "callout",
+          "type": "callout",
+          "tone": "warning",
+          "title": "不受支持的版本",
+          "text": "如果世界中已有受保护的居民，而保护钩子无法启用（使用了其他版本的 Living Villages），服务器会在任何改变发生前拒绝启动，并在日志中写明原因。请安装经审计的 JAR，或设置 livingVillages.allowUnprotectedResidents 以接受 Living Villages 可能替换他们。"
+        }
+      ],
+      "commands": [
+        "/kingdoms livingvillages status",
+        "/kingdoms livingvillages inspect <settlement>",
+        "/kingdoms livingvillages migration preview",
+        "/kingdoms livingvillages conflicts",
+        "/kingdoms livingvillages recover <id>"
+      ]
+    }
+  ]
+}

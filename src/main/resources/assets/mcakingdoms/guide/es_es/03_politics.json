@@ -6,12 +6,41 @@
       "category": "politics",
       "title": "Consulta las páginas del reino",
       "summary": "Primero inspecciona; una acción cambia un registro concreto bajo una autoridad concreta.",
-      "body": [
-        "Abre el Registro de aldeas, selecciona un asentamiento conocido y elige Reino. Resumen describe el gobierno; Consejo enumera cargos y mandatos; Acuerdos muestra la diplomacia; Peticiones muestra las solicitudes que puedes ver; Instituciones enumera los lugares reconocidos; Distinciones muestra los galardones; Historial enumera los acontecimientos políticos registrados.",
-        "Elige Acciones en una página del reino, o pulsa {key:tasks} y busca Gobierno. Cada operación admitida tiene su propia tarea y sus propios campos. Los acuerdos, peticiones, instituciones, distinciones, cargos, sucesión, casas, elecciones y regencia usan formularios distintos en lugar de un único selector de acciones genérico.",
-        "El servidor ofrece los registros con nombre que se te permite ver. Una petición sigue siendo privada para quienes pueden verla, los votos son secretos y otro jugador puede recibir una lista distinta. Seleccionar una opción no concede autoridad; el cargo, el mandato, la jurisdicción, el estado actual y las definiciones instaladas se comprueban de nuevo.",
-        "Las tareas con consecuencias terminan en una página de revisión que muestra el reino elegido, las personas, los detalles del registro y las condiciones. Aplicar acción revisada realiza la operación una sola vez. Si el estado del gobierno cambia mientras el formulario está abierto, vuelve a abrir la tarea y revisa el nuevo estado.",
-        "Las elecciones y la regencia tienen tareas propias. Busca Abrir elecciones al liderazgo, Votar en unas elecciones, Cerrar elecciones y contar votos, Nombrar un regente temporal o Finalizar una regencia. Estas tareas aplican la norma constitucional adoptada y nunca deducen la muerte o la incapacidad de alguien porque esté desconectado o sin cargar."
+      "blocks": [
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "Abre el Registro de aldeas, selecciona un asentamiento conocido y elige Reino. Resumen describe el gobierno; Consejo enumera cargos y mandatos; Acuerdos muestra la diplomacia; Peticiones muestra las solicitudes que puedes ver; Instituciones enumera los lugares reconocidos; Distinciones muestra los galardones; Historial enumera los acontecimientos políticos registrados."
+        },
+        {
+          "id": "diagram",
+          "type": "image",
+          "texture": "mcakingdoms:textures/gui/guide/government_chain.png",
+          "width": 192,
+          "height": 96,
+          "alt": "Un asentamiento pertenece a un reino; el gobierno del reino tiene la corona, y sus cargos los ocupan personas.",
+          "caption": "Del asentamiento al reino, y al gobierno con sus cargos."
+        },
+        {
+          "id": "p2",
+          "type": "paragraph",
+          "text": "Elige Acciones en una página del reino, o pulsa {key:tasks} y busca Gobierno. Cada operación admitida tiene su propia tarea y sus propios campos. Los acuerdos, peticiones, instituciones, distinciones, cargos, sucesión, casas, elecciones y regencia usan formularios distintos en lugar de un único selector de acciones genérico."
+        },
+        {
+          "id": "p3",
+          "type": "paragraph",
+          "text": "El servidor ofrece los registros con nombre que se te permite ver. Una petición sigue siendo privada para quienes pueden verla, los votos son secretos y otro jugador puede recibir una lista distinta. Seleccionar una opción no concede autoridad; el cargo, el mandato, la jurisdicción, el estado actual y las definiciones instaladas se comprueban de nuevo."
+        },
+        {
+          "id": "p4",
+          "type": "paragraph",
+          "text": "Las tareas con consecuencias terminan en una página de revisión que muestra el reino elegido, las personas, los detalles del registro y las condiciones. Aplicar acción revisada realiza la operación una sola vez. Si el estado del gobierno cambia mientras el formulario está abierto, vuelve a abrir la tarea y revisa el nuevo estado."
+        },
+        {
+          "id": "p5",
+          "type": "paragraph",
+          "text": "Las elecciones y la regencia tienen tareas propias. Busca Abrir elecciones al liderazgo, Votar en unas elecciones, Cerrar elecciones y contar votos, Nombrar un regente temporal o Finalizar una regencia. Estas tareas aplican la norma constitucional adoptada y nunca deducen la muerte o la incapacidad de alguien porque esté desconectado o sin cargar."
+        }
       ],
       "commands": [],
       "task": "politics.read_overview"
@@ -211,6 +240,15 @@
           "text": "Necesitas permiso para proponer en nombre del primer gobierno y un gobierno contraparte definido y disponible. Empieza por el reconocimiento diplomático. Los acuerdos incluidos de hospitalidad, intercambio académico, carta de artesanía y mercado, y ayuda cívica requieren un reconocimiento diplomático activo para que sus condiciones adicionales surtan efecto."
         },
         {
+          "id": "diagram",
+          "type": "image",
+          "texture": "mcakingdoms:textures/gui/guide/diplomacy.png",
+          "width": 192,
+          "height": 96,
+          "alt": "Los estandartes de dos reinos apuntan a un mismo pergamino de acuerdo entre ellos: ambos firman las mismas condiciones revisadas.",
+          "caption": "Un acuerdo, firmado por ambos reinos."
+        },
+        {
           "id": "p2",
           "type": "paragraph",
           "text": "1. Abre Proponer un acuerdo, elige ambos gobiernos y una definición de acuerdo disponible, y escribe unas condiciones claras. La propuesta fija sus condiciones escritas y su duración. Usa Consultar los acuerdos para ver el resultado."
@@ -295,12 +333,76 @@
       "body": [
         "El líder actual abre Designar un sucesor y elige a una persona con nombre que cumpla los requisitos. Consulta el resumen para confirmar a esa persona antes de Abdicar del liderazgo. Designar a alguien no es lo mismo que instalarlo de inmediato.",
         "La abdicación deja vacante el liderazgo. Un gobierno entre dos gobernantes está en interregno, es decir, sin líder actual. El sucesor designado o un operador autorizado pueden confirmar la sucesión de forma explícita; se vuelve a comprobar que cumple los requisitos. La capital, la identidad del reino y los tratados activos continúan, mientras que los mandatos delegados antiguos no sobreviven automáticamente a la vacante.",
-        "La muerte confirmada de un PNJ puede dejar vacante un cargo. Descargarse, ausentarse temporalmente o que un jugador muera y reaparezca no instala automáticamente a otro gobernante. Una vacante sin sucesor designado necesita la reparación admitida de un operador o una norma electoral adoptada explícitamente; el mod no adivina un heredero a partir de los lazos familiares.",
+        "La muerte confirmada de un PNJ puede dejar vacante un cargo. Descargarse, ausentarse temporalmente o que un jugador muera y reaparezca no instala automáticamente a otro gobernante. Con la ley predeterminada, Solo manual, una vacante sin sucesor designado necesita la reparación admitida de un operador o una regla de elección adoptada expresamente, y nada adivina un heredero a partir de los lazos familiares. Un reino que adopta una ley de linaje consulta en cambio los registros familiares de MCA: consulta Leyes de sucesión y herederos.",
         "Usa Registrar una casa política para anotar una etiqueta de casa, un lema y un miembro elegido explícitamente para un gobierno. Es un registro político, no un editor de apellidos ni un sistema genealógico. El matrimonio por sí solo nunca transfiere el reino.",
         "Las elecciones y la regencia temporal se explican en Un mundo en evolución. Requieren una norma adoptada y usan sus propias tareas en Tareas del reino. Durante una regencia activa se conserva el sucesor designado; finaliza esa regencia según sus normas antes de intentar sustituir el acuerdo de sucesión protegido."
       ],
       "commands": [],
       "task": "politics.read_overview"
+    },
+    {
+      "id": "dynasty_succession",
+      "category": "politics",
+      "title": "Leyes de sucesión y herederos",
+      "summary": "La ley de un reino decide su próxima vacante; Solo manual, la predeterminada, no cambia nada.",
+      "body": [
+        "Todo gobierno empieza con la ley Solo manual: una vacante espera a los funcionarios, exactamente como antes. Quien lidera o un operador puede adoptar otra ley con Adoptar una ley de sucesión, pero no mientras haya una sucesión en curso. En la página del reino, Sucesión muestra la ley y la sucesión en curso; los miembros de la corte ven además quién sucedería ahora y por qué.",
+        "Heredero designado y después linaje pone primero al sucesor designado y después a los hijos, nietos y hermanos de quien gobierna tal como los registra el árbol familiar de MCA. Herencia igualitaria lee los mismos parientes sin sucesor designado. Confirmación del consejo añade la confirmación del consejo. Monarquía electiva deja toda vacante a las elecciones del gobierno. Los parientes siguen un orden fijo por persona, porque MCA no registra el orden de nacimiento: nada es aleatorio y no se lee ningún género.",
+        "Cuando se observa la muerte de quien gobierna, o abdica o es destituido, se abre una sucesión que se decide en pocos segundos. Un heredero PNJ adulto y residente del reino ocupa el trono. A un heredero jugador se le ofrece la corona y responde con Responder a una corona ofrecida. Un heredero menor espera bajo una regencia hasta su mayoría de edad verificada: un progenitor jugador vivo gobierna como regente si la regla de transición del reino permite regencias; si no, un operador nombra a uno.",
+        "Un gobernante elegido nunca es sustituido por linaje, y un sucesor elegido por el gobierno siempre va primero. Cuando las pruebas no se pueden verificar, como un aldeano no cargado o un registro familiar ausente, la sucesión espera en lugar de adivinar y vuelve a consultar cuando puede. Revisar una sucesión permite a un funcionario o a un operador consultar de nuevo la ley o dejar la sucesión a los funcionarios. Los reinos cuya corona gobierna MCA Capitals nunca se deciden aquí."
+      ],
+      "commands": [
+        "/kingdoms dynasty status <kingdom>"
+      ],
+      "task": "dynasty.court"
+    },
+    {
+      "id": "court_titles_and_claims",
+      "category": "politics",
+      "title": "Títulos de la corte, reclamaciones y luto",
+      "summary": "Los rangos son ceremoniales; una reclamación cambia la sucesión solo por la decisión registrada de la corona.",
+      "body": [
+        "Un funcionario con la responsabilidad Conceder distinciones concede rangos de la corte con Conceder un título de la corte. Cada reino nombra sus rangos a su manera. Un rango es ceremonial: no concede cargo, permiso, mando de Recruits ni privilegio de Crime. Un jugador acepta primero el rango ofrecido y puede renunciar a él con honor; un rango con tierras nombra un asentamiento del reino.",
+        "Quien está en la línea de sucesión puede renunciar a su lugar. Un jugador puede presentar una reclamación ante la corona: impugnar el orden, pedir ser reconocido como miembro de la casa gobernante o pedir recuperar un lugar al que renunció. La decide un funcionario que nombra cargos o un operador, nunca quien reclama. Cada decisión se conserva, y una reclamación desestimada puede presentarse de nuevo tras una espera.",
+        "La legitimidad es una lectura de la pretensión de quien gobierna a partir de unos pocos registros acotados: cómo ocupó el trono, un parentesco verificado, la confirmación del consejo, los acuerdos vigentes, un consejo con cargos ocupados y las impugnaciones abiertas. No cambia ninguna autoridad. La corte ve sus motivos; los demás ven el nivel.",
+        "Cuando se observa la muerte de quien gobierna, el reino guarda luto durante un día: sus páginas lo indican y sus estandartes se oscurecen. No cambia nada en ningún aldeano ni jugador. Una memoria registra cada reinado que terminó por muerte o abdicación."
+      ],
+      "commands": [],
+      "task": "dynasty.court"
+    },
+    {
+      "id": "heraldry_and_charters",
+      "category": "politics",
+      "title": "Estandartes, sellos y cartas",
+      "summary": "Una carta es oficial solo mientras el registro conserve lo que acredita.",
+      "blocks": [
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "Los estandartes del reino, los escudos heráldicos y los tablones de la corte representan al reino donde se colocan: el asentamiento en el que están o, fuera de los asentamientos, la residencia de quien los coloca. Muestran los colores y el emblema del reino, y quien lidera elige los colores con Elegir los colores de tu reino. Usa un tablón para leer las últimas proclamas y registros públicos del reino."
+        },
+        {
+          "id": "diagram",
+          "type": "image",
+          "texture": "mcakingdoms:textures/gui/guide/heraldry_charter.png",
+          "width": 192,
+          "height": 96,
+          "alt": "El estandarte del reino, luego una prensa de sellos y después una carta con un sello rojo: una carta se sella en una prensa para un registro del reino.",
+          "caption": "Blasón, prensa de sellos, carta sellada."
+        },
+        {
+          "id": "p2",
+          "type": "paragraph",
+          "text": "Un funcionario sella una carta en una prensa de sellos: sostén una carta en blanco a 4 bloques o menos de la prensa y abre Sellar una carta. Una proclama requiere Conceder distinciones, un nombramiento Nombrar funcionarios y un tratado Ratificar acuerdos; quien lidera sella la fundación. El registro anota primero el documento; después la carta lo lleva."
+        },
+        {
+          "id": "p3",
+          "type": "paragraph",
+          "text": "Usa una carta, o Examinar una carta, para consultar el registro. Es oficial mientras se mantenga lo que acredita, oficial pero histórica cuando ya no se mantiene, revocada tras Revocar un documento sellado, y sin verificar cuando ningún registro sellado coincide, como una copia alterada o de otro mundo. Una carta prueba un registro; nunca concede autoridad por sí misma."
+        }
+      ],
+      "commands": [],
+      "task": "documents.inspect"
     },
     {
       "id": "read_political_history",

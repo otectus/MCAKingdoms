@@ -52,7 +52,16 @@ class TranslationCoverageTest {
             Politics.State.values(), Politics.AgreementState.values(), Politics.PetitionState.values(), Politics.Clause.values(),
             AgreementClauseView.Status.values(), PoliticalTransition.ElectionState.values(), PoliticalFact.Correction.values(),
             InstitutionView.Status.values(), CampaignState.Relation.values(), MobilizationSavedData.Phase.values(),
-            OrganizationMembershipSnapshot.Status.values(), OrganizationExplanation.Decision.values());
+            OrganizationMembershipSnapshot.Status.values(), OrganizationExplanation.Decision.values(),
+            dev.otectus.mcakingdoms.document.DocumentLedger.Kind.values(), dev.otectus.mcakingdoms.compat.capitals.CapitalsSavedData.Status.values(),
+            dev.otectus.mcakingdoms.politics.dynasty.DynastySavedData.Status.values(), dev.otectus.mcakingdoms.politics.dynasty.DynastySavedData.Cause.values(),
+            dev.otectus.mcakingdoms.politics.dynasty.DynastySavedData.ClaimKind.values(), dev.otectus.mcakingdoms.politics.dynasty.DynastySavedData.ClaimState.values(),
+            dev.otectus.mcakingdoms.politics.dynasty.DynastySavedData.TitleState.values(), dev.otectus.mcakingdoms.politics.dynasty.Lineage.Relation.values(),
+            dev.otectus.mcakingdoms.politics.dynasty.Lineage.Stage.values(), dev.otectus.mcakingdoms.politics.dynasty.Legitimacy.Level.values(),
+            dev.otectus.mcakingdoms.development.DevelopmentMode.values(), dev.otectus.mcakingdoms.development.DevelopmentSavedData.State.values(),
+            dev.otectus.mcakingdoms.development.DevelopmentSavedData.Provenance.values(), dev.otectus.mcakingdoms.development.DevelopmentTemplate.Role.values(),
+            dev.otectus.mcakingdoms.compat.livingvillages.LvState.Term.values(), dev.otectus.mcakingdoms.compat.livingvillages.LvState.TreatyStatus.values(),
+            dev.otectus.mcakingdoms.compat.livingvillages.LvState.BindingStatus.values(), dev.otectus.mcakingdoms.compat.livingvillages.LvState.OperationKind.values());
     private static final List<String> LOCALES = List.of("en_us", "es_es", "zh_cn");
 
     private static JsonObject lang(String locale) throws IOException {

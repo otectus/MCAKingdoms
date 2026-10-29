@@ -1,0 +1,379 @@
+{
+  "schema": 2,
+  "entries": [
+    {
+      "id": "living_villages",
+      "category": "warfare",
+      "task": "villages.here",
+      "title": "Recruits: Living Villages",
+      "summary": "Living Villages dirige aldeas y ejércitos por su cuenta; MCA: Kingdoms da a esos mismos lugares una identidad, su política y su historia.",
+      "keywords": [
+        "reino",
+        "living villages",
+        "ocupada",
+        "cultura"
+      ],
+      "blocks": [
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "Con Recruits 1.15.2 y Recruits: Living Villages 1.1.0 instalados, cada aldea de Living Villages es un único asentamiento de MCA: Kingdoms: su título de llegada, su página del Libro de la Aldea, su Sala de Guerra y la pantalla de Living Villages son el mismo lugar. Living Villages sigue llevando su economía, edificios, ejército y batallas. MCA: Kingdoms registra quién tiene cada aldea, qué gobierno se reconoce allí, qué se acordó y qué ocurrió."
+        },
+        {
+          "id": "three",
+          "type": "comparison",
+          "alt": "Tres hechos distintos: el reino dice quién es la gente; el reino de Living Villages es la facción que gobierna; el control militar es quién tiene la aldea ahora. La conquista solo cambia el control.",
+          "columns": [
+            {
+              "title": "Reino cívico",
+              "points": [
+                "Quién es su gente: cultura, nombres, heráldica.",
+                "La conquista nunca lo cambia."
+              ]
+            },
+            {
+              "title": "Reino",
+              "points": [
+                "Una facción de Living Villages: una capital y sus aldeas.",
+                "Dos reinos pueden compartir cultura y aun así ser rivales."
+              ]
+            },
+            {
+              "title": "Control",
+              "points": [
+                "Quién tiene la aldea ahora.",
+                "Una aldea ocupada conserva su gobierno reconocido hasta que se acuerde una cesión."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "p2",
+          "type": "paragraph",
+          "text": "La ocupación no cambia el nombre del pueblo, no reemplaza a sus residentes, no cambia sus familias ni reescribe su reino. El Libro muestra el reino que tiene el control y, cuando difiere, el gobierno reconocido; la Sala de Guerra muestra las guerras del reino, se libren en el mundo o fuera de la vista."
+        },
+        {
+          "id": "callout",
+          "type": "callout",
+          "tone": "note",
+          "title": "Versiones compatibles",
+          "text": "La integración está auditada para Recruits 1.15.2 con el JAR publicado de Living Villages 1.1.0. Con cualquier otra combinación, los registros guardados se quedan como están y no se vincula nada nuevo; la Salud del servidor y el estado del operador explican por qué."
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "task",
+              "target": "villages.here",
+              "label": "Leer la aldea en la que estás"
+            },
+            {
+              "kind": "guide",
+              "target": "living_villages_wars"
+            },
+            {
+              "kind": "guide",
+              "target": "living_villages_players"
+            },
+            {
+              "kind": "guide",
+              "target": "living_villages_residents"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "living_villages_wars",
+      "category": "warfare",
+      "task": "villages.realm",
+      "title": "Cómo van a la guerra los reinos",
+      "summary": "Los reinos de IA eligen sus propias guerras; las reglas del servidor y los acuerdos en vigor deciden cuáles pueden ocurrir.",
+      "blocks": [
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "Living Villages elige objetivos para sus reinos de IA según la distancia, la fuerza y la enemistad. Antes de declarar una guerra, iniciar un asedio abstracto, comenzar una batalla, pasar un asedio entre el mundo y el modelo u ocupar una aldea, MCA: Kingdoms comprueba las mismas reglas: la guerra activada, ninguna paz, alto el fuego o alianza en vigor, ninguna tregua en curso, una sede de capital protegida a salvo y la aldea de un reino dirigido por un jugador atacada solo mientras su líder está conectado. Un objetivo rechazado se omite y la IA considera a su siguiente vecino."
+        },
+        {
+          "id": "paths",
+          "type": "diagram",
+          "alt": "Una declaración da aviso; la guerra se libra en el mundo cuando hay jugadores cerca y fuera de la vista en otro caso, cambiando según llegan y se van; termina en conquista, rechazo o retirada, registrada una sola vez.",
+          "nodes": [
+            {
+              "id": "declared",
+              "label": "Declarada",
+              "item": "minecraft:bell"
+            },
+            {
+              "id": "live",
+              "label": "En el mundo",
+              "item": "minecraft:iron_sword"
+            },
+            {
+              "id": "abstract",
+              "label": "Fuera de la vista",
+              "item": "minecraft:map"
+            },
+            {
+              "id": "outcome",
+              "label": "Un resultado",
+              "item": "minecraft:writable_book"
+            }
+          ],
+          "edges": [
+            {
+              "from": "declared",
+              "to": "live"
+            },
+            {
+              "from": "declared",
+              "to": "abstract"
+            },
+            {
+              "from": "live",
+              "to": "abstract",
+              "label": "los jugadores se van"
+            },
+            {
+              "from": "abstract",
+              "to": "live",
+              "label": "los jugadores vuelven"
+            },
+            {
+              "from": "live",
+              "to": "outcome"
+            },
+            {
+              "from": "abstract",
+              "to": "outcome"
+            }
+          ]
+        },
+        {
+          "id": "p2",
+          "type": "paragraph",
+          "text": "Una guerra sigue siendo un solo registro por mucho que pase entre el mundo y el modelo, así que las declaraciones, recompensas e historia nunca se repiten. Tras un reinicio, una guerra que Living Villages olvidó continúa fuera de la vista con las tropas de sus listas; nada se vuelve a sortear ni se concede. Una capital de IA corriente puede ser atacada; la sede de capital protegida de un reino no, mientras el servidor proteja las capitales."
+        },
+        {
+          "id": "callout",
+          "type": "callout",
+          "tone": "tip",
+          "title": "Ajustes del servidor",
+          "text": "Los propios aiWarEnabled y aiWarRequiresEnemy de Living Villages deciden si los reinos de IA buscan guerras. MCA: Kingdoms añade political_warfare.enabled y militaryActions, y livingVillages.allowAiVsAiWars, playerTargetPolicy, aiRealmCapitalPolicy y minimumTruceTicks."
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "task",
+              "target": "warfare.realm_peace",
+              "label": "Proponer paz o una alianza"
+            },
+            {
+              "kind": "guide",
+              "target": "living_villages_players"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "living_villages_players",
+      "category": "warfare",
+      "task": "villages.supply",
+      "title": "Participar como jugador",
+      "summary": "Únete a un ejército, defiende, negocia en nombre de tu reino y abastece aldeas desde los menús que ya usas.",
+      "blocks": [
+        {
+          "id": "steps",
+          "type": "steps",
+          "items": [
+            {
+              "text": "Abrir aldea muestra la pantalla propia de Living Villages para la aldea en la que estás.",
+              "link": {
+                "kind": "task",
+                "target": "villages.open"
+              }
+            },
+            {
+              "text": "Unirse al ejército te hace miembro. Los miembros no son comandantes, y unirse nunca convierte a nadie en gobernante.",
+              "link": {
+                "kind": "task",
+                "target": "villages.join"
+              }
+            },
+            {
+              "text": "Guerra y paz con un reino propone paz, alto el fuego, alianza o cesión. Un reino de IA responde al momento según sus intereses: su opinión de ti, su fuerza, sus pérdidas. Una parte dirigida por un jugador debe firmar.",
+              "link": {
+                "kind": "task",
+                "target": "warfare.realm_peace"
+              }
+            },
+            {
+              "text": "Proporcionar suministros entrega moneda o materiales de herrería a la aldea en la que estás; solo se toma lo que caben en sus almacenes y el resto se queda contigo.",
+              "link": {
+                "kind": "task",
+                "target": "villages.supply"
+              }
+            },
+            {
+              "text": "¿Por qué está parado el crecimiento? te dice qué espera la aldea: camas, dinero para su próximo edificio, terreno o el fin de un asedio.",
+              "link": {
+                "kind": "task",
+                "target": "villages.growth"
+              }
+            }
+          ]
+        },
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "Una paz que entra en vigor termina las guerras de los reinos a través del propio Living Villages: los supervivientes vuelven a casa una vez, las bajas ya sufridas se mantienen y nadie cobra por una conquista que no ocurrió. Después, una tregua impide que los mismos reinos vuelvan a luchar durante un tiempo. Los cambios periódicos de opinión no pueden anular un acuerdo en vigor; si un jugador fija igualmente una relación de enemistad en Recruits, el acuerdo se registra como roto y se avisa a ambas partes."
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "guide",
+              "target": "living_villages"
+            },
+            {
+              "kind": "guide",
+              "target": "living_villages_residents"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "living_villages_residents",
+      "category": "settlements",
+      "task": "villages.here",
+      "title": "Residentes de las aldeas de Living Villages",
+      "summary": "La gente de una aldea integrada sigue siendo la misma cuando te vas, cuando la ascienden y cuando la aldea cambia de manos.",
+      "blocks": [
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "Por sí solo, Living Villages vuelve a convertir una aldea en números cuando los jugadores se van y genera aldeanos nuevos cuando regresan, reemplaza a un trabajador cada vez que asciende y elimina aldeanos que sus cuentas no esperan. En una aldea integrada por MCA: Kingdoms, los residentes permanecen en el mundo y se guardan con su chunk, un trabajador asciende en su sitio y conserva sus intercambios, y una persona que el proveedor deja de contar simplemente sigue viviendo allí. Con MCA Reborn instalado, los residentes nuevos son personas de MCA creadas por el propio MCA."
+        },
+        {
+          "id": "states",
+          "type": "comparison",
+          "alt": "Descargado, ausente y muerto son distintos: una persona descargada sigue existiendo, quien está fuera conserva su hogar y su trabajo, y solo una muerte confirmada pone fin a una persona.",
+          "columns": [
+            {
+              "title": "Descargado",
+              "points": [
+                "Su zona no está cargada; existen y nadie los reemplaza."
+              ]
+            },
+            {
+              "title": "Ausente",
+              "points": [
+                "Siguiendo a un jugador o en otra dimensión; se conservan el hogar y el trabajo."
+              ]
+            },
+            {
+              "title": "Muerto",
+              "points": [
+                "Solo una muerte confirmada; una desaparición sin explicar se investiga, no se llora."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "p2",
+          "type": "paragraph",
+          "text": "Las personas casadas, los padres, los familiares, los cargos y los compañeros no se convierten automáticamente en trabajadores ni soldados; la aldea recluta en su lugar de su propia mano de obra no generada. Los soldados que se retiran a las listas de la aldea conservan su nombre, su salud y sus efectos, además de su equipo."
+        },
+        {
+          "id": "links",
+          "type": "links",
+          "links": [
+            {
+              "kind": "guide",
+              "target": "living_villages"
+            },
+            {
+              "kind": "guide",
+              "target": "living_villages_operations"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "living_villages_operations",
+      "category": "operators",
+      "task": "villages.status",
+      "operator": true,
+      "player_task": "villages.here",
+      "title": "Living Villages: importación, adopción y recuperación",
+      "summary": "Cómo se importan los mundos existentes, cómo se pone a propósito una aldea corriente bajo gestión y cómo se recuperan los registros interrumpidos.",
+      "blocks": [
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "Un mundo existente se importa en lotes pequeños tras cargar ambos mods: cada aldea real se empareja con el asentamiento que ya es (por su referencia del proveedor, luego por lugar, nunca por nombre) o se convierte en un asentamiento nuevo con el nombre de Living Villages. Una facción de jugador cuyo Libro aún no se ha colocado es solo un reino. La importación no concede recompensas y registra el control existente como referencia, no como una batalla. Una coincidencia ambigua te espera con sus candidatos listados."
+        },
+        {
+          "id": "steps",
+          "type": "steps",
+          "items": [
+            {
+              "text": "Comprueba la disponibilidad: cada capacidad con su motivo, las políticas efectivas y las colas.",
+              "link": {
+                "kind": "task",
+                "target": "villages.status",
+                "operator": true
+              }
+            },
+            {
+              "text": "Revisa la vista previa de la importación y decide las aldeas ambiguas: vincula cada una a un candidato o mantenla aparte.",
+              "link": {
+                "kind": "task",
+                "target": "villages.bind",
+                "operator": true
+              }
+            },
+            {
+              "text": "Activar la gestión de Living Villages aquí adopta una aldea corriente a partir de la gente y las camas que ya hay, con la construcción en pausa.",
+              "link": {
+                "kind": "task",
+                "target": "villages.adopt",
+                "operator": true
+              }
+            },
+            {
+              "text": "Registros que te esperan lista operaciones y guerras interrumpidas; recupera cada una después de que el puente vuelva a comprobar Living Villages.",
+              "link": {
+                "kind": "task",
+                "target": "villages.recover",
+                "operator": true
+              }
+            }
+          ]
+        },
+        {
+          "id": "callout",
+          "type": "callout",
+          "tone": "warning",
+          "title": "Versiones no compatibles",
+          "text": "Si un mundo ya tiene residentes protegidos y los hooks de protección no pueden estar activos (otra compilación de Living Villages), el servidor se niega a arrancar antes de que cambie nada, con el motivo en el registro. Instala el JAR auditado o activa livingVillages.allowUnprotectedResidents para aceptar que Living Villages pueda reemplazarlos."
+        }
+      ],
+      "commands": [
+        "/kingdoms livingvillages status",
+        "/kingdoms livingvillages inspect <settlement>",
+        "/kingdoms livingvillages migration preview",
+        "/kingdoms livingvillages conflicts",
+        "/kingdoms livingvillages recover <id>"
+      ]
+    }
+  ]
+}

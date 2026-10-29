@@ -103,9 +103,9 @@ public final class DefinitionRegistry {
                 .forEach(entry -> {
                     ResourceLocation file = entry.getKey();
                     String relative = file.getPath().substring(ROOT.length());
-                    // Shared gates have their own transactional integration registry.
-                    if (relative.startsWith(KINGDOM_GATES) || java.util.Set.of("governments", "offices", "agreements", "petitions", "honors", "institution_charters")
-                            .contains(relative.split("/", 2)[0])) return;
+                    // Shared gates have their own transactional integration registry; succession laws and court ranks have the dynasty's.
+                    if (relative.startsWith(KINGDOM_GATES) || java.util.Set.of("governments", "offices", "agreements", "petitions", "honors", "institution_charters",
+                            "succession_laws", "noble_ranks", "development_templates").contains(relative.split("/", 2)[0])) return;
                     JsonElement parsed;
                     try {
                         parsed = DefinitionProblems.parse(file, entry.getValue());

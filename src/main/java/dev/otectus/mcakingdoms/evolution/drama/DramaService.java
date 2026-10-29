@@ -1,5 +1,7 @@
 package dev.otectus.mcakingdoms.evolution.drama;
 
+import dev.otectus.mcakingdoms.interaction.Keyed;
+
 import dev.otectus.mcakingdoms.api.McaKingdomsApi;
 import dev.otectus.mcakingdoms.api.politics.*;
 import dev.otectus.mcakingdoms.api.factions.organization.*;
@@ -35,78 +37,78 @@ public final class DramaService {
         try{return RecruitsMilitary.commandedFaction(viewer).equals(drama.targetFaction());}catch(IllegalArgumentException failure){return false;} }
 
     public String propose(ServerPlayer actor, UUID request, long expectedRevision, String templateId, UUID settlement, String subject) {
-        actor(actor); require(EvolutionRuntime.dramaEnabled(server), "Authored drama is not enabled for this world.");
+        actor(actor); require(EvolutionRuntime.dramaEnabled(server), Keyed.text("evolution.mcakingdoms.drama.disabled","World events are not turned on for this world."));
         require(request != null && settlement != null, "A request and settlement are required.");
-        var template = definitions.snapshot().get(templateId); require(template != null, "Unknown authored drama template.");
-        require(SettlementKnowledge.get(server).visible(actor, settlement), "Settlement is not known to you.");
-        var civic = McaKingdomsApi.get(server).getSettlement(settlement).orElseThrow(() -> new IllegalArgumentException("Civic settlement is unavailable."));
+        var template = definitions.snapshot().get(templateId); require(template != null, Keyed.text("evolution.mcakingdoms.drama.unknown_template","That world event is not defined by the loaded data packs."));
+        require(SettlementKnowledge.get(server).visible(actor, settlement), Keyed.text("evolution.mcakingdoms.drama.unknown_settlement","You have not discovered that settlement."));
+        var civic = McaKingdomsApi.get(server).getSettlement(settlement).orElseThrow(() -> Keyed.refuse("evolution.mcakingdoms.drama.settlement_unavailable","That settlement is not available."));
         String source, target, sourceKingdom, targetKingdom; var evidence = new ArrayList<DramaState.Evidence>();
         String dynamic = ""; subject = subject == null ? "" : subject;
         if (template.kind() == DramaState.Kind.SCHISM) {
-            var original = ResourceLocation.tryParse(subject); require(original != null, "Schism requires an existing organization id.");
-            var organizations = OrganizationApi.get(server); require(organizations.definition(original).isPresent(), "Schism requires a defined source organization.");
+            var original = ResourceLocation.tryParse(subject); require(original != null, Keyed.text("evolution.mcakingdoms.drama.schism_id","A schism needs an existing organization."));
+            var organizations = OrganizationApi.get(server); require(organizations.definition(original).isPresent(), Keyed.text("evolution.mcakingdoms.drama.schism_defined","A schism needs a defined source organization."));
             var membership = organizations.ownSnapshot(actor).memberships().stream().filter(m -> m.organizationId().equals(original)
                     && m.status() == OrganizationMembershipSnapshot.Status.ACTIVE).findFirst();
-            require(membership.isPresent(), "Schism participants must be active members of the source organization.");
+            require(membership.isPresent(), Keyed.text("evolution.mcakingdoms.drama.schism_members","Everyone in a schism must be an active member of the source organization."));
             sourceKingdom = civic.kingdomId().toString(); targetKingdom = sourceKingdom;
-            require(KingdomsPoliticsApi.get(server).authorized(actor, sourceKingdom, Politics.Permission.RECOGNIZE), "Founding signatory lacks current charter recognition authority.");
+            require(KingdomsPoliticsApi.get(server).authorized(actor, sourceKingdom, Politics.Permission.RECOGNIZE), Keyed.text("evolution.mcakingdoms.drama.schism_authority","Founding a schism needs the Recognize institutions responsibility in the source kingdom."));
             source = "schism_founder"; target = "schism_consenter";
             dynamic = "mcakingdoms:schism_" + request.toString().replace("-", "");
-            evidence.add(new DramaState.Evidence("organization", "ACTIVE_MEMBERSHIP", original.toString(), membership.get().revision(), "Saved source organization membership and current charter authority confirmed"));
+            evidence.add(new DramaState.Evidence("organization", "ACTIVE_MEMBERSHIP", original.toString(), membership.get().revision(), Keyed.text("evolution.mcakingdoms.drama.evidence.membership","The saved membership in the source organization and the current charter authority were confirmed.")));
         } else {
             var controls = WarfareRuntime.get(server); var binding = controls.verifiedBinding(settlement)
-                    .orElseThrow(() -> new IllegalArgumentException("Saved native control evidence is unavailable."));
+                    .orElseThrow(() -> Keyed.refuse("evolution.mcakingdoms.drama.control_unavailable","The saved Recruits control record is unavailable."));
             source = RecruitsMilitary.commandedFaction(actor);
-            var sourceMap = controls.mapping(source).orElseThrow(() -> new IllegalArgumentException("Your native faction is not explicitly mapped."));
+            var sourceMap = controls.mapping(source).orElseThrow(() -> Keyed.refuse("evolution.mcakingdoms.drama.faction_unmapped","Your Recruits faction is not linked to a kingdom."));
             target = binding.owner(); sourceKingdom = sourceMap.kingdom(); targetKingdom = sourceKingdom;
-            var targetMap = controls.mapping(target).orElseThrow(() -> new IllegalArgumentException("The involved native faction is not explicitly mapped."));
-            require(!source.equals(target), "The two participants must be distinct."); targetKingdom = targetMap.kingdom();
-            require(Set.of(DramaState.Kind.CAMPAIGN, DramaState.Kind.REBELLION, DramaState.Kind.INVASION).contains(template.kind()), "This authored template has no installed authority adapter.");
+            var targetMap = controls.mapping(target).orElseThrow(() -> Keyed.refuse("evolution.mcakingdoms.drama.other_unmapped","The other Recruits faction is not linked to a kingdom."));
+            require(!source.equals(target), Keyed.text("evolution.mcakingdoms.drama.distinct","The two sides must be different.")); targetKingdom = targetMap.kingdom();
+            require(Set.of(DramaState.Kind.CAMPAIGN, DramaState.Kind.REBELLION, DramaState.Kind.INVASION).contains(template.kind()), Keyed.text("evolution.mcakingdoms.drama.no_adapter","This world event has no installed way to carry out its outcome."));
             evidence.add(new DramaState.Evidence("warfare_control", binding.condition().name(), binding.claim().toString(), binding.sequence(),
-                    "Saved control binding; civic settlement and buildings remain unchanged"));
+                    Keyed.text("evolution.mcakingdoms.drama.evidence.binding","Saved control record; the settlement's civic identity and buildings stay unchanged.")));
             if (template.kind() == DramaState.Kind.REBELLION) {
-                require(binding.condition() == ControlState.Condition.OCCUPIED, "Rebellion requires a current saved occupation grievance.");
-                evidence.add(new DramaState.Evidence("warfare_control", "OCCUPATION_GRIEVANCE", settlement.toString(), binding.sequence(), "Occupation is evidence for the proposal, not authority to erase civic identity"));
+                require(binding.condition() == ControlState.Condition.OCCUPIED, Keyed.text("evolution.mcakingdoms.drama.rebellion_grievance","A rebellion needs a current, saved occupation of this settlement."));
+                evidence.add(new DramaState.Evidence("warfare_control", "OCCUPATION_GRIEVANCE", settlement.toString(), binding.sequence(), Keyed.text("evolution.mcakingdoms.drama.evidence.grievance","The occupation supports the proposal; it gives no authority to erase the settlement's civic identity.")));
             }
         }
         String fingerprint = templateId + "|" + settlement + "|" + subject;
         var current = data.snapshot();
-        if (current.receipts.containsKey(request)) { require(current.receipts.get(request).equals(fingerprint), "Request id belongs to another proposal."); return "This drama proposal is already recorded."; }
-        require(current.revision == expectedRevision, "Drama state changed; refresh before proposing.");
+        if (current.receipts.containsKey(request)) { require(current.receipts.get(request).equals(fingerprint), Keyed.text("evolution.mcakingdoms.drama.request_reused","That request id belongs to another proposal.")); return Keyed.text("evolution.mcakingdoms.drama.already_recorded","This proposal is already recorded."); }
+        require(current.revision == expectedRevision, Keyed.text("evolution.mcakingdoms.drama.state_changed","World events changed; refresh before proposing."));
         require(current.dramas.values().stream().filter(d -> !d.terminal()).count() + EvolutionRuntime.activeScenarioCount(server)
-                < dev.otectus.mcakingdoms.evolution.EvolutionConfig.CONCURRENT.get(), "The shared world evolution concurrency budget is full.");
-        require(current.dramas.size() < DramaState.CAPACITY, "Drama capacity reached.");
+                < dev.otectus.mcakingdoms.evolution.EvolutionConfig.CONCURRENT.get(), Keyed.text("evolution.mcakingdoms.drama.budget","The world evolution budget for simultaneous events is full."));
+        require(current.dramas.size() < DramaState.CAPACITY, Keyed.text("evolution.mcakingdoms.drama.capacity","No more world events can be recorded."));
         var kingdoms = McaKingdomsApi.get(server); UUID place = kingdoms.resolveSettlementId(settlement);
-        require(current.dramas.values().stream().noneMatch(d -> kingdoms.resolveSettlementId(d.settlement()).equals(place) && !d.terminal()), "An authored drama already involves this settlement.");
+        require(current.dramas.values().stream().noneMatch(d -> kingdoms.resolveSettlementId(d.settlement()).equals(place) && !d.terminal()), Keyed.text("evolution.mcakingdoms.drama.settlement_busy","A world event already involves this settlement."));
         var participants = new LinkedHashMap<String, UUID>(); participants.put(source, actor.getUUID());
         var frozen = new DramaState.Drama(request, templateId, template, settlement, actor.getUUID(), source, target, sourceKingdom, targetKingdom,
                 subject, dynamic, participants, Set.of(source), evidence, now(), template.durationTicks(), now(), 1, 0, DramaState.Phase.PROPOSED,
-                DramaState.Operation.NONE, DramaState.operationId(request, "provider"), "Awaiting an independent participant's consent");
+                DramaState.Operation.NONE, DramaState.operationId(request, "provider"), Keyed.text("evolution.mcakingdoms.drama.awaiting_consent","Waiting for a participant from the other side to consent."));
         current.dramas.put(request, frozen); current.receipts.put(request, fingerprint); save(current);
-        dev.otectus.mcakingdoms.interaction.Notify.players(server, frozen.participants().values(), actor.getUUID(), net.minecraft.network.chat.Component.translatableWithFallback("notice.mcakingdoms.world_event_proposed", "The world event \"%s\" was proposed at %s; your consent is requested.", frozen.terms().title(), dev.otectus.mcakingdoms.interaction.Names.settlement(server, settlement)), "drama.inspect");
-        return "Drama \"" + frozen.terms().title() + "\" proposed from frozen authored terms; the other participant must consent.";
+        dev.otectus.mcakingdoms.interaction.Notify.players(server, frozen.participants().values(), actor.getUUID(), net.minecraft.network.chat.Component.translatableWithFallback("notice.mcakingdoms.world_event_proposed", "The world event \"%s\" was proposed at %s; your consent is requested.", dev.otectus.mcakingdoms.interaction.PlayerWords.component(frozen.terms().title()), dev.otectus.mcakingdoms.interaction.Names.settlement(server, settlement)), "drama.inspect");
+        return Keyed.text("evolution.mcakingdoms.drama.proposed", "World event \"%s\" proposed with its fixed terms; the other participant must consent.", dev.otectus.mcakingdoms.interaction.PlayerWords.component(frozen.terms().title()));
     }
 
     public String consent(ServerPlayer actor, UUID id, long expectedRevision) {
         actor(actor); requireEnabled(); var current = data.snapshot(); var drama = requireDrama(current, id);
-        require(drama.phase() == DramaState.Phase.PROPOSED, "Drama is not awaiting consent.");
+        require(drama.phase() == DramaState.Phase.PROPOSED, Keyed.text("evolution.mcakingdoms.drama.not_awaiting","This world event is not waiting for consent."));
         String side;
         if (drama.terms().kind() == DramaState.Kind.SCHISM) {
-            var source = ResourceLocation.tryParse(drama.subject()); require(source != null && activeMember(actor, source), "Only another active source member may consent.");
-            require(!actor.getUUID().equals(drama.proposer()), "Bilateral consent requires another player."); side = drama.targetFaction();
+            var source = ResourceLocation.tryParse(drama.subject()); require(source != null && activeMember(actor, source), Keyed.text("evolution.mcakingdoms.drama.source_member","Only another active member of the source organization may consent."));
+            require(!actor.getUUID().equals(drama.proposer()), Keyed.text("evolution.mcakingdoms.drama.another_player","Consent must come from a different player.")); side = drama.targetFaction();
         } else {
-            side = RecruitsMilitary.commandedFaction(actor); require(side.equals(drama.targetFaction()), "Only the involved opposing native leader may consent.");
+            side = RecruitsMilitary.commandedFaction(actor); require(side.equals(drama.targetFaction()), Keyed.text("evolution.mcakingdoms.drama.opposing_leader","Only the leader of the other Recruits faction may consent."));
         }
         current.dramas.put(id, drama.consent(side, actor.getUUID(), expectedRevision)); save(current);
-        return "Consent recorded. The drama is ready; no native operation has been implied.";
+        return Keyed.text("evolution.mcakingdoms.drama.consented","Consent recorded. The world event is ready; nothing has happened in Recruits yet.");
     }
 
     public String execute(ServerPlayer actor, UUID id, long expectedRevision) {
         actor(actor); requireEnabled(); var current = data.snapshot(); var drama = requireDrama(current, id);
-        require(drama.terms().outcomes().contains(drama.terms().kind() == DramaState.Kind.SCHISM ? DramaState.Outcome.FOUND_SCHISM : DramaState.Outcome.DECLARE), "Template does not authorize this outcome.");
-        require(actor.getUUID().equals(drama.proposer()), "Only the proposing signatory may start the recorded operation.");
+        require(drama.terms().outcomes().contains(drama.terms().kind() == DramaState.Kind.SCHISM ? DramaState.Outcome.FOUND_SCHISM : DramaState.Outcome.DECLARE), Keyed.text("evolution.mcakingdoms.drama.outcome_not_allowed","This world event does not allow that outcome."));
+        require(actor.getUUID().equals(drama.proposer()), Keyed.text("evolution.mcakingdoms.drama.proposer_only","Only the player who proposed it may start this."));
         if (drama.terms().kind() != DramaState.Kind.SCHISM)
-            require(RecruitsMilitary.commands(actor, drama.sourceFaction()), "Proposer no longer commands the recorded native faction.");
+            require(RecruitsMilitary.commands(actor, drama.sourceFaction()), Keyed.text("evolution.mcakingdoms.drama.proposer_lost_command","You no longer command the recorded Recruits faction."));
         DramaState.Operation operation = drama.terms().kind() == DramaState.Kind.SCHISM ? DramaState.Operation.SCHISM_FOUNDING : DramaState.Operation.DECLARATION;
         current.dramas.put(id, drama.begin(operation, expectedRevision)); save(current); // durable fence before provider call
         return resume(actor, id);
@@ -114,28 +116,28 @@ public final class DramaService {
 
     public String negotiate(ServerPlayer actor, UUID id, long expectedRevision) {
         actor(actor); requireEnabled(); var current = data.snapshot(); var drama = requireDrama(current, id);
-        require(drama.terms().outcomes().contains(DramaState.Outcome.NEGOTIATE), "Template does not authorize negotiation.");
+        require(drama.terms().outcomes().contains(DramaState.Outcome.NEGOTIATE), Keyed.text("evolution.mcakingdoms.drama.no_negotiation","This world event does not allow negotiation."));
         require(drama.terms().kind() != DramaState.Kind.SCHISM, "A schism exits peacefully by leaving or independently choosing membership.");
-        require(RecruitsMilitary.commands(actor, drama.sourceFaction()), "Only the recorded native signatory may propose terms.");
+        require(RecruitsMilitary.commands(actor, drama.sourceFaction()), Keyed.text("evolution.mcakingdoms.drama.signatory_terms","Only the recorded Recruits commander may propose terms."));
         current.dramas.put(id, drama.begin(DramaState.Operation.ACCORD, expectedRevision)); save(current);
         return resume(actor, id);
     }
 
     public String exit(ServerPlayer actor, UUID id, long expectedRevision) {
-        actor(actor); var current = data.snapshot(); var drama = requireDrama(current, id); require(participates(actor, drama), "Only a participant may exit.");
-        require(drama.terms().outcomes().contains(DramaState.Outcome.EXIT), "Template does not authorize exit.");
-        current.dramas.put(id, drama.exit(expectedRevision, "Participant chose a nonviolent exit; civic identity, buildings, assets, and standing were retained")); save(current);
-        return "Drama exited without changing native control, civic identity, buildings, assets, or organization standing.";
+        actor(actor); var current = data.snapshot(); var drama = requireDrama(current, id); require(participates(actor, drama), Keyed.text("evolution.mcakingdoms.drama.participant_exit","Only a participant may leave."));
+        require(drama.terms().outcomes().contains(DramaState.Outcome.EXIT), Keyed.text("evolution.mcakingdoms.drama.no_exit","This world event does not allow leaving."));
+        current.dramas.put(id, drama.exit(expectedRevision, Keyed.text("evolution.mcakingdoms.drama.exit_detail","A participant chose a peaceful exit; civic identity, buildings, property and standing were kept."))); save(current);
+        return Keyed.text("evolution.mcakingdoms.drama.exited","You left the world event. Control, civic identity, buildings, property and organization standing are unchanged.");
     }
 
     public String recover(ServerPlayer actor, UUID id, long expectedRevision) {
-        actor(actor); requireEnabled(); var current = data.snapshot(); var drama = requireDrama(current, id); require(participates(actor, drama), "Only a participant may recover this drama.");
+        actor(actor); requireEnabled(); var current = data.snapshot(); var drama = requireDrama(current, id); require(participates(actor, drama), Keyed.text("evolution.mcakingdoms.drama.participant_recover","Only a participant may recover this world event."));
         if (drama.phase() == DramaState.Phase.ACTIVE) {
-            require(drama.terms().outcomes().contains(DramaState.Outcome.RECOVER), "Template does not authorize withdrawal recovery.");
-            require(RecruitsMilitary.commands(actor, drama.sourceFaction()), "Only the recorded campaign commander may withdraw.");
+            require(drama.terms().outcomes().contains(DramaState.Outcome.RECOVER), Keyed.text("evolution.mcakingdoms.drama.no_recovery","This world event does not allow withdrawing."));
+            require(RecruitsMilitary.commands(actor, drama.sourceFaction()), Keyed.text("evolution.mcakingdoms.drama.commander_withdraw","Only the recorded campaign commander may withdraw."));
             current.dramas.put(id, drama.begin(DramaState.Operation.WITHDRAWAL, expectedRevision)); save(current);
         } else {
-            require(drama.revision() == expectedRevision && Set.of(DramaState.Phase.APPLYING, DramaState.Phase.SUSPENDED, DramaState.Phase.NEGOTIATING, DramaState.Phase.RECOVERING).contains(drama.phase()), "Nothing is pending recovery.");
+            require(drama.revision() == expectedRevision && Set.of(DramaState.Phase.APPLYING, DramaState.Phase.SUSPENDED, DramaState.Phase.NEGOTIATING, DramaState.Phase.RECOVERING).contains(drama.phase()), Keyed.text("evolution.mcakingdoms.drama.nothing_pending","Nothing is waiting for recovery."));
             if (drama.operation() != DramaState.Operation.NONE) { current.dramas.put(id, drama.retry(expectedRevision)); save(current); }
         }
         return resume(actor, id);
@@ -148,68 +150,71 @@ public final class DramaService {
                 var organizations = OrganizationApi.get(server); var dynamic = new ResourceLocation(drama.dynamicOrganization());
                 if (organizations.lifecycle(dynamic).isEmpty()) {
                     var result = organizations.found(actor, dynamic, new ResourceLocation(drama.terms().organizationTemplate()), drama.sourceKingdom(), drama.terms().organizationName(), organizations.revision());
-                    require(result.status() == OrganizationLifecycleResult.Status.APPLIED, "Charter was not applied: " + result.reason());
+                    require(result.status() == OrganizationLifecycleResult.Status.APPLIED, Keyed.text("evolution.mcakingdoms.drama.charter_failed", "The charter was not applied: %s", Keyed.component(result.reason())));
                 }
                 current = data.snapshot(); drama = requireDrama(current, id);
-                current.dramas.put(id, drama.applied(DramaState.Phase.RESOLVED, "Schism charter founded; each participant retains standing and chooses membership independently")); save(current);
-                return "Schism charter founded. No member was moved and no standing was copied.";
+                current.dramas.put(id, drama.applied(DramaState.Phase.RESOLVED, Keyed.text("evolution.mcakingdoms.drama.schism_detail","Schism charter founded; each participant keeps their standing and chooses membership independently."))); save(current);
+                return Keyed.text("evolution.mcakingdoms.drama.schism_founded","Schism charter founded. No member was moved and no standing was copied.");
             }
             var campaigns = CampaignService.get(server);
             if (drama.operation() == DramaState.Operation.WITHDRAWAL || drama.phase() == DramaState.Phase.RECOVERING) {
                 campaigns.withdraw(actor, drama.providerRequest());
-                var confirmed = campaigns.campaign(drama.providerRequest()).orElseThrow(() -> new IllegalArgumentException("Campaign receipt unavailable after withdrawal."));
-                require(confirmed.phase() == CampaignState.Phase.RESOLVED, "Native withdrawal remains pending.");
-                current = data.snapshot(); drama = requireDrama(current, id); current.dramas.put(id, drama.applied(DramaState.Phase.RESOLVED, "Native campaign withdrawal confirmed")); save(current);
-                return "Native withdrawal confirmed; civic identity and assets remain intact.";
+                var confirmed = campaigns.campaign(drama.providerRequest()).orElseThrow(() -> Keyed.refuse("evolution.mcakingdoms.drama.campaign_receipt_missing","The campaign record is missing after the withdrawal."));
+                require(confirmed.phase() == CampaignState.Phase.RESOLVED, Keyed.text("evolution.mcakingdoms.drama.withdrawal_pending","The withdrawal is still waiting for Recruits."));
+                current = data.snapshot(); drama = requireDrama(current, id); current.dramas.put(id, drama.applied(DramaState.Phase.RESOLVED, Keyed.text("evolution.mcakingdoms.drama.withdrawal_detail","The campaign withdrawal is confirmed."))); save(current);
+                return Keyed.text("evolution.mcakingdoms.drama.withdrawal_confirmed","Withdrawal confirmed; civic identity and property stay intact.");
             }
             if (drama.operation() == DramaState.Operation.ACCORD || drama.phase() == DramaState.Phase.NEGOTIATING) {
                 UUID accordId = DramaState.operationId(id, "accord"); var accord = campaigns.accord(accordId).orElse(null);
                 if (accord == null) {
-                    var control = campaigns.control(drama.settlement()).orElseThrow(() -> new IllegalArgumentException("Current control unavailable for negotiation."));
+                    var control = campaigns.control(drama.settlement()).orElseThrow(() -> Keyed.refuse("evolution.mcakingdoms.drama.control_for_negotiation","The current control record is unavailable for negotiation."));
                     campaigns.propose(actor, accordId, campaigns.revision(), drama.settlement(), drama.targetFaction(), Relation.NEUTRAL,
                             Sovereignty.RECOGNIZED, control.recognizedKingdom(), drama.terms().objective());
-                    accord = campaigns.accord(accordId).orElseThrow(() -> new IllegalArgumentException("Negotiation receipt unavailable after proposal."));
+                    accord = campaigns.accord(accordId).orElseThrow(() -> Keyed.refuse("evolution.mcakingdoms.drama.negotiation_receipt_missing","The negotiation record is missing after the proposal."));
                 }
                 if (accord.phase() != TreatyPhase.ACTIVE) {
                     if (drama.operation() == DramaState.Operation.ACCORD) {
                         current = data.snapshot(); drama = requireDrama(current, id);
-                        current.dramas.put(id, drama.applied(DramaState.Phase.NEGOTIATING, "Native accord proposed; both leaders must ratify through campaign authority")); save(current);
+                        current.dramas.put(id, drama.applied(DramaState.Phase.NEGOTIATING, Keyed.text("evolution.mcakingdoms.drama.accord_proposed_detail","Accord proposed; both leaders must ratify it through campaign authority."))); save(current);
                     }
-                    return "Negotiation remains pending bilateral native ratification.";
+                    return Keyed.text("evolution.mcakingdoms.drama.negotiation_pending","The negotiation is waiting for both sides to ratify.");
                 }
-                current = data.snapshot(); drama = requireDrama(current, id); current.dramas.put(id, drama.applied(DramaState.Phase.RESOLVED, "Bilateral native accord confirmed")); save(current);
-                return "Bilateral native accord confirmed.";
+                current = data.snapshot(); drama = requireDrama(current, id); current.dramas.put(id, drama.applied(DramaState.Phase.RESOLVED, Keyed.text("evolution.mcakingdoms.drama.accord_detail","Both sides ratified the accord."))); save(current);
+                return Keyed.text("evolution.mcakingdoms.drama.accord_confirmed","Both sides ratified the accord.");
             }
             if (campaigns.campaign(drama.providerRequest()).isEmpty()) {
                 campaigns.declare(actor, drama.providerRequest(), campaigns.revision(), drama.settlement(), drama.terms().goal(), drama.terms().objective());
             } else campaigns.applyDeclaration(actor, drama.providerRequest());
-            var confirmed = campaigns.campaign(drama.providerRequest()).orElseThrow(() -> new IllegalArgumentException("Campaign receipt unavailable after provider operation."));
+            var confirmed = campaigns.campaign(drama.providerRequest()).orElseThrow(() -> Keyed.refuse("evolution.mcakingdoms.drama.provider_receipt_missing","The campaign record is missing after the operation."));
             DramaState.Phase next = confirmed.phase() == CampaignState.Phase.SUSPENDED ? DramaState.Phase.SUSPENDED
                     : confirmed.phase() == CampaignState.Phase.RESOLVED || confirmed.phase() == CampaignState.Phase.EXPIRED ? DramaState.Phase.RESOLVED : DramaState.Phase.ACTIVE;
             current = data.snapshot(); drama = requireDrama(current, id); current.dramas.put(id, drama.applied(next,
-                    "Native campaign state confirmed as " + confirmed.phase() + "; battle and control remain native-owned")); save(current);
-            return "Provider-confirmed campaign state: " + confirmed.phase() + ". No siege or transfer was invented.";
+                    Keyed.text("evolution.mcakingdoms.drama.campaign_state_detail", "Recruits confirmed the campaign as %s; battle and control stay with Recruits.", confirmed.phase()))); save(current);
+            return Keyed.text("evolution.mcakingdoms.drama.campaign_state", "Campaign confirmed by Recruits: %s. No siege or transfer was made up.", confirmed.phase());
         } catch (RuntimeException failure) { return suspend(id, failure); }
     }
 
     private String suspend(UUID id, RuntimeException failure) {
-        var current = data.snapshot(); var drama = requireDrama(current, id); String detail = failure.getMessage() == null ? failure.getClass().getSimpleName() : failure.getMessage();
-        if (detail.length() > 800) detail = detail.substring(0, 800);
-        current.dramas.put(id, drama.suspended("Provider operation pending recovery: " + detail));
-        if (!saveIfPossible(current)) return "Provider failed and suspension could not be saved; inspect before retrying.";
-        return "Provider operation was not confirmed. Drama is suspended for explicit recovery: " + detail;
+        var current = data.snapshot(); var drama = requireDrama(current, id);
+        var detail = failure.getMessage() == null ? net.minecraft.network.chat.Component.literal(failure.getClass().getSimpleName()) : Keyed.component(failure);
+        if (detail.getString().length() > 800) detail = net.minecraft.network.chat.Component.literal(detail.getString().substring(0, 800));
+        current.dramas.put(id, drama.suspended(Keyed.text("evolution.mcakingdoms.drama.suspended_detail", "The operation waits for recovery: %s", detail)));
+        if (!saveIfPossible(current)) return Keyed.text("evolution.mcakingdoms.drama.suspension_unsaved","The operation failed and its suspension could not be saved; inspect before retrying.");
+        return Keyed.text("evolution.mcakingdoms.drama.suspended", "The operation was not confirmed. The world event is suspended until someone recovers it: %s", detail);
     }
 
     public List<String> page(ServerPlayer viewer, int offset) {
-        actor(viewer); if (offset < 0) throw new IllegalArgumentException("Offset must be nonnegative.");
+        actor(viewer); if (offset < 0) throw Keyed.refuse("evolution.mcakingdoms.drama.invalid_offset","That page is not valid.");
         return data.snapshot().dramas.values().stream().filter(d -> participates(viewer, d)).sorted(Comparator.comparingLong(DramaState.Drama::created).reversed())
-                .skip(offset).limit(20).map(d -> d.id() + " | " + d.terms().title() + " | " + d.phase() + " | rev " + d.revision() + " | online time " + d.remainingTicks()).toList();
+                .skip(offset).limit(20).map(d -> Keyed.text("evolution.mcakingdoms.drama.page.row", "#%s · %s · %s · revision %s · %s of online time left", d.id().toString().substring(0, 4), dev.otectus.mcakingdoms.interaction.PlayerWords.component(d.terms().title()), d.phase(), d.revision(), dev.otectus.mcakingdoms.interaction.Names.durationText(d.remainingTicks()))).toList();
     }
     public List<String> inspect(ServerPlayer viewer, UUID id) {
-        actor(viewer); var drama = data.snapshot().dramas.get(id); if (drama == null || !participates(viewer, drama)) return List.of("Drama unavailable.");
-        var lines = new ArrayList<String>(); lines.add(drama.terms().title() + " · " + dev.otectus.mcakingdoms.interaction.Names.words(drama.phase()));
-        lines.add("Objective: " + drama.terms().objective()); lines.add("Remaining online time: " + dev.otectus.mcakingdoms.interaction.Names.duration(drama.remainingTicks()) + "; consents " + drama.consents().size() + " of 2");
-        drama.evidence().forEach(e -> lines.add("Evidence " + e.source() + "/" + e.kind() + " #" + e.revision() + ": " + e.detail())); lines.add("Status: " + drama.result()); return List.copyOf(lines);
+        actor(viewer); var drama = data.snapshot().dramas.get(id); if (drama == null || !participates(viewer, drama)) return List.of(Keyed.text("evolution.mcakingdoms.drama.unavailable", "That world event is not available."));
+        var lines = new ArrayList<String>(); lines.add(Keyed.text("evolution.mcakingdoms.drama.inspect.head", "%s · %s", dev.otectus.mcakingdoms.interaction.PlayerWords.component(drama.terms().title()), drama.phase()));
+        lines.add(Keyed.text("evolution.mcakingdoms.drama.inspect.objective", "Objective: %s", dev.otectus.mcakingdoms.interaction.PlayerWords.component(drama.terms().objective())));
+        lines.add(Keyed.text("evolution.mcakingdoms.drama.inspect.time", "Online time left: %s; consents %s of 2", dev.otectus.mcakingdoms.interaction.Names.durationText(drama.remainingTicks()), drama.consents().size()));
+        drama.evidence().forEach(e -> lines.add(Keyed.text("evolution.mcakingdoms.drama.inspect.evidence", "Evidence %s/%s #%s: %s", e.source(), e.kind(), e.revision(), Keyed.component(e.detail()))));
+        lines.add(Keyed.text("evolution.mcakingdoms.drama.inspect.status", "Status: %s", Keyed.component(drama.result()))); return List.copyOf(lines);
     }
 
     void tick() {
@@ -226,13 +231,13 @@ public final class DramaService {
         return OrganizationApi.get(server).ownSnapshot(player).memberships().stream().anyMatch(m -> m.organizationId().equals(organization) && m.status() == OrganizationMembershipSnapshot.Status.ACTIVE);
     }
     private boolean participates(ServerPlayer player, DramaState.Drama drama) { return drama.participants().containsValue(player.getUUID()); }
-    private DramaState.Drama requireDrama(DramaState state, UUID id) { var drama = state.dramas.get(id); if (drama == null) throw new IllegalArgumentException("Drama unavailable."); return drama; }
-    private void viewer(ServerPlayer actor) { thread(); require(actor != null && actor.getServer() == server && !actor.hasDisconnected(), "Connected server player required."); }
-    private void actor(ServerPlayer actor) { viewer(actor); require(data.writable(), "Drama records are retained read-only."); }
-    private void requireEnabled() { require(EvolutionRuntime.dramaEnabled(server), "Authored drama is not enabled for this world."); }
+    private DramaState.Drama requireDrama(DramaState state, UUID id) { var drama = state.dramas.get(id); if (drama == null) throw Keyed.refuse("evolution.mcakingdoms.drama.unavailable", "That world event is not available."); return drama; }
+    private void viewer(ServerPlayer actor) { thread(); require(actor != null && actor.getServer() == server && !actor.hasDisconnected(), Keyed.text("evolution.mcakingdoms.drama.connected","You must be connected to this server.")); }
+    private void actor(ServerPlayer actor) { viewer(actor); require(data.writable(), Keyed.text("evolution.mcakingdoms.drama.read_only","World event records are kept read-only.")); }
+    private void requireEnabled() { require(EvolutionRuntime.dramaEnabled(server), Keyed.text("evolution.mcakingdoms.drama.disabled","World events are not turned on for this world.")); }
     private long now() { return server.overworld().getGameTime(); }
-    private void save(DramaState next) { next.revision = Math.addExact(next.revision, 1); require(data.commit(server, next), "Drama transaction could not be saved."); }
+    private void save(DramaState next) { next.revision = Math.addExact(next.revision, 1); require(data.commit(server, next), Keyed.text("evolution.mcakingdoms.drama.save_failed","The world event could not be saved, so nothing changed.")); }
     private boolean saveIfPossible(DramaState next) { next.revision = Math.addExact(next.revision, 1); return data.commit(server, next); }
     private void thread() { if (!server.isSameThread()) throw new IllegalStateException("Drama requires server thread"); }
-    private static void require(boolean value, String message) { if (!value) throw new IllegalArgumentException(message); }
+    private static void require(boolean value, String message) { if (!value) throw Keyed.of(message); }
 }

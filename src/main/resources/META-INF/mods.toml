@@ -52,6 +52,13 @@ ordering="AFTER"
 side="BOTH"
 
 [[dependencies.${mod_id}]]
+modId="recruitsvillages"
+mandatory=false
+versionRange="${recruitsvillages_version_range}"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
 modId="mcacrime"
 mandatory=false
 versionRange="${mcacrime_version_range}"

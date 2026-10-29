@@ -87,6 +87,7 @@ public class ResidenceRegistrationGameTests {
         player.setRespawnPosition(Level.OVERWORLD, bed, 0, true, false);
         check(ResidenceRegistration.evidence(player).check() == Check.COMMAND_SPAWN, "a command-set spawn is not evidence");
         BlockPos empty = home.anchor().west(4);
+        helper.getLevel().getChunkAt(empty); // a loaded spot without a bed, wherever the test layout puts it
         sleptIn(player, empty);
         check(ResidenceRegistration.evidence(player).check() == Check.BED_MISSING, "a respawn point without a bed is not evidence");
         BlockPos outside = bed(helper, home.anchor().east(60));

@@ -165,6 +165,7 @@ tasks.named('processResources', ProcessResources).configure {
             mcaquests_version_range: mcaquests_version_range,
             townstead_version_range: townstead_version_range,
             recruits_version_range : recruits_version_range,
+            recruitsvillages_version_range: recruitsvillages_version_range,
             mcacrime_version_range : mcacrime_version_range,
             mcareputation_version_range: mcareputation_version_range,
             politics_townstead_version: politics_townstead_version,

@@ -8,7 +8,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.storage.LevelResource;
 
 /** Synchronous durable intent fence; unsupported data is preserved without writes. */
-public final class EvolutionSavedData extends SavedData {
+public final class EvolutionSavedData extends dev.otectus.mcakingdoms.persistence.DurableSavedData {
     public static final String NAME = "mcakingdoms_evolution";
     static final Gson JSON = new Gson();
     private EvolutionState state = new EvolutionState();

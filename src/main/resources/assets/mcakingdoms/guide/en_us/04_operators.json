@@ -43,6 +43,21 @@
       "player_task": "help.available"
     },
     {
+      "id": "capitals_interop",
+      "category": "operators",
+      "title": "MCA Capitals installed alongside",
+      "summary": "Capitals governs the crowns of its capitals; MCA: Kingdoms keeps the civic layer.",
+      "body": [
+        "With MCA Capitals installed, a kingdom whose village is a governing Capitals capital has its crown governed by Capitals: founding, the seat, the leader, succession, the royal house, elections and regency are handled there, and MCA: Kingdoms refuses them. Its civic offices, agreements, guilds and honors continue here. Other kingdoms keep their MCA: Kingdoms governments.",
+        "Capitals is only read, never written. Operators review the mappings with Review MCA Capitals mappings or /kingdoms capitals report, accept a capital as a kingdom's crown, or release a mapping once its capital stopped governing or Capitals was removed. The setting capitals.interop = ALL_READ_ONLY keeps every crown action read-only, as before 0.3.0."
+      ],
+      "commands": [
+        "/kingdoms capitals report"
+      ],
+      "task": "capitals.report",
+      "operator": true
+    },
+    {
       "id": "standing_sync",
       "category": "operators",
       "title": "Kingdom standing and MCA reputation",

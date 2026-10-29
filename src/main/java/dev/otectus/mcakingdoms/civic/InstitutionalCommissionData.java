@@ -10,7 +10,7 @@ import net.minecraft.world.level.storage.LevelResource;
 import java.util.*;
 
 /** Offers commit before display; accepted identities never recycle and cancellation releases ownership. */
-final class InstitutionalCommissionData extends SavedData {
+final class InstitutionalCommissionData extends dev.otectus.mcakingdoms.persistence.DurableSavedData {
     static final String NAME="mcakingdoms_institutional_commissions";
     private static final Gson JSON=new Gson();
     record Contract(UUID id,UUID player,UUID giver,UUID institution,String organization,String kingdom,String quest,

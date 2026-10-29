@@ -141,7 +141,8 @@ public final class UsabilityGameTests {
         check(playerIndex.mode().equals("index") && !playerIndex.value().contains("\"settlement.rename\"") && playerIndex.value().contains("\"civic.join\""),
                 "The player index must list exactly authorized tasks");
         check(operatorIndex.value().contains("\"settlement.rename\"") && operatorIndex.value().contains("\"operator\":true"), "The operator index omitted administrative tasks");
-        check(InteractionNetwork.encodeReply(operatorIndex).length() < 40000, "The catalogue index is not comfortably bounded");
+        int indexLength = InteractionNetwork.encodeReply(operatorIndex).length();
+        check(indexLength < 40000, "The catalogue index is not comfortably bounded: " + indexLength + " characters");
         helper.succeed();
     }
 

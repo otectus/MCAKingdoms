@@ -1,5 +1,7 @@
 package dev.otectus.mcakingdoms.politics;
 
+import dev.otectus.mcakingdoms.interaction.Keyed;
+
 import dev.otectus.mcakingdoms.api.*;
 import dev.otectus.mcakingdoms.api.event.*;
 import dev.otectus.mcakingdoms.api.politics.*;
@@ -34,7 +36,8 @@ public final class GovernmentService implements PoliticalService {
     private final KingdomsService kingdoms;
     private final PoliticalDefinitions definitions;
     private final PoliticalSavedData data;
-    private final boolean conflict;
+    /** Who governs each kingdom's crown (C2): this mod, or MCA Capitals for the kingdoms it governs. */
+    private final java.util.function.Function<String, Sovereignty> sovereignty;
     private final java.util.function.Predicate<UUID> knownPlayer;
     private final java.util.function.BooleanSupplier openFounding;
     private final java.util.function.BooleanSupplier institutionalServices;
@@ -42,14 +45,15 @@ public final class GovernmentService implements PoliticalService {
     static final int MAINTENANCE_BUDGET = 8;
     private final java.util.Deque<LivingDeathEvent> pendingDeaths = new java.util.ArrayDeque<>();
     public GovernmentService(MinecraftServer server, KingdomsService kingdoms, PoliticalDefinitions definitions) {
-        this(server, kingdoms, definitions, PoliticalSavedData.get(server), ModList.get().isLoaded("mcacapitals"));
+        this(server, kingdoms, definitions, PoliticalSavedData.get(server), false);
     }
     GovernmentService(MinecraftServer server, KingdomsService kingdoms, PoliticalDefinitions definitions,
                       PoliticalSavedData data, boolean conflict) {
         this(server, kingdoms, definitions, data, conflict, id -> server.getPlayerList().getPlayer(id) != null
                 || server.getProfileCache() != null && server.getProfileCache().get(id).isPresent());
     }
-    GovernmentService(MinecraftServer server, KingdomsService kingdoms, PoliticalDefinitions definitions,
+    /** A service over {@code data} with an explicit known-player test; used by GameTests outside this package. */
+    public GovernmentService(MinecraftServer server, KingdomsService kingdoms, PoliticalDefinitions definitions,
                       PoliticalSavedData data, boolean conflict, java.util.function.Predicate<UUID> knownPlayer) {
         this(server, kingdoms, definitions, data, conflict, knownPlayer,
                 () -> dev.otectus.mcakingdoms.civic.CivicConfig.INSTITUTIONAL_SERVICES.get());
@@ -65,7 +69,10 @@ public final class GovernmentService implements PoliticalService {
                       PoliticalSavedData data, boolean conflict, java.util.function.Predicate<UUID> knownPlayer,
                       java.util.function.BooleanSupplier institutionalServices, java.util.function.BooleanSupplier openFounding) {
         this.server = server; this.kingdoms = kingdoms; this.definitions = definitions;
-        this.data = data; this.conflict = conflict; this.knownPlayer = knownPlayer;
+        this.data = data; this.knownPlayer = knownPlayer;
+        // conflict = true is the legacy all-read-only answer (tests and the ALL_READ_ONLY setting); otherwise per kingdom.
+        this.sovereignty = conflict ? kingdom -> new Sovereignty(Sovereignty.Mode.UNSUPPORTED, "politics.mcakingdoms.sovereignty.capitals_all_read_only")
+                : kingdom -> dev.otectus.mcakingdoms.compat.capitals.CapitalsInterop.get(server).sovereignty(kingdom);
         this.institutionalServices = institutionalServices; this.openFounding = openFounding;
     }
     private void thread() { if (!server.isSameThread()) throw new IllegalStateException("Politics requires the server thread"); }
@@ -74,18 +81,18 @@ public final class GovernmentService implements PoliticalService {
         thread(); Objects.requireNonNull(kingdom); return Optional.ofNullable(data.records().governments.get(kingdom));
     }
     @Override public Optional<Result> receipt(ServerPlayer actor, UUID requestId) {
-        thread(); check(actor.getServer() == server && !actor.hasDisconnected(), "Player is not connected to this server");
+        thread(); check(actor.getServer() == server && !actor.hasDisconnected(), Keyed.text("politics.mcakingdoms.refusal.disconnected","You must be connected to this server."));
         Receipt value = data.records().receipts.get(Objects.requireNonNull(requestId));
         return value != null && value.actor().equals(actor.getUUID()) ? Optional.of(value.result()) : Optional.empty();
     }
     @Override public List<ElectionView> elections(ServerPlayer viewer,int offset,int limit) {
-        thread();check(offset>=0&&offset<=100000&&limit>0&&limit<=64,"Invalid election page");
+        thread();check(offset>=0&&offset<=100000&&limit>0&&limit<=64,Keyed.text("politics.mcakingdoms.refusal.invalid_page","That page is not valid."));
         return data.records().elections.keySet().stream().sorted().map(id->election(viewer,id)).flatMap(Optional::stream).skip(offset).limit(limit).toList();
     }
     @Override public Optional<Rule> transitionRule(String kingdom) { thread(); return Optional.ofNullable(data.records().transitionRules.get(kingdom)); }
     @Override public Optional<Regency> regency(String kingdom) { thread(); return Optional.ofNullable(data.records().regencies.get(kingdom)); }
     @Override public Optional<ElectionView> election(ServerPlayer viewer, UUID id) {
-        thread(); check(viewer.getServer() == server && !viewer.hasDisconnected(), "Player is not connected to this server");
+        thread(); check(viewer.getServer() == server && !viewer.hasDisconnected(), Keyed.text("politics.mcakingdoms.refusal.disconnected","You must be connected to this server."));
         Election value = data.records().elections.get(id); if (value == null) return Optional.empty();
         Government government = data.records().governments.get(value.kingdom()); boolean eligible = value.electorate().contains(viewer.getUUID());
         if (!eligible && !viewer.hasPermissions(2) && !permitted(viewer, government, Permission.APPOINT)) return Optional.empty();
@@ -150,32 +157,32 @@ public final class GovernmentService implements PoliticalService {
 
     private interface TransitionMutation { String apply(PoliticalSavedData.Records state); }
     private Result transition(ServerPlayer actor,UUID request,long expected,String kingdom,Action action,String detail,TransitionMutation mutation) {
-        thread();check(actor.getServer()==server&&!actor.hasDisconnected(),"Player is not connected to this server");Objects.requireNonNull(request); Politics.bounded(kingdom,128);
+        thread();check(actor.getServer()==server&&!actor.hasDisconnected(),Keyed.text("politics.mcakingdoms.refusal.disconnected","You must be connected to this server."));Objects.requireNonNull(request); Politics.bounded(kingdom,128);
         String fingerprint=hash(action+"|"+expected+"|"+kingdom+"|"+detail);Receipt replay=data.records().receipts.get(request);
         if(replay!=null)return replay.actor().equals(actor.getUUID())&&replay.fingerprint().equals(fingerprint)?replay.result():new Result(false,revision(),"politics.mcakingdoms.refusal.request_used","");
-        try{check(data.writable(),data.diagnostic());check(!conflict,"politics.mcakingdoms.refusal.capitals");check(expected==revision(),"politics.mcakingdoms.refusal.state_changed");
+        try{check(data.writable(),data.diagnostic());Sovereignty crown=sovereignty.apply(kingdom);check(crown.native_(),crown.refusal());check(expected==revision(),"politics.mcakingdoms.refusal.state_changed");
             Government government=data.records().governments.get(kingdom);check(government!=null,"politics.mcakingdoms.refusal.no_government");
             check(definitions.available(government.profileId()),"politics.mcakingdoms.refusal.dormant");check(data.records().receipts.size()<RECEIPT_CAPACITY,"politics.mcakingdoms.refusal.receipts_full");
-            var next=data.transaction();next.revision++;String record=mutation.apply(next);Result result=new Result(true,next.revision,"Constitutional transition recorded",record);
+            var next=data.transaction();next.revision++;String record=mutation.apply(next);Result result=new Result(true,next.revision,Keyed.text("politics.mcakingdoms.result.transition","Constitutional transition recorded."),record);
             next.receipts.put(request,new Receipt(actor.getUUID(),fingerprint,result,now()));Notice notice=new Notice(request,kingdom,action,actor.getUUID(),record,now());append(next,notice,transitionFact(request,kingdom,action,actor.getUUID(),record,next));
             if(!data.commitDurably(server,next))return new Result(false,revision(),"politics.mcakingdoms.refusal.save_failed","");publish(notice);return result;
-        }catch(IllegalArgumentException|IllegalStateException failure){return new Result(false,revision(),Objects.toString(failure.getMessage(),"Constitutional transition rejected"),"");}
+        }catch(IllegalArgumentException|IllegalStateException failure){return new Result(false,revision(),failure.getMessage()==null?Keyed.text("politics.mcakingdoms.refusal.transition_rejected","The constitutional transition was refused."):Keyed.text(failure),"");}
     }
     @Override public List<PoliticalFact> history(ServerPlayer viewer, int offset, int limit) {
-        thread(); check(viewer.getServer() == server && !viewer.hasDisconnected(), "Player is not connected to this server");
-        check(offset >= 0 && offset <= 100000 && limit > 0 && limit <= 50, "Invalid history page");
+        thread(); check(viewer.getServer() == server && !viewer.hasDisconnected(), Keyed.text("politics.mcakingdoms.refusal.disconnected","You must be connected to this server."));
+        check(offset >= 0 && offset <= 100000 && limit > 0 && limit <= 50, Keyed.text("politics.mcakingdoms.refusal.invalid_history_page","That history page is not valid."));
         return visibleHistory(viewer).skip(offset).limit(limit).toList();
     }
     private long now() { return server.overworld().getGameTime(); }
     private static UUID uuid(String value) { return UUID.fromString(value); }
-    private static void check(boolean valid, String message) { if (!valid) throw new IllegalArgumentException(message); }
+    private static void check(boolean valid, String message) { if (!valid) throw Keyed.of(message); }
     public static String hash(String value) {
         try { return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8))); }
         catch (java.security.NoSuchAlgorithmException impossible) { throw new IllegalStateException(impossible); }
     }
     @Override public Result execute(ServerPlayer actor, Request request) {
         thread();
-        check(actor.getServer() == server && !actor.hasDisconnected(), "Player is not connected to this server");
+        check(actor.getServer() == server && !actor.hasDisconnected(), Keyed.text("politics.mcakingdoms.refusal.disconnected","You must be connected to this server."));
         String fingerprint = hash(PoliticalSavedData.JSON.toJson(request));
         Receipt receipt = data.records().receipts.get(request.requestId());
         if (receipt != null) {
@@ -184,7 +191,9 @@ public final class GovernmentService implements PoliticalService {
         }
         try {
             check(data.writable(), data.diagnostic());
-            check(!conflict, "politics.mcakingdoms.refusal.capitals");
+            // Crown actions of a kingdom MCA Capitals governs stay with Capitals (C2); its civic actions continue here.
+            Sovereignty crown = sovereignty.apply(request.kingdom());
+            check(crown.native_() || !Sovereignty.crown(request.action(), crownOffice(request)), crown.refusal());
             check(request.expectedRevision() == revision(), "politics.mcakingdoms.refusal.state_changed");
             check(kingdoms.getKingdom(new ResourceLocation(request.kingdom())).filter(KingdomView::defined).isPresent(),
                     "politics.mcakingdoms.refusal.kingdom_undefined");
@@ -193,7 +202,7 @@ public final class GovernmentService implements PoliticalService {
             PoliticalSavedData.Records next = data.transaction();
             next.revision++;
             String id = mutate(actor, request, next);
-            Result result = new Result(true, next.revision, "Political decision recorded", id);
+            Result result = new Result(true, next.revision, Keyed.text("politics.mcakingdoms.result.decision","Political decision recorded."), id);
             next.receipts.put(request.requestId(), new Receipt(actor.getUUID(), fingerprint, result, now()));
             Notice notice = new Notice(request.requestId(), request.kingdom(), request.action(), actor.getUUID(), id, now());
             append(next, notice, fact(request, result, next, actor.getUUID()));
@@ -206,7 +215,7 @@ public final class GovernmentService implements PoliticalService {
             }
             return result;
         } catch (IllegalArgumentException | IllegalStateException failure) {
-            return new Result(false, revision(), Objects.toString(failure.getMessage(), "Political action rejected"), "");
+            return new Result(false, revision(), failure.getMessage() == null ? Keyed.text("politics.mcakingdoms.refusal.action_rejected","The political action was refused.") : Keyed.text(failure), "");
         }
     }
 
@@ -354,12 +363,12 @@ public final class GovernmentService implements PoliticalService {
     private String mutate(ServerPlayer actor, Request r, PoliticalSavedData.Records s) {
         Government g = s.governments.get(r.kingdom());
         if (r.action() == Action.BOOTSTRAP) {
-            check(actor.hasPermissions(2) || residentFounder(actor, r), "Founding requires an operator, or a civic resident of the capital naming themselves leader");
-            check(g == null, "Government already constituted");
+            check(actor.hasPermissions(2) || residentFounder(actor, r), Keyed.text("politics.mcakingdoms.refusal.founding_capital_resident","Founding needs an operator, or a civic resident of the capital naming themselves leader."));
+            check(g == null, Keyed.text("politics.mcakingdoms.refusal.already_constituted","This kingdom already has a government."));
             Definition profile = definitions.get(r.definition(), "government");
             SettlementView seat = settlement(r.target(), r.kingdom());
             Person leader = person(r.person(), r.kingdom(), null);
-            check(profile.offices().contains(LEADER), "Constitution has no leadership office");
+            check(profile.offices().contains(LEADER), Keyed.text("politics.mcakingdoms.refusal.no_leadership_office","This constitution has no leadership office."));
             Office office = new Office(LEADER, definitions.get(LEADER, "office"), leader, null, actor.getUUID(), now());
             s.governments.put(r.kingdom(), new Government(r.kingdom(), seat.id(), r.definition(), profile, State.ACTIVE,
                     Map.of(LEADER, office), Map.of(), null, s.revision));
@@ -375,15 +384,13 @@ public final class GovernmentService implements PoliticalService {
                 s.governments.put(g.kingdom(), government(g, seat.id(), g.offices(), g.mandates(), g.successor(), s.revision));
             }
             case APPOINT -> {
-                if (g.state() == State.INTERREGNUM && r.definition().equals(LEADER))
-                    check(actor.hasPermissions(2), "Vacant leadership without a successor requires operator appointment");
-                else authorize(actor, g, Permission.APPOINT);
-                check(g.constitution().offices().contains(r.definition()), "Office is not in this constitution");
-                Definition office = definitions.get(r.definition(), "office");
                 UUID scope = r.target().isEmpty() ? null : settlement(r.target(), r.kingdom()).id();
-                check(!r.definition().equals(LEADER) || scope == null, "Leadership is kingdom-wide");
+                GovernmentActionPolicy.require(facts(actor, g.kingdom(), g, s), Action.APPOINT, GovernmentActionPolicy.Target.office(officeKey(r.definition(), scope)));
+                check(g.constitution().offices().contains(r.definition()), Keyed.text("politics.mcakingdoms.refusal.office_not_in_constitution","That office is not part of this constitution."));
+                Definition office = definitions.get(r.definition(), "office");
+                check(!r.definition().equals(LEADER) || scope == null, Keyed.text("politics.mcakingdoms.refusal.leadership_kingdom_wide","The leadership office is kingdom-wide; it cannot be limited to one settlement."));
                 Person candidate = person(r.person(), r.kingdom(), scope);
-                check(g.offices().values().stream().filter(o -> o.holder().equals(candidate)).count() < g.constitution().maxOffices(), "Office limit reached");
+                check(g.offices().values().stream().filter(o -> o.holder().equals(candidate)).count() < g.constitution().maxOffices(), Keyed.text("politics.mcakingdoms.refusal.office_limit","That person already holds as many offices as this constitution allows."));
                 String key = officeKey(r.definition(), scope);
                 check(g.offices().values().stream().noneMatch(o -> o.definitionId().equals(r.definition())
                         && Objects.equals(scope, o.settlement() == null ? null : kingdoms.getSettlement(o.settlement()).orElseThrow().id())), "Office occupied; remove its holder explicitly first");
@@ -393,22 +400,21 @@ public final class GovernmentService implements PoliticalService {
             }
             case REMOVE_OFFICE, ABDICATE -> {
                 String key = r.action() == Action.ABDICATE ? LEADER : officeKey(r.definition(), r.target().isEmpty() ? null : uuid(r.target()));
-                Office office = g.offices().get(key); check(office != null, "Office is vacant");
-                if (r.action() == Action.ABDICATE) { check(office.holder().equals(new Person(actor.getUUID(), Kind.PLAYER)), "Only the holder may abdicate"); if (elected(s, g.kingdom(), office.holder())) s.electedMandates.remove(g.kingdom()); }
-                else { authorize(actor, g, Permission.APPOINT); check(!key.equals(LEADER) || !elected(s, g.kingdom(), office.holder()), "The leader holds an elected mandate; only a new election or abdication ends it"); }
+                GovernmentActionPolicy.require(facts(actor, g.kingdom(), g, s), r.action(), GovernmentActionPolicy.Target.office(key));
+                Office office = g.offices().get(key);
+                if (r.action() == Action.ABDICATE && elected(s, g.kingdom(), office.holder())) s.electedMandates.remove(g.kingdom());
                 Map<String, Office> offices = new LinkedHashMap<>(g.offices()); offices.remove(key);
                 Map<UUID, Set<Permission>> mandates = key.equals(LEADER) ? Map.of() : g.mandates();
                 s.governments.put(g.kingdom(), government(g, g.capital(), offices, mandates, g.successor(), s.revision));
             }
             case DELEGATE, REVOKE -> {
-                authorize(actor, g, Permission.DELEGATE);
-                check(r.person() != null && r.person().kind() == Kind.PLAYER, "Mandates require a player");
+                GovernmentActionPolicy.require(facts(actor, g.kingdom(), g, s), r.action(), GovernmentActionPolicy.Target.ANY);
+                check(r.person() != null && r.person().kind() == Kind.PLAYER, "politics.mcakingdoms.refusal.mandate_player");
                 Map<UUID, Set<Permission>> mandates = new LinkedHashMap<>(g.mandates());
                 if (r.action() == Action.REVOKE) mandates.remove(r.person().id());
                 else {
                     Permission permission = Permission.valueOf(r.definition().toUpperCase(Locale.ROOT));
-                    check(permission != Permission.DELEGATE, "Delegation authority cannot be redelegated");
-                    check(g.offices().get(LEADER) != null && g.offices().get(LEADER).holder().equals(new Person(actor.getUUID(), Kind.PLAYER)), "Only the leader delegates mandates");
+                    check(permission != Permission.DELEGATE, "politics.mcakingdoms.refusal.redelegate");
                     Set<Permission> grant = new HashSet<>(mandates.getOrDefault(r.person().id(), Set.of())); grant.add(permission);
                     mandates.put(r.person().id(), grant);
                 }
@@ -418,8 +424,8 @@ public final class GovernmentService implements PoliticalService {
             case SIGN, DECLINE, WITHDRAW, TERMINATE -> {
                 if (r.action() == Action.WITHDRAW && s.petitions.containsKey(uuid(r.target()))) {
                     Petition p = s.petitions.get(uuid(r.target()));
-                    check(p.requester().equals(actor.getUUID()) && p.kingdom().equals(r.kingdom()), "Only the petitioner can withdraw");
-                    check(open(p), "Petition is closed");
+                    check(p.requester().equals(actor.getUUID()) && p.kingdom().equals(r.kingdom()), Keyed.text("politics.mcakingdoms.refusal.petitioner_only","Only the petitioner can withdraw this petition."));
+                    check(open(p), Keyed.text("politics.mcakingdoms.refusal.petition_closed","This petition is closed."));
                     s.petitions.put(p.id(), decision(p, PetitionState.WITHDRAWN, r.text(), actor.getUUID(), s.revision));
                 } else agreement(actor, r, s, g);
             }
@@ -427,11 +433,11 @@ public final class GovernmentService implements PoliticalService {
                 authorize(actor, g, Permission.REVIEW);
                 Petition p = s.petitions.get(uuid(r.target()));
                 check(p != null && p.kingdom().equals(r.kingdom()), "Petition unavailable");
-                check(open(p) && now() < p.expiresAt(), "Petition is closed or expired");
-                check(definitions.available(p.definitionId()), "Petition definition unavailable");
+                check(open(p) && now() < p.expiresAt(), Keyed.text("politics.mcakingdoms.refusal.petition_expired","This petition is closed or has expired."));
+                check(definitions.available(p.definitionId()), Keyed.text("politics.mcakingdoms.refusal.petition_definition","This petition's definition is no longer loaded."));
                 if (p.terms().independentApproval()) check(!p.requester().equals(actor.getUUID())
-                        && (p.nominee() == null || !p.nominee().id().equals(actor.getUUID())), "An independent approver is required");
-                check(!r.text().isBlank(), "A decision reason is required");
+                        && (p.nominee() == null || !p.nominee().id().equals(actor.getUUID())), Keyed.text("politics.mcakingdoms.refusal.independent_approver","An independent approver is required: not the petitioner or the nominee."));
+                check(!r.text().isBlank(), Keyed.text("politics.mcakingdoms.refusal.decision_reason","Give a reason for the decision."));
                 if (r.action() == Action.APPROVE) approvePetition(actor, p, s, g);
                 s.petitions.put(p.id(), decision(p, r.action() == Action.REVIEW ? PetitionState.UNDER_REVIEW
                         : r.action() == Action.APPROVE ? PetitionState.APPROVED : PetitionState.DECLINED,
@@ -453,12 +459,12 @@ public final class GovernmentService implements PoliticalService {
                 Recognition recognition = s.recognitions.get(uuid(r.target()));
                 check(recognition != null && recognition.kingdom().equals(g.kingdom()), "Recognition unavailable");
                 authorizeScoped(actor, g, Permission.RECOGNIZE, settlement(recognition.building().settlement().toString(), g.kingdom()).id());
-                check(definitions.available(recognition.definitionId()), "Charter definition unavailable");
+                check(definitions.available(recognition.definitionId()), Keyed.text("politics.mcakingdoms.refusal.charter_definition","The institution charter's definition is no longer loaded."));
                 Building original = recognition.building();
                 ServerLevel level = server.getLevel(ResourceKey.create(Registries.DIMENSION, new ResourceLocation(original.dimension())));
-                check(level != null && level.hasChunkAt(new BlockPos(original.x(), original.y(), original.z())), "Building status unknown: location unloaded");
+                check(level != null && level.hasChunkAt(new BlockPos(original.x(), original.y(), original.z())), Keyed.text("politics.mcakingdoms.refusal.building_unloaded","The building's status is unknown because its location is not loaded."));
                 Optional<TownsteadBuildingView> observed = townstead().buildingAt(level, new BlockPos(original.x(), original.y(), original.z()));
-                check(townstead().capabilities().contains(TownsteadCapability.READ_BUILDING), "Building capability unavailable");
+                check(townstead().capabilities().contains(TownsteadCapability.READ_BUILDING), Keyed.text("politics.mcakingdoms.refusal.building_capability","Building records cannot be read on this server."));
                 boolean valid = observed.filter(b -> b.villageId() == original.villageId() && b.buildingId() == original.buildingId()
                         && b.type().equals(original.type())).isPresent();
                 s.recognitions.put(recognition.id(), new Recognition(recognition.id(), recognition.kingdom(), recognition.definitionId(), recognition.terms(), original, actor.getUUID(), valid, s.revision));
@@ -473,15 +479,12 @@ public final class GovernmentService implements PoliticalService {
                 s.honors.put(h.id(), new Honor(h.id(), h.kingdom(), h.definitionId(), h.terms(), h.recipient(), actor.getUUID(), h.evidence(), h.discretionary(), false, s.revision));
             }
             case NAME_SUCCESSOR -> {
-                authorize(actor, g, Permission.APPOINT);
-                check(!activeRegency(g.kingdom()), "politics.mcakingdoms.refusal.successor_frozen");
-                check(!elected(s, g.kingdom(), g.successor()), "The named successor was elected; only a new election or the successor's own withdrawal replaces them");
+                GovernmentActionPolicy.require(facts(actor, g.kingdom(), g, s), Action.NAME_SUCCESSOR, GovernmentActionPolicy.Target.ANY);
                 Person successor = person(r.person(), g.kingdom(), null);
                 s.governments.put(g.kingdom(), government(g, g.capital(), g.offices(), g.mandates(), successor, s.revision));
             }
             case SUCCEED -> {
-                check(g.state() == State.INTERREGNUM && g.successor() != null, "No named successor in interregnum");
-                check(actor.hasPermissions(2) || g.successor().equals(new Person(actor.getUUID(), Kind.PLAYER)), "Only the named successor or operator can confirm");
+                GovernmentActionPolicy.require(facts(actor, g.kingdom(), g, s), Action.SUCCEED, GovernmentActionPolicy.Target.ANY);
                 Person successor = person(g.successor(), g.kingdom(), null);
                 Map<String, Office> offices = new LinkedHashMap<>(g.offices());
                 offices.put(LEADER, new Office(LEADER, definitions.get(LEADER, "office"), successor, null, actor.getUUID(), now()));
@@ -498,6 +501,121 @@ public final class GovernmentService implements PoliticalService {
         return r.target().isEmpty() ? r.kingdom() : r.target();
     }
     private static String officeKey(String definition, UUID scope) { return scope == null ? definition : definition + "@" + scope; }
+    /** The office a request appoints or removes, as the crown rule reads it: the leader's key only for the kingdom-wide leader. */
+    private static String crownOffice(Request r) {
+        if (r.action() != Action.APPOINT && r.action() != Action.REMOVE_OFFICE) return null;
+        return r.definition().equals(LEADER) && r.target().isEmpty() ? LEADER : r.definition();
+    }
+    /** A person by name: online player, loaded entity, then MCA's family record; never a raw id. */
+    private String personName(UUID id) {
+        String known = dev.otectus.mcakingdoms.interaction.Names.person(server, id);
+        return known.startsWith("an ") ? dev.otectus.mcakingdoms.compat.mca.McaFamilyEvidence.name(server, id).orElse(known) : known;
+    }
+    /** Who governs {@code kingdom}'s crown now (C2). */
+    public Sovereignty sovereignty(String kingdom) { thread(); return sovereignty.apply(kingdom); }
+    /** The player whose current mandate in {@code kingdom} came from a resolved election, if any. */
+    public Optional<UUID> electedHolder(String kingdom) { thread(); return Optional.ofNullable(data.records().electedMandates.get(kingdom)); }
+    /** The players who sit on {@code kingdom}'s council: player office holders and mandate holders. */
+    public Set<UUID> council(String kingdom) {
+        thread(); Government g = data.records().governments.get(kingdom); if (g == null) return Set.of();
+        Set<UUID> out = new LinkedHashSet<>(g.mandates().keySet());
+        g.offices().values().stream().map(Office::holder).filter(p -> p.kind() == Kind.PLAYER).map(Person::id).forEach(out::add);
+        return out;
+    }
+    /** Why {@code candidate} could not hold office in {@code kingdom} now (an encoded bundled message), or empty when they could. */
+    public Optional<String> eligibility(Person candidate, String kingdom) {
+        thread();
+        try { person(candidate, kingdom, null); return Optional.empty(); }
+        catch (IllegalArgumentException | IllegalStateException refused) { return Optional.of(refused.getMessage() == null ? "politics.mcakingdoms.refusal.action_rejected" : Keyed.text(refused)); }
+    }
+    /** Whether {@code id} is a player this service knows (connected, or in the server's profile cache): the test every player choice passes. */
+    public boolean knownPlayer(UUID id) { return id != null && knownPlayer.test(id); }
+    /** Whether {@code actor} holds {@code permission} in {@code kingdom} through an office, mandate or regency. */
+    public boolean permitted(UUID actor, String kingdom, Permission permission) { thread(); return permitted(actor, data.records().governments.get(kingdom), permission); }
+
+    /**
+     * Seats {@code heir} as leader of {@code kingdom} because its law of succession chose them (A2): a system write in
+     * interregnum, on the kingdom's own crown only, with the same eligibility check as any succession. An elected
+     * successor is never displaced: when one is named, only they can be seated. One commit per succession case; a
+     * repeat returns the first result. Ends an active regency, once.
+     */
+    public Result succeedByLaw(String kingdom, Person heir, UUID caseId, UUID authorizedBy) {
+        thread();
+        UUID request = stable("succession-by-law", caseId, 0, kingdom);
+        Receipt receipt = data.records().receipts.get(request);
+        if (receipt != null) return receipt.result();
+        try {
+            check(data.writable(), data.diagnostic());
+            Sovereignty crown = sovereignty.apply(kingdom); check(crown.native_(), crown.refusal());
+            check(kingdoms.getKingdom(new ResourceLocation(kingdom)).filter(KingdomView::defined).isPresent(), "politics.mcakingdoms.refusal.kingdom_undefined");
+            check(data.records().receipts.size() < RECEIPT_CAPACITY, "politics.mcakingdoms.refusal.receipts_full");
+            PoliticalSavedData.Records next = data.transaction();
+            next.revision++;
+            Government g = next.governments.get(kingdom);
+            check(g != null && definitions.available(g.profileId()), "politics.mcakingdoms.refusal.no_government");
+            check(g.state() == State.INTERREGNUM, "politics.mcakingdoms.refusal.no_succession");
+            check(g.successor() == null || !elected(next, kingdom, g.successor()) || g.successor().equals(heir), "politics.mcakingdoms.refusal.elected_successor");
+            Person seated = person(heir, kingdom, null);
+            Map<String, Office> offices = new LinkedHashMap<>(g.offices());
+            UUID by = authorizedBy == null ? new UUID(0, 0) : authorizedBy;
+            offices.put(LEADER, new Office(LEADER, definitions.get(LEADER, "office"), seated, null, by, now()));
+            next.governments.put(kingdom, government(g, g.capital(), offices, Map.of(), null, next.revision));
+            Regency regency = next.regencies.get(kingdom);
+            if (regency != null && regency.active()) next.regencies.put(kingdom, new Regency(regency.id(), regency.kingdom(), regency.regent(), regency.permissions(),
+                    regency.preservedSuccessor(), regency.appointedAt(), regency.expiresAt(), false, next.revision));
+            Result result = new Result(true, next.revision, Keyed.text("politics.mcakingdoms.result.succession_by_law", "The heir was seated under the kingdom's law of succession."), kingdom);
+            next.receipts.put(request, new Receipt(by, "succession-by-law|" + caseId, result, now()));
+            Notice notice = new Notice(request, kingdom, Action.SUCCEED, by, kingdom, now());
+            append(next, notice, new PoliticalFact(request, request, next.revision, now(), kingdom, PoliticalFact.Type.SUCCESSION_CONFIRMED, authorizedBy, kingdom,
+                    Set.of(kingdom), Set.of(seated.id()), PoliticalFact.Visibility.PUBLIC, PoliticalFact.Correction.CURRENT, null, summary(PoliticalFact.Type.SUCCESSION_CONFIRMED)));
+            if (!data.commitDurably(server, next)) return new Result(false, revision(), "politics.mcakingdoms.refusal.save_failed", "");
+            publish(notice);
+            return result;
+        } catch (IllegalArgumentException | IllegalStateException failure) {
+            return new Result(false, revision(), failure.getMessage() == null ? Keyed.text("politics.mcakingdoms.refusal.action_rejected", "The political action was refused.") : Keyed.text(failure), "");
+        }
+    }
+
+    /**
+     * Appoints {@code regent}, a minor heir's guardian, under the kingdom's transition rule while the heir grows up (A2):
+     * the existing regency with its bounded term and permissions, preserving the heir as the named successor. Refused
+     * without a rule that allows regencies, while one is active, or when it would displace an elected successor. One
+     * commit per succession case.
+     */
+    public Result appointRegentByLaw(String kingdom, Person regent, Person heir, UUID caseId) {
+        thread();
+        UUID request = stable("regency-by-law", caseId, 0, kingdom);
+        Receipt receipt = data.records().receipts.get(request);
+        if (receipt != null) return receipt.result();
+        try {
+            check(data.writable(), data.diagnostic());
+            Sovereignty crown = sovereignty.apply(kingdom); check(crown.native_(), crown.refusal());
+            check(data.records().receipts.size() < RECEIPT_CAPACITY, "politics.mcakingdoms.refusal.receipts_full");
+            PoliticalSavedData.Records next = data.transaction();
+            next.revision++;
+            Government g = next.governments.get(kingdom); Rule rule = next.transitionRules.get(kingdom);
+            check(g != null && g.state() == State.INTERREGNUM, "politics.mcakingdoms.refusal.no_succession");
+            check(rule != null && rule.regency(), "politics.mcakingdoms.refusal.no_regency");
+            Regency prior = next.regencies.get(kingdom); check(prior == null || !prior.active() || now() >= prior.expiresAt(), "politics.mcakingdoms.refusal.regency_active");
+            Person guardian = person(regent, kingdom, null);
+            check(guardian.kind() == Kind.PLAYER, "politics.mcakingdoms.refusal.regency_operator");
+            // The regency preserves the named successor, so the minor heir becomes it; an elected successor is never displaced.
+            check(g.successor() == null || !elected(next, kingdom, g.successor()) || g.successor().equals(heir), "politics.mcakingdoms.refusal.elected_successor");
+            UUID id = stable("regency", caseId, 0, kingdom);
+            next.governments.put(kingdom, government(g, g.capital(), g.offices(), g.mandates(), heir, next.revision));
+            next.regencies.put(kingdom, new Regency(id, kingdom, guardian, rule.regentPermissions(), heir, now(), now() + rule.regencyTicks(), true, next.revision));
+            Result result = new Result(true, next.revision, Keyed.text("politics.mcakingdoms.result.regency_by_law", "The heir's guardian governs as regent until the heir comes of age."), id.toString());
+            next.receipts.put(request, new Receipt(new UUID(0, 0), "regency-by-law|" + caseId, result, now()));
+            Notice notice = new Notice(request, kingdom, Action.APPOINT_REGENT, new UUID(0, 0), id.toString(), now());
+            append(next, notice, new PoliticalFact(request, request, next.revision, now(), kingdom, PoliticalFact.Type.REGENCY_APPOINTED, null, id.toString(),
+                    Set.of(kingdom), Set.of(guardian.id()), PoliticalFact.Visibility.PUBLIC, PoliticalFact.Correction.CURRENT, null, summary(PoliticalFact.Type.REGENCY_APPOINTED)));
+            if (!data.commitDurably(server, next)) return new Result(false, revision(), "politics.mcakingdoms.refusal.save_failed", "");
+            publish(notice);
+            return result;
+        } catch (IllegalArgumentException | IllegalStateException failure) {
+            return new Result(false, revision(), failure.getMessage() == null ? Keyed.text("politics.mcakingdoms.refusal.action_rejected", "The political action was refused.") : Keyed.text(failure), "");
+        }
+    }
     private Government government(Government g, UUID capital, Map<String, Office> offices,
                                   Map<UUID, Set<Permission>> mandates, Person successor, long revision) {
         return new Government(g.kingdom(), capital, g.profileId(), g.constitution(), offices.containsKey(LEADER) ? State.ACTIVE : State.INTERREGNUM,
@@ -565,53 +683,53 @@ public final class GovernmentService implements PoliticalService {
                 && o.holder().equals(new Person(actor, Kind.PLAYER)) && o.terms().permissions().contains(permission));
     }
     private void authorize(ServerPlayer actor, Government g, Permission permission) {
-        check(permitted(actor, g, permission), "Requires a kingdom-wide " + permission.name().toLowerCase(Locale.ROOT) + " mandate");
+        check(permitted(actor, g, permission), GovernmentActionPolicy.permissionKey(permission));
     }
     private void authorizeScoped(ServerPlayer actor, Government g, Permission permission, UUID settlement) {
         if (permitted(actor, g, permission)) return;
         check(g.state() == State.ACTIVE && g.offices().values().stream().anyMatch(o -> o.settlement() != null
                 && o.holder().equals(new Person(actor.getUUID(), Kind.PLAYER)) && definitions.available(o.definitionId())
                 && o.terms().permissions().contains(permission) && kingdoms.getSettlement(o.settlement()).map(v -> v.id().equals(settlement)).orElse(false)),
-                "Requires a " + permission.name().toLowerCase(Locale.ROOT) + " mandate for this settlement");
+                Keyed.text("politics.mcakingdoms.refusal.scoped_permission", "This needs the %s responsibility for this settlement.", permission));
     }
     private SettlementView settlement(String id, String kingdom) {
         SettlementView result = kingdoms.findSettlement(id).orElseThrow(() -> new IllegalArgumentException("Settlement unavailable"));
-        check(result.kingdomId().toString().equals(kingdom), "Settlement belongs to another kingdom"); return result;
+        check(result.kingdomId().toString().equals(kingdom), Keyed.text("politics.mcakingdoms.refusal.settlement_other_kingdom","That settlement belongs to another kingdom.")); return result;
     }
     private TownsteadService townstead() { return KingdomsTownsteadApi.get(server); }
     private Person person(Person candidate, String kingdom, UUID scope) {
-        check(candidate != null, "A person is required");
+        check(candidate != null, Keyed.text("politics.mcakingdoms.refusal.person_required","Choose a person."));
         if (candidate.kind() == Kind.PLAYER) {
             check(knownPlayer.test(candidate.id()), "Unknown player");
             return candidate;
         }
         Entity entity = null;
         for (ServerLevel level : server.getAllLevels()) { entity = level.getEntity(candidate.id()); if (entity != null) break; }
-        check(entity instanceof LivingEntity && entity.isAlive() && !(entity instanceof ServerPlayer), "NPC life status unknown: candidate must be alive and loaded");
-        var identity = kingdoms.getCivicIdentity(entity).orElseThrow(() -> new IllegalArgumentException("Civic residence unknown"));
-        UUID residence = identity.residenceSettlement().orElseThrow(() -> new IllegalArgumentException("Civic residence unknown"));
+        check(entity instanceof LivingEntity && entity.isAlive() && !(entity instanceof ServerPlayer), Keyed.text("politics.mcakingdoms.refusal.npc_unloaded","That villager must be alive and loaded to be checked."));
+        var identity = kingdoms.getCivicIdentity(entity).orElseThrow(() -> Keyed.refuse("politics.mcakingdoms.refusal.no_residence","That villager has no known civic residence."));
+        UUID residence = identity.residenceSettlement().orElseThrow(() -> Keyed.refuse("politics.mcakingdoms.refusal.no_residence","That villager has no known civic residence."));
         SettlementView home = settlement(residence.toString(), kingdom);
-        check(scope == null || scope.equals(home.id()), "Candidate is not resident in this office's settlement");
+        check(scope == null || scope.equals(home.id()), Keyed.text("politics.mcakingdoms.refusal.not_resident_here","That person does not live in this office's settlement."));
         if (ModList.get().isLoaded("townstead")) {
             // Whether Townstead's life stages can be read is a capability probe, not a version match: a
             // release that moved these members fails closed here, one that kept them works.
             check(townstead().capabilities().contains(TownsteadCapability.READ_VILLAGER)
                     && townstead().capabilities().contains(TownsteadCapability.READ_ORIGIN),
-                    "Townstead life-stage evidence unavailable: its villager and origin data cannot be read");
-            TownsteadVillagerView view = townstead().villager(entity).orElseThrow(() -> new IllegalArgumentException("Townstead life-stage evidence unavailable"));
+                    Keyed.text("politics.mcakingdoms.refusal.townstead_unreadable","Townstead's life stages cannot be read: its villager and origin data are unavailable."));
+            TownsteadVillagerView view = townstead().villager(entity).orElseThrow(() -> Keyed.refuse("politics.mcakingdoms.refusal.townstead_unavailable","Townstead's life stage for this villager is unavailable."));
             String presentation = view.rootId().flatMap(townstead()::origin).stream().flatMap(root -> root.lifeStages().stream())
                     .filter(stage -> stage.id().equalsIgnoreCase(view.lifeStage())).map(TownsteadLifeStageView::presentsAs).findFirst().orElse("");
-            check(Set.of("adult", "senior").contains(presentation.toLowerCase(Locale.ROOT)), "Adulthood unconfirmed for life stage " + view.lifeStage());
+            check(Set.of("adult", "senior").contains(presentation.toLowerCase(Locale.ROOT)), Keyed.text("politics.mcakingdoms.refusal.not_adult", "That villager is not confirmed as an adult (life stage %s).", view.lifeStage()));
         } else {
-            check(entity instanceof Villager && !((Villager) entity).isBaby(), "Adult evidence unavailable for this NPC provider");
+            check(entity instanceof Villager && !((Villager) entity).isBaby(), Keyed.text("politics.mcakingdoms.refusal.adult_unknown","Adulthood cannot be confirmed for this kind of villager."));
         }
         return candidate;
     }
     private Building building(ServerLevel level, BlockPos position, String kingdom) {
-        check(level.hasChunkAt(position), "Building status unknown: location unloaded");
+        check(level.hasChunkAt(position), Keyed.text("politics.mcakingdoms.refusal.building_unloaded","The building's status is unknown because its location is not loaded."));
         // Townstead's building query, or MCA's own building list without it; either way a probed capability.
-        check(townstead().capabilities().contains(TownsteadCapability.READ_BUILDING), "Building capability unavailable");
-        TownsteadBuildingView b = townstead().buildingAt(level, position).orElseThrow(() -> new IllegalArgumentException("Building evidence unavailable"));
+        check(townstead().capabilities().contains(TownsteadCapability.READ_BUILDING), Keyed.text("politics.mcakingdoms.refusal.building_capability","Building records cannot be read on this server."));
+        TownsteadBuildingView b = townstead().buildingAt(level, position).orElseThrow(() -> Keyed.refuse("politics.mcakingdoms.refusal.building_evidence","No building record was found at that position."));
         SettlementView settlement = settlement(b.settlementId().toString(), kingdom);
         return new Building("townstead", b.dimension().toString(), b.villageId(), b.buildingId(), settlement.id(), b.type(), b.centerX(), b.centerY(), b.centerZ());
     }
@@ -619,18 +737,24 @@ public final class GovernmentService implements PoliticalService {
         authorize(actor, g, Permission.PROPOSE);
         Government other = s.governments.get(r.counterpart());
         check(other != null && !other.kingdom().equals(g.kingdom()) && other.state() == State.ACTIVE
-                && definitions.available(other.profileId()), "Counterpart government unavailable");
+                && definitions.available(other.profileId()), Keyed.text("politics.mcakingdoms.refusal.counterpart_unavailable","The other kingdom has no government."));
         Definition terms = definitions.get(r.definition(), "agreement");
         for (String prerequisite : terms.requires()) check(s.agreements.values().stream().anyMatch(a -> a.involves(g.kingdom()) && a.involves(other.kingdom())
-                && a.definitionId().equals(prerequisite) && active(a)), "Requires active " + prerequisite);
+                && a.definitionId().equals(prerequisite) && active(a)), Keyed.text("politics.mcakingdoms.refusal.requires_prerequisite", "This needs an active %s first.",
+                Optional.ofNullable(definitions.snapshot().get(prerequisite)).map(d -> definitionTitle(d.title())).orElse(net.minecraft.network.chat.Component.literal(prerequisite))));
         check(s.agreements.values().stream().noneMatch(a -> a.involves(g.kingdom()) && a.involves(other.kingdom()) && a.definitionId().equals(r.definition())
-                && (active(a) || a.state() == AgreementState.PROPOSED && now() < a.expiresAt())), "An agreement of this type is already pending or active");
+                && (active(a) || a.state() == AgreementState.PROPOSED && now() < a.expiresAt())), Keyed.text("politics.mcakingdoms.refusal.agreement_exists","An agreement of this type is already pending or in force."));
         UUID id = UUID.randomUUID();
         String termsHash = hash(g.kingdom() + "|" + other.kingdom() + "|" + r.definition() + "|" + PoliticalSavedData.JSON.toJson(terms) + "|" + r.text());
         s.agreements.put(id, new Agreement(id, g.kingdom(), other.kingdom(), r.definition(), terms, r.text(), termsHash,
                 Map.of(), AgreementState.PROPOSED, now(), now() + 720000, s.revision)); return id;
     }
     private boolean active(Agreement a) { return a.state() == AgreementState.ACTIVE && now() < a.expiresAt(); }
+    /** The agreements in force that {@code kingdom} signed, by id, for documents that seal them (B2). */
+    public List<Agreement> activeAgreements(String kingdom) {
+        thread();
+        return data.records().agreements.values().stream().filter(a -> a.involves(kingdom) && active(a)).sorted(Comparator.comparing(a -> a.id().toString())).limit(64).toList();
+    }
     /** A proposed agreement waiting for a signature this viewer may give, for one of the two governments. */
     public record AwaitingSignature(String kingdom, UUID agreement, net.minecraft.network.chat.Component title) { }
     /**
@@ -639,7 +763,7 @@ public final class GovernmentService implements PoliticalService {
      */
     public List<AwaitingSignature> awaitingSignature(ServerPlayer viewer, int limit) {
         thread();
-        if (!data.writable() || conflict) return List.of();
+        if (!data.writable()) return List.of();
         PoliticalSavedData.Records s = data.records();
         List<AwaitingSignature> out = new ArrayList<>();
         for (Agreement a : s.agreements.values().stream().sorted(Comparator.comparingLong(Agreement::proposedAt).reversed()).toList()) {
@@ -655,7 +779,7 @@ public final class GovernmentService implements PoliticalService {
     }
     @Override public AgreementClauseView clause(String first, String second, Clause clause) {
         thread(); Objects.requireNonNull(clause);
-        if (!data.writable() || conflict || !institutionalServices.getAsBoolean())
+        if (!data.writable() || !institutionalServices.getAsBoolean())
             return new AgreementClauseView(clause, AgreementClauseView.Status.UNAVAILABLE, Optional.empty(), revision(), 0, "civic.agreement_unavailable");
         if (first.equals(second)) return new AgreementClauseView(clause, AgreementClauseView.Status.NOT_AGREED,
                 Optional.empty(), revision(), 0, "civic.agreement_required");
@@ -679,26 +803,26 @@ public final class GovernmentService implements PoliticalService {
         Agreement a = s.agreements.get(uuid(r.target())); check(a != null && a.involves(g.kingdom()), "Agreement unavailable");
         authorize(actor, g, Permission.RATIFY);
         check(now() < a.expiresAt(), "Agreement expired");
-        check(definitions.available(a.definitionId()), "Agreement definition unavailable; retained terms are dormant");
+        check(definitions.available(a.definitionId()), Keyed.text("politics.mcakingdoms.refusal.agreement_dormant","This agreement's definition is no longer loaded; its kept terms are dormant."));
         Map<String, UUID> signatures = new LinkedHashMap<>(a.signatures());
         AgreementState state;
         long expires = a.expiresAt();
         if (r.action() == Action.SIGN) {
-            check(a.state() == AgreementState.PROPOSED, "Agreement is not pending");
-            check(a.termsHash().equals(r.termsHash()), "Terms hash does not match; review the proposal again");
-            check(!signatures.containsKey(g.kingdom()), "Government has already signed");
+            check(a.state() == AgreementState.PROPOSED, Keyed.text("politics.mcakingdoms.refusal.agreement_not_pending","That agreement is not waiting for signatures."));
+            check(a.termsHash().equals(r.termsHash()), Keyed.text("politics.mcakingdoms.refusal.terms_changed","The terms you reviewed are not the current terms; review the proposal again."));
+            check(!signatures.containsKey(g.kingdom()), Keyed.text("politics.mcakingdoms.refusal.already_signed","This government has already signed."));
             for (var signature : signatures.entrySet()) check(permitted(signature.getValue(), s.governments.get(signature.getKey()), Permission.RATIFY),
-                    "A previous signatory lost ratification authority; withdraw and submit a new proposal");
+                    Keyed.text("politics.mcakingdoms.refusal.signatory_lost","An earlier signer lost the ratification responsibility; withdraw it and submit a new proposal."));
             for (String prerequisite : a.terms().requires()) check(s.agreements.values().stream().anyMatch(required -> required.involves(a.proposer())
-                    && required.involves(a.recipient()) && required.definitionId().equals(prerequisite) && active(required)), "Agreement prerequisite is no longer active");
+                    && required.involves(a.recipient()) && required.definitionId().equals(prerequisite) && active(required)), Keyed.text("politics.mcakingdoms.refusal.prerequisite_inactive","The agreement it depends on is no longer in force."));
             signatures.put(g.kingdom(), actor.getUUID());
             state = signatures.size() == 2 ? AgreementState.ACTIVE : AgreementState.PROPOSED;
             if (state == AgreementState.ACTIVE) expires = now() + a.terms().durationTicks();
         } else if (r.action() == Action.TERMINATE) {
-            check(active(a), "Agreement is not active"); state = AgreementState.TERMINATED;
+            check(active(a), Keyed.text("politics.mcakingdoms.refusal.agreement_inactive","That agreement is not in force.")); state = AgreementState.TERMINATED;
         } else {
-            check(a.state() == AgreementState.PROPOSED, "Agreement is not pending");
-            check(r.action() == Action.DECLINE ? a.recipient().equals(g.kingdom()) : a.proposer().equals(g.kingdom()), "Wrong party for this action");
+            check(a.state() == AgreementState.PROPOSED, Keyed.text("politics.mcakingdoms.refusal.agreement_not_pending","That agreement is not waiting for signatures."));
+            check(r.action() == Action.DECLINE ? a.recipient().equals(g.kingdom()) : a.proposer().equals(g.kingdom()), Keyed.text("politics.mcakingdoms.refusal.wrong_party","Your government is not the party that can do this."));
             state = r.action() == Action.DECLINE ? AgreementState.DECLINED : AgreementState.WITHDRAWN;
         }
         s.agreements.put(a.id(), new Agreement(a.id(), a.proposer(), a.recipient(), a.definitionId(), a.terms(), a.explanation(), a.termsHash(), signatures, state, a.proposedAt(), expires, s.revision));
@@ -708,13 +832,13 @@ public final class GovernmentService implements PoliticalService {
         Government g = s.governments.get(r.kingdom()); check(g != null && g.state() == State.ACTIVE && definitions.available(g.profileId()), "Government unavailable");
         Definition terms = definitions.get(r.definition(), "petition");
         check(Set.of("mcakingdoms:institution_petition", "mcakingdoms:honor_petition", "mcakingdoms:introduction_petition").contains(r.definition()),
-                "No supported handler for this petition definition");
-        check(s.petitions.values().stream().filter(p -> p.requester().equals(actor.getUUID()) && p.kingdom().equals(g.kingdom()) && open(p) && now() < p.expiresAt()).count() < 3, "At most three open petitions per kingdom");
-        check(!r.text().isBlank(), "Explain the request");
+                Keyed.text("politics.mcakingdoms.refusal.petition_handler","This petition type has no supported way to be handled."));
+        check(s.petitions.values().stream().filter(p -> p.requester().equals(actor.getUUID()) && p.kingdom().equals(g.kingdom()) && open(p) && now() < p.expiresAt()).count() < 3, Keyed.text("politics.mcakingdoms.refusal.petition_limit","You may have at most three open petitions per kingdom."));
+        check(!r.text().isBlank(), Keyed.text("politics.mcakingdoms.refusal.explain_request","Explain your request."));
         UUID settlement = r.target().isEmpty() ? g.capital() : settlement(r.target(), r.kingdom()).id();
         Building building = r.definition().equals("mcakingdoms:institution_petition") ? building(actor.serverLevel(), new BlockPos(r.x(), r.y(), r.z()), r.kingdom()) : null;
         if (r.definition().equals("mcakingdoms:honor_petition")) person(r.person(), r.kingdom(), null);
-        if (r.definition().equals("mcakingdoms:introduction_petition")) check(s.governments.containsKey(r.counterpart()) && !r.counterpart().equals(r.kingdom()), "Counterpart government unavailable");
+        if (r.definition().equals("mcakingdoms:introduction_petition")) check(s.governments.containsKey(r.counterpart()) && !r.counterpart().equals(r.kingdom()), Keyed.text("politics.mcakingdoms.refusal.counterpart_unavailable","The other kingdom has no government."));
         UUID id = UUID.randomUUID();
         s.petitions.put(id, new Petition(id, actor.getUUID(), r.kingdom(), r.definition(), terms, settlement, r.person(), building,
                 r.counterpart(), r.text(), PetitionState.SUBMITTED, "", null, now(), now() + terms.durationTicks(), s.revision)); return id;
@@ -729,11 +853,11 @@ public final class GovernmentService implements PoliticalService {
                 authorize(actor, g, Permission.RECOGNIZE);
                 Building b = p.building();
                 ServerLevel level = server.getLevel(ResourceKey.create(Registries.DIMENSION, new ResourceLocation(b.dimension())));
-                check(level != null, "Building dimension unavailable");
+                check(level != null, Keyed.text("politics.mcakingdoms.refusal.building_dimension","The building's dimension is not available."));
                 Building observed = building(level, new BlockPos(b.x(), b.y(), b.z()), g.kingdom());
-                check(observed.villageId() == b.villageId() && observed.buildingId() == b.buildingId(), "Original institution no longer exists");
+                check(observed.villageId() == b.villageId() && observed.buildingId() == b.buildingId(), Keyed.text("politics.mcakingdoms.refusal.institution_gone","The original institution no longer exists."));
                 String definition = definitions.snapshot().entrySet().stream().filter(e -> e.getValue().kind().equals("institution") && e.getValue().buildingTypes().contains(observed.type()))
-                        .map(Map.Entry::getKey).sorted().findFirst().orElseThrow(() -> new IllegalArgumentException("No charter supports this building type"));
+                        .map(Map.Entry::getKey).sorted().findFirst().orElseThrow(() -> Keyed.refuse("politics.mcakingdoms.refusal.no_charter_type","No institution charter covers this building type."));
                 recognize(actor, s, g.kingdom(), definition, observed);
             }
             case "mcakingdoms:honor_petition" -> {
@@ -744,7 +868,7 @@ public final class GovernmentService implements PoliticalService {
                 Request proposal = new Request(UUID.randomUUID(), s.revision, Action.PROPOSE, g.kingdom(), "mcakingdoms:diplomatic_recognition", "", null, p.counterpart(), p.explanation(), "", 0, 0, 0);
                 propose(actor, proposal, s, g);
             }
-            default -> throw new IllegalArgumentException("No supported fulfillment handler for this petition");
+            default -> throw Keyed.refuse("politics.mcakingdoms.refusal.fulfillment_handler","This petition has no supported way to be fulfilled.");
         }
     }
     /** Kingdom definitions name the honor an approved honor petition grants; one that does not grants the open bell. */
@@ -771,24 +895,24 @@ public final class GovernmentService implements PoliticalService {
     }
     private UUID recognize(ServerPlayer actor, PoliticalSavedData.Records s, String kingdom, String id, Building b) {
         Definition terms = definitions.get(id, "institution");
-        check(terms.buildingTypes().contains(b.type()), "This charter does not support building type " + b.type());
-        check(s.recognitions.values().stream().noneMatch(v -> v.building().dimension().equals(b.dimension()) && v.building().villageId() == b.villageId() && v.building().buildingId() == b.buildingId()), "Institution already recognized; use revalidation");
+        check(terms.buildingTypes().contains(b.type()), Keyed.text("politics.mcakingdoms.refusal.charter_type", "This charter does not cover the building type %s.", b.type()));
+        check(s.recognitions.values().stream().noneMatch(v -> v.building().dimension().equals(b.dimension()) && v.building().villageId() == b.villageId() && v.building().buildingId() == b.buildingId()), Keyed.text("politics.mcakingdoms.refusal.already_recognized","This institution is already recognized; use Revalidate instead."));
         UUID record = UUID.randomUUID(); s.recognitions.put(record, new Recognition(record, kingdom, id, terms, b, actor.getUUID(), true, s.revision)); return record;
     }
     private UUID honor(ServerPlayer actor, PoliticalSavedData.Records s, String kingdom, String id, Person person, String evidence, boolean discretionary) {
-        check(honorCapacity(s), "Honor capacity reserved for accepted institutional work");
+        check(honorCapacity(s), Keyed.text("politics.mcakingdoms.refusal.honor_capacity","The remaining honor capacity is reserved for accepted institutional work."));
         Definition terms = definitions.get(id, "honor");
-        check(s.honors.values().stream().noneMatch(h -> h.kingdom().equals(kingdom) && h.definitionId().equals(id) && h.recipient().equals(person)), "Honor has already been awarded in this scope");
+        check(s.honors.values().stream().noneMatch(h -> h.kingdom().equals(kingdom) && h.definitionId().equals(id) && h.recipient().equals(person)), Keyed.text("politics.mcakingdoms.refusal.honor_awarded","That honor has already been awarded to this person here."));
         UUID record = UUID.randomUUID(); s.honors.put(record, new Honor(record, kingdom, id, terms, person, actor.getUUID(), evidence, discretionary, true, s.revision)); return record;
     }
     private boolean honorCapacity(PoliticalSavedData.Records records) {
         int reserved=dev.otectus.mcakingdoms.civic.CivicRuntime.get(server).reservedHonorSlots(records.honors.keySet());
         return records.honors.size()+reserved<8192;
     }
-    public boolean canPromiseCommissionHonor() { thread();return data.writable()&&!conflict&&honorCapacity(data.records()); }
+    public boolean canPromiseCommissionHonor() { thread();return data.writable()&&honorCapacity(data.records()); }
     /** Internal recipient: frozen recognized-workshop authorization plus durable provider evidence. */
     public boolean recordCommissionHonor(ServerPlayer player, UUID epoch, UUID receipt) {
-        thread();if(!data.writable()||conflict||player.getServer()!=server)return false;
+        thread();if(!data.writable()||player.getServer()!=server)return false;
         var proof=dev.otectus.mcakingdoms.civic.CivicRuntime.get(server).commissionHonor(player,epoch,receipt);
         if(proof.isEmpty())return false;
         var grant=proof.get();var prior=data.records().honors.get(grant.contract());
@@ -814,7 +938,7 @@ public final class GovernmentService implements PoliticalService {
     }
     @Override public boolean authorized(ServerPlayer actor, String kingdom, Permission permission) {
         thread();
-        return actor.getServer() == server && !actor.hasDisconnected() && data.writable() && !conflict
+        return actor.getServer() == server && !actor.hasDisconnected() && data.writable()
                 && permitted(actor, data.records().governments.get(kingdom), permission);
     }
     @Override public boolean isCapital(UUID settlement) {
@@ -853,17 +977,20 @@ public final class GovernmentService implements PoliticalService {
                 original.type(),recognition.terms().title(),status,data.records().revision));
     }
     @Override public List<dev.otectus.mcakingdoms.api.politics.InstitutionView> knownInstitutions(ServerPlayer viewer,int offset,int limit) {
-        thread(); check(viewer.getServer()==server,"Wrong server"); check(offset>=0&&offset<=4096&&limit>0&&limit<=32,"Invalid institution page");
+        thread(); check(viewer.getServer()==server,"Wrong server"); check(offset>=0&&offset<=4096&&limit>0&&limit<=32,Keyed.text("politics.mcakingdoms.refusal.invalid_institution_page","That institution page is not valid."));
         return data.records().recognitions.keySet().stream().sorted().map(this::institution).flatMap(Optional::stream)
                 .filter(v -> dev.otectus.mcakingdoms.knowledge.SettlementKnowledge.get(server).visible(viewer,v.settlement()))
                 .skip(offset).limit(limit).toList();
     }
     @Override public Page page(ServerPlayer viewer, UUID requestId, String kingdom, String tab, int offset) {
         thread(); check(viewer.getServer() == server, "Wrong server");
-        check(offset >= 0 && offset <= 100000 && offset % 20 == 0, "Invalid page offset");
+        // Any offset: a reply cut to its byte budget continues from the first row it left out (H08).
+        check(offset >= 0 && offset <= 100000, Keyed.text("politics.mcakingdoms.refusal.invalid_offset","That page is not valid."));
         PoliticalSavedData.Records s = data.records(); Government g = s.governments.get(kingdom);
         List<Row> rows = new ArrayList<>();
-        switch (tab) {
+        // History filters ride in the tab name (H10): history:<group>:<days>:<visibility>, applied to the authorized facts before paging.
+        var historyFilter = HistoryFilter.parse(tab);
+        switch (historyFilter.isPresent() ? "history" : tab) {
             case "overview" -> {
                 if (g == null) rows.add(new Row("", "UNORGANIZED", "An operator may explicitly constitute this kingdom at an existing settlement."));
                 else {
@@ -902,13 +1029,17 @@ public final class GovernmentService implements PoliticalService {
             case "honors" -> s.honors.values().stream().filter(h -> h.kingdom().equals(kingdom)).forEach(h -> rows.add(new Row(h.id().toString(), h.terms().title(),
                     h.recipient().id() + "; " + (h.active() ? "Awarded" : "Revoked") + "; " + h.evidence())));
             case "history" -> visibleHistory(viewer).filter(fact -> fact.affectedKingdoms().contains(kingdom))
+                    .filter(fact -> historyFilter.map(filter -> filter.accepts(fact, now())).orElse(true))
                     .forEach(fact -> rows.add(new Row(fact.id().toString(), fact.summary(),
                             "Recorded on day " + (fact.gameTime() / 24000 + 1) + ". "
                                     + (fact.actor() == null ? "Government record." : "By " + dev.otectus.mcakingdoms.interaction.Names.player(server, fact.actor()) + ".")
                                     + " Status: " + fact.correction().name().toLowerCase(java.util.Locale.ROOT) + ".")));
-            default -> throw new IllegalArgumentException("Unknown political tab");
+            case "succession" -> rows.addAll(dev.otectus.mcakingdoms.politics.dynasty.DynastyPages.rows(dev.otectus.mcakingdoms.politics.dynasty.DynastyService.of(server, this), viewer, kingdom));
+            case "development" -> rows.addAll(dev.otectus.mcakingdoms.development.DevelopmentPages.rows(dev.otectus.mcakingdoms.development.DevelopmentService.get(server), viewer, kingdom));
+            default -> throw Keyed.refuse("politics.mcakingdoms.refusal.unknown_tab","That government page does not exist.");
         }
-        String diagnostic = conflict ? "MCA: Capitals conflict: native governance disabled" : data.diagnostic();
+        Sovereignty crown = sovereignty.apply(kingdom);
+        String diagnostic = !data.writable() ? data.diagnostic() : crown.native_() ? "" : crown.statusKey();
         int start = Math.min(offset, rows.size());
         return new Page(requestId, revision(), kingdom, tab, offset, rows.size() > start + 20,
                 rows.subList(start, Math.min(start + 20, rows.size())), definitions.snapshot().entrySet().stream()
@@ -1005,13 +1136,17 @@ public final class GovernmentService implements PoliticalService {
      */
     public List<PresentedRow> present(ServerPlayer viewer, Page page) {
         thread();
+        if (page.tab().equals("succession"))
+            return dev.otectus.mcakingdoms.politics.dynasty.DynastyPages.present(dev.otectus.mcakingdoms.politics.dynasty.DynastyService.of(server, this), viewer, page.kingdom(), page.rows());
+        if (page.tab().equals("development"))
+            return dev.otectus.mcakingdoms.development.DevelopmentPages.present(dev.otectus.mcakingdoms.development.DevelopmentService.get(server), viewer, page.rows());
         PoliticalSavedData.Records s = data.records(); Government g = s.governments.get(page.kingdom());
         List<PresentedRow> out = new ArrayList<>();
         for (Row row : page.rows()) {
             net.minecraft.network.chat.Component title = definitionTitle(row.title()), detail = net.minecraft.network.chat.Component.literal(row.detail());
             List<Field> fields = new ArrayList<>();
             Optional<UUID> id = parse(row.id());
-            switch (page.tab()) {
+            switch (HistoryFilter.parse(page.tab()).isPresent() ? "history" : page.tab()) {
                 case "overview" -> {
                     if (row.title().equals("UNORGANIZED")) {
                         title = p("unorganized", "No government yet");
@@ -1096,7 +1231,7 @@ public final class GovernmentService implements PoliticalService {
                         var text = net.minecraft.network.chat.Component.empty().append(state).append(" · ").append(parties).append(" · ").append(signatures).append(" · ").append(timing);
                         if (!definitions.available(a.definitionId())) text.append(" · ").append(p("definition_unavailable", "its definition is no longer loaded"));
                         text.append(" · ").append(clauses);
-                        if (!a.explanation().isBlank()) text.append("\n").append(p("terms", "Terms: %s", a.explanation()));
+                        if (!a.explanation().isBlank()) text.append("\n").append(p("terms", "Terms: %s", Keyed.component(a.explanation())));
                         detail = text;
                         fields.add(f("agreement", "Agreement", title));
                         fields.add(f("state", "State", state));
@@ -1111,7 +1246,7 @@ public final class GovernmentService implements PoliticalService {
                         }
                         fields.add(f("timing", "Timing", timing));
                         fields.add(f("clauses", "What it allows", clauses));
-                        if (!a.explanation().isBlank()) fields.add(f("terms", "Terms", net.minecraft.network.chat.Component.literal(a.explanation())));
+                        if (!a.explanation().isBlank()) fields.add(f("terms", "Terms", Keyed.component(a.explanation())));
                     }
                 }
                 case "petitions" -> {
@@ -1123,13 +1258,13 @@ public final class GovernmentService implements PoliticalService {
                         var requester = net.minecraft.network.chat.Component.literal(dev.otectus.mcakingdoms.interaction.Names.player(server, petition.requester()));
                         var text = net.minecraft.network.chat.Component.empty().append(state)
                                 .append(" · ").append(p("requested_by", "requested by %s", requester));
-                        if (!petition.explanation().isBlank()) text.append("\n").append(p("reason", "Reason: %s", petition.explanation()));
-                        if (!petition.decision().isBlank()) text.append("\n").append(p("decision", "Decision: %s", petition.decision()));
+                        if (!petition.explanation().isBlank()) text.append("\n").append(p("reason", "Reason: %s", Keyed.component(petition.explanation())));
+                        if (!petition.decision().isBlank()) text.append("\n").append(p("decision", "Decision: %s", Keyed.component(petition.decision())));
                         detail = text;
                         fields.add(f("request", "Request", title));
                         fields.add(f("requester", "Requested by", requester));
                         fields.add(f("state", "State", state));
-                        if (!petition.explanation().isBlank()) fields.add(f("reason_given", "Reason given", net.minecraft.network.chat.Component.literal(petition.explanation())));
+                        if (!petition.explanation().isBlank()) fields.add(f("reason_given", "Reason given", Keyed.component(petition.explanation())));
                         if (!petition.decision().isBlank()) fields.add(f("decision", "Decision", net.minecraft.network.chat.Component.literal(petition.decision())));
                         if (open(petition) && !expired) fields.add(f("next", "Next step", p("next.review", "Waiting for an official who holds the review responsibility")));
                     }
@@ -1187,9 +1322,15 @@ public final class GovernmentService implements PoliticalService {
     public List<net.minecraft.network.chat.Component> header(ServerPlayer viewer, String kingdom) {
         thread();
         List<net.minecraft.network.chat.Component> lines = new ArrayList<>();
-        if (conflict) {
-            lines.add(p("header.capitals", "MCA: Capitals governs kingdoms on this server; these pages are read-only history."));
-            return lines;
+        Sovereignty crown = sovereignty.apply(kingdom);
+        if (!crown.native_()) {
+            // Read-through (C3): the crown as Capitals records it; only public court roles, no family ties or private records.
+            lines.add(dev.otectus.mcakingdoms.interaction.PlayerWords.component(crown.statusKey()));
+            if (crown.mode() == Sovereignty.Mode.CAPITALS) dev.otectus.mcakingdoms.compat.capitals.CapitalsInterop.get(server).crownOf(kingdom).ifPresent(capital -> {
+                lines.add(p("header.capitals.sovereign", "Sovereign (MCA Capitals): %s", capital.sovereign() == null ? p("header.leader.vacant", "vacant") : net.minecraft.network.chat.Component.literal(personName(capital.sovereign()))));
+                if (capital.heir() != null) lines.add(p("header.capitals.heir", "Heir (MCA Capitals): %s", net.minecraft.network.chat.Component.literal(personName(capital.heir()))));
+                if (capital.mourning()) lines.add(p("header.capitals.mourning", "The court is in mourning."));
+            });
         }
         PoliticalSavedData.Records s = data.records(); Government g = s.governments.get(kingdom);
         if (g == null) {
@@ -1213,6 +1354,7 @@ public final class GovernmentService implements PoliticalService {
                     election.viewerVoted() ? p("header.election.voted", "your vote is recorded") : election.viewerEligible() ? p("header.election.not_voted", "you may vote")
                             : p("header.election.not_eligible", "you are not in its electorate")));
         }
+        if (crown.native_()) lines.addAll(dev.otectus.mcakingdoms.politics.dynasty.DynastyPages.header(dev.otectus.mcakingdoms.politics.dynasty.DynastyService.of(server, this), viewer, kingdom));
         var held = net.minecraft.network.chat.Component.empty(); boolean first = true;
         for (Permission permission : Permission.values()) if (permitted(viewer, g, permission)) { if (!first) held.append(", "); first = false; held.append(enumWords(permission)); }
         lines.add(first ? p("header.yours.none", "Your responsibilities here: none. You can read its public records and send petitions.")
@@ -1261,50 +1403,56 @@ public final class GovernmentService implements PoliticalService {
         }
         return person.kind() == Kind.PLAYER ? dev.otectus.mcakingdoms.interaction.Names.player(server, person.id()) : "an absent " + dev.otectus.mcakingdoms.interaction.Names.lower(dev.otectus.mcakingdoms.interaction.Names.words(person.kind()));
     }
+    /** The page's generic availability: each action's refusal for some target, from the one shared policy (H02). */
     private Map<Action, String> actionDenials(ServerPlayer viewer, String kingdom, Government g) {
+        var facts = facts(viewer, kingdom, g, data.records());
         Map<Action, String> reasons = new EnumMap<>(Action.class);
-        for (Action action : Action.values()) {
-            String reason = "";
-            if (!data.writable()) reason = data.diagnostic();
-            else if (conflict) reason = "politics.mcakingdoms.refusal.capitals";
-            else if (action == Action.BOOTSTRAP) reason = g != null ? "Government already constituted"
-                    : viewer.hasPermissions(2) || openFounding.getAsBoolean() && residentOf(viewer, kingdom) ? ""
-                    : openFounding.getAsBoolean() ? "Founding requires an operator, or a civic resident of this kingdom naming themselves leader with their residence as capital"
-                    : "Founding requires an operator; resident founding is turned off on this server";
-            else if (g == null) reason = "politics.mcakingdoms.refusal.no_government";
-            else if (!definitions.available(g.profileId())) reason = "politics.mcakingdoms.refusal.dormant";
-            else if (action == Action.NAME_SUCCESSOR && elected(data.records(), g.kingdom(), g.successor())) reason = "The named successor holds an elected mandate";
-            else if (action == Action.REMOVE_OFFICE && g.offices().containsKey(LEADER) && elected(data.records(), g.kingdom(), g.offices().get(LEADER).holder()) && g.offices().size() == 1) reason = "The leader holds an elected mandate";
-            else if (action == Action.ABDICATE) reason = g.offices().containsKey(LEADER) && g.offices().get(LEADER).holder().equals(new Person(viewer.getUUID(), Kind.PLAYER)) ? "" : "Only the leader may abdicate";
-            else if (action == Action.SUCCEED) reason = g.state() == State.INTERREGNUM && g.successor() != null && (viewer.hasPermissions(2) || g.successor().equals(new Person(viewer.getUUID(), Kind.PLAYER))) ? "" : "No eligible named succession to confirm";
-            else if (action != Action.PETITION && action != Action.WITHDRAW) {
-                Permission permission = switch (action) {
-                    case SEAT -> Permission.SEAT; case APPOINT, REMOVE_OFFICE, NAME_SUCCESSOR, HOUSE -> Permission.APPOINT;
-                    case DELEGATE, REVOKE -> Permission.DELEGATE; case PROPOSE -> Permission.PROPOSE;
-                    case SIGN, DECLINE, TERMINATE -> Permission.RATIFY; case REVIEW, APPROVE, REJECT -> Permission.REVIEW;
-                    case RECOGNIZE, REVALIDATE, SUSPEND_RECOGNITION -> Permission.RECOGNIZE; case HONOR, REVOKE_HONOR -> Permission.HONOR;
-                    case ADOPT_TRANSITION_RULE, OPEN_ELECTION, CLOSE_ELECTION, APPOINT_REGENT, END_REGENCY -> Permission.APPOINT;
-                    case CAST_BALLOT -> Permission.APPOINT;
-                    default -> throw new IllegalStateException("Unmapped political action");
-                };
-                boolean scopedRecognition = permission == Permission.RECOGNIZE && g.state() == State.ACTIVE && g.offices().values().stream()
-                        .anyMatch(o -> o.settlement() != null && o.holder().equals(new Person(viewer.getUUID(), Kind.PLAYER))
-                                && o.terms().permissions().contains(Permission.RECOGNIZE) && definitions.available(o.definitionId()));
-                if (!permitted(viewer, g, permission) && !scopedRecognition && !(action == Action.APPOINT && g.state() == State.INTERREGNUM && viewer.hasPermissions(2)))
-                    reason = "Requires a " + permission.name().toLowerCase(Locale.ROOT) + " mandate";
-            }
-            reasons.put(action, reason);
-        }
+        for (Action action : Action.values()) reasons.put(action, GovernmentActionPolicy.denial(facts, action, GovernmentActionPolicy.Target.ANY).orElse(""));
         return reasons;
+    }
+    /** The facts {@link GovernmentActionPolicy} decides from, read from {@code records} on the server thread. */
+    private GovernmentActionPolicy.Facts facts(ServerPlayer actor, String kingdom, Government g, PoliticalSavedData.Records records) {
+        String key = g == null ? kingdom : g.kingdom();
+        boolean scopedRecognition = g != null && g.state() == State.ACTIVE && g.offices().values().stream()
+                .anyMatch(o -> o.settlement() != null && o.holder().equals(new Person(actor.getUUID(), Kind.PLAYER))
+                        && o.terms().permissions().contains(Permission.RECOGNIZE) && definitions.available(o.definitionId()));
+        return new GovernmentActionPolicy.Facts(actor.getUUID(), actor.hasPermissions(2), data.writable(), sovereignty.apply(key), g,
+                g != null && definitions.available(g.profileId()), records.electedMandates.get(key), g != null && activeRegency(g.kingdom()),
+                permission -> permitted(actor, g, permission), scopedRecognition, openFounding.getAsBoolean(), g == null && residentOf(actor, kingdom));
+    }
+    /**
+     * Why {@code viewer} cannot take {@code action} on {@code target} in {@code kingdom} now: the bundled key the mutation
+     * would refuse with, or empty (H02). Previews ask this per target, so an elected leader's office is never offered for
+     * removal; the mutation asks it again when it runs.
+     */
+    public Optional<String> actionDenial(ServerPlayer viewer, String kingdom, Action action, GovernmentActionPolicy.Target target) {
+        thread();
+        return GovernmentActionPolicy.denial(facts(viewer, kingdom, data.records().governments.get(kingdom), data.records()), action, target);
+    }
+    /** One occupied office as the removal form lists it: its key, holder and whether this viewer may vacate it (H02). */
+    public record OccupiedOffice(String key, String definitionId, String title, Person holder, String holderName, UUID settlement, Optional<String> removal) {
+        /** The scope part of the stored key, exactly as a removal request must name it (a pre-merge id stays as stored). */
+        public String scope() { int at = key.indexOf('@'); return at < 0 ? "" : key.substring(at + 1); }
+    }
+    /** The kingdom's occupied offices in key order, each with this viewer's removal decision. Office holders are public. */
+    public List<OccupiedOffice> occupiedOffices(ServerPlayer viewer, String kingdom) {
+        thread();
+        Government g = data.records().governments.get(kingdom);
+        if (g == null) return List.of();
+        var facts = facts(viewer, kingdom, g, data.records());
+        return g.offices().entrySet().stream().sorted(Map.Entry.comparingByKey()).map(e -> new OccupiedOffice(e.getKey(), e.getValue().definitionId(),
+                e.getValue().terms().title(), e.getValue().holder(), personLabel(e.getValue().holder()),
+                e.getValue().settlement() == null ? null : kingdoms.resolveSettlementId(e.getValue().settlement()),
+                GovernmentActionPolicy.denial(facts, Action.REMOVE_OFFICE, GovernmentActionPolicy.Target.office(e.getKey())))).toList();
     }
     @SubscribeEvent public void preflight(SettlementMutationPreflightEvent event) {
         if (event.server() != server) return;
-        if (!data.writable()) { event.reject("Political data is read-only; settlement references cannot be validated"); return; }
+        if (!data.writable()) { event.reject(Keyed.text("politics.mcakingdoms.refusal.merge.read_only","Political records are read-only, so settlement references cannot be checked.")); return; }
         UUID source = event.source().id();
         for (Government g : data.records().governments.values()) {
             boolean seat = kingdoms.getSettlement(g.capital()).map(v -> v.id().equals(source)).orElse(false);
             if (seat && !event.destinationKingdom().toString().equals(g.kingdom())) {
-                event.reject("Designate a replacement capital before changing this settlement's kingdom"); return;
+                event.reject(Keyed.text("politics.mcakingdoms.refusal.merge.capital","Choose another capital before changing this settlement's kingdom.")); return;
             }
         }
         if (event.mergeTarget().isPresent()) {
@@ -1318,16 +1466,16 @@ public final class GovernmentService implements PoliticalService {
                     if (scope.equals(target)) targetOffices.add(office.definitionId());
                 }
                 if (!Collections.disjoint(sourceOffices, targetOffices)) {
-                    event.reject("Both settlements have holders of the same local office; remove one appointment before merging"); return;
+                    event.reject(Keyed.text("politics.mcakingdoms.refusal.merge.office","Both settlements have holders of the same local office; remove one appointment before merging.")); return;
                 }
             }
             boolean sourceRecognition = data.records().recognitions.values().stream().anyMatch(r -> r.active() && kingdoms.getSettlement(r.building().settlement()).map(v -> v.id().equals(source)).orElse(false));
             boolean targetRecognition = data.records().recognitions.values().stream().anyMatch(r -> r.active() && kingdoms.getSettlement(r.building().settlement()).map(v -> v.id().equals(target)).orElse(false));
-            if (sourceRecognition && targetRecognition) event.reject("Both settlements have active institution charters; suspend the source charters before merging");
+            if (sourceRecognition && targetRecognition) event.reject(Keyed.text("politics.mcakingdoms.refusal.merge.charters","Both settlements have active institution charters; suspend the source charters before merging."));
         }
         if (!event.source().kingdomId().equals(event.destinationKingdom()) && data.records().recognitions.values().stream()
                 .anyMatch(r -> r.active() && kingdoms.getSettlement(r.building().settlement()).map(v -> v.id().equals(source)).orElse(false)))
-            event.reject("Settlement has active institution charters; suspend them before kingdom reassignment");
+            event.reject(Keyed.text("politics.mcakingdoms.refusal.reassign.charters","This settlement has active institution charters; suspend them before changing its kingdom."));
     }
     @SubscribeEvent public void merged(SettlementMergedEvent event) {
         if (event.server() != server || !data.writable()) return;
@@ -1346,6 +1494,7 @@ public final class GovernmentService implements PoliticalService {
     @SubscribeEvent public void tick(net.minecraftforge.event.TickEvent.ServerTickEvent event) {
         if (event.getServer() != server || event.phase != net.minecraftforge.event.TickEvent.Phase.END) return;
         if (server.getTickCount() % 20 == 0) maintainDeadlines();
+        if (dev.otectus.mcakingdoms.compat.capitals.CapitalsBridge.installed()) dev.otectus.mcakingdoms.compat.capitals.CapitalsInterop.get(server).tick();
         for (int i = 0; i < 32 && !pendingDeaths.isEmpty(); i++) {
             LivingDeathEvent death = pendingDeaths.removeFirst();
             if (!death.isCanceled() && death.getEntity().isDeadOrDying() && !confirmedDeath(death)) {
@@ -1363,7 +1512,7 @@ public final class GovernmentService implements PoliticalService {
      * published only after it. Receipt pruning keeps its own bounded batch.
      */
     private void maintainDeadlines() {
-        if (!data.writable() || conflict) return;
+        if (!data.writable()) return;
         var current = data.records();
         long now = now();
         PoliticalSavedData.Records next = null;
@@ -1385,7 +1534,7 @@ public final class GovernmentService implements PoliticalService {
         for (Petition p : due(current.petitions.values(), value -> open(value) && now >= value.expiresAt(), Petition::expiresAt, Petition::id)) {
             if (next == null) { next = data.transaction(); next.revision++; }
             UUID id = p.id();
-            next.petitions.put(id, decision(p, PetitionState.EXPIRED, "Submission deadline elapsed", null, next.revision));
+            next.petitions.put(id, decision(p, PetitionState.EXPIRED, Keyed.text("politics.mcakingdoms.decision.deadline","The submission deadline passed."), null, next.revision));
             UUID source = stable("petition-expired", id, p.expiresAt());
             Notice notice = new Notice(source, p.kingdom(), Action.PETITION, new UUID(0, 0), id.toString(), now);
             Set<UUID> affected = new LinkedHashSet<>(); affected.add(p.requester());
@@ -1458,12 +1607,14 @@ public final class GovernmentService implements PoliticalService {
     }
     private boolean confirmedDeath(LivingDeathEvent event) {
         // Player respawn is not political death. Unload, absence and restart are not death signals.
-        if (event.getEntity() instanceof net.minecraft.world.entity.player.Player || event.getEntity().getServer() != server || !data.writable() || conflict) return true;
+        if (event.getEntity() instanceof net.minecraft.world.entity.player.Player || event.getEntity().getServer() != server || !data.writable()) return true;
         UUID id = event.getEntity().getUUID(); PoliticalSavedData.Records s = data.transaction(); boolean changed = false;
         List<Notice> notices = new ArrayList<>();
         for (Government g : List.copyOf(s.governments.values())) {
             Map<String, Office> offices = new LinkedHashMap<>(g.offices());
-            boolean removed = offices.values().removeIf(o -> o.holder().kind() == Kind.NPC && o.holder().id().equals(id));
+            // A crown MCA Capitals governs is Capitals' to succeed: its kept leader record is history and is not vacated here.
+            boolean crownElsewhere = !sovereignty.apply(g.kingdom()).native_();
+            boolean removed = offices.entrySet().removeIf(e -> e.getValue().holder().kind() == Kind.NPC && e.getValue().holder().id().equals(id) && !(crownElsewhere && e.getKey().equals(LEADER)));
             if (removed) {
                 if (!changed) s.revision++;
                 s.governments.put(g.kingdom(), government(g, g.capital(), offices, offices.containsKey(LEADER) ? g.mandates() : Map.of(), g.successor(), s.revision));

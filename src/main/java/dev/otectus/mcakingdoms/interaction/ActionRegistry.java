@@ -28,6 +28,11 @@ public final class ActionRegistry {
         public Component shown(){return display!=null?display:Component.literal(label);}
         public Component shownDetail(){return detailDisplay!=null?detailDisplay:Component.literal(detail);}
     }
+    /**
+     * Choice metadata marking a listed record that cannot be chosen now; its detail says why. The form keeps it visible,
+     * so players see the reason instead of a missing entry, and refuses the pick (H02).
+     */
+    public static final String UNAVAILABLE="unavailable";
     public enum Kind { CHOICE, MULTI, TEXT, NUMBER }
     /**
      * Bounds and units of a numeric field. The form shows them before submission, checks them before advancing, and

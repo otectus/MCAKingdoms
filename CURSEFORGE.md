@@ -23,6 +23,9 @@ If Read this settlement finds nothing yet, walk further into the village and try
 - Register your own civic residence: the server checks that your bed-set respawn point is in the settlement and that you are there, and a cooldown applies to moves. It is a civic record, not a land claim.
 - Optional political notices for foundings, accessions, vacancies and memorials, turned on per player, plus office badges above public office holders. Names and skins are never changed.
 - Six kingdoms with distinct name pools, biome rules, colors, and heraldry
+- Dynasty and court: laws of succession read from MCA family trees (every government starts with Manual only, which changes nothing), ceremonial ranks in each kingdom's own style, claims, legitimacy, memorials and mourning
+- Kingdom banners, heraldic shields, court noticeboards, a seal press and charters that are official only while the record they prove holds
+- Optional settlement development (off by default): public works funded with real deliveries, small works built safely on surveyed plots, and an abstract goods ledger; no currency and no tax
 - Automatic detection of village structures and village point-of-interest clusters
 - The Book of Kingdoms guide and the Village Ledger, with kingdom filters and detail pages
 - Configurable settlement-entry titles and heraldry
@@ -60,7 +63,7 @@ All optional:
 - MCA: Crime for paid workshop jobs.
 - MCA Conversations for kingdom-gated topics.
 
-The README's compatibility table separates the accepted range, the validated jar and the public source. With MCA: Capitals installed, MCA: Kingdoms turns its own governments off.
+The README's compatibility table separates the accepted range, the validated jar and the public source. With MCA Capitals installed, each kingdom whose village is a governing Capitals capital has its crown governed by Capitals, while its civic offices, agreements and guilds continue here; Capitals is only read.
 
 ## For modpack authors
 

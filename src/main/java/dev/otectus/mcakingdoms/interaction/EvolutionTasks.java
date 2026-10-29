@@ -257,7 +257,7 @@ public final class EvolutionTasks {
         lines.add(e("scenario.choices","Choices: %s. Verified contributions required: %s.",joined(v.outcomes().stream().map(ActionRegistry::enumLabel).toList()),v.requiredContributions()));
         v.contributions().forEach((outcome,count)->lines.add(e("scenario.contributions","%s: %s verified contribution(s)",enumLabel(outcome),count)));
         v.ownChoice().ifPresent(choice->lines.add(e("scenario.own","Your current choice: %s. You may withdraw it while the opportunity remains open.",enumLabel(choice))));
-        lines.add(e("scenario.next","Next: %s",nextScenario(v)));if(!v.result().isBlank())lines.add(e("scenario.result","Recorded outcome: %s",v.result()));return List.copyOf(lines);}
+        lines.add(e("scenario.next","Next: %s",nextScenario(v)));if(!v.result().isBlank())lines.add(e("scenario.result","Recorded outcome: %s",Keyed.component(v.result())));return List.copyOf(lines);}
     private static Component nextScenario(EvolutionService.ScenarioView v){return switch(v.phase()){case OPEN->e("scenario.next.open","contribute, withdraw your own choice, or let an authorized reviewer resolve a supported outcome");
         case RESOLVING->e("scenario.next.resolving","the original resolver may retry or release an uncommitted rejected request");default->e("scenario.next.closed","the opportunity is closed and kept as history");};}
     private static Component joined(List<Component> parts){var out=Component.empty();for(int i=0;i<parts.size();i++){if(i>0)out.append(", ");out.append(parts.get(i));}return out;}
@@ -278,7 +278,7 @@ public final class EvolutionTasks {
         lines.add(e("transfer.people","Recruit: %s. Source owner: %s. Recipient: %s.",recruitName(c,v.unit()),BasicTargets.player(c,v.owner()),BasicTargets.player(c,v.recipient())));
         lines.add(e("transfer.group","Destination group: %s. Family-backed introduction: %s.",nativeGroupName(c,v.recipient(),v.recipientGroup()),Component.translatable(v.family()?"gui.yes":"gui.no")));
         lines.add(e("transfer.times","Notice ends in: %s; deadline in: %s. The recruit's equipment is fixed as recorded when it was proposed.",Names.remainingText(c.server(),v.noticeUntil()),Names.remainingText(c.server(),v.deadline())));
-        lines.add(Component.literal(v.detail()));lines.add(e("transfer.next","Next: %s",transferNext(v)));
+        lines.add(Keyed.component(v.detail()));lines.add(e("transfer.next","Next: %s",transferNext(v)));
         if(v.accountingDiverged())lines.add(e("transfer.diverged","Native accounting changed separately; an operator must review reconciliation."));return List.copyOf(lines);}
     private static Component transferNext(RecruitTransferService.TransferView v){return switch(v.phase()){case OFFERED->e("transfer.next.offered","the recipient may consent, or either party may cancel");
         case CONSENTED->e("transfer.next.consented","the source owner may apply after the notice while both players and the recruit are present");case APPLYING,CONFIRMING->e("transfer.next.confirming","either party may confirm the retained native save");
@@ -295,7 +295,7 @@ public final class EvolutionTasks {
         lines.add(e("drama.where","Settlement: %s. Remaining online time: %s.",BasicTargets.settlement(c,v.settlement()),Names.durationText(v.remainingTicks())));lines.add(e("drama.objective","Objective: %s",v.objective()));
         lines.add(e("drama.outcomes","Authorized outcomes: %s.",joined(v.outcomes().stream().map(ActionRegistry::enumLabel).toList())));if(!v.subject().isBlank())lines.add(e("drama.subject","Recorded subject: %s.",organizationNameText(c,v.subject())));
         lines.add(v.canConsent()?e("drama.next.consent","Next: review the frozen objective and consent as the eligible independent participant."):v.participant()?e("drama.next.participant","Next: use only an outcome these frozen terms authorize."):e("drama.next.preview","Read-only preview."));
-        if(!v.result().isBlank())lines.add(e("drama.status","Status: %s",v.result()));return List.copyOf(lines);}
+        if(!v.result().isBlank())lines.add(e("drama.status","Status: %s",Keyed.component(v.result())));return List.copyOf(lines);}
 
     private static List<Object> organizationOverview(Context c){var lifecycles=organizations(c).lifecycles(c.player);var merges=organizations(c).merges(c.player);var lines=new ArrayList<Object>();
         lines.add(e("organization.counts","Founded organizations: %s. Merge proposals you can see: %s.",lifecycles.size(),merges.size()));

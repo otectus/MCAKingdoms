@@ -285,14 +285,29 @@ public final class Pieces {
             this.framed = framed;
         }
 
+        /** Whether the texture exists; a resource pack that removed it gets the description in its place, never a missing-texture pattern. */
+        private Boolean present;
+        private List<FormattedCharSequence> fallback = List.of();
+
         @Override protected int layout(Font font, int width) {
+            if (present == null) present = net.minecraft.client.Minecraft.getInstance().getResourceManager().getResource(texture).isPresent();
+            lines = caption == null || caption.getString().isEmpty() ? List.of() : font.split(caption, width);
+            if (!present) {
+                fallback = font.split(t("image.missing", "[Picture: %s]", alt), width);
+                shownWidth = width; shownHeight = fallback.size() * lineHeight(font);
+                return shownHeight + (lines.isEmpty() ? 0 : 3 + lines.size() * lineHeight(font));
+            }
             shownWidth = Math.min(w, width);
             shownHeight = h * shownWidth / Math.max(1, w);
-            lines = caption == null || caption.getString().isEmpty() ? List.of() : font.split(caption, width);
             return shownHeight + (lines.isEmpty() ? 0 : 3 + lines.size() * lineHeight(font));
         }
 
         @Override protected void render(GuiGraphics g, Font font, int x, int y, int width, int mx, int my, Hover hover) {
+            if (Boolean.FALSE.equals(present)) {
+                for (int i = 0; i < fallback.size(); i++) drawText(g, font, fallback.get(i), x, y + i * lineHeight(font), MUTED, false);
+                for (int i = 0; i < lines.size(); i++) drawText(g, font, lines.get(i), x, y + shownHeight + 3 + i * lineHeight(font), MUTED, false);
+                return;
+            }
             g.blit(texture, x, y, shownWidth, shownHeight, 0, 0, tw, th, tw, th);
             if (manuscript && framed) dev.otectus.mcakingdoms.client.book.BookSkin.illustrationFrame(g, x, y, shownWidth, shownHeight);
             for (int i = 0; i < lines.size(); i++) drawText(g, font, lines.get(i), x, y + shownHeight + 3 + i * lineHeight(font), MUTED, false);

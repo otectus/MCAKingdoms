@@ -243,7 +243,9 @@ public final class VillageLedgerScreen extends Screen {
         fields.add(new Pieces.Field(l("field.dimension", "Dimension"), dimensionName(s.dimension())));
         fields.add(new Pieces.Field(l("field.location", "Location"), l("location", "%s, %s, %s", s.anchor().getX(), s.anchor().getY(), s.anchor().getZ())));
         fields.add(new Pieces.Field(l("field.distance", "Distance"), distance(s)));
+        direction(s).ifPresent(direction -> fields.add(new Pieces.Field(l("field.direction", "Direction"), direction)));
         pieces.add(Pieces.fields("summary", fields));
+        sketch(s).ifPresent(pieces::add);
         pieces.add(Pieces.actions("links", List.of(
                 Pieces.button("government", l("link.government", "Government of %s", kingdomName), l("link.government.help", "Leaders, agreements, petitions and history of this settlement's kingdom."),
                         () -> minecraft.setScreen(new dev.otectus.mcakingdoms.client.politics.KingdomScreen(this, s.kingdomId().toString(), s.id().toString())), kingdom != null),
@@ -252,7 +254,12 @@ public final class VillageLedgerScreen extends Screen {
                 Pieces.button("war_room", Component.translatable("menu.mcakingdoms.war_room"), l("link.war_room.help", "Who controls this settlement, campaigns and civilian options."),
                         () -> minecraft.setScreen(new WarRoomScreen(this, s.id(), s.displayName())), true),
                 Pieces.button("tasks", l("link.tasks", "Tasks for this settlement"), l("link.tasks.help", "Kingdom Tasks, with this settlement chosen wherever a task asks for one."),
-                        () -> InteractionClient.open(this, "", "", InteractionClient.prefill("settlement", s.id())), true))));
+                        () -> InteractionClient.open(this, "", "", InteractionClient.prefill("settlement", s.id())), true),
+                // Recruits: Living Villages runs on both sides, so the client knows whether this server can have such villages.
+                Pieces.button("living_villages", l("link.living_villages", "Living Villages realm and army"),
+                        l("link.living_villages.help", "Who holds this village, its recognized government, people, war and peace (when it is a Living Villages village)."),
+                        () -> InteractionClient.open(this, "villages.settlement", "", InteractionClient.prefill("settlement", s.id())),
+                        net.minecraftforge.fml.ModList.get().isLoaded("recruitsvillages")))));
         pieces.add(Pieces.actions("more_toggle", List.of(Pieces.button("more", moreDetails ? l("more.hide", "Hide technical details") : l("more.show", "More details"),
                 l("more.help", "When and how this settlement was recognized, for troubleshooting."), () -> { moreDetails = !moreDetails; details.setPieces(detailPieces(), details.anchor()); details.focusTarget("more"); }, true))));
         if (moreDetails) pieces.add(Pieces.fields("more", List.of(
@@ -274,6 +281,31 @@ public final class VillageLedgerScreen extends Screen {
         if (!player.level().dimension().location().equals(settlement.dimension())) return l("distance.elsewhere", "In another dimension (%s)", dimensionName(settlement.dimension()));
         long blocks = Math.round(Math.sqrt(player.blockPosition().distSqr(settlement.anchor())));
         return blocks <= 8 ? l("distance.here", "Here") : l("distance.blocks", "About %s blocks away", blocks);
+    }
+
+    private static final String[] DIRECTIONS = {"east", "south_east", "south", "south_west", "west", "north_west", "north", "north_east"};
+
+    /** The compass direction from the player to {@code settlement}, in the player's dimension only. */
+    private Optional<Component> direction(SettlementSummary settlement) {
+        var player = minecraft == null ? null : minecraft.player;
+        if (player == null || !player.level().dimension().location().equals(settlement.dimension())) return Optional.empty();
+        int dx = settlement.anchor().getX() - player.blockPosition().getX(), dz = settlement.anchor().getZ() - player.blockPosition().getZ();
+        if (dx * dx + dz * dz <= 64) return Optional.empty();
+        int octant = (int) Math.floorMod(Math.round(Math.atan2(dz, dx) / (Math.PI / 4)), 8);
+        String key = DIRECTIONS[octant];
+        return Optional.of(l("direction." + key, key.replace('_', '-')));
+    }
+
+    /** A sketch of the known places on this page around the player (H10), when the chosen one shares the player's dimension. */
+    private Optional<dev.otectus.mcakingdoms.client.rich.RichPanel.Piece> sketch(SettlementSummary chosen) {
+        var player = minecraft == null ? null : minecraft.player;
+        if (player == null || page == null || !player.level().dimension().location().equals(chosen.dimension())) return Optional.empty();
+        var places = page.settlements().stream().limit(PAGE_SIZE).filter(x -> x.dimension().equals(chosen.dimension()))
+                .map(x -> new PlacesSketch.Place(x.displayName(), x.anchor(), x.id().equals(chosen.id()))).toList();
+        long blocks = Math.round(Math.sqrt(player.blockPosition().distSqr(chosen.anchor())));
+        Component where = direction(chosen).orElse(l("distance.here", "Here"));
+        return Optional.of(new PlacesSketch("sketch", player.blockPosition(), places,
+                l("sketch", "A sketch of %s known settlement(s) on this page around you; %s is %s, about %s blocks away.", places.size(), chosen.displayName(), where, blocks)));
     }
 
     private void chooseKingdom(Optional<ResourceLocation> kingdom) {

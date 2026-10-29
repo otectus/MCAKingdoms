@@ -1,0 +1,125 @@
+{
+  "schema": 1,
+  "role": "market",
+  "title": "development.mcakingdoms.template.market_stall",
+  "minimum_mode": "projects",
+  "demand": [
+    {
+      "tag": "minecraft:wooden_fences",
+      "count": 8
+    },
+    {
+      "tag": "minecraft:wooden_slabs",
+      "count": 9
+    }
+  ],
+  "blocks": [
+    {
+      "x": -1,
+      "y": 0,
+      "z": -1,
+      "state": "minecraft:oak_fence"
+    },
+    {
+      "x": -1,
+      "y": 1,
+      "z": -1,
+      "state": "minecraft:oak_fence"
+    },
+    {
+      "x": -1,
+      "y": 0,
+      "z": 1,
+      "state": "minecraft:oak_fence"
+    },
+    {
+      "x": -1,
+      "y": 1,
+      "z": 1,
+      "state": "minecraft:oak_fence"
+    },
+    {
+      "x": 1,
+      "y": 0,
+      "z": -1,
+      "state": "minecraft:oak_fence"
+    },
+    {
+      "x": 1,
+      "y": 1,
+      "z": -1,
+      "state": "minecraft:oak_fence"
+    },
+    {
+      "x": 1,
+      "y": 0,
+      "z": 1,
+      "state": "minecraft:oak_fence"
+    },
+    {
+      "x": 1,
+      "y": 1,
+      "z": 1,
+      "state": "minecraft:oak_fence"
+    },
+    {
+      "x": -1,
+      "y": 2,
+      "z": -1,
+      "state": "minecraft:oak_slab[type=bottom]"
+    },
+    {
+      "x": -1,
+      "y": 2,
+      "z": 0,
+      "state": "minecraft:oak_slab[type=bottom]"
+    },
+    {
+      "x": -1,
+      "y": 2,
+      "z": 1,
+      "state": "minecraft:oak_slab[type=bottom]"
+    },
+    {
+      "x": 0,
+      "y": 2,
+      "z": -1,
+      "state": "minecraft:oak_slab[type=bottom]"
+    },
+    {
+      "x": 0,
+      "y": 2,
+      "z": 0,
+      "state": "minecraft:oak_slab[type=bottom]"
+    },
+    {
+      "x": 0,
+      "y": 2,
+      "z": 1,
+      "state": "minecraft:oak_slab[type=bottom]"
+    },
+    {
+      "x": 1,
+      "y": 2,
+      "z": -1,
+      "state": "minecraft:oak_slab[type=bottom]"
+    },
+    {
+      "x": 1,
+      "y": 2,
+      "z": 0,
+      "state": "minecraft:oak_slab[type=bottom]"
+    },
+    {
+      "x": 1,
+      "y": 2,
+      "z": 1,
+      "state": "minecraft:oak_slab[type=bottom]"
+    }
+  ],
+  "placement": "air",
+  "tier_points": 2,
+  "abstract_output": {
+    "goods": 2
+  }
+}

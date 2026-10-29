@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.util.*;
 
 /** Independent schema-1 organization state. Unsupported or corrupt payloads are retained read-only. */
-final class OrganizationSavedData extends SavedData {
+final class OrganizationSavedData extends dev.otectus.mcakingdoms.persistence.DurableSavedData {
     static final String DATA_NAME = "mcakingdoms_organizations";
     static final int SCHEMA = 1;
     static final int MAX_MEMBERSHIPS = 32_768;

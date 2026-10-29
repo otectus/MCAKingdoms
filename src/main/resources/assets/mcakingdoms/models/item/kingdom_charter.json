@@ -1,0 +1,14 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "mcakingdoms:item/kingdom_charter"
+  },
+  "overrides": [
+    {
+      "predicate": {
+        "mcakingdoms:sealed": 1
+      },
+      "model": "mcakingdoms:item/kingdom_charter_sealed"
+    }
+  ]
+}

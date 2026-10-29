@@ -13,13 +13,13 @@ public final class WarfareCommands {
         var root = Commands.literal("warfare");
         root.then(Commands.literal("here").executes(c -> run(c, () -> {
             var player = c.getSource().getPlayerOrException();
-            WarfareRuntime.get(player.getServer()).here(player).forEach(line -> player.sendSystemMessage(Component.literal(line)));
+            WarfareRuntime.get(player.getServer()).here(player).forEach(line -> player.sendSystemMessage(dev.otectus.mcakingdoms.interaction.Keyed.component(line)));
             return "Campaigns and accords use /kingdoms warfare. Temporary orders use /kingdoms-mobilization; civilian work uses /kingdoms-contract.";
         })));
         root.then(Commands.literal("inspect").then(dev.otectus.mcakingdoms.interaction.NamedTargets.argument("settlement","settlement").executes(c -> run(c, () -> {
             var player = c.getSource().getPlayerOrException();
             WarfareRuntime.get(player.getServer()).view(player, dev.otectus.mcakingdoms.interaction.NamedTargets.uuid(c,"settlement","settlement"))
-                    .forEach(line -> player.sendSystemMessage(Component.literal(line)));
+                    .forEach(line -> player.sendSystemMessage(dev.otectus.mcakingdoms.interaction.Keyed.component(line)));
             return "Control history inspection complete.";
         }))));
         root.then(Commands.literal("map_here").requires(s -> s.hasPermission(2))
@@ -34,7 +34,7 @@ public final class WarfareCommands {
                                 com.mojang.brigadier.arguments.LongArgumentType.getLong(c, "revision")))))));
         root.then(Commands.literal("campaigns").then(dev.otectus.mcakingdoms.interaction.NamedTargets.argument("settlement","settlement").executes(c -> run(c, () -> {
             var player = c.getSource().getPlayerOrException();
-            CampaignService.get(player.getServer()).page(player, dev.otectus.mcakingdoms.interaction.NamedTargets.uuid(c,"settlement","settlement")).forEach(s -> player.sendSystemMessage(Component.literal(s)));
+            CampaignService.get(player.getServer()).page(player, dev.otectus.mcakingdoms.interaction.NamedTargets.uuid(c,"settlement","settlement")).forEach(s -> player.sendSystemMessage(dev.otectus.mcakingdoms.interaction.Keyed.component(s)));
             return "Political campaign and settlement decisions.";
         }))));
         var declare = Commands.literal("declare");
@@ -77,9 +77,9 @@ public final class WarfareCommands {
     private static int run(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack> context, Operation operation)
             throws com.mojang.brigadier.exceptions.CommandSyntaxException {
         try {
-            String result = operation.run(); context.getSource().sendSuccess(() -> Component.literal(result), false); return 1;
+            String result = operation.run(); context.getSource().sendSuccess(() -> dev.otectus.mcakingdoms.interaction.Keyed.component(result), false); return 1;
         } catch (IllegalArgumentException failure) {
-            context.getSource().sendFailure(Component.literal(failure.getMessage())); return 0;
+            context.getSource().sendFailure(dev.otectus.mcakingdoms.interaction.Keyed.component(failure)); return 0;
         }
     }
 }

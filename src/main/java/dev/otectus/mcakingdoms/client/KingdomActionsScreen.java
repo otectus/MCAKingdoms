@@ -177,11 +177,14 @@ public final class KingdomActionsScreen extends Screen {
                 String task=reply.value();
                 // Only an action has an outcome to check; a read-only result is already the current record.
                 boolean action=!reply.statusOrEmpty().equals("read");
-                int cells=action?4:3,cell=(w-16-8*(cells-1))/cells,at=0;
+                int cells=action?5:4,cell=(w-16-8*(cells-1))/cells,at=0;
                 if(action)control("check",BookButton.builder(text("check","Check this action"),b->send("CHECK",(actionRequest==null?lastSent.request():actionRequest).toString(),"",0)).bounds(left+8+(cell+8)*at++,y,cell,20)
                         .tooltip(Tooltip.create(text("check.help","Asks for the outcome of the action you sent, without sending it again."))).build()).active=lastSent!=null;
                 control("again",BookButton.builder(action?text("again","Same task again"):text("again.read","Read again"),b->{localPage=0;open(task);}).bounds(left+8+(cell+8)*at++,y,cell,20).build()).active=!task.isEmpty();
                 control("related",BookButton.builder(text("related","Related tasks"),b->{localPage=0;showRelated(task);}).bounds(left+8+(cell+8)*at++,y,cell,20).build()).active=!task.isEmpty();
+                boolean pinned=ClientState.get().pinnedTask().map(task::equals).orElse(false);
+                control("pin",BookButton.builder(pinned?text("pin.remove","Unpin"):text("pin.add","Pin to screen"),b->{PinnedTask.toggle(task);focusedControl="pin";rebuildWidgets();}).bounds(left+8+(cell+8)*at++,y,cell,20)
+                        .tooltip(Tooltip.create(pinned?text("pin.remove.help","Stop showing this task at the top of your screen."):text("pin.add.help","Shows this task at the top of your screen until you unpin it. Pinning never runs it."))).build()).active=!task.isEmpty();
                 boolean favorite=ClientState.get().favorite(task);
                 control("favorite",BookButton.builder(favorite?text("favorite.remove","★ Favourite"):text("favorite.add","☆ Favourite"),b->{ClientState.get().toggleFavorite(task);focusedControl="favorite";rebuildWidgets();}).bounds(left+8+(cell+8)*at,y,w-16-(cell+8)*at,20)
                         .tooltip(Tooltip.create(favorite?text("favorite.remove.help","Remove this task from the favourites on your start view."):text("favorite.add.help","Show this task on your start view."))).build()).active=!task.isEmpty();
@@ -461,10 +464,15 @@ public final class KingdomActionsScreen extends Screen {
     private static String slug(String value){return value.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+","_").replaceAll("^_|_$","");}
     private void acceptIndex(InteractionNetwork.Reply value){
         try{var json=JsonParser.parseString(value.value()).getAsJsonObject();var out=new ArrayList<IndexEntry>();
+            // Each distinct unavailability reason is sent once; an entry names it by its position.
+            var reasons=json.has("reasons")?json.getAsJsonArray("reasons"):new com.google.gson.JsonArray();
             for(var element:json.getAsJsonArray("tasks")){var o=element.getAsJsonObject();
+                String reason=o.has("q")?reasons.get(o.get("q").getAsInt()).getAsString():o.has("r")?o.get("r").getAsString():"";
                 out.add(new IndexEntry(o.get("i").getAsString(),o.get("c").getAsBoolean(),o.get("t").getAsString(),o.get("g").getAsString(),o.has("h")?o.get("h").getAsString():"",
-                        o.has("p")?o.get("p").getAsString():"HELP",o.has("a")?o.get("a").getAsString():"",o.has("r")?o.get("r").getAsString():"",o.has("l")?o.get("l").getAsString():""));}
+                        o.has("p")?o.get("p").getAsString():"HELP",o.has("a")?o.get("a").getAsString():"",reason,o.has("l")?o.get("l").getAsString():""));}
             index=List.copyOf(out);operatorIndex=json.has("operator")&&json.get("operator").getAsBoolean();
+            var availability=new java.util.HashMap<String,String>();for(var e:index)availability.put(e.id(),e.unavailable().isEmpty()?"":e.reason());
+            PinnedTask.catalogue(availability,true);
         }catch(RuntimeException malformed){index=List.of();}
         if(wantStart){wantStart=false;send("START","","",0);return;}
         showCatalogue();

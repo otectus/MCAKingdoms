@@ -42,7 +42,8 @@ public final class ProductionMcaHarness {
         if(event.phase!=TickEvent.Phase.END||server==null||finished)return;
         tick++;
         try {while(!scheduled.isEmpty()&&scheduled.firstKey()<=tick){for(Runnable action:scheduled.pollFirstEntry().getValue())action.run();}
-            if(tick>("politics-cycle".equals(System.getProperty("mcakingdoms.acceptance.integration"))?25000:650))throw new IllegalStateException("MCA lifecycle timed out");}
+            String phase=System.getProperty("mcakingdoms.acceptance.integration","");
+            if(tick>("politics-cycle".equals(phase)?25000:phase.equals("lv")||phase.startsWith("lv-")?4000:650))throw new IllegalStateException("MCA lifecycle timed out");}
         catch(Throwable failure){fail(failure);}
     }
     private void fail(Throwable failure){failure.printStackTrace();finish("FAIL "+failure);}

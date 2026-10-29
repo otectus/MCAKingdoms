@@ -6,7 +6,8 @@ variable or from tools/test/local-environment.json (git-ignored; copy local-envi
 stops the calling script with a message naming the variable to set. Licence acceptance is never assumed: the server
 EULA must be a file you have accepted yourself.
 
-  MCAKINGDOMS_EULA            an eula.txt containing eula=true, copied into each fresh server folder
+  MCAKINGDOMS_ACCEPT_EULA     set to true to state that you accept the Minecraft EULA for the temporary test servers
+  MCAKINGDOMS_EULA            alternatively, an eula.txt you accepted yourself (eula=true), copied into each fresh server folder
   MCAKINGDOMS_MC_INSTALL      a Minecraft launcher install root (versions/, libraries/, assets/), for client harnesses
   MCAKINGDOMS_PACK            a modpack instance folder with mods/, for full-pack runs (MCA, Townstead, Recruits, ...)
   MCAKINGDOMS_XVFB            an Xvfb binary for headless client runs (defaults to Xvfb on PATH)
@@ -16,11 +17,13 @@ EULA must be a file you have accepted yourself.
 Run `python3 -I tools/test/environment.py` to see which prerequisites are found.
 """
 import json, os, pathlib, shutil, subprocess, sys
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))  # outcome.py, for scripts run from other folders
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 LOCAL = ROOT / 'tools/test/local-environment.json'
 
 PREREQUISITES = {
+    'MCAKINGDOMS_ACCEPT_EULA': 'true when you accept the Minecraft EULA (https://aka.ms/MinecraftEULA) for temporary test servers',
     'MCAKINGDOMS_EULA': 'an eula.txt you accepted (eula=true) for the Minecraft server EULA',
     'MCAKINGDOMS_MC_INSTALL': 'a Minecraft launcher install root with versions/, libraries/ and assets/',
     'MCAKINGDOMS_PACK': 'a modpack instance folder containing mods/ with the provider jars',
@@ -44,9 +47,10 @@ def value(name):
 
 
 def fail(name, detail=''):
-    raise SystemExit(f'Missing prerequisite {name}: {PREREQUISITES.get(name, name)}. {detail}'
-                     f'Set the environment variable or add it to {LOCAL.relative_to(ROOT)} '
-                     f'(see local-environment.example.json).')
+    """A missing prerequisite: the calling check is SKIPPED (FAIL in release mode), never passed (H04)."""
+    import outcome
+    outcome.finish('SKIPPED', f'missing prerequisite {name}: {PREREQUISITES.get(name, name)}. {detail}'
+                   f'Set the environment variable or add it to {LOCAL.relative_to(ROOT)} (see local-environment.example.json).')
 
 
 def path(name, required=True, kind='any'):
@@ -62,7 +66,12 @@ def path(name, required=True, kind='any'):
 
 
 def eula(destination):
-    """Copies the accepted EULA into a fresh server folder; refuses one that does not say eula=true."""
+    """Writes the server EULA acceptance into a fresh server folder, only from an explicit acceptance: MCAKINGDOMS_ACCEPT_EULA=true,
+    or an eula.txt you accepted named by MCAKINGDOMS_EULA. Acceptance is never assumed or inherited silently (H04)."""
+    if str(value('MCAKINGDOMS_ACCEPT_EULA') or '').lower() in ('1', 'true', 'yes'):
+        (pathlib.Path(destination) / 'eula.txt').write_text('# Accepted for this temporary test server by MCAKINGDOMS_ACCEPT_EULA=true\n'
+                                                            '# https://aka.ms/MinecraftEULA\neula=true\n')
+        return
     source = path('MCAKINGDOMS_EULA', kind='file')
     text = source.read_text(errors='replace')
     if not any(line.strip().lower() == 'eula=true' for line in text.splitlines()):
@@ -127,6 +136,7 @@ def report():
         elif name == 'MCAKINGDOMS_JAVA':
             try: found = java()
             except SystemExit: found = None
+        elif name == 'MCAKINGDOMS_ACCEPT_EULA': found = value(name)
         else: found = path(name, required=False, kind={'MCAKINGDOMS_EULA': 'file', 'MCAKINGDOMS_GRADLEW_QUIET': 'file'}.get(name, 'dir'))
         print(f'{"found  " if found else "missing"} {name:28} {found or meaning}')
 

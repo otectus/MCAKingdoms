@@ -1,5 +1,7 @@
 package dev.otectus.mcakingdoms.compat.recruits;
 
+import dev.otectus.mcakingdoms.interaction.Keyed;
+
 import dev.otectus.mcakingdoms.warfare.mobilization.MobilizationDoctrine;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
@@ -25,7 +27,7 @@ public final class RecruitsMobilization {
     public static boolean ownedBy(Entity unit,ServerPlayer actor){try{return type().isInstance(unit)&&(boolean)call(unit,"isOwned")
                 &&actor.getUUID().equals(call(unit,"getOwnerUUID"));}catch(RuntimeException failure){return false;}}
     public static Orders snapshot(Entity entity){
-        if(!type().isInstance(entity))throw new IllegalArgumentException("Unit is not a supported recruit.");
+        if(!type().isInstance(entity))throw Keyed.refuse("compat.mcakingdoms.recruits.not_recruit","That is not a supported recruit.");
         UUID owner=(UUID)call(entity,"getOwnerUUID");UUID group=(UUID)call(entity,"getGroup");Vec3 hold=(Vec3)call(entity,"getHoldPos");BlockPos move=(BlockPos)call(entity,"getMovePos");
         return new Orders(entity.getUUID(),owner,group,(int)call(entity,"getFollowState"),(boolean)call(entity,"getListen"),
                 bool(entity,"getShouldFollow"),bool(entity,"getShouldHoldPos"),bool(entity,"getShouldMovePos"),bool(entity,"getShouldProtect"),
@@ -58,8 +60,8 @@ public final class RecruitsMobilization {
         call(entity,"setShouldMovePos",new Class<?>[]{boolean.class},o.move());call(entity,"setShouldProtect",new Class<?>[]{boolean.class},o.protect());
     }
     private static boolean bool(Object target,String method){return (boolean)call(target,method);}
-    private static Class<?> type(){try{return Class.forName(TYPE,false,RecruitsMobilization.class.getClassLoader());}catch(ClassNotFoundException|LinkageError failure){throw new IllegalArgumentException("Supported Recruits unit API unavailable.",failure);}}
+    private static Class<?> type(){try{return Class.forName(TYPE,false,RecruitsMobilization.class.getClassLoader());}catch(ClassNotFoundException|LinkageError failure){throw Keyed.refuse("compat.mcakingdoms.recruits.unit_api","Recruits' unit functions are unavailable.").because(failure);}}
     private static Object call(Object target,String name){return call(target,name,new Class<?>[0]);}
     private static Object call(Object target,String name,Class<?>[] types,Object...args){try{return target.getClass().getMethod(name,types).invoke(target,args);}
-        catch(ReflectiveOperationException|LinkageError failure){throw new IllegalArgumentException("Recruits order API unavailable: "+name,failure);}}
+        catch(ReflectiveOperationException|LinkageError failure){throw Keyed.refuse("compat.mcakingdoms.recruits.order_api","Recruits' order functions are unavailable: %s",name).because(failure);}}
 }

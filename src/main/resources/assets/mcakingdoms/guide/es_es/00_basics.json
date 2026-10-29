@@ -423,7 +423,7 @@
         {
           "id": "keyboard",
           "type": "paragraph",
-          "text": "Tab recorre los controles y enlaces; Intro o Espacio activa el elemento seleccionado. Re Pág y Av Pág cambian de página; con el artículo seleccionado, las flechas, Inicio y Fin desplazan el texto. Ctrl + F selecciona la búsqueda. Escape cierra el libro. En ventanas estrechas, Índice / Artículo cambia de página sin reducir el texto."
+          "text": "Tab recorre los controles y enlaces; Intro o Espacio activa el elemento seleccionado. Re Pág y Av Pág cambian de página; con el artículo seleccionado, las flechas, Inicio y Fin desplazan el texto. Ctrl + F selecciona la búsqueda. Escape cierra el libro. En ventanas estrechas, Índice / Artículo cambia de página sin reducir el texto. En pantallas bajas, la página del reino muestra un solo botón Sección en lugar de filas de pestañas: púlsalo, o usa la rueda sobre él, para pasar a la sección siguiente; mantén Mayús y púlsalo para volver."
         },
         {
           "id": "commands",

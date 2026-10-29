@@ -49,6 +49,9 @@ public final class LegacyRename {
             "institutional_commissions", "quest_receipts", "campaigns", "control", "civilian_contracts",
             "evolution", "evolution_drama", "protection", "recruit_transfers", "mobilization", "world_context");
 
+    /** Stores added after the rename (0.3.0); no world ever wrote them under the old namespace, so there is nothing to migrate. */
+    static final List<String> SINCE_RENAME = List.of("capitals", "documents", "dynasty", "development", "living_villages");
+
     /** Config files, old name to new. The keys inside them did not change. */
     static final Map<String, String> CONFIG_FILES = configFiles();
 

@@ -13,7 +13,7 @@ import java.util.*;
 import java.util.function.UnaryOperator;
 
 /** Durable owner ledger. Accepted identities and terminal proofs are never retired implicitly. */
-final class CivilianContractData extends SavedData {
+final class CivilianContractData extends dev.otectus.mcakingdoms.persistence.DurableSavedData {
     static final String NAME = "mcakingdoms_civilian_contracts";
     static final int CAPACITY = 16_384;
     private static final Gson JSON = new Gson();

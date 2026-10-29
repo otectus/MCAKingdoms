@@ -19,7 +19,7 @@ public final class EvolutionState {
         }
     }
     public record Evidence(String provider, String receipt, String kind, long at, String detail) {
-        public Evidence { text(provider, 128); text(receipt, 256); text(kind, 64); text(detail, 512);
+        public Evidence { text(provider, 128); text(receipt, 256); text(kind, 64); text(detail, dev.otectus.mcakingdoms.interaction.Keyed.LIMIT);
             if (at < 0) throw new IllegalArgumentException("Invalid evidence time"); }
         public String key() { return provider + ":" + receipt; }
     }
@@ -37,7 +37,7 @@ public final class EvolutionState {
         public Scenario {
             Objects.requireNonNull(id); text(templateId, 128); Objects.requireNonNull(terms);
             Objects.requireNonNull(settlement); text(kingdom, 128); Objects.requireNonNull(cause);
-            Objects.requireNonNull(phase); contributions = Map.copyOf(contributions); text(result, 512);
+            Objects.requireNonNull(phase); contributions = Map.copyOf(contributions); text(result, dev.otectus.mcakingdoms.interaction.Keyed.LIMIT);
             if (created < 0 || deadline <= created || revision < 1 || contributions.size() > 64
                     || (phase == Phase.RESOLVING || phase == Phase.RESOLVED) && intent == null)
                 throw new IllegalArgumentException("Invalid scenario state");

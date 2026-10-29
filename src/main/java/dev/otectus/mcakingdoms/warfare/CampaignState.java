@@ -18,7 +18,7 @@ public final class CampaignState {
         public Campaign {
             Objects.requireNonNull(id); Objects.requireNonNull(settlement); Objects.requireNonNull(claim);
             token(attacker); token(defender); token(kingdom); Objects.requireNonNull(commander); Objects.requireNonNull(goal);
-            Objects.requireNonNull(phase); Objects.requireNonNull(before); text(reason, 512);
+            Objects.requireNonNull(phase); Objects.requireNonNull(before); text(reason, dev.otectus.mcakingdoms.interaction.Keyed.LIMIT);
             if (attacker.equals(defender) || noticeUntil < 0 || expires <= noticeUntil || observedControlSequence < 1)
                 throw new IllegalArgumentException("Invalid campaign");
         }
@@ -33,7 +33,7 @@ public final class CampaignState {
             Objects.requireNonNull(id); Objects.requireNonNull(settlement); token(first); token(second);
             token(firstKingdom); token(secondKingdom); Objects.requireNonNull(desired); Objects.requireNonNull(firstBefore);
             Objects.requireNonNull(secondBefore); signatures = Map.copyOf(signatures); Objects.requireNonNull(phase);
-            Objects.requireNonNull(sovereignty); Objects.requireNonNull(claim); token(controller); token(recognizedKingdom); text(reason, 512);
+            Objects.requireNonNull(sovereignty); Objects.requireNonNull(claim); token(controller); token(recognizedKingdom); text(reason, dev.otectus.mcakingdoms.interaction.Keyed.LIMIT);
             if (first.equals(second) || signatures.size() > 2 || signatures.keySet().stream().anyMatch(s -> !s.equals(first) && !s.equals(second))
                     || new HashSet<>(signatures.values()).size() != signatures.size()
                     || desired == Relation.ENEMY
@@ -73,10 +73,10 @@ public final class CampaignState {
     }
     public record Notice(UUID id, UUID settlement, String action, UUID actor, long at, String detail) {
         public Notice { Objects.requireNonNull(id); Objects.requireNonNull(settlement); token(action); Objects.requireNonNull(actor);
-            if (at < 0) throw new IllegalArgumentException("Invalid notice"); text(detail, 512); }
+            if (at < 0) throw new IllegalArgumentException("Invalid notice"); text(detail, dev.otectus.mcakingdoms.interaction.Keyed.LIMIT); }
     }
     public record Receipt(UUID player, String fingerprint, String result) {
-        public Receipt { Objects.requireNonNull(player); text(fingerprint, 64); text(result, 1024); }
+        public Receipt { Objects.requireNonNull(player); text(fingerprint, 64); text(result, dev.otectus.mcakingdoms.interaction.Keyed.LIMIT); }
     }
     public long revision;
     public Map<UUID, Campaign> campaigns = new LinkedHashMap<>();

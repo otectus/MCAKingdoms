@@ -59,9 +59,9 @@ final class EvolutionScenario {
             check(refused, "out-of-scope protectorate levy denied");
             protection.request(one, pact, ProtectionState.Duty.CIVIC_AID, 3); UUID obligation = protection.obligations(one).get(0).id();
             protection.refuse(two, obligation, 1, "Local workshop is serving its residents first");
-            check(protection.inspect(one, pact).stream().anyMatch(s -> s.contains("REFUSED")), "subordinate retains explicit refusal");
+            check(protection.obligations(one).stream().anyMatch(o -> o.id().equals(obligation) && o.status() == ProtectionState.Status.REFUSED), "subordinate retains explicit refusal");
             protection.exit(two, pact, B, 3);
-            check(protection.page(one, 0).stream().anyMatch(s -> s.contains("EXIT_NOTICE")), "peaceful exit is recorded without troop confiscation");
+            check(protection.pacts(one).stream().anyMatch(p -> p.id().equals(pact) && p.phase() == ProtectionState.Phase.EXIT_NOTICE), "peaceful exit is recorded without troop confiscation");
 
             UUID petition = UUID.randomUUID();
             success(politics.execute(outsider, new Politics.Request(petition, politics.revision(), Politics.Action.PETITION, A,
@@ -74,8 +74,8 @@ final class EvolutionScenario {
                     "", "", null, "", "", "", 0,0,0)));
             livePlayers.add(one);
             try { evolution.tick(); } finally { livePlayers.remove(one); }
-            var lines = evolution.page(two, 0); String row = lines.stream().filter(s -> s.contains("named successor")).findFirst().orElseThrow();
-            UUID scenario = UUID.fromString(row.substring(0,36));
+            // Typed views, not page text: results are worded per reader since 0.3.0 (H03).
+            UUID scenario = evolution.scenarios(two).stream().filter(v -> v.trigger() == EvolutionState.Trigger.INTERREGNUM).findFirst().orElseThrow().id();
             evolution.contribute(two, scenario, 1, EvolutionState.Outcome.SUCCEED);
             evolution.resolve(two, scenario, 2, EvolutionState.Outcome.SUCCEED, "");
             check(politics.government(A).orElseThrow().offices().get("mcakingdoms:leader").holder().id().equals(two.getUUID()), "scenario confirms lawful native succession");
@@ -108,12 +108,12 @@ final class EvolutionScenario {
             transfers.consent(two, transfer, 1); server.getWorldData().overworldData().setGameTime(level.getGameTime()+1201);
             String refusal = transfers.apply(one, transfer, 2);
             check(RecruitsTransfer.matches(unit, before, false), "native hire veto restores original owner/group/count/equipment: " + refusal);
-            check(transfers.inspect(one, transfer).get(0).contains("CANCELLED"), "restoration has actual disk acknowledgment");
+            check(phase(transfers, one, transfer) == RecruitTransferData.Phase.CANCELLED, "restoration has actual disk acknowledgment");
             veto.set(false);
             transfers.propose(one, unit.getUUID(), two.getUUID(), secondGroupId, false); transfer = newestTransfer(transfers, one, unit.getUUID());
             transfers.consent(two, transfer, 1); server.getWorldData().overworldData().setGameTime(level.getGameTime()+1201);
             var forced = Set.copyOf(level.getForcedChunks()); String result = transfers.apply(one, transfer, 2);
-            check(transfers.inspect(one, transfer).get(0).contains("COMPLETE"), "native transfer has disk acknowledgment: " + result);
+            check(phase(transfers, one, transfer) == RecruitTransferData.Phase.COMPLETE, "native transfer has disk acknowledgment: " + result);
             check(RecruitsTransfer.matches(unit, before, true), "recipient owns same recruit/equipment with balanced native counts");
             check(forced.equals(Set.copyOf(level.getForcedChunks())), "R4 transfer introduces no forced chunks");
             transfers.confirm(two, transfer); check(RecruitsTransfer.matches(unit, before, true), "confirmation replay does not add a second recruit");
@@ -142,7 +142,7 @@ final class EvolutionScenario {
             refused=false;try{transfers.reconcile(two,accountingIntent.id(),2,review.fingerprint(),"Verified counts");}catch(IllegalArgumentException expected){refused=true;}
             check(refused,"non-operator cannot acknowledge diverged accounting");
             transfers.reconcile(one,accountingIntent.id(),2,review.fingerprint(),"Verified native counts after test listener restored its unrelated change");
-            check(transfers.inspect(one,accountingIntent.id()).get(0).contains("RECONCILED"),"operator acknowledgment retains distinct reconciled result without changing ownership");
+            check(phase(transfers,one,accountingIntent.id())==RecruitTransferData.Phase.RECONCILED,"operator acknowledgment retains distinct reconciled result without changing ownership");
             var fixture = new CompoundTag(); fixture.putUUID("Transfer", transfer); fixture.putUUID("Unit", unit.getUUID()); fixture.putUUID("Recipient", two.getUUID());
             fixture.putString("Equipment", before.equipment());
             fixture.putUUID("Scenario", scenario); fixture.putUUID("Petition", petition); fixture.putUUID("Petitioner", outsider.getUUID());
@@ -173,11 +173,11 @@ final class EvolutionScenario {
         } else {
             check(EvolutionSavedData.get(server).writable() && RecruitTransferData.get(server).writable(), "R4 sidecars reload writable");
             if(phase.equals("r4-crash-restart")){
-                check(transfers.inspect(actor,fixture.getUUID("Transfer")).get(0).contains("APPLYING"),"crash retained unacknowledged intent");
+                check(phase(transfers,actor,fixture.getUUID("Transfer"))==RecruitTransferData.Phase.APPLYING,"crash retained unacknowledged intent");
                 transfers.confirm(actor,fixture.getUUID("Transfer"));
             }
-            check(transfers.inspect(actor, fixture.getUUID("Transfer")).get(0).contains("COMPLETE"), "durable transfer receipt survives restart/provider absence");
-            check(EvolutionRuntime.get(server).inspect(actor, fixture.getUUID("Scenario")).stream().anyMatch(s -> s.contains("RESOLVED")), "resolved shared outcome survives restart");
+            check(phase(transfers, actor, fixture.getUUID("Transfer")) == RecruitTransferData.Phase.COMPLETE, "durable transfer receipt survives restart/provider absence");
+            check(EvolutionRuntime.get(server).scenario(actor, fixture.getUUID("Scenario")).map(v -> v.phase() == EvolutionState.Phase.RESOLVED).orElse(false), "resolved shared outcome survives restart");
             var politics = KingdomsPoliticsApi.get(server);
             check(politics.government(A).orElseThrow().offices().get("mcakingdoms:leader").holder().id().equals(fixture.getUUID("Leader")), "lawful succession survives restart");
             var stranger = new FakePlayer(server.overworld(),new GameProfile(UUID.randomUUID(),"R4Unrelated"));
@@ -186,7 +186,8 @@ final class EvolutionScenario {
                 var unit = server.overworld().getEntity(fixture.getUUID("Unit"));
                 check(unit != null, "native transferred entity reloads");
                 check(actor.getUUID().equals(call(unit,"getOwnerUUID")) && fixture.getString("Equipment").equals(RecruitsTransfer.equipment(unit)), "native recipient and unchanged equipment survive restart");
-                check(transfers.confirm(actor, fixture.getUUID("Transfer")).contains("acknowledged"), "terminal confirmation replay is read-only");
+                transfers.confirm(actor, fixture.getUUID("Transfer"));
+                check(phase(transfers, actor, fixture.getUUID("Transfer")) == RecruitTransferData.Phase.COMPLETE, "terminal confirmation replay is read-only");
             }
         }
         server.saveEverything(false,true,true);
@@ -198,4 +199,8 @@ final class EvolutionScenario {
     private static UUID parse(String line, String prefix) { int start = line.indexOf(prefix) + prefix.length(); return UUID.fromString(line.substring(start, start + 36)); }
     private static void success(Politics.Result result) { check(result.success(), "political setup: " + result.message()); }
     private EvolutionScenario() { }
+    /** A transfer's phase from the typed view both parties can read. */
+    private static RecruitTransferData.Phase phase(RecruitTransferService transfers, ServerPlayer viewer, UUID id) {
+        return transfers.transfers(viewer).stream().filter(v -> v.id().equals(id)).findFirst().orElseThrow().phase();
+    }
 }

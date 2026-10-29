@@ -5,10 +5,31 @@
       "category": "warfare",
       "title": "Responsabilidades y preparación de la guerra",
       "summary": "Antes de iniciar una campaña, aprende qué sistemas gestionan batallas, asentamientos, contratos, leyes y mapas.",
-      "body": [
-        "MCA: Kingdoms coordina la autoridad política alrededor de otros mods sin sustituirlos. Recruits 1.15.2 gestiona las facciones, los soldados, el equipo, las reclamaciones, el progreso de los asedios y los resultados de los combates. MCA: Kingdoms gestiona la correspondencia entre esos hechos y los asentamientos cívicos, la intención pública de campaña, los plazos de aviso, los mandatos políticos, los acuerdos de soberanía y los justificantes duraderos. Una captura nativa crea una ocupación; no renombra un pueblo, no borra residentes, no cambia la cultura, no mueve edificios ni limpia la reputación ni los antecedentes legales.",
-        "El juego militar necesita el proveedor Recruits correspondiente. Los contratos civiles necesitan una instalación compatible de MCA Quests, y la jurisdicción de Crime necesita el proveedor MCA Crime correspondiente. Map Atlases sigue siendo quien dibuja el mapa cuando está instalado. El registro de asentamientos, los registros de descubrimiento, las rutas y los justificantes de encuentros siguen perteneciendo a MCA: Kingdoms y siguen siendo útiles aunque falte un complemento opcional. Las operaciones ligadas a una versión fallan de forma segura en lugar de adivinar el estado del proveedor.",
-        "Todos los interruptores de guerra están activados por defecto. La configuración común puede desactivar por separado las acciones militares, los contratos civiles, la protección de objetivos o el contexto del mundo. La política predeterminada protege las capitales, exige que el líder defensor esté conectado para el daño de asedio vinculado, da 1200 ticks de aviso de campaña, dura 168 000 ticks tras el aviso, permite como mucho 16 unidades temporales por comandante y da 6000 ticks a las movilizaciones. Los operadores pueden ajustar estos valores acotados antes de jugar."
+      "blocks": [
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "MCA: Kingdoms coordina la autoridad política alrededor de otros mods sin sustituirlos. Recruits 1.15.2 gestiona las facciones, los soldados, el equipo, las reclamaciones, el progreso de los asedios y los resultados de los combates. MCA: Kingdoms gestiona la correspondencia entre esos hechos y los asentamientos cívicos, la intención pública de campaña, los plazos de aviso, los mandatos políticos, los acuerdos de soberanía y los justificantes duraderos. Una captura nativa crea una ocupación; no renombra un pueblo, no borra residentes, no cambia la cultura, no mueve edificios ni limpia la reputación ni los antecedentes legales."
+        },
+        {
+          "id": "diagram",
+          "type": "image",
+          "texture": "mcakingdoms:textures/gui/guide/warfare_control.png",
+          "width": 192,
+          "height": 96,
+          "alt": "El estandarte de un reino atacante apunta, a través de una frontera, a un asentamiento defendido con un escudo: el control solo cambia mediante un asedio nativo, nunca solo por el estandarte.",
+          "caption": "Una reclamación cruza una frontera; el control sigue a un asedio nativo."
+        },
+        {
+          "id": "p2",
+          "type": "paragraph",
+          "text": "El juego militar necesita el proveedor Recruits correspondiente. Los contratos civiles necesitan una instalación compatible de MCA Quests, y la jurisdicción de Crime necesita el proveedor MCA Crime correspondiente. Map Atlases sigue siendo quien dibuja el mapa cuando está instalado. El registro de asentamientos, los registros de descubrimiento, las rutas y los justificantes de encuentros siguen perteneciendo a MCA: Kingdoms y siguen siendo útiles aunque falte un complemento opcional. Las operaciones ligadas a una versión fallan de forma segura en lugar de adivinar el estado del proveedor."
+        },
+        {
+          "id": "p3",
+          "type": "paragraph",
+          "text": "Todos los interruptores de guerra están activados por defecto. La configuración común puede desactivar por separado las acciones militares, los contratos civiles, la protección de objetivos o el contexto del mundo. La política predeterminada protege las capitales, exige que el líder defensor esté conectado para el daño de asedio vinculado, da 1200 ticks de aviso de campaña, dura 168 000 ticks tras el aviso, permite como mucho 16 unidades temporales por comandante y da 6000 ticks a las movilizaciones. Los operadores pueden ajustar estos valores acotados antes de jugar."
+        }
       ],
       "commands": [],
       "task": "warfare.here"

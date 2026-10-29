@@ -1,0 +1,46 @@
+{
+  "schema": 1,
+  "role": "road",
+  "title": "development.mcakingdoms.template.path_segment",
+  "minimum_mode": "projects",
+  "demand": [
+    {
+      "item": "minecraft:dirt",
+      "count": 5
+    }
+  ],
+  "blocks": [
+    {
+      "x": 0,
+      "y": 0,
+      "z": -2,
+      "state": "minecraft:dirt_path"
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "z": -1,
+      "state": "minecraft:dirt_path"
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "state": "minecraft:dirt_path"
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "z": 1,
+      "state": "minecraft:dirt_path"
+    },
+    {
+      "x": 0,
+      "y": 0,
+      "z": 2,
+      "state": "minecraft:dirt_path"
+    }
+  ],
+  "placement": "ground",
+  "tier_points": 1
+}

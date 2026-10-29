@@ -39,5 +39,16 @@ public final class WarfareConfig {
         builder.pop();
         SPEC = builder.build();
     }
+    private static volatile Boolean enabledOverride;
+
+    /** Whether warfare is on: the {@code enabled} setting, or a packaged scenario's override (no config file is rewritten mid-run). */
+    public static boolean enabled() {
+        var forced = enabledOverride;
+        return forced != null ? forced : ENABLED.get();
+    }
+
+    /** Test seam for packaged scenarios: forces {@link #enabled()} without {@code ConfigValue.set}, whose file write can race Forge's watcher; null restores the setting. */
+    public static void overrideEnabledForTests(Boolean enabled) { enabledOverride = enabled; }
+
     private WarfareConfig() { }
 }

@@ -7,7 +7,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.storage.LevelResource;
 
-public final class CampaignSavedData extends SavedData {
+public final class CampaignSavedData extends dev.otectus.mcakingdoms.persistence.DurableSavedData {
     public static final String NAME = "mcakingdoms_campaigns";
     static final Gson JSON = new Gson();
     private CampaignState state = new CampaignState();

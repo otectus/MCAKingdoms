@@ -72,7 +72,7 @@ public final class CoreTasks {
         if(report.examined()==0)lines.add(t("reconcile.nothing","Nothing to reconcile: no unreconciled record is anchored in a loaded chunk within %s chunks.",radius));
         var refused=new LinkedHashMap<String,dev.otectus.mcakingdoms.core.SettlementReconciler.Refusal>();
         report.refused().forEach(r->refused.putIfAbsent(r.source()+">"+r.target(),r));impl.refusalsAround(level,center,radius).forEach(r->refused.putIfAbsent(r.source()+">"+r.target(),r));
-        refused.values().forEach(r->lines.add(t("reconcile.refused","Not merged: %s into %s — %s. Resolve that, then run this task again (console: %s).",r.sourceName(),r.targetName(),r.reason(),r.command())));
+        refused.values().forEach(r->lines.add(t("reconcile.refused","Not merged: %s into %s — %s. Resolve that, then run this task again (console: %s).",r.sourceName(),r.targetName(),Keyed.component(r.encodedReason()),r.command())));
         return lines;
     }
     private static List<Object> mergeEffects(Context c){

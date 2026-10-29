@@ -1,4 +1,12 @@
 {
   "kingdom.example.harbor_league": "Liga del Puerto",
-  "politics.example.harbor_league_charter": "Carta de la Liga del Puerto"
+  "politics.example.harbor_league_charter": "Carta de la Liga del Puerto",
+  "kingdom.example.harbor_league.motto": "Por la marea y el registro",
+  "dynasty.example.law.harbor_council": "Sucesión del consejo del puerto",
+  "dynasty.example.rank.harbor_warden": "Guardián del puerto",
+  "dynasty.example.rank.harbor_warden.address": "Guardián",
+  "dynasty.example.rank.harbor_warden.league": "Guardián de los muelles",
+  "development.example.template.harbor_beacon": "Faro del puerto",
+  "organization.example.harbor_archivists": "Archiveros del Puerto",
+  "organization.example.harbor_archivists.description": "Custodios de los registros de mareas y las cartas de la Liga; abiertos a miembros de cualquier reino."
 }

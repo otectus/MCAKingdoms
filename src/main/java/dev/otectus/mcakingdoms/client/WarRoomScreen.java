@@ -69,12 +69,13 @@ public final class WarRoomScreen extends Screen {
             case "campaigns"->t("section.campaigns","Campaigns and control agreements");
             case "orders"->t("section.orders","Your temporary troop orders");
             case "civilian"->t("section.civilian","Civilian and travel options");
+            case "realms"->t("section.realms","Living Villages realms");
             default->Component.literal(key);
         };
     }
     /** Which section a task link belongs in, so each action sits next to what it changes. */
     private static String sectionFor(String task){
-        return switch(task){case "warfare.accord"->"control";case "warfare.declare"->"campaigns";case "warfare.muster_nearby"->"orders";default->"civilian";};
+        return switch(task){case "warfare.accord"->"control";case "warfare.declare"->"campaigns";case "warfare.muster_nearby"->"orders";case "warfare.realm_peace"->"realms";default->"civilian";};
     }
     private List<RichPanel.Piece> pieces(){
         var out=new ArrayList<RichPanel.Piece>();

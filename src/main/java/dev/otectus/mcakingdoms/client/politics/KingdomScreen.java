@@ -5,6 +5,7 @@ import dev.otectus.mcakingdoms.client.HeraldryRenderer;
 import dev.otectus.mcakingdoms.client.InteractionClient;
 import dev.otectus.mcakingdoms.client.KingdomGuideScreen;
 import dev.otectus.mcakingdoms.client.book.BookButton;
+import dev.otectus.mcakingdoms.client.book.BookCycleButton;
 import dev.otectus.mcakingdoms.client.book.BookLayout;
 import dev.otectus.mcakingdoms.client.book.BookSkin;
 import dev.otectus.mcakingdoms.client.rich.Pieces;
@@ -13,6 +14,7 @@ import dev.otectus.mcakingdoms.interaction.InteractionNetwork;
 import dev.otectus.mcakingdoms.politics.PoliticalNetwork;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -26,7 +28,7 @@ import java.util.*;
  * this kingdom (and record) chosen; nothing here changes records. No authoritative client state.
  */
 public final class KingdomScreen extends Screen {
-    private static final List<String> TABS = List.of("overview", "council", "agreements", "petitions", "institutions", "honors", "history");
+    private static final List<String> TABS = List.of("overview", "council", "succession", "agreements", "petitions", "institutions", "honors", "history", "development");
     private final Screen parent;
     private final String kingdom;
     private final String settlement;
@@ -77,29 +79,43 @@ public final class KingdomScreen extends Screen {
             presented.put(row, new Presented(hasTitles ? InteractionNetwork.component(reply.titles().get(i)) : translated(row.title()),
                     hasDetails ? InteractionNetwork.component(reply.details().get(i)) : Component.literal(row.detail()), fields));
         }
-        status = reply.result() == null ? page.diagnostic().isBlank() ? Component.empty() : Component.literal(page.diagnostic()) : dev.otectus.mcakingdoms.interaction.PlayerWords.component(reply.result().message());
+        status = reply.result() == null ? page.diagnostic().isBlank() ? Component.empty() : dev.otectus.mcakingdoms.interaction.PlayerWords.component(page.diagnostic()) : dev.otectus.mcakingdoms.interaction.PlayerWords.component(reply.result().message());
         if (reply.result() != null && reply.result().success()) { selected = null; }
         rebuildWidgets();
     }
+    /** The history filter (H10); sent in the tab name, so the request format is unchanged. */
+    private dev.otectus.mcakingdoms.politics.HistoryFilter historyFilter = new dev.otectus.mcakingdoms.politics.HistoryFilter("", 0, false);
+    private String requestedTab() { return tab.equals("history") && !historyFilter.unfiltered() ? historyFilter.tab() : tab; }
+    private boolean filtersShown() { return tab.equals("history"); }
+    /** The first list row, below the history filters when they are shown. */
+    private int listTop() { return bodyTop() + (filtersShown() ? 22 : 0); }
     private void request() {
-        pending = new PoliticalNetwork.Query(UUID.randomUUID(), kingdom, tab, offset);
+        pending = new PoliticalNetwork.Query(UUID.randomUUID(), kingdom, requestedTab(), offset);
         attempts = 1; timeout = 40; PoliticalNetwork.send(pending);
         if (minecraft != null) rebuildWidgets();
     }
     @Override protected void init() {
         clearWidgets();
         folio = BookLayout.folio(width, height, 640, 440);
-        int tabWidth = (contentWidth() - 12) / 4;
-        for (int i = 0; i < TABS.size(); i++) {
-            String value = TABS.get(i);
-            var button = addRenderableWidget(BookButton.builder(label(value), b -> { tab = value; offset = rowScroll = 0; selected = null; page = null; request(); })
-                    .bounds(contentLeft() + (i % 4) * (tabWidth + 3), folio.y() + 42 + (i / 4) * 22, tabWidth, 20).build().selected(tab.equals(value)));
-            button.active = pending == null && !tab.equals(value);
+        if (sectionPicker()) {
+            // Native cycling: click or wheel moves on, Shift goes back, and narration reads the section.
+            var picker = addRenderableWidget(new BookCycleButton<>(CycleButton.builder(KingdomScreen::label).withValues(TABS).withInitialValue(tab)
+                    .create(contentLeft(), folio.y() + 42, contentWidth(), 20, t("tab_picker", "Section"), (b, value) -> { tab = value; offset = rowScroll = 0; selected = null; page = null; request(); })));
+            picker.active = pending == null;
+        } else {
+            int perRow = tabsPerRow();
+            int tabWidth = (contentWidth() - 3 * (perRow - 1)) / perRow;
+            for (int i = 0; i < TABS.size(); i++) {
+                String value = TABS.get(i);
+                var button = addRenderableWidget(BookButton.builder(label(value), b -> { tab = value; offset = rowScroll = 0; selected = null; page = null; request(); })
+                        .bounds(contentLeft() + (i % perRow) * (tabWidth + 3), folio.y() + 42 + (i / perRow) * 22, tabWidth, 20).build().selected(tab.equals(value)));
+                button.active = pending == null && !tab.equals(value);
+            }
         }
         int count = visibleRows();
         rowScroll = Math.max(0, Math.min(rowScroll, page == null ? 0 : Math.max(0, page.rows().size() - count)));
         int detailX = spread() ? folio.leafX(true) : contentLeft();
-        int detailY = spread() ? bodyTop() : bodyTop() + count * 21 + 4;
+        int detailY = spread() ? bodyTop() : listTop() + count * 21 + 4;
         int detailW = spread() ? folio.leafWidth() : contentWidth();
         int detailH = Math.max(20, bodyBottom() - detailY);
         if (detailPanel == null) detailPanel = new RichPanel(detailX, detailY, detailW, detailH, Component.translatable("menu.mcakingdoms.record_details")).manuscript();
@@ -111,13 +127,34 @@ public final class KingdomScreen extends Screen {
             Component title = rowLabel(row);
             boolean current = row.equals(currentRow());
             var button = addRenderableWidget(BookButton.builder(title, b -> { selected = row; rebuildWidgets(); setFocused(detailPanel); })
-                    .bounds(listLeft(), bodyTop() + i * 21, listWidth(), 20).tooltip(Tooltip.create(title)).build().kind(BookButton.Kind.INDEX).selected(current));
+                    .bounds(listLeft(), listTop() + i * 21, listWidth(), 20).tooltip(Tooltip.create(title)).build().kind(BookButton.Kind.INDEX).selected(current));
             button.active = pending == null && !row.equals(selected);
+        }
+        if (filtersShown()) {
+            int third = (listWidth() - 6) / 3;
+            var groups = dev.otectus.mcakingdoms.politics.HistoryFilter.GROUPS;
+            var days = dev.otectus.mcakingdoms.politics.HistoryFilter.DAYS;
+            var f = historyFilter;
+            Component groupLabel = f.group().isEmpty() ? t("history.filter.all", "All events") : t("history.filter." + f.group(), f.group());
+            addRenderableWidget(BookButton.builder(t("history.filter.type", "Show: %s", groupLabel), b -> {
+                historyFilter = new dev.otectus.mcakingdoms.politics.HistoryFilter(groups.get((groups.indexOf(f.group()) + 1) % groups.size()), f.days(), f.publicOnly());
+                offset = rowScroll = 0; selected = null; page = null; request(); })
+                    .bounds(listLeft(), bodyTop(), third, 20).tooltip(Tooltip.create(t("history.filter.type.help", "Which kind of event to show; press to change."))).build()).active = pending == null;
+            Component dayLabel = f.days() == 0 ? t("history.filter.any_time", "Any time") : t("history.filter.days", "Last %s days", f.days());
+            addRenderableWidget(BookButton.builder(dayLabel, b -> {
+                historyFilter = new dev.otectus.mcakingdoms.politics.HistoryFilter(f.group(), days.get((days.indexOf(f.days()) + 1) % days.size()), f.publicOnly());
+                offset = rowScroll = 0; selected = null; page = null; request(); })
+                    .bounds(listLeft() + third + 3, bodyTop(), third, 20).tooltip(Tooltip.create(t("history.filter.when.help", "How far back to show, in Minecraft days; press to change."))).build()).active = pending == null;
+            addRenderableWidget(BookButton.builder(f.publicOnly() ? t("history.filter.public", "Public only") : t("history.filter.visible", "All you may see"), b -> {
+                historyFilter = new dev.otectus.mcakingdoms.politics.HistoryFilter(f.group(), f.days(), !f.publicOnly());
+                offset = rowScroll = 0; selected = null; page = null; request(); })
+                    .bounds(listLeft() + 2 * (third + 3), bodyTop(), listWidth() - 2 * (third + 3), 20)
+                    .tooltip(Tooltip.create(t("history.filter.visibility.help", "Public events only, or everything you are allowed to see; press to change."))).build()).active = pending == null;
         }
         int pagerWidth = Math.max(48, Math.min(90, listWidth() / 3));
         addRenderableWidget(BookButton.builder(label("previous"), b -> { if (rowScroll > 0) { rowScroll = Math.max(0, rowScroll - count); rebuildWidgets(); } else { offset = Math.max(0, offset - 20); rowScroll = 0; request(); } })
                 .bounds(listLeft(), pagerY(), pagerWidth, 20).build()).active = pending == null && (rowScroll > 0 || offset > 0);
-        addRenderableWidget(BookButton.builder(label("next"), b -> { if (page != null && rowScroll + count < page.rows().size()) { rowScroll += count; rebuildWidgets(); } else { offset += 20; rowScroll = 0; request(); } })
+        addRenderableWidget(BookButton.builder(label("next"), b -> { if (page != null && rowScroll + count < page.rows().size()) { rowScroll += count; rebuildWidgets(); } else { offset = page == null || page.rows().isEmpty() ? offset + 20 : page.offset() + page.rows().size(); rowScroll = 0; request(); } })
                 .bounds(listLeft() + listWidth() - pagerWidth, pagerY(), pagerWidth, 20).build()).active = pending == null && page != null && (rowScroll + count < page.rows().size() || page.hasMore());
         int footerWidth = (contentWidth() - 12) / 4;
         var actions = addRenderableWidget(BookButton.builder(label("actions"), b -> { refreshOnReturn = true; InteractionClient.open(this, "", "Government", settlement.isEmpty() ? "" : InteractionClient.prefill("target", settlement)); })
@@ -134,6 +171,8 @@ public final class KingdomScreen extends Screen {
     private String helpTopic() {
         return switch (tab) {
             case "council" -> "offices_and_permissions";
+            case "succession" -> "dynasty_succession";
+            case "development" -> "settlement_development";
             case "agreements" -> "agreements";
             case "petitions" -> "petitions";
             case "institutions", "honors" -> "institutions_and_honors";
@@ -153,14 +192,25 @@ public final class KingdomScreen extends Screen {
     private int contentLeft() { return folio.leafX(false); }
     private int contentRight() { return spread() ? folio.leafX(true) + folio.leafWidth() : contentLeft() + folio.leafWidth(); }
     private int contentWidth() { return contentRight() - contentLeft(); }
-    private int bodyTop() { return folio.y() + 88; }
+    /** Five tabs to a row when the widest label (in the player's language) fits, otherwise four, so wide screens keep two rows. */
+    private int tabsPerRow() {
+        if (font == null || folio == null) return 4;
+        int widest = 0;
+        for (String value : TABS) widest = Math.max(widest, font.width(label(value)) + 14);
+        return (contentWidth() - 12) / Math.max(1, widest) >= 5 ? 5 : 4;
+    }
+    private int tabRows() { int perRow = tabsPerRow(); return (TABS.size() + perRow - 1) / perRow; }
+    /** On a short page, three rows of tabs would leave the record a few lines; one section picker takes a single row. */
+    private boolean sectionPicker() { return tabRows() > 2 && bodyBottom() - (folio.y() + 44 + tabRows() * 22) < 100; }
+    /** Below the tab rows, or the section picker. */
+    private int bodyTop() { return folio.y() + 44 + (sectionPicker() ? 1 : tabRows()) * 22; }
     private int pagerY() { return folio.bottom() - 62; }
     private int footerY() { return folio.bottom() - 34; }
     private int bodyBottom() { return pagerY() - 6; }
     private int listLeft() { return spread() ? folio.leafX(false) : contentLeft(); }
     private int listWidth() { return spread() ? folio.leafWidth() : contentWidth(); }
     private int visibleRows() {
-        int rows = Math.max(1, (bodyBottom() - bodyTop() - 80) / 21);
+        int rows = Math.max(1, (bodyBottom() - listTop() - 80) / 21);
         return spread() ? rows : Math.min(4, rows);
     }
     private Row currentRow() {
@@ -198,6 +248,8 @@ public final class KingdomScreen extends Screen {
             case "honors" -> t("empty.honors", "No honors have been awarded.");
             case "history" -> t("empty.history", "No recorded history you may see.");
             case "council" -> t("empty.council", "No offices are filled.");
+            case "succession" -> t("empty.succession", "No succession records you may see.");
+            case "development" -> t("empty.development", "No development records for settlements you know.");
             default -> Component.translatable("menu.mcakingdoms.no_records");
         };
     }
@@ -209,6 +261,11 @@ public final class KingdomScreen extends Screen {
                     () -> openTask("politics.sign", Map.of("kingdom", kingdom, "target", row.id())), true));
             case "petitions" -> Optional.of(Pieces.button("review", t("petition.review", "Review this petition…"), t("petition.review.help", "Opens Review a petition with this petition chosen; it needs the review responsibility."),
                     () -> openTask("politics.review", Map.of("kingdom", kingdom, "target", row.id())), true));
+            case "succession" -> row.id().startsWith("dynasty:claim:")
+                    ? Optional.of(Pieces.button("decide", t("claim.decide", "Decide this claim…"), t("claim.decide.help", "Opens Decide a claim with this claim chosen; it needs the Appoint officials responsibility."),
+                            () -> openTask("dynasty.decide", Map.of("claim", row.id().substring("dynasty:claim:".length()))), true))
+                    : row.id().equals("dynasty:case") ? Optional.of(Pieces.button("court", t("succession.court", "Read the succession…"), t("succession.court.help", "Opens Read the court and succession for this kingdom. Read-only."),
+                            () -> openTask("dynasty.court", Map.of("kingdom", kingdom)), true)) : Optional.empty();
             case "institutions" -> Optional.of(Pieces.button("revalidate", t("institution.revalidate", "Revalidate this institution…"), t("institution.revalidate.help", "Checks its building again; it needs the recognize responsibility."),
                     () -> openTask("politics.revalidate", Map.of("kingdom", kingdom, "target", row.id())), true));
             default -> Optional.empty();
@@ -228,8 +285,8 @@ public final class KingdomScreen extends Screen {
         }
     }
     @Override public boolean mouseScrolled(double x, double y, double delta) {
-        int listBottom = spread() ? bodyBottom() : bodyTop() + visibleRows() * 21;
-        if (pending == null && page != null && x >= listLeft() && x < listLeft() + listWidth() && y >= bodyTop() && y < listBottom && delta != 0) {
+        int listBottom = spread() ? bodyBottom() : listTop() + visibleRows() * 21;
+        if (pending == null && page != null && x >= listLeft() && x < listLeft() + listWidth() && y >= listTop() && y < listBottom && delta != 0) {
             rowScroll = Math.max(0, Math.min(Math.max(0, page.rows().size() - visibleRows()), rowScroll + (delta > 0 ? -1 : 1)));
             rebuildWidgets();
             return true;

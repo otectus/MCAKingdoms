@@ -15,7 +15,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-final class SettlementSavedData extends SavedData {
+final class SettlementSavedData extends dev.otectus.mcakingdoms.persistence.DurableSavedData {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String DATA_NAME = "mcakingdoms_settlements";
     private static final int SCHEMA = 1;

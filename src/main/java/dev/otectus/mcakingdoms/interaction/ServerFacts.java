@@ -70,15 +70,15 @@ public final class ServerFacts {
         lines.add(workshopLine());
 
         lines.add(heading("government.title", "Governments"));
-        if (ModList.get().isLoaded("mcacapitals")) lines.add(f("government.capitals", "MCA: Capitals governs kingdoms on this server; MCA: Kingdoms governments are turned off."));
+        if (dev.otectus.mcakingdoms.compat.capitals.CapitalsBridge.installed()) lines.add(f("government.capitals_shared", "MCA Capitals is installed: it governs the crown of each kingdom where it has a governing capital, and MCA: Kingdoms keeps every other kingdom and its civic layer. A kingdom's page says who governs it."));
         else lines.add(McaKingdomsConfig.OPEN_FOUNDING.get()
                 ? f("government.open", "Available. Resident founding is on: a recorded resident may found their kingdom's first government. Search Check whether you can found a government.")
                 : f("government.closed", "Available. Resident founding is off: operators establish governments."));
 
         lines.add(heading("warfare.title", "Warfare and exploration"));
         lines.add(warfareLine());
-        lines.add(WarfareConfig.ENABLED.get() && WarfareConfig.CONTRACTS.get() ? f("contracts.on", "Civilian recovery contracts: on.") : Unavailable.DISABLED.explain(f("contracts.name", "civilian recovery contracts")));
-        lines.add(WarfareConfig.ENABLED.get() && WarfareConfig.WORLD_CONTEXT.get() ? f("world.on", "World sites, routes and encounters: on.") : Unavailable.DISABLED.explain(f("world.name", "world sites, routes and encounters")));
+        lines.add(WarfareConfig.enabled() && WarfareConfig.CONTRACTS.get() ? f("contracts.on", "Civilian recovery contracts: on.") : Unavailable.DISABLED.explain(f("contracts.name", "civilian recovery contracts")));
+        lines.add(WarfareConfig.enabled() && WarfareConfig.WORLD_CONTEXT.get() ? f("world.on", "World sites, routes and encounters: on.") : Unavailable.DISABLED.explain(f("world.name", "world sites, routes and encounters")));
 
         lines.add(heading("evolution.title", "Evolving world"));
         var evolution = dev.otectus.mcakingdoms.evolution.EvolutionRuntime.get(server).worldSettings();
@@ -127,7 +127,7 @@ public final class ServerFacts {
     }
 
     private static Component warfareLine() {
-        if (!WarfareConfig.ENABLED.get()) return Unavailable.DISABLED.explain(f("warfare.name", "warfare"));
+        if (!WarfareConfig.enabled()) return Unavailable.DISABLED.explain(f("warfare.name", "warfare"));
         if (!WarfareConfig.MILITARY.get()) return f("warfare.peaceful", "Military actions are off; civilian and exploration services follow their own switches below.");
         var recruits = version("recruits");
         if (recruits.isEmpty()) return f("warfare.no_recruits", "Military actions need Recruits 1.15.2, which is not installed.");
@@ -150,11 +150,22 @@ public final class ServerFacts {
                 onOff(McaKingdomsConfig.POLITICAL_NOTICES.get()), onOff(McaKingdomsConfig.OFFICE_BADGES.get())));
         lines.add(f("health.recruits", "Recruits: %s; the military bridge is gated to exactly 1.15.2 and is %s.", installed("recruits"),
                 version("recruits").filter("1.15.2"::equals).isPresent() ? f("health.bridge_active", "active") : f("health.bridge_inactive", "inactive")));
+        lines.add(livingVillagesHealth(server));
+        // H07: what the Recruits transfer save check costs on this server, so operators can see it under load.
+        var fence = dev.otectus.mcakingdoms.compat.recruits.TransferFenceMetrics.snapshot();
+        if (fence.count() > 0) lines.add(f("health.recruits_fence", "Recruits transfer save checks this session: %s; last %s ms, p95 %s ms, p99 %s ms, longest %s ms; the last saved %s entities with %s entity writes already queued. Server tick p95: %s ms.",
+                fence.count(), millis(fence.lastNanos()), millis(fence.p95Nanos()), millis(fence.p99Nanos()), millis(fence.maxNanos()), fence.lastEntities(), fence.lastQueued() < 0 ? "?" : fence.lastQueued(), tickP95(server)));
         lines.add(f("health.crime", "MCA: Crime: %s; workshop-legality provider %s.", installed("mcacrime"),
                 onOff(dev.otectus.mcakingdoms.compat.crime.InstitutionalCrimeBridge.providerPresent())));
         lines.add(f("health.reputation", "MCA Reputation: %s; synchronization %s.", installed("mcareputation"), syncMode()));
         lines.add(f("health.conversations", "MCA Conversations: %s.", installed("mcaconversations")));
-        if (ModList.get().isLoaded("mcacapitals")) lines.add(f("health.capitals", "MCA: Capitals is installed: native governance is off."));
+        lines.addAll(capitalsHealth(server));
+        var mode = dev.otectus.mcakingdoms.development.DevelopmentMode.current();
+        if (mode != dev.otectus.mcakingdoms.development.DevelopmentMode.OFF) {
+            var development = dev.otectus.mcakingdoms.development.DevelopmentMetrics.snapshot();
+            lines.add(f("health.development", "Development (%s): %s pass(es) this session, last %s µs, longest %s µs; %s work(s) queued to build; %s block(s) placed.",
+                    ActionRegistry.enumLabel(mode), development.passes(), development.lastMicros(), development.maxMicros(), development.queue(), development.placed()));
+        }
 
         lines.add(heading("health.switches", "Switches"));
         lines.add(f("health.discovery", "Village identity %s; automatic reconciliation %s; start-up reconciliation %s; resident founding %s.",
@@ -163,7 +174,7 @@ public final class ServerFacts {
         lines.add(f("health.civic", "Civic network %s; institutional services %s; contact range %s blocks.", onOff(CivicConfig.ENABLED.get()),
                 onOff(CivicConfig.INSTITUTIONAL_SERVICES.get()), CivicConfig.CONTACT_RANGE.get()));
         lines.add(f("health.warfare", "Warfare %s: military actions %s, civilian contracts %s, world context %s, target protection %s.",
-                onOff(WarfareConfig.ENABLED.get()), onOff(WarfareConfig.MILITARY.get()), onOff(WarfareConfig.CONTRACTS.get()),
+                onOff(WarfareConfig.enabled()), onOff(WarfareConfig.MILITARY.get()), onOff(WarfareConfig.CONTRACTS.get()),
                 onOff(WarfareConfig.WORLD_CONTEXT.get()), onOff(WarfareConfig.TARGET_POLICY.get())));
         var evolution = dev.otectus.mcakingdoms.evolution.EvolutionRuntime.get(server).worldSettings();
         lines.add(f("health.evolution", "World evolution %s for this world (world events %s); automatic eligible regions %s; %s eligible and %s active regions.",
@@ -176,6 +187,13 @@ public final class ServerFacts {
             lines.add(store.writable() ? f("health.store_ok", "%s: writable.", store.name())
                     : Component.empty().append(f("health.store_read_only", "%s: read-only — %s", store.name(), store.diagnostic())).withStyle(ChatFormatting.RED));
         }
+        // H06: a write that could not be committed left the previous file whole; say which store and why.
+        for (var failure : dev.otectus.mcakingdoms.persistence.AtomicSavedDataWriter.failures())
+            lines.add(Component.empty().append(switch (failure.cause()) {
+                case NOT_ATOMIC -> f("health.store_not_atomic", "%s could not be saved: this filesystem cannot replace files atomically. The previous file is unchanged; changes to it are refused until the world is on a filesystem that can.", failure.store());
+                case UNREADABLE -> f("health.store_unreadable", "%s could not be read when the world loaded, so it is protected from being overwritten and its changes are refused. Stop the server and restore %s.bak (see Save durability in the documentation).", failure.store(), failure.store());
+                case IO -> f("health.store_write_failed", "%s could not be saved (%s). Its previous file is unchanged and the save is retried; see Save durability in the documentation.", failure.store(), failure.reason());
+            }).withStyle(ChatFormatting.RED));
 
         lines.add(heading("health.capacity", "Capacity"));
         lines.addAll(capacityLines(server));
@@ -283,5 +301,42 @@ public final class ServerFacts {
         MutableComponent out = Component.empty();
         for (int i = 0; i < parts.size(); i++) { if (i > 0) out.append("\n"); out.append(parts.get(i)); }
         return out;
+    }
+    private static String millis(long nanos) { return String.format(java.util.Locale.ROOT, "%.1f", nanos / 1_000_000.0); }
+    /** The 95th percentile of the server's last 100 tick durations, in milliseconds. */
+    private static String tickP95(net.minecraft.server.MinecraftServer server) {
+        long[] ticks = server.tickTimes.clone(); java.util.Arrays.sort(ticks);
+        return millis(dev.otectus.mcakingdoms.compat.recruits.TransferFenceMetrics.percentileOf(ticks, 95));
+    }
+    /** C: the bridge's state and every mapping, for operators; the mapping evidence is public (village and kingdom names). */
+    /** The Living Villages integration in one line, from the capability snapshot its tasks and services use. */
+    private static Component livingVillagesHealth(MinecraftServer server) {
+        var snapshot = dev.otectus.mcakingdoms.compat.livingvillages.LvCompat.snapshot(server);
+        var binding = snapshot.of(dev.otectus.mcakingdoms.compat.livingvillages.LvCompat.Capability.STABLE_BINDING);
+        Component state = Component.translatableWithFallback("warfare.mcakingdoms.villages.readiness." + snapshot.overall().name().toLowerCase(java.util.Locale.ROOT),
+                snapshot.overall().name());
+        return binding.reason().isEmpty()
+                ? f("health.living_villages", "Recruits: Living Villages: %s; integration %s. Details: /kingdoms livingvillages status.",
+                installed(dev.otectus.mcakingdoms.compat.livingvillages.LvCompat.MOD_ID), state)
+                : f("health.living_villages_reason", "Recruits: Living Villages: %s; integration %s (%s). Details: /kingdoms livingvillages status.",
+                installed(dev.otectus.mcakingdoms.compat.livingvillages.LvCompat.MOD_ID), state, binding.why());
+    }
+
+    private static List<Component> capitalsHealth(net.minecraft.server.MinecraftServer server) {
+        var bridge = dev.otectus.mcakingdoms.compat.capitals.CapitalsBridge.capabilities();
+        var lines = new ArrayList<Component>();
+        var bindings = dev.otectus.mcakingdoms.compat.capitals.CapitalsSavedData.get(server).bindings().values();
+        if (bridge.availability() == dev.otectus.mcakingdoms.compat.capitals.CapitalsBridge.Availability.ABSENT && bindings.isEmpty()) return lines;
+        lines.add(switch (bridge.availability()) {
+            case ABSENT -> f("health.capitals.absent", "MCA Capitals is not installed, but %s earlier mapping(s) remain; their kingdoms keep crown actions read-only until an operator releases them.", bindings.stream().filter(b -> b.status() != dev.otectus.mcakingdoms.compat.capitals.CapitalsSavedData.Status.RELEASED).count());
+            case UNSUPPORTED -> Component.empty().append(f("health.capitals.unsupported", "MCA Capitals %s cannot be read (%s); every MCA: Kingdoms crown action is read-only.", bridge.version(), bridge.diagnostic())).withStyle(ChatFormatting.RED);
+            case AVAILABLE -> f("health.capitals.available", "MCA Capitals %s: read-only bridge %s; %s governing capital(s); delegated actions: none (Capitals publishes no action API).",
+                    bridge.version(), bridge.tested() ? f("health.capitals.tested", "tested") : f("health.capitals.untested", "untested version, accessors checked"),
+                    dev.otectus.mcakingdoms.compat.capitals.CapitalsInterop.get(server).capitals().stream().filter(dev.otectus.mcakingdoms.compat.capitals.CapitalsBridge.CapitalView::governing).count());
+        });
+        for (var binding : bindings.stream().limit(16).toList())
+            lines.add(f("health.capitals.binding", "Capital #%s → %s: %s (%s).", binding.capital().toString().substring(0, 4), dev.otectus.mcakingdoms.interaction.Names.kingdomName(server, binding.kingdom()),
+                    ActionRegistry.enumLabel(binding.status()), dev.otectus.mcakingdoms.interaction.PlayerWords.component(binding.reason())));
+        return lines;
     }
 }

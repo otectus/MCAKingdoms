@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "mcakingdoms:block/court_noticeboard"
+    },
+    "facing=east": {
+      "model": "mcakingdoms:block/court_noticeboard",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "mcakingdoms:block/court_noticeboard",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "mcakingdoms:block/court_noticeboard",
+      "y": 270
+    }
+  }
+}

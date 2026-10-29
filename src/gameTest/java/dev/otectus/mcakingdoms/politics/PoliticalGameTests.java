@@ -218,6 +218,51 @@ public class PoliticalGameTests {
             helper.succeed();
         } finally { MinecraftForge.EVENT_BUS.unregister(politics); }
     }
+    /**
+     * H02: with several offices, the page still offers removal generically, but the elected leader's office is refused for
+     * that target by the preview, listed as unavailable in the removal form, and refused by the mutation with the same key.
+     * Another office is removed normally; a stale revision and an unauthorized viewer are refused with their own keys.
+     */
+    @GameTest(template="empty",timeoutTicks=200)
+    public static void electedLeaderOfficeIsProtectedAmongSeveralOffices(GameTestHelper helper) {
+        var server=helper.getLevel().getServer(); var identity=McaKingdomsApi.get(server);
+        var data=new PoliticalSavedData(); var knownPlayers=new HashSet<UUID>(); var politics=new GovernmentService(server,identity,McaKingdoms.POLITICS,data,false,knownPlayers::contains);
+        var one=new net.minecraftforge.common.util.FakePlayer(helper.getLevel(),new GameProfile(UUID.randomUUID(),"PolicyOne")) { @Override public boolean hasPermissions(int level) { return level <= 2; } };
+        var two=FakePlayerFactory.get(helper.getLevel(),new GameProfile(UUID.randomUUID(),"PolicyTwo"));
+        var three=FakePlayerFactory.get(helper.getLevel(),new GameProfile(UUID.randomUUID(),"PolicyThree"));
+        knownPlayers.addAll(List.of(one.getUUID(),two.getUUID(),three.getUUID()));
+        String leader=GovernmentActionPolicy.LEADER;
+        var a=settlement(helper,identity,"policy-a",152,SERENUM);
+        check(politics.execute(one,req(politics,Action.BOOTSTRAP,SERENUM,SERENUM+"_charter",a.id().toString(),one,"","","")).success(),"Founding failed");
+        check(politics.adoptTransitionRule(one,UUID.randomUUID(),politics.revision(),SERENUM,new dev.otectus.mcakingdoms.api.politics.PoliticalTransition.Rule(true,false,1200,200,1200,4,Set.of())).success(),"Rule rejected");
+        check(politics.execute(one,req(politics,Action.APPOINT,SERENUM,"mcakingdoms:local_steward",a.id().toString(),two,"","","")).success(),"Steward rejected");
+        Result opened=politics.openElection(one,UUID.randomUUID(),politics.revision(),SERENUM,List.of(two.getUUID(),three.getUUID()));check(opened.success(),opened.message());
+        UUID election=UUID.fromString(opened.recordId());
+        check(politics.castBallot(one,UUID.randomUUID(),politics.revision(),election,two.getUUID()).success(),"Ballot one rejected");
+        check(politics.castBallot(two,UUID.randomUUID(),politics.revision(),election,two.getUUID()).success(),"Ballot two rejected");
+        check(politics.closeElection(one,UUID.randomUUID(),politics.revision(),election).success(),"Close rejected");
+        check(politics.execute(one,req(politics,Action.ABDICATE,SERENUM,"","",null,"","","")).success(),"Abdication rejected");
+        check(politics.execute(two,req(politics,Action.SUCCEED,SERENUM,"","",null,"","","")).success(),"Elected successor could not take office");
+        Result chancellor=politics.execute(two,req(politics,Action.APPOINT,SERENUM,"mcakingdoms:chancellor","",three,"","",""));check(chancellor.success(),chancellor.message());
+        Result envoy=politics.execute(two,req(politics,Action.APPOINT,SERENUM,"mcakingdoms:envoy","",one,"","",""));check(envoy.success(),envoy.message());
+        check(data.records().governments.get(SERENUM).offices().size()==4,"Expected four occupied offices");
+        var page=politics.page(two,UUID.randomUUID(),SERENUM,"council",0);
+        check(page.actionDenials().get(Action.REMOVE_OFFICE).isEmpty(),"Removal should stay generically available with other offices: "+page.actionDenials().get(Action.REMOVE_OFFICE));
+        String elected="politics.mcakingdoms.refusal.elected_leader";
+        check(politics.actionDenial(two,SERENUM,Action.REMOVE_OFFICE,GovernmentActionPolicy.Target.office(leader)).equals(Optional.of(elected)),"Target preview did not protect the elected leader");
+        var listed=politics.occupiedOffices(two,SERENUM);
+        check(listed.stream().filter(o->o.key().equals(leader)).allMatch(o->o.removal().equals(Optional.of(elected))),"The removal form offered the elected leader's office");
+        check(listed.stream().filter(o->o.key().equals("mcakingdoms:chancellor")).allMatch(o->o.removal().isEmpty()),"The chancellor's office should be removable");
+        Result refused=politics.execute(two,req(politics,Action.REMOVE_OFFICE,SERENUM,leader,"",null,"","",""));
+        check(!refused.success()&&refused.message().equals(elected),"Mutation and preview disagree: "+refused.message());
+        Result stale=politics.execute(two,new Request(UUID.randomUUID(),politics.revision()-1,Action.REMOVE_OFFICE,SERENUM,"mcakingdoms:chancellor","",null,"","","",0,0,0));
+        check(!stale.success()&&stale.message().equals("politics.mcakingdoms.refusal.state_changed"),"A stale revision was not refused: "+stale.message());
+        Result removed=politics.execute(two,req(politics,Action.REMOVE_OFFICE,SERENUM,"mcakingdoms:chancellor","",null,"","",""));check(removed.success(),removed.message());
+        check(politics.actionDenial(three,SERENUM,Action.REMOVE_OFFICE,GovernmentActionPolicy.Target.office("mcakingdoms:envoy")).equals(Optional.of("politics.mcakingdoms.refusal.requires.appoint")),"An unauthorized viewer was offered removal");
+        Result unauthorized=politics.execute(three,req(politics,Action.REMOVE_OFFICE,SERENUM,"mcakingdoms:envoy","",null,"","",""));
+        check(!unauthorized.success()&&unauthorized.message().equals("politics.mcakingdoms.refusal.requires.appoint"),"Unauthorized removal: "+unauthorized.message());
+        helper.succeed();
+    }
     /** politics.openFounding off refuses a resident's founding in the service itself, whatever reaches it; on, the same request founds. */
     @GameTest(template="empty",timeoutTicks=100)
     public static void residentFoundingFollowsTheSetting(GameTestHelper helper) {

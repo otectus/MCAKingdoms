@@ -38,7 +38,7 @@ public final class R4MultiplayerFixture {
                 success(politics.execute(one,new Politics.Request(petition,politics.revision(),Politics.Action.PETITION,kingdom,"mcakingdoms:introduction_petition",seat.id().toString(),null,"mcakingdoms:lunari","Private R4 concern","",0,0,0)));
                 success(politics.execute(one,new Politics.Request(UUID.randomUUID(),politics.revision(),Politics.Action.ABDICATE,kingdom,"","",null,"","","",0,0,0)));
                 var evolution=EvolutionRuntime.get(server);evolution.configure(one,true,false);evolution.region(one,seat.id(),true);evolution.tick();
-                String row=evolution.page(two,0).stream().filter(s->s.contains("named successor")).findFirst().orElseThrow();scenario=UUID.fromString(row.substring(0,36));
+                scenario=evolution.scenarios(two).stream().filter(v->v.trigger()==EvolutionState.Trigger.INTERREGNUM).findFirst().orElseThrow().id(); // pages name opportunities by title, not id
                 evolution.contribute(two,scenario,1,EvolutionState.Outcome.SUCCEED);
                 // The former ruler should no longer receive operator privacy privileges during the race.
                 server.getPlayerList().deop(one.getGameProfile());
@@ -47,11 +47,11 @@ public final class R4MultiplayerFixture {
             }catch(Exception failure){throw new RuntimeException(failure);}}))
             .then(Commands.literal("audit").executes(c->{
                 var server=c.getSource().getServer();var two=server.getPlayerList().getPlayerByName("PoliticalOther");
-                var lines=EvolutionRuntime.get(server).inspect(two,scenario);String first=lines.get(0);
-                check(first.contains("RESOLVED")||first.contains("DECLINED"),"one race outcome committed");
+                var view=EvolutionRuntime.get(server).scenario(two,scenario).orElseThrow();var phase=view.phase();
+                check(phase==EvolutionState.Phase.RESOLVED||phase==EvolutionState.Phase.DECLINED,"one race outcome committed");
                 var government=KingdomsPoliticsApi.get(server).government("mcakingdoms:serenum").orElseThrow();
-                check(first.contains("RESOLVED")?government.offices().get("mcakingdoms:leader").holder().id().equals(two.getUUID()):government.state()==Politics.State.INTERREGNUM,"government agrees with committed race result");
-                check(first.contains("revision 4"),"losing command cannot commit a second terminal outcome");
+                check(phase==EvolutionState.Phase.RESOLVED?government.offices().get("mcakingdoms:leader").holder().id().equals(two.getUUID()):government.state()==Politics.State.INTERREGNUM,"government agrees with committed race result");
+                check(view.revision()==4,"losing command cannot commit a second terminal outcome");
                 System.out.println("R4_MULTIPLAYER_AUDIT_PASS");return 1;
             })));
     }

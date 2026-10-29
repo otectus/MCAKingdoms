@@ -1,4 +1,12 @@
 {
   "kingdom.example.harbor_league": "港湾同盟",
-  "politics.example.harbor_league_charter": "港湾同盟宪章"
+  "politics.example.harbor_league_charter": "港湾同盟宪章",
+  "kingdom.example.harbor_league.motto": "以潮汐与账册为凭",
+  "dynasty.example.law.harbor_council": "港口议会继承法",
+  "dynasty.example.rank.harbor_warden": "港口守护",
+  "dynasty.example.rank.harbor_warden.address": "守护",
+  "dynasty.example.rank.harbor_warden.league": "码头守护",
+  "development.example.template.harbor_beacon": "港口灯塔",
+  "organization.example.harbor_archivists": "港口档案员",
+  "organization.example.harbor_archivists.description": "联盟潮汐账册与特许状的保管者；向任何王国的成员开放。"
 }

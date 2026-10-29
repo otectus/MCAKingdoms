@@ -423,7 +423,7 @@
         {
           "id": "keyboard",
           "type": "paragraph",
-          "text": "Tab moves between controls and the links inside an article; Enter or Space activates the focused one. Page Up and Page Down turn pages; with the article focused, arrows, Home and End scroll. Ctrl + F focuses search. Escape closes the book. Narrow windows use Contents / Article to switch leaves without shrinking the text."
+          "text": "Tab moves between controls and the links inside an article; Enter or Space activates the focused one. Page Up and Page Down turn pages; with the article focused, arrows, Home and End scroll. Ctrl + F focuses search. Escape closes the book. Narrow windows use Contents / Article to switch leaves without shrinking the text. On a short screen, the Kingdom page shows one Section button instead of rows of tabs: press it, or scroll over it, for the next section; hold Shift and press to go back."
         },
         {
           "id": "commands",

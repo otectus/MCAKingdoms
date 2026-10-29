@@ -36,6 +36,15 @@ The other services follow the same pattern: `KingdomsPoliticsApi.get`, `Kingdoms
 - `getSettlementAt` uses saved bounds and loads nothing; `discover` examines only loaded chunks (0 to 32 chunks around a point).
 - `CivicIdentityView.source()` says how the current record was made: `AUTOMATIC`, `MCA`, `ADDON`, `COMMAND`, `MIGRATION`, or, since 0.3.0, `REGISTERED` (declared by the player and verified by the server). Keep a default branch for values a later version may add; builds before 0.3.0 read a saved `REGISTERED` as `MIGRATION`.
 
+- **Recruits: Living Villages** (0.3.0): the settlement of a bound village carries the external reference
+  `recruitsvillages:village` with the Living Villages village UUID (`getSettlementByExternalRef`). Its faction is a
+  *realm*, not a kingdom: `api/politics/PoliticalPartyRef` names a side of an agreement as `Kingdom(id)` or `Realm(uuid)`,
+  written by `format()` as `kingdom:<id>` or `realm:<uuid>` and read back by `parse`. Same-culture realms are separate
+  parties; the government API stays keyed by kingdom id, and a kingdom represents a realm only through an operator
+  association. For an entity with a civic identity that stands in an integrated village, `getContext` adds
+  `mcakingdoms.realm`, `mcakingdoms.realm_recognized`, `mcakingdoms.realm_occupied`, `mcakingdoms.realm_war` and, during a
+  war, `mcakingdoms.realm_enemy`.
+
 **Stored ids and merges.** A merge retires the merged record's id: from then on it resolves to the surviving record. If you store settlement ids, pass them through `resolveSettlementId` before comparing or looking them up, and update stored copies on `SettlementMergedEvent`. A stored id can also stop resolving at all; treat an empty lookup as normal.
 
 **Visibility.** The service is a trusted server API and returns every record, including settlements a given player has not discovered and other players' civic data. It is not a player-filtered UI API: before showing anything to a player, filter it by what that player may know. MCA: Kingdoms' own screens, tasks and commands do that for their players.

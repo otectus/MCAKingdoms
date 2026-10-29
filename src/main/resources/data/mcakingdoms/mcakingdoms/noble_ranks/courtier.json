@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "tier": 4,
+  "court": true,
+  "title": "dynasty.mcakingdoms.rank.courtier",
+  "address": "dynasty.mcakingdoms.rank.courtier.address",
+  "styles": {
+    "mcakingdoms:serenum": "dynasty.mcakingdoms.rank.serenum.courtier",
+    "mcakingdoms:lunari": "dynasty.mcakingdoms.rank.lunari.courtier",
+    "mcakingdoms:madera": "dynasty.mcakingdoms.rank.madera.courtier",
+    "mcakingdoms:anemosia": "dynasty.mcakingdoms.rank.anemosia.courtier",
+    "mcakingdoms:shimaguni": "dynasty.mcakingdoms.rank.shimaguni.courtier",
+    "mcakingdoms:yew": "dynasty.mcakingdoms.rank.yew.courtier"
+  }
+}

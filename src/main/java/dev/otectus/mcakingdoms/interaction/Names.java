@@ -23,6 +23,16 @@ public final class Names {
     public static String kingdom(MinecraftServer server,String id){if(id==null||id.isBlank())return "no kingdom";return McaKingdomsApi.get(server).getKingdoms().stream().filter(k->k.id().toString().equals(id)).findFirst().map(k->PlayerWords.text(k.translationKey())).orElse(id);}
     public static String player(MinecraftServer server,UUID id){if(id==null)return "nobody";var player=server.getPlayerList().getPlayer(id);if(player!=null)return player.getGameProfile().getName();var cache=server.getProfileCache();return cache==null?"an offline player":cache.get(id).map(com.mojang.authlib.GameProfile::getName).orElse("an offline player");}
     public static String entity(MinecraftServer server,UUID id){if(id==null)return "an unknown unit";for(var level:server.getAllLevels()){var entity=level.getEntity(id);if(entity!=null)return entity.getName().getString();}return "an unloaded unit";}
+    /**
+     * A unit as players read it (H03): its name and a short tag that tells same-named recruits apart, or "an unloaded
+     * recruit" with the tag. The full id stays in operator diagnostics.
+     */
+    public static net.minecraft.network.chat.Component unitText(MinecraftServer server,UUID id){
+        if(id==null)return ActionRegistry.tr("interaction.mcakingdoms.unit.unknown","an unknown unit");
+        String tag=id.toString().substring(0,4);
+        for(var level:server.getAllLevels()){var entity=level.getEntity(id);if(entity!=null)return ActionRegistry.tr("interaction.mcakingdoms.unit.named","%s (#%s)",entity.getName(),tag);}
+        return ActionRegistry.tr("interaction.mcakingdoms.unit.unloaded","an unloaded recruit (#%s)",tag);
+    }
     /** A player by name when known, otherwise a loaded entity's name. */
     public static String person(MinecraftServer server,UUID id){var player=server.getPlayerList().getPlayer(id);if(player!=null)return player.getGameProfile().getName();for(var level:server.getAllLevels()){var entity=level.getEntity(id);if(entity!=null)return entity.getName().getString();}return player(server,id);}
     public static String words(Object value){return value instanceof Enum<?> e?ActionRegistry.words(e.name()):value==null?"":ActionRegistry.words(String.valueOf(value));}

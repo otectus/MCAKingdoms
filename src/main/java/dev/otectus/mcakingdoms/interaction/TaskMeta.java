@@ -44,9 +44,9 @@ public final class TaskMeta {
         if (task.operator()) return Group.OPERATOR;
         String prefix = task.id().substring(0, task.id().indexOf('.'));
         return switch (prefix) {
-            case "settlement", "kingdom", "citizen" -> Group.PLACES;
+            case "settlement", "kingdom", "citizen", "development", "villages" -> Group.PLACES;
             case "civic", "organization" -> Group.GUILDS;
-            case "politics" -> Group.GOVERNMENT;
+            case "politics", "dynasty", "documents", "heraldry" -> Group.GOVERNMENT;
             case "world" -> Group.EXPLORATION;
             case "warfare", "transfer", "protection" -> Group.CONFLICT;
             case "evolution", "drama" -> Group.WORLD_EVENTS;
@@ -68,7 +68,11 @@ public final class TaskMeta {
         WORLD_CONTEXT("world sites, routes and encounters", "discover_world_sites"),
         EVOLUTION("world evolution", "evolution_world_opt_in"),
         DRAMA("world events", "authored_drama_workflow"),
-        RECRUITS("Recruits", "recruit_transfer_workflow");
+        RECRUITS("Recruits", "recruit_transfer_workflow"),
+        DYNASTY("dynastic succession", "dynasty_succession"),
+        HERALDRY("physical heraldry", "heraldry_and_charters"),
+        DEVELOPMENT("settlement development", "settlement_development"),
+        LIVING_VILLAGES("Recruits: Living Villages", "living_villages");
 
         public final String english, learnMore;
 
@@ -145,6 +149,9 @@ public final class TaskMeta {
         if (id.equals("civic.workshop")) out.add(Feature.INSTITUTIONAL_QUESTS);
         if (id.equals("civic.workshop")) out.add(Feature.WORKSHOP_LEGALITY);
         if (id.startsWith("politics.") && task.consequential()) out.add(Feature.GOVERNMENT);
+        if (id.startsWith("dynasty.") && task.consequential()) { out.add(Feature.DYNASTY); out.add(Feature.GOVERNMENT); }
+        if (id.equals("documents.seal") || id.equals("documents.revoke") || id.equals("heraldry.colours")) out.add(Feature.HERALDRY);
+        if (id.startsWith("development.") && task.consequential()) out.add(Feature.DEVELOPMENT);
         if (id.startsWith("warfare.")) out.add(Feature.WARFARE);
         if (MILITARY_TASKS.contains(id)) out.add(Feature.MILITARY);
         if (id.equals("warfare.contract")) out.add(Feature.CONTRACTS);
@@ -152,6 +159,7 @@ public final class TaskMeta {
         if (EVOLUTION_TASKS.contains(id)) out.add(Feature.EVOLUTION);
         if (DRAMA_TASKS.contains(id)) out.add(Feature.DRAMA);
         if (RECRUIT_TASKS.contains(id)) out.add(Feature.RECRUITS);
+        if (id.startsWith("villages.") || id.startsWith("warfare.realm_")) out.add(Feature.LIVING_VILLAGES);
         return out;
     }
 
@@ -176,17 +184,35 @@ public final class TaskMeta {
             };
             case WORKSHOP_LEGALITY -> !ModList.get().isLoaded("mcacrime") ? missing(feature)
                     : dev.otectus.mcakingdoms.compat.crime.InstitutionalCrimeBridge.providerPresent() ? Availability.AVAILABLE : unsupported(feature);
-            case GOVERNMENT -> !ModList.get().isLoaded("mcacapitals") ? Availability.AVAILABLE
-                    : new Availability(State.DISABLED, Component.translatableWithFallback("politics.mcakingdoms.founding.capitals",
-                    "MCA: Capitals governs kingdoms on this server, so MCA: Kingdoms governments cannot be founded. Use the Capitals government system."), feature.learnMore);
-            case WARFARE -> WarfareConfig.ENABLED.get() ? Availability.AVAILABLE : disabled(feature);
-            case MILITARY -> !WarfareConfig.ENABLED.get() || !WarfareConfig.MILITARY.get() ? disabled(feature)
+            // With MCA Capitals installed, government tasks stay open: the service refuses only the crown actions of the kingdoms
+            // Capitals governs (C2). They close only when every crown is read-only (unreadable Capitals or ALL_READ_ONLY).
+            case GOVERNMENT -> !dev.otectus.mcakingdoms.compat.capitals.CapitalsBridge.installed()
+                    || dev.otectus.mcakingdoms.compat.capitals.CapitalsBridge.capabilities().readable()
+                    && dev.otectus.mcakingdoms.config.McaKingdomsConfig.CAPITALS_INTEROP.get() == dev.otectus.mcakingdoms.config.McaKingdomsConfig.CapitalsInterop.PER_KINGDOM
+                    ? Availability.AVAILABLE
+                    : new Availability(State.DISABLED, Component.translatableWithFallback("politics.mcakingdoms.sovereignty.capitals_unsupported",
+                    "MCA Capitals is installed but cannot be read safely, so every MCA: Kingdoms crown action is read-only."), feature.learnMore);
+            case WARFARE -> WarfareConfig.enabled() ? Availability.AVAILABLE : disabled(feature);
+            case MILITARY -> !WarfareConfig.enabled() || !WarfareConfig.MILITARY.get() ? disabled(feature)
                     : ModList.get().isLoaded("recruits") ? recruits() ? Availability.AVAILABLE : unsupported(Feature.RECRUITS) : missing(Feature.RECRUITS);
-            case CONTRACTS -> WarfareConfig.ENABLED.get() && WarfareConfig.CONTRACTS.get() ? Availability.AVAILABLE : disabled(feature);
-            case WORLD_CONTEXT -> WarfareConfig.ENABLED.get() && WarfareConfig.WORLD_CONTEXT.get() ? Availability.AVAILABLE : disabled(feature);
+            case CONTRACTS -> WarfareConfig.enabled() && WarfareConfig.CONTRACTS.get() ? Availability.AVAILABLE : disabled(feature);
+            case WORLD_CONTEXT -> WarfareConfig.enabled() && WarfareConfig.WORLD_CONTEXT.get() ? Availability.AVAILABLE : disabled(feature);
             case EVOLUTION -> dev.otectus.mcakingdoms.evolution.EvolutionRuntime.get(server).worldSettings().enabled() ? Availability.AVAILABLE : disabled(feature);
             case DRAMA -> dev.otectus.mcakingdoms.evolution.EvolutionRuntime.dramaEnabled(server) ? Availability.AVAILABLE : disabled(feature);
             case RECRUITS -> !ModList.get().isLoaded("recruits") ? missing(feature) : recruits() ? Availability.AVAILABLE : unsupported(feature);
+            case DYNASTY -> dev.otectus.mcakingdoms.politics.dynasty.DynastyConfig.enabled() ? Availability.AVAILABLE : disabled(feature);
+            case HERALDRY -> dev.otectus.mcakingdoms.heraldry.HeraldryConfig.enabled() ? Availability.AVAILABLE : disabled(feature);
+            case DEVELOPMENT -> dev.otectus.mcakingdoms.development.DevelopmentMode.current() != dev.otectus.mcakingdoms.development.DevelopmentMode.OFF ? Availability.AVAILABLE : disabled(feature);
+            // One shared capability snapshot decides the tasks, the Book and the services alike.
+            case LIVING_VILLAGES -> {
+                if (!dev.otectus.mcakingdoms.compat.livingvillages.LvCompat.installed()) yield missing(feature);
+                var state = dev.otectus.mcakingdoms.compat.livingvillages.LvCompat.snapshot(server).of(dev.otectus.mcakingdoms.compat.livingvillages.LvCompat.Capability.STABLE_BINDING);
+                yield switch (state.readiness()) {
+                    case READY, PARTIAL -> dev.otectus.mcakingdoms.compat.livingvillages.LvRuntime.get(server).isPresent() ? Availability.AVAILABLE : disabled(feature);
+                    case UNAVAILABLE -> disabled(feature);
+                    default -> unsupported(feature);
+                };
+            }
         };
     }
 

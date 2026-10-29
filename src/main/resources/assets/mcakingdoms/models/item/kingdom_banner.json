@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "mcakingdoms:item/kingdom_banner_cloth",
+    "layer1": "mcakingdoms:item/kingdom_banner_trim",
+    "layer2": "mcakingdoms:item/kingdom_banner_pole"
+  }
+}

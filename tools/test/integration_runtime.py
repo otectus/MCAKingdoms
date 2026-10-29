@@ -75,6 +75,38 @@ def main():
         assert before==[hashlib.sha256(save.read_bytes()).hexdigest() for save in saves]
         print('PASS R4 future sidecars unchanged across save/shutdown',flush=True)
     if args.phase=='military':boot('military-restart')
+    if args.phase=='lv':
+        # Recruits: Living Villages: restart, provider absent, reinstalled, future schema, then an unaudited jar.
+        boot('lv-restart')
+        store=work/'world/data/mcakingdoms_living_villages.dat'
+        lv=next((work/'mods').glob('recruitsvillages-*.jar'));retained=work/lv.name
+        before=hashlib.sha256(store.read_bytes()).hexdigest()
+        lv.rename(retained)
+        try:boot('lv-absent')
+        finally:retained.rename(lv)
+        assert hashlib.sha256(store.read_bytes()).hexdigest()==before,'bridge store changed while Living Villages was absent'
+        print('PASS Living Villages bridge store byte-identical while the provider was absent',flush=True)
+        boot('lv-reinstalled')
+        original=store.read_bytes()
+        raw=gzip.decompress(original);marker=b'\x03\x00\x06Schema\x00\x00\x00\x01';assert marker in raw
+        store.write_bytes(gzip.compress(raw.replace(marker,b'\x03\x00\x06Schema\x00\x00\x00\x63',1)))
+        future=hashlib.sha256(store.read_bytes()).hexdigest();boot('lv-future')
+        assert hashlib.sha256(store.read_bytes()).hexdigest()==future,'future-schema bridge store was rewritten'
+        print('PASS Living Villages future-schema store unchanged across save/shutdown',flush=True)
+        store.write_bytes(original)
+        # The same version string with different bytes is not the audited jar: a world with protected residents refuses to start.
+        import zipfile
+        patched=work/'mods'/lv.name
+        with zipfile.ZipFile(patched,'a') as jar:jar.writestr('mcakingdoms-acceptance-marker.txt','unaudited')
+        log=work/'lv-unaudited.log'
+        with log.open('w') as out:
+            proc=subprocess.Popen([environment.java(),'-Xmx2G','-Dmcakingdoms.acceptance.integration=lv-unaudited','@libraries/net/minecraftforge/forge/1.20.1-47.4.23/unix_args.txt','nogui'],cwd=work,stdin=subprocess.PIPE,stdout=out,stderr=out,text=True)
+            try:proc.wait(timeout=240)
+            except subprocess.TimeoutExpired:proc.kill();proc.wait(timeout=20);raise RuntimeError(f'Unaudited start did not stop: {log}')
+        body=log.read_text(errors='replace')
+        assert 'Living Villages would discard and respawn them' in body,f'no refusal message: {log}'
+        assert hashlib.sha256(store.read_bytes()).hexdigest()==hashlib.sha256(original).hexdigest(),'bridge store changed on the refused start'
+        print(f'PASS unaudited Living Villages jar refused before any world change: {log}',flush=True)
     if args.phase=='r3-civilian':boot('r3-civilian-restart')
     if args.phase=='r3':
         boot('r3-restart')

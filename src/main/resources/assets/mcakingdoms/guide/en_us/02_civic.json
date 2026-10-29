@@ -215,13 +215,46 @@
       "category": "civic",
       "title": "Complete a paid workshop commission",
       "summary": "Recognized institutional work can pay normally and record a civic honor.",
-      "body": [
-        "This route needs an operational recognized institution, a chartered chapter, an appointed contact, the matching native quest integration, and the server's institutional services setting. It is more specific than ordinary curated guild work.",
-        "1. Visit the actual contact and choose Paid workshop (in Kingdom Tasks, Browse paid workshop jobs). Read the native offer before accepting. Acceptance fixes the player, giver, institution, building, quest instance, objectives, rewards, and honor terms. In the bundled workshop example, four lanterns pay six emeralds through MCA Quests; do not assume every commission uses that reward.",
-        "2. Do the stated work. Return to the required giver and complete it through MCA Quests. The quest mod consumes the required items and pays the reward. MCA: Kingdoms then records the verified civic honor from the saved completion. The honor is not a new office and does not automatically change sovereign reputation.",
-        "3. Refresh the relevant history and honors after completion. A replayed receipt cannot pay or grant that honor again. Changing guild membership does not silently rewrite the accepted work's terms.",
-        "If the building, issuer, definition, or legal eligibility becomes unavailable, accepted institutional work may be suspended instead of silently redirected. Restore the genuine prerequisite or use the native quest's supported cancellation. Do not delete a completion record to retry a reward; unresolved saves need operator investigation.",
-        "You must qualify for Lamplighters commissions at a Lamplighters chapter, and the supported MCA Crime service must confirm your institutional-service eligibility. Missing Crime integration does not bypass this requirement."
+      "blocks": [
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "This route needs an operational recognized institution, a chartered chapter, an appointed contact, the matching native quest integration, and the server's institutional services setting. It is more specific than ordinary curated guild work."
+        },
+        {
+          "id": "diagram",
+          "type": "image",
+          "texture": "mcakingdoms:textures/gui/guide/commissions.png",
+          "width": 192,
+          "height": 96,
+          "alt": "An anvil, then a commission scroll, then a gold star: a workshop's commission, once carried out and confirmed, earns the guild's standing.",
+          "caption": "Workshop, commission, standing."
+        },
+        {
+          "id": "p2",
+          "type": "paragraph",
+          "text": "1. Visit the actual contact and choose Paid workshop (in Kingdom Tasks, Browse paid workshop jobs). Read the native offer before accepting. Acceptance fixes the player, giver, institution, building, quest instance, objectives, rewards, and honor terms. In the bundled workshop example, four lanterns pay six emeralds through MCA Quests; do not assume every commission uses that reward."
+        },
+        {
+          "id": "p3",
+          "type": "paragraph",
+          "text": "2. Do the stated work. Return to the required giver and complete it through MCA Quests. The quest mod consumes the required items and pays the reward. MCA: Kingdoms then records the verified civic honor from the saved completion. The honor is not a new office and does not automatically change sovereign reputation."
+        },
+        {
+          "id": "p4",
+          "type": "paragraph",
+          "text": "3. Refresh the relevant history and honors after completion. A replayed receipt cannot pay or grant that honor again. Changing guild membership does not silently rewrite the accepted work's terms."
+        },
+        {
+          "id": "p5",
+          "type": "paragraph",
+          "text": "If the building, issuer, definition, or legal eligibility becomes unavailable, accepted institutional work may be suspended instead of silently redirected. Restore the genuine prerequisite or use the native quest's supported cancellation. Do not delete a completion record to retry a reward; unresolved saves need operator investigation."
+        },
+        {
+          "id": "p6",
+          "type": "paragraph",
+          "text": "You must qualify for Lamplighters commissions at a Lamplighters chapter, and the supported MCA Crime service must confirm your institutional-service eligibility. Missing Crime integration does not bypass this requirement."
+        }
       ],
       "commands": [
         "/kingdoms guild workshop <organization definition id>",

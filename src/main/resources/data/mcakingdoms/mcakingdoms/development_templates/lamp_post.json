@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "role": "lighting",
+  "title": "development.mcakingdoms.template.lamp_post",
+  "minimum_mode": "projects",
+  "demand": [
+    {
+      "tag": "minecraft:wooden_fences",
+      "count": 2
+    },
+    {
+      "item": "minecraft:lantern",
+      "count": 1
+    }
+  ],
+  "blocks": [
+    {
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "state": "minecraft:oak_fence"
+    },
+    {
+      "x": 0,
+      "y": 1,
+      "z": 0,
+      "state": "minecraft:oak_fence"
+    },
+    {
+      "x": 0,
+      "y": 2,
+      "z": 0,
+      "state": "minecraft:lantern[hanging=false]"
+    }
+  ],
+  "placement": "air",
+  "tier_points": 1
+}

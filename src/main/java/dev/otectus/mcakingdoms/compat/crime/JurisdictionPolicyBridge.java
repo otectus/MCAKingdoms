@@ -77,6 +77,14 @@ public final class JurisdictionPolicyBridge {
         int village = (int)key.getClass().getMethod("villageId").invoke(key);
         var settlement = McaKingdomsApi.get(server).getSettlementForMcaVillage(dimension, village).orElse(null);
         if (settlement == null) return Optional.empty();
+        // A Recruits: Living Villages village: its realm's control, with local civil law continuing through any occupation.
+        var realm = dev.otectus.mcakingdoms.compat.livingvillages.LvContext.control(server, settlement.id()).orElse(null);
+        if (realm != null) {
+            return Optional.of(snapshot.newInstance(key, settlement.slug().toString(), settlement.kingdomId().toString(), realm.controllerTeam(),
+                    "mcakingdoms:civil", Enum.valueOf(civilLaw, "CONTINUES"), Enum.valueOf(cooperation, "LOCAL_ONLY"), realm.occupied(),
+                    realm.contested(), false, false, Math.max(1, realm.revision()), Enum.valueOf(availability, "AVAILABLE"),
+                    bounded(realm.explanation(), 512)));
+        }
         var provider = WarfareApi.get(server).orElse(null);
         if (provider == null) return Optional.empty();
         var control = provider.control(settlement.id()).orElse(null);

@@ -7,7 +7,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.storage.LevelResource;
 
-public final class ProtectionSavedData extends SavedData {
+public final class ProtectionSavedData extends dev.otectus.mcakingdoms.persistence.DurableSavedData {
     public static final String NAME = "mcakingdoms_protection";
     static final Gson JSON = new Gson();
     private ProtectionState state = new ProtectionState();

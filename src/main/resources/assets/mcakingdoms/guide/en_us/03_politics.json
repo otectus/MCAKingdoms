@@ -6,12 +6,41 @@
       "category": "politics",
       "title": "Read the kingdom pages",
       "summary": "Inspect first; an action changes a particular record under a particular authority.",
-      "body": [
-        "Open Village Ledger, select a known settlement, then choose Kingdom. Overview describes the government; Council lists offices and mandates; Agreements lists diplomacy; Petitions lists requests visible to you; Institutions lists recognized places; Honors lists awards; History lists committed political events.",
-        "Choose Actions on a Kingdom page, or press {key:tasks} and search Government. Each supported operation has its own task and fields. Agreements, petitions, institutions, honors, offices, succession, houses, elections, and regency use separate forms rather than one generic action selector.",
-        "The server offers named records you are allowed to see. A petition remains private to its authorized viewers, ballots remain private, and another player may receive a different list. Selecting a choice does not grant authority; office, mandate, jurisdiction, current state, and installed definitions are checked again.",
-        "Consequential tasks finish on a review page showing the chosen kingdom, people, record details, and terms. Apply reviewed action performs the operation once. If government state changes while the form is open, reopen the task and review the new state.",
-        "Election and regency have dedicated tasks. Search Open a leadership election, Vote in an election, Close and count an election, Appoint a temporary regent, or End a regency. These tasks enforce the adopted constitutional rule and never infer death or incapacity from an offline or unloaded person."
+      "blocks": [
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "Open Village Ledger, select a known settlement, then choose Kingdom. Overview describes the government; Council lists offices and mandates; Agreements lists diplomacy; Petitions lists requests visible to you; Institutions lists recognized places; Honors lists awards; History lists committed political events."
+        },
+        {
+          "id": "diagram",
+          "type": "image",
+          "texture": "mcakingdoms:textures/gui/guide/government_chain.png",
+          "width": 192,
+          "height": 96,
+          "alt": "A settlement belongs to a kingdom; the kingdom's government holds the crown, and its offices are filled by people.",
+          "caption": "From settlement to kingdom to government and its offices."
+        },
+        {
+          "id": "p2",
+          "type": "paragraph",
+          "text": "Choose Actions on a Kingdom page, or press {key:tasks} and search Government. Each supported operation has its own task and fields. Agreements, petitions, institutions, honors, offices, succession, houses, elections, and regency use separate forms rather than one generic action selector."
+        },
+        {
+          "id": "p3",
+          "type": "paragraph",
+          "text": "The server offers named records you are allowed to see. A petition remains private to its authorized viewers, ballots remain private, and another player may receive a different list. Selecting a choice does not grant authority; office, mandate, jurisdiction, current state, and installed definitions are checked again."
+        },
+        {
+          "id": "p4",
+          "type": "paragraph",
+          "text": "Consequential tasks finish on a review page showing the chosen kingdom, people, record details, and terms. Apply reviewed action performs the operation once. If government state changes while the form is open, reopen the task and review the new state."
+        },
+        {
+          "id": "p5",
+          "type": "paragraph",
+          "text": "Election and regency have dedicated tasks. Search Open a leadership election, Vote in an election, Close and count an election, Appoint a temporary regent, or End a regency. These tasks enforce the adopted constitutional rule and never infer death or incapacity from an offline or unloaded person."
+        }
       ],
       "commands": [],
       "task": "politics.read_overview"
@@ -211,6 +240,15 @@
           "text": "You need permission to propose for the first government and a defined, available counterpart government. Start with diplomatic recognition. The bundled hospitality, scholarly exchange, craft/market charter, and civic aid agreements require active diplomatic recognition before their additional terms can take effect."
         },
         {
+          "id": "diagram",
+          "type": "image",
+          "texture": "mcakingdoms:textures/gui/guide/diplomacy.png",
+          "width": 192,
+          "height": 96,
+          "alt": "Two kingdoms' banners, each pointing to one agreement scroll between them: both sign the same reviewed terms.",
+          "caption": "One agreement, signed by both kingdoms."
+        },
+        {
           "id": "p2",
           "type": "paragraph",
           "text": "1. Open Propose an agreement, choose both named governments and an available agreement definition, then write clear terms. The proposal freezes its authored terms and duration. Read agreements to inspect the result."
@@ -295,12 +333,76 @@
       "body": [
         "A current leader opens Name a successor and chooses an eligible named person. Read overview to confirm the person before Abdicate leadership. Naming someone is not the same as immediately installing them.",
         "Abdication vacates leadership. A government between rulers is in interregnum, meaning there is no current leader. The named successor or an authorized operator can explicitly confirm succession; eligibility is checked again. The capital, kingdom identity, and active treaties continue, while old delegated mandates do not automatically survive a leadership vacancy.",
-        "Confirmed NPC death can vacate an office. Unloading, temporary absence, and player death/respawn do not automatically install another ruler. A vacancy without a named successor needs the supported operator repair or an explicitly adopted election rule; the mod does not guess an heir from family links.",
+        "Confirmed NPC death can vacate an office. Unloading, temporary absence, and player death/respawn do not automatically install another ruler. Under the default law, Manual only, a vacancy without a named successor needs the supported operator repair or an explicitly adopted election rule, and nothing guesses an heir from family links. A kingdom that adopts a lineage law reads MCA's family records instead: see Laws of succession and heirs.",
         "Use the House action in the current political form to record one house label, motto, and explicitly selected member for a government. This is a political record, not a surname editor or a genealogy system. Marriage never transfers the kingdom by itself.",
         "Elections and temporary regency are explained in Evolving World. They require an adopted rule and use their own tasks in Kingdom Tasks. During an active regency the named successor is preserved; end that regency under its rules before trying to replace the protected succession arrangement."
       ],
       "commands": [],
       "task": "politics.read_overview"
+    },
+    {
+      "id": "dynasty_succession",
+      "category": "politics",
+      "title": "Laws of succession and heirs",
+      "summary": "A kingdom's law decides its next vacancy; Manual only, the default, changes nothing.",
+      "body": [
+        "Every government starts with the law Manual only: a vacancy waits for the officials, exactly as before. Its leader or an operator can adopt another law with Adopt a law of succession, but not while a succession is under way. On the Kingdom page, Succession shows the law and the succession under way; members of the court also see who would succeed now and why.",
+        "Named heir, then lineage puts the named successor first, then the ruler's children, grandchildren and siblings as MCA's family tree records them. Equal inheritance reads the same relatives without a named successor. Council confirmation adds the council's confirmation. Elective monarchy leaves every vacancy to the government's elections. Relatives come in a fixed order by person, because MCA records no birth order: nothing is random and no gender is read.",
+        "When the ruler's death is observed, or the ruler abdicates or is removed, one succession opens and is decided within a few seconds. An NPC heir who is an adult resident of the kingdom is seated. A player heir is offered the crown and answers with Answer an offered crown. A minor heir waits under a regency until verified adulthood: a living player parent governs as regent when the kingdom's transition rule allows regencies; otherwise an operator appoints one.",
+        "An elected ruler is never replaced by lineage, and a successor the government elected always comes first. When evidence cannot be verified, such as a villager that is not loaded or a missing family record, the succession waits instead of guessing and asks again when it can. Review a succession lets an official or operator ask the law again or leave the succession to the officials. Kingdoms whose crown MCA Capitals governs are never decided here."
+      ],
+      "commands": [
+        "/kingdoms dynasty status <kingdom>"
+      ],
+      "task": "dynasty.court"
+    },
+    {
+      "id": "court_titles_and_claims",
+      "category": "politics",
+      "title": "Court titles, claims and mourning",
+      "summary": "Ranks are ceremonial; a claim changes the succession only by the crown's recorded decision.",
+      "body": [
+        "An official with the Award honors responsibility grants court ranks with Grant a court title. Each kingdom names its ranks in its own style. A rank is ceremonial: it grants no office, permission, Recruits command or Crime privilege. A player accepts an offered rank first and may resign it with honor; a landed rank names one settlement of the kingdom.",
+        "Someone in the line of succession may renounce their place. A player may file a claim with the crown: contest the order, ask to be recognized as a member of the ruling house, or ask for a renounced place back. An official who appoints, or an operator, decides it, never the claimant. Every decision is kept, and a dismissed claim may be filed again after a wait.",
+        "Legitimacy is a reading of the ruler's claim from a few bounded records: how they were seated, a verified family tie, the council's confirmation, agreements in force, a seated council and open contests. It changes no authority. The court sees its reasons; everyone else sees the level.",
+        "When a ruler's death is observed, the kingdom mourns for a day: its pages say so and its banners darken. Nothing changes on any villager or player. A memorial records each reign that ended by death or abdication."
+      ],
+      "commands": [],
+      "task": "dynasty.court"
+    },
+    {
+      "id": "heraldry_and_charters",
+      "category": "politics",
+      "title": "Banners, seals and charters",
+      "summary": "A charter is official only while the ledger holds what it proves.",
+      "blocks": [
+        {
+          "id": "p1",
+          "type": "paragraph",
+          "text": "Kingdom banners, heraldic shields and court noticeboards stand for the kingdom where they are placed: the settlement they stand in or, outside settlements, the placer's residence. They show the kingdom's colours and sigil, and its leader chooses the colours with Choose your kingdom's colours. Use a noticeboard to read the kingdom's latest proclamations and public records."
+        },
+        {
+          "id": "diagram",
+          "type": "image",
+          "texture": "mcakingdoms:textures/gui/guide/heraldry_charter.png",
+          "width": 192,
+          "height": 96,
+          "alt": "The kingdom's banner, then a seal press, then a charter with a red seal: a charter is sealed at a press for a record of the kingdom.",
+          "caption": "Arms, seal press, sealed charter."
+        },
+        {
+          "id": "p2",
+          "type": "paragraph",
+          "text": "An official seals a charter at a seal press: hold a blank charter within 4 blocks of the press and open Seal a charter. A proclamation needs Award honors, an office appointment Appoint officials and a treaty Ratify agreements; the leader seals the founding. The ledger records the document first; then the charter carries it."
+        },
+        {
+          "id": "p3",
+          "type": "paragraph",
+          "text": "Use a charter, or Inspect a charter, to ask the ledger. It is official while what it proves holds, official but historical once that no longer holds, revoked after Revoke a sealed document, and unverified when no sealed record matches it, as with an altered copy or one from another world. A charter proves a record; it never grants authority by itself."
+        }
+      ],
+      "commands": [],
+      "task": "documents.inspect"
     },
     {
       "id": "read_political_history",

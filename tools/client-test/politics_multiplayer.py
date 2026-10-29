@@ -66,7 +66,7 @@ def main():
         wait_until(lambda:all(name+' logged in' in slog.read_text(errors='replace') or re.search(name+r'\[.*logged in',slog.read_text(errors='replace')) for name in ['PoliticalLeader','PoliticalOther']))
         commands=['op PoliticalLeader','execute positioned 0 -60 0 run kingdoms village create 16 PoliticalSeat','kingdoms village setkingdom PoliticalSeat mcakingdoms:serenum','execute positioned 160 -60 0 run kingdoms village create 16 WinterSeat','kingdoms village setkingdom WinterSeat mcakingdoms:lunari','execute as PoliticalLeader run kingdoms politics bootstrap mcakingdoms:serenum PoliticalSeat mcakingdoms:serenum_charter PoliticalLeader','execute as PoliticalLeader run kingdoms politics bootstrap mcakingdoms:lunari WinterSeat mcakingdoms:lunari_charter PoliticalLeader','execute as PoliticalLeader run kingdoms politics propose mcakingdoms:serenum mcakingdoms:lunari mcakingdoms:diplomatic_recognition Private multiplayer proposal']
         for command in commands:srv.stdin.write(command+'\n');srv.stdin.flush();time.sleep(.15)
-        wait_until(lambda:'Political decision recorded:' in slog.read_text(errors='replace'))
+        wait_until(lambda:'Political decision recorded.' in slog.read_text(errors='replace'))  # the result, then the record's short tag
         (work/'READY').write_text('ready\n');wait_until(lambda:(work/'leader-PASS.txt').exists() and (work/'stranger-PASS.txt').exists())
         for proc in processes[1:]:assert proc.wait(timeout=60)==0
         srv.stdin.write('stop\n');srv.stdin.flush();assert srv.wait(timeout=60)==0

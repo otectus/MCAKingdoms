@@ -100,4 +100,14 @@ class OrganizationDefinitionTest {
                 }
                 """).getAsJsonObject();
     }
+
+    /** P08: the example pack's non-military cultural institution, with a neutral alternate route to each service, loads. */
+    @org.junit.jupiter.api.Test
+    void theExamplePackInstitutionParses() throws java.io.IOException {
+        var file = new net.minecraft.resources.ResourceLocation("example", "mcakingdoms_factions/factions/harbor_archivists.json");
+        var json = com.google.gson.JsonParser.parseString(java.nio.file.Files.readString(java.nio.file.Path.of(
+                "examples/datapack/mcakingdoms-example/data/example/mcakingdoms_factions/factions/harbor_archivists.json"))).getAsJsonObject();
+        var definition = OrganizationDefinitions.parseDefinition(file, new net.minecraft.resources.ResourceLocation("example", "harbor_archivists"), json);
+        org.junit.jupiter.api.Assertions.assertNotNull(definition);
+    }
 }

@@ -15,7 +15,9 @@ public final class PlayerWords {
     private static final Map<String,String> WORDS=new HashMap<>();
     private static final int LIMIT=16000;
     static {try(var stream=PlayerWords.class.getResourceAsStream("/assets/mcakingdoms/lang/en_us.json")){if(stream!=null)JsonParser.parseReader(new InputStreamReader(stream,StandardCharsets.UTF_8)).getAsJsonObject().entrySet().forEach(e->WORDS.put(e.getKey(),e.getValue().getAsString()));}catch(Exception ignored){}}
-    public static String text(String value){return WORDS.getOrDefault(value,value);}
+    public static String text(String value){if(encoded(value))return Keyed.english(value);return WORDS.getOrDefault(value,value);}
+    /** True for a service result encoded by {@link Keyed#text}: a component's JSON. */
+    static boolean encoded(String value){return value!=null&&value.startsWith("{\"")&&value.endsWith("}");}
     /** True when the value is a bundled translation key rather than free text. */
     public static boolean isKey(String value){return value!=null&&WORDS.containsKey(value);}
     /** Plain text for a handler result: joined paragraphs, keys resolved, selected record values shown by their labels, bounded. */
@@ -41,6 +43,9 @@ public final class PlayerWords {
                 length+=size;out.append(built);continue;
             }
             String paragraph=String.valueOf(item);
+            if(encoded(paragraph)){Component built=Keyed.component(paragraph);int size=built.getString().length();
+                if(length+size>LIMIT){out.append(ActionRegistry.tr("interaction.mcakingdoms.truncated","More details are available by selecting a narrower task."));break;}
+                length+=size;out.append(built);continue;}
             if(length+paragraph.length()>LIMIT){out.append(ActionRegistry.tr("interaction.mcakingdoms.truncated","More details are available by selecting a narrower task."));break;}
             length+=paragraph.length();
             out.append(isKey(paragraph)?ActionRegistry.tr(paragraph,WORDS.get(paragraph)):Component.literal(labels(paragraph,context)));
@@ -51,7 +56,9 @@ public final class PlayerWords {
      * One service message for a player: a bundled translation key becomes translatable (English as fallback), anything
      * else stays literal. For messages outside a task form, such as command feedback and the Kingdom screen (F14).
      */
-    public static Component component(String value){
+    public static Component component(String value){return Keyed.component(value);}
+    /** A bundled key as translatable text, anything else literal; {@link Keyed#component(String)} reads encoded results first. */
+    static Component literalOrKey(String value){
         if(value==null)return Component.empty();
         return isKey(value)?ActionRegistry.tr(value,WORDS.get(value)):Component.literal(value);
     }

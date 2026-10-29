@@ -10,7 +10,7 @@ import net.minecraft.world.level.storage.LevelResource;
 import java.util.*;
 
 /** Sparse appointments and introduction receipts. Provider building/government state is never copied. */
-final class CivicSavedData extends SavedData {
+final class CivicSavedData extends dev.otectus.mcakingdoms.persistence.DurableSavedData {
     static final String NAME="mcakingdoms_civic_network";
     private static final Gson JSON=new Gson();
     record Site(UUID settlement,String dimension,int villageId,int buildingId,String family,String type,int x,int y,int z) { }

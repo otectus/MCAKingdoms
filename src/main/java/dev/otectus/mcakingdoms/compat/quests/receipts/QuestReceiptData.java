@@ -10,7 +10,7 @@ import net.minecraft.world.level.storage.LevelResource;
 import java.util.*;
 
 /** Freezes recipient policy before any effect, so a datapack reload cannot alter an in-flight receipt. */
-final class QuestReceiptData extends SavedData {
+final class QuestReceiptData extends dev.otectus.mcakingdoms.persistence.DurableSavedData {
     static final String NAME="mcakingdoms_quest_receipts";
     private static final Gson JSON=new Gson();
     record Effect(String organization,int credit,boolean authoredContact) { }

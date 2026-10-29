@@ -53,6 +53,7 @@ public final class CivicCommands {
                     var mod=ModList.get().getModContainerById(id);
                     c.getSource().sendSuccess(() -> Component.literal(id+": "+mod.map(m -> "installed "+m.getModInfo().getVersion()).orElse("absent")),false);
                 }
+                for(var row:dev.otectus.mcakingdoms.integration.ProviderMatrix.rows(c.getSource().getServer()))c.getSource().sendSuccess(() -> Component.literal(row.mod()+": tested "+row.tested()+"; capabilities ["+row.capabilities()+"]; effects ["+row.effects()+"]; owner: "+row.owner()+(row.diagnostic().isEmpty()?"":"; "+row.diagnostic())),false);
                 c.getSource().sendSuccess(() -> Component.literal("Civic network: "+CivicRuntime.get(c.getSource().getServer()).diagnostic()),false);
                 var knowledge=dev.otectus.mcakingdoms.knowledge.SettlementKnowledge.get(c.getSource().getServer());
                 c.getSource().sendSuccess(() -> Component.literal(knowledge.writable()?"Discovery storage: available":knowledge.diagnostic()),false);

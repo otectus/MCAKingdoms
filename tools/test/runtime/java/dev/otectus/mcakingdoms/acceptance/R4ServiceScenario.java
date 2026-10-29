@@ -74,7 +74,7 @@ final class R4ServiceScenario {
             QuestCompletionBridge.consume(worker);QuestCompletionBridge.consume(worker);
             check(CivilianContractService.scopedProof(server,worker.getUUID(),place.settlement().id(),CivilianContractKind.EVOLVING_AID,obligation).isPresent(),"durable scoped proof");
             protection.fulfill(worker,obligation,1);
-            check(protection.inspect(steward,pact).stream().anyMatch(s->s.contains("SATISFIED")),"operational vassal duty fulfilled by neutral native service");
+            check(protection.obligations(steward).stream().anyMatch(o->o.id().equals(obligation)&&o.status()==ProtectionState.Status.SATISFIED),"operational vassal duty fulfilled by neutral native service"); // inspect lines read as words
             boolean denied=false;try{protection.fulfill(worker,obligation,1);}catch(IllegalArgumentException expected){denied=true;}
             check(denied && worker.getInventory().countItem(Items.EMERALD)==6,"replay cannot duplicate duty or payment");
             check(!CivilianContractService.offerScoped(worker,place.npc(),CivilianContractKind.EVOLVING_AID,obligation).success(),"closed obligation cannot farm repeatable rewards");

@@ -45,7 +45,7 @@ public final class CivilianContractService {
         requireActor(player); Objects.requireNonNull(giver); Objects.requireNonNull(kind);
         MinecraftServer server = player.getServer();
         if (kind.scoped() != (scope != null)) return Result.deny("evolution.contract_scope_required");
-        if (scope == null && (!WarfareConfig.ENABLED.get() || !WarfareConfig.CONTRACTS.get()))
+        if (scope == null && (!WarfareConfig.enabled() || !WarfareConfig.CONTRACTS.get()))
             return Result.deny("warfare.contracts_disabled");
         CivilianContractData data = CivilianContractData.get(server);
         if (!data.writable()) return Result.deny("warfare.contract_ledger_read_only");
@@ -108,7 +108,7 @@ public final class CivilianContractService {
         MinecraftServer server = player.getServer();
         var data = CivilianContractData.get(server);
         var contract = data.get(id).orElse(null);
-        if (!data.writable() || contract != null && contract.scope() == null && (!WarfareConfig.ENABLED.get() || !WarfareConfig.CONTRACTS.get()))
+        if (!data.writable() || contract != null && contract.scope() == null && (!WarfareConfig.enabled() || !WarfareConfig.CONTRACTS.get()))
             return "warfare.contract_unavailable";
         if (contract == null || giver == null || quest == null || !contract.player().equals(player.getUUID())
                 || !contract.giver().equals(giver.getUUID()) || !contract.quest().equals(quest.toString()))

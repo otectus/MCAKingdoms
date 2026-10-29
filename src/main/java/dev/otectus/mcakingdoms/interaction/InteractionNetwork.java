@@ -164,7 +164,9 @@ public final class InteractionNetwork {
                 var f=s.task.fields().get(s.field);if(f.kind()!=Kind.CHOICE&&f.kind()!=Kind.MULTI)throw fail("pick.kind","This field is not a selection.");
                 int index;try{index=Integer.parseInt(q.value());}catch(NumberFormatException invalid){throw fail("pick.changed","That choice changed. Refresh the form.");}
                 if(index<0||index>=s.candidates.size())throw fail("pick.changed","That choice changed. Refresh the form.");
-                var choice=s.candidates.get(index);if(f.kind()==Kind.MULTI){if(!s.multi.add(choice.value()))s.multi.remove(choice.value());}
+                var choice=s.candidates.get(index);
+                if(choice.metadata().containsKey(ActionRegistry.UNAVAILABLE))s.notice=msg("pick.unavailable","%s cannot be chosen now: %s",choice.shown(),choice.shownDetail()).copy().withStyle(ChatFormatting.RED);
+                else if(f.kind()==Kind.MULTI){if(!s.multi.add(choice.value()))s.multi.remove(choice.value());}
                 else {s.values.put(f.key(),choice.value());s.selected.put(f.key(),choice);s.current.remove(f.key());s.field++;s.page=0;s.search="";}
             }else if(q.operation().equals("NEXT")){
                 if(s.field>=s.task.fields().size())throw fail("apply.review","Review the task before applying.");var f=s.task.fields().get(s.field);
@@ -232,6 +234,7 @@ public final class InteractionNetwork {
      */
     private static Component reason(Throwable failure,Context c){
         if(failure instanceof FormException form)return form.component;
+        if(failure instanceof Keyed keyed)return keyed.component();
         String message=failure.getMessage();
         if((failure instanceof IllegalArgumentException||failure instanceof IllegalStateException)&&!(failure instanceof NumberFormatException)&&message!=null&&!message.isBlank())
             return PlayerWords.component(message,c);
@@ -311,7 +314,7 @@ public final class InteractionNetwork {
         while(s.field<s.task.fields().size()){
             var f=s.task.fields().get(s.field);if(f.kind()!=Kind.CHOICE)return;String wanted=s.autoSelect.remove(f.key());if(wanted==null)return;
             var found=f.options().apply(s.context(p)).stream().filter(o->o.value().equals(wanted)).findFirst();
-            if(found.isEmpty()){s.notice=msg("edit.gone","Your earlier choice for %s is no longer available; choose again.",label(s.task,f));return;}
+            if(found.isEmpty()||found.get().metadata().containsKey(ActionRegistry.UNAVAILABLE)){s.notice=msg("edit.gone","Your earlier choice for %s is no longer available; choose again.",label(s.task,f));return;}
             s.values.put(f.key(),wanted);s.selected.put(f.key(),found.get());s.field++;s.page=0;s.search="";
         }
     }
@@ -320,8 +323,9 @@ public final class InteractionNetwork {
         for(var f:s.task.fields()){
             var c=new Context(p,values,selected);String value=s.values.getOrDefault(f.key(),"");
             if(f.kind()==Kind.CHOICE){var found=f.options().apply(c).stream().filter(o->o.value().equals(value)).findFirst().orElseThrow(()->fail("validate.gone","A selected person or record is no longer available."));
+                if(found.metadata().containsKey(ActionRegistry.UNAVAILABLE))throw fail("validate.unavailable","%s can no longer be chosen: %s",found.shown(),found.shownDetail());
                 if(!found.equals(s.selected.get(f.key())))throw fail("validate.changed","A selected record changed. Open the task again to review it.");selected.put(f.key(),found);
-            }else if(f.kind()==Kind.MULTI){var permitted=f.options().apply(c).stream().map(Choice::value).toList();for(String v:value.isEmpty()&&f.optional()?new String[0]:value.split(","))if(!permitted.contains(v))throw fail("validate.choice","An available choice changed.");}
+            }else if(f.kind()==Kind.MULTI){var permitted=f.options().apply(c).stream().filter(o->!o.metadata().containsKey(ActionRegistry.UNAVAILABLE)).map(Choice::value).toList();for(String v:value.isEmpty()&&f.optional()?new String[0]:value.split(","))if(!permitted.contains(v))throw fail("validate.choice","An available choice changed.");}
             else if(f.kind()==Kind.NUMBER&&f.bounds()!=null&&!(f.optional()&&value.isBlank())){
                 try{f.constraint(c).check(Long.parseLong(value));}catch(NumberFormatException invalid){throw fail("error.number","Enter a whole number, using digits only.");}
             }
@@ -447,16 +451,21 @@ public final class InteractionNetwork {
      */
     private static Reply index(ServerPlayer p,Request q){
         var tasks=new JsonArray();
+        // Unavailable tasks often share one reason (every task of a provider the server lacks): each distinct reason is sent
+        // once, in "reasons", and an entry names it by position ("q").
+        var reasons=new JsonArray();var reasonIds=new HashMap<String,Integer>();
         for(var t:tasks(p).stream().sorted(Comparator.comparing(Task::category).thenComparing(Task::title)).toList()){
             var entry=new JsonObject();entry.addProperty("i",t.id());entry.addProperty("c",t.consequential());entry.addProperty("t",t.title());entry.addProperty("g",t.category());
             entry.addProperty("p",TaskMeta.group(t).name());
             if(!LocalizedText.has("en_us",t.helpKey()))entry.addProperty("h",t.help());
             // Unavailable features stay listed with their reason, so players learn what the server lacks instead of guessing.
             var availability=TaskMeta.availability(t,p.getServer());
-            if(!availability.available()){entry.addProperty("a",availability.state().name());entry.addProperty("r",encode(availability.reason()));entry.addProperty("l",availability.learnMore());}
+            if(!availability.available()){entry.addProperty("a",availability.state().name());
+                entry.addProperty("q",reasonIds.computeIfAbsent(encode(resolvable(availability.reason())),reason->{reasons.add(reason);return reasons.size()-1;}));
+                entry.addProperty("l",availability.learnMore());}
             tasks.add(entry);
         }
-        var index=new JsonObject();index.addProperty("operator",p.hasPermissions(2));index.add("tasks",tasks);
+        var index=new JsonObject();index.addProperty("operator",p.hasPermissions(2));index.add("tasks",tasks);index.add("reasons",reasons);
         return new Reply(q.request(),NONE,NONE,"index",encode(msg("catalogue.title","Kingdom Tasks")),encode(msg("catalogue.help","Choose a task. Search by what you want to do. No commands are entered or sent.")),List.of(),index.toString(),0,false,false,false);
     }
     private static Optional<Component> entityLocation(ServerPlayer player,Choice choice){
@@ -464,11 +473,22 @@ public final class InteractionNetwork {
             if(entity instanceof net.minecraft.world.entity.LivingEntity&&entity.distanceToSqr(player)<=32*32&&player.hasLineOfSight(entity))return Optional.of(msg("location","Current location: %s",entity.blockPosition().toShortString()));
         }catch(IllegalArgumentException ignored){}return Optional.empty();
     }
+    /**
+     * {@code component} without the English fallbacks a client of this version translates from its own language file, as
+     * the index already omits help text the client has. Keeps the catalogue reply well inside its payload budget.
+     */
+    static Component resolvable(Component component){
+        if(!(component.getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents translatable)||!LocalizedText.has("en_us",translatable.getKey()))return component;
+        Object[] args=Arrays.stream(translatable.getArgs()).map(arg->arg instanceof Component c?resolvable(c):arg).toArray();
+        MutableComponent out=Component.translatable(translatable.getKey(),args).setStyle(component.getStyle());
+        for(var sibling:component.getSiblings())out.append(resolvable(sibling));
+        return out;
+    }
     public static String encodeReply(Reply reply){
-        String encoded=JSON.toJson(reply);if(encoded.length()<=REPLY_LIMIT)return encoded;
+        String encoded=JSON.toJson(reply);if(dev.otectus.mcakingdoms.network.PayloadBudget.fits(encoded))return encoded;
         return JSON.toJson(new Reply(reply.request(),reply.session(),reply.state(),"error",encode(msg("long.title","Details too long")),encode(msg("long","These details exceed the display limit. Narrow your search or ask an operator to shorten the record text before continuing.")),List.of(),"",0,false,reply.back(),false));
     }
-    private static Component bounded(Component text,int limit){String plain=text.getString();return plain.length()>limit?Component.literal(plain.substring(0,limit-1)+"…"):text;}
+    private static Component bounded(Component text,int limit){return dev.otectus.mcakingdoms.network.PayloadBudget.clip(text,limit);}
     private static Reply copy(Request q,Reply r){return new Reply(q.request(),r.session(),r.state(),r.mode(),r.title(),r.detail(),r.options(),r.value(),r.page(),r.more(),r.back(),r.multi(),r.step(),r.steps(),r.nextOrEmpty(),r.action()==null?"":r.action(),r.statusOrEmpty(),r.learnOrEmpty());}
     private static Reply result(Request q,Session s){return new Reply(q.request(),s.id,s.state,"result",encode(title(s.task)),encode(s.result),List.of(),s.task.id(),0,false,false,false,0,0,encodeNext(s),"",s.status,"");}
     /** The next step as JSON for the client: the task, server-checked prefill and its translated title. */

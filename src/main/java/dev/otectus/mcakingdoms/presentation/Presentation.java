@@ -20,6 +20,7 @@ public final class Presentation {
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, dev.otectus.mcakingdoms.civic.CivicConfig.SPEC,
                 "mcakingdoms-civic-common.toml");
         CommandArguments.register(modBus);
+        dev.otectus.mcakingdoms.heraldry.HeraldicBlocks.register(modBus);
         ModItems.register(modBus);
         NetworkHandler.init();
         dev.otectus.mcakingdoms.civic.CivicNetwork.init();

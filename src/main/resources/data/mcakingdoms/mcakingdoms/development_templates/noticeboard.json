@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "role": "noticeboard",
+  "title": "development.mcakingdoms.template.noticeboard",
+  "minimum_mode": "projects",
+  "demand": [
+    {
+      "item": "mcakingdoms:court_noticeboard",
+      "count": 1
+    }
+  ],
+  "blocks": [
+    {
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "state": "mcakingdoms:court_noticeboard[facing=south]"
+    }
+  ],
+  "placement": "air",
+  "tier_points": 1
+}

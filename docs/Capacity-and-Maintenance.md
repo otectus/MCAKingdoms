@@ -58,8 +58,24 @@ The store is the file under `world/data/` (`<store>.dat`). The **Relief** column
 | `mcakingdoms_civic_network` | dismissed contacts | 16,384 | Kept as evidence | Stops a dismissed contact from being re-seeded. |
 | `mcakingdoms_civic_network` | chapter introductions | 100,000 | Kept as evidence | Make an introduction once-only per player and guild. |
 | `mcakingdoms_institutional_commissions` | commission contracts | 16,384 | Offline procedure | Payment, provider receipts and refusal state. |
+| `mcakingdoms_documents` | documents | 8,192 | Offline procedure | Charters in players' hands name these records. |
+| `mcakingdoms_documents` | receipts | 4,096 | Retention | Oldest go first; a reused request is then refused instead of replayed. |
+| `mcakingdoms_dynasty` | succession cases | 2,048 | Offline procedure | Closed cases beyond the bound are dropped oldest first; open cases never. |
+| `mcakingdoms_dynasty` | claims | 4,096 | Offline procedure | Decisions are kept as the record of each claim. |
+| `mcakingdoms_dynasty` | titles | 4,096 | Offline procedure | Title charters name these records. |
+| `mcakingdoms_dynasty` | receipts | 4,096 | Retention | As above. |
+| `mcakingdoms_development` | projects | 512 | Offline procedure | Completed and cancelled works beyond the bound are dropped oldest first; open works never. |
+| `mcakingdoms_development` | refunds | 4,096 | Offline procedure | Owed to contributors of cancelled works until claimed. |
+| `mcakingdoms_development` | receipts | 4,096 | Retention | As above. |
 | `mcakingdoms_knowledge` | discoveries | 100,000 | Offline procedure | Each player's private settlement knowledge. |
 | `mcakingdoms_knowledge` | visits | 100,000 | Offline procedure | First-visit titles already shown. |
+| `mcakingdoms_living_villages` | village bindings | 4,096 | Offline procedure | One per Living Villages village; settlements, conflicts and residents refer to them. |
+| `mcakingdoms_living_villages` | realms | 4,096 | Offline procedure | Realm ids outlive capital changes; agreements, associations and history refer to them. |
+| `mcakingdoms_living_villages` | conflicts | 2,048 | Retention | Finished conflicts beyond the bound are dropped oldest first; open ones never. |
+| `mcakingdoms_living_villages` | operation journal | 4,096 | Retention | Published or abandoned operations beyond the bound are dropped oldest first; open ones never. |
+| `mcakingdoms_living_villages` | treaties | 1,024 | Kept as evidence | Agreements between realms and their signatures; a full collection refuses new proposals. |
+| `mcakingdoms_living_villages` | residents | 16,384 | Retention | Confirmed deaths beyond the bound are dropped oldest first; living residents never. |
+| `mcakingdoms_living_villages` | history | 2,048 | Retention | The oldest entry is dropped first. |
 
 Other bounds hold only open or per-request state and recover as it closes. Examples are per-government limits (64 offices, 128 mandates), per-request page sizes and pending-death queues. They are not listed.
 
