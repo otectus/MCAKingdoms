@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "kingdom": "mcakingdoms:lunari",
+  "base": "light_blue",
+  "patterns": [
+    {
+      "pattern": "minecraft:circle",
+      "color": "white"
+    },
+    {
+      "pattern": "minecraft:gradient",
+      "color": "blue"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "schema": 2,
+  "entries": [
+    {
+      "id": "waystone_names",
+      "category": "settlements",
+      "task": "waystones.status",
+      "title": "Nombres de las piedras de paso",
+      "summary": "Con Waystones instalado, una piedra de paso nueva dentro de un asentamiento toma su nombre; el nombre que tú le des siempre se respeta.",
+      "keywords": [
+        "waystones",
+        "piedra de paso",
+        "nombre",
+        "renombrar",
+        "teletransporte"
+      ],
+      "body": [
+        "Cuando una piedra de paso normal dentro de un asentamiento reconocido necesita nombre por primera vez, toma el del asentamiento: una piedra encontrada en el mundo al activarse por primera vez, y una que colocas antes de que se abra su pantalla de ajustes, para que puedas cambiarlo enseguida. Si otra piedra ya tiene ese nombre, la nueva lleva un número, como Robledal (2), y lo conserva.",
+        "Un nombre que una piedra ya tiene nunca se sustituye, y el nombre que le das en la propia pantalla de ajustes de Waystones es tuyo para siempre: nunca se vuelve a poner el del asentamiento, aunque escribieras las mismas palabras. Los cambios de nombre y las fusiones de asentamientos no renombran piedras. Las piedras compartidas, las placas de teletransporte y las piedras de puerto conservan el comportamiento propio de Waystones, igual que una piedra fuera de todo asentamiento.",
+        "Si colocas una piedra mientras se reconoce una aldea, espera un poco al asentamiento y luego toma su nombre si nadie la ha nombrado entretanto. Por qué esta piedra de paso tiene su nombre explica la que tienes al lado; Nombrar esta piedra de paso como el asentamiento le da el nombre cuando Waystones te deja editarla. Su dueño, activaciones, ajuste global, costes y tiempos de espera nunca cambian."
+      ],
+      "commands": [
+        "/kingdoms waystones status"
+      ]
+    }
+  ]
+}

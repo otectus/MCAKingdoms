@@ -36,6 +36,11 @@
           "id": "p4",
           "type": "paragraph",
           "text": "If the ledger is empty, you have not discovered a settlement yet: walk into a village (opening the ledger inside one also records it) and refresh. With a kingdom filter or a search, an empty list only means nothing you know matches; choose All kingdoms or clear the search. If the entry banner appeared but a page seems stale, refresh before trying an administrative repair. If Read this settlement reports no recognized settlement, you may be outside its saved bounds or the settlement may not yet be recognized. An operator can investigate; creating a second identity blindly can make duplicates."
+        },
+        {
+          "id": "p_scan",
+          "type": "paragraph",
+          "text": "A village you build yourself is recognized without leaving the area: placing a village bed, bell or workstation has its chunk looked at again a moment later. If Read this settlement still finds nothing, it says how many village points of interest are nearby and how many a settlement needs; Look for a settlement around me asks the server to look at the loaded area around you now (at most every 30 seconds). Nothing is generated or loaded for it."
         }
       ],
       "commands": [
@@ -336,13 +341,15 @@
       "title": "Develop a settlement with public works",
       "summary": "Off unless the server turns it on; works are funded with real deliveries and built only where allowed.",
       "body": [
-        "Settlement development is off unless an operator sets development.mode. Observe only explains a settlement's development from its recognized buildings and completed works. Projects lets officials post public works that players fund; a funded work is a recorded milestone and nothing is built. Managed growth also builds small works, and Full economy adds an abstract goods ledger. The Development tab of the Kingdom page shows the mode and every work.",
-        "An official with the Appoint officials responsibility opens Propose a public work for a settlement, then Approve a public work. Anyone then uses Deliver to a public work inside that settlement: only plain items the work still needs are taken, never more than it needs, and if the record cannot be saved they come back. A cancelled work's deliveries are returned with Claim development refunds.",
-        "In managed growth, a buildable work is surveyed where the official stands when proposing it, and is built only in a settlement that allows construction (Allow construction in a settlement). The plot must be loaded, inside the settlement and the world, in an allowed dimension, clear of homes, buildings, storage, beds, farmland, doors, redstone and workstations, and buildable by the approving official under any claim mod. Construction places a few blocks a second, never replaces a block changed since the survey, and stops when its approver loses office or the mode is lowered.",
-        "Protect your home from construction keeps every work away from the land around your bed. In full economy, the abstract ledger and its trade between settlements of kingdoms with an agreement are labelled abstract everywhere: no real item or coin is ever created or moved by them, and there is no tax."
+        "Settlement development is off unless an operator sets development.mode. Observe only explains a settlement's development from its recognized buildings and completed works. Projects lets officials post public works that players fund; a funded work is a recorded milestone and nothing is built. Managed growth also builds small works, and Full economy adds an abstract goods ledger. The Development tab of the Kingdom page shows the mode and every work; Check a public work reads one work: what it still needs, why it waits and what comes next.",
+        "An official with the Appoint officials responsibility in the settlement's current kingdom opens Propose a public work, then Approve a public work. Anyone then uses Deliver to a public work inside that settlement: only plain items the work still needs are taken, never more than it needs. A delivery counts at once and is confirmed when your player data is saved; until then the work starts nothing it could not undo, and if the server stops first, your saved inventory decides, so nothing is taken twice or lost.",
+        "A work proposed as construction stays construction: it is built only in managed growth, in a settlement that allows it (Allow construction in a settlement), never completed as a milestone. Before every block the server checks the mode, the settlement's consent, the approver's authority, the dimension, protected homes, recognized buildings and land claims; any change stops the next block and says why. Resume a public work surveys every block not yet built. A work completes after two world saves have shown every block on disk.",
+        "Survey a public work again continues only if every remaining cell is clear; a block someone else placed, even one like the work's, is never built over or taken as the work's. Roll back a public work removes only blocks that are still exactly the work's and that your rights allow, and closes once the removals are saved. Cancelling before any block is built refunds every delivery; once a block is built, the materials count as used. Pausing, cancelling, rolling back, Stop construction in a settlement and Claim development refunds all work while development is turned down.",
+        "Protect your home from construction keeps every work away from the land around your bed. Claim development refunds returns what fits in your inventory and keeps the rest owed; refunds for items from a removed mod stay owed. In full economy, the abstract ledger and its trade between settlements of kingdoms with an agreement are labelled abstract everywhere: no real item or coin is ever created or moved by them, and there is no tax."
       ],
       "commands": [
         "/kingdoms development inspect <settlement>",
+        "/kingdoms development operations",
         "/kingdoms economy diagnose"
       ],
       "task": "development.read"

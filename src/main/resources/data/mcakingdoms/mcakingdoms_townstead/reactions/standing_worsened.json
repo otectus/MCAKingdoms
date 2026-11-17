@@ -1,0 +1,5 @@
+{
+  "schema": 1,
+  "event": "standing_worsened",
+  "reaction": "mcakingdoms:standing_worsened"
+}

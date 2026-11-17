@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "kingdom": "mcakingdoms:shimaguni",
+  "base": "white",
+  "patterns": [
+    {
+      "pattern": "minecraft:circle",
+      "color": "red"
+    },
+    {
+      "pattern": "minecraft:triangles_bottom",
+      "color": "light_blue"
+    }
+  ]
+}

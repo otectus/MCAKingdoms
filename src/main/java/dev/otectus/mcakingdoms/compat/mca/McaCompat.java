@@ -54,6 +54,12 @@ public final class McaCompat {
     public record Status(Optional<String> installed, boolean detection, boolean evidence) {
     }
 
+    /** The installed MCA's package root ({@code forge.net.mca} on 7.6, {@code forge.net.conczin.mca} on 7.7); empty without MCA. */
+    public static Optional<String> root() {
+        String root = McaAccess.root();
+        return root == null || "unresolved".equals(root) ? Optional.empty() : Optional.of(root);
+    }
+
     public static Status status() {
         Optional<String> installed = ModList.get().getModContainerById("mca")
                 .map(container -> container.getModInfo().getVersion().toString());

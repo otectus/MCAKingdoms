@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "signal": "thermal",
+  "enter": 0.2,
+  "exit": 0.05,
+  "minimum_coverage": 0.5,
+  "maximum_age_days": 3,
+  "sustain": 2,
+  "cooldown_days": 1,
+  "message": "townstead.mcakingdoms.suggestion.thermal",
+  "task": "development.propose"
+}

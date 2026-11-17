@@ -23,7 +23,8 @@
     "LvDeferredWorkMixin",
     "LvLecternMixin",
     "LvLivestockMixin",
-    "LvFoundingMixin"
+    "LvFoundingMixin",
+    "WaystonesEditMixin"
   ],
   "injectors": {
     "defaultRequire": 1

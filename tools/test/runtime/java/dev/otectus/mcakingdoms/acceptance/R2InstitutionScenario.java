@@ -87,6 +87,13 @@ final class R2InstitutionScenario {
             UUID targetChapter=chapters.stream().filter(c->c.institution().toString().equals(targetRecognition.recordId())).findFirst().orElseThrow().id();
             check(civic.appoint(operator,targetChapter,target.npc()).success(),"neighbor contact appointed");
             operator.moveTo(6001,-60,6000);check(civic.appoint(operator,sourceChapter,source.npc()).success(),"workshop contact appointed");
+            // Out of reach inside the settlement: the requirement row says where this settlement's own contact is (spec 8.3).
+            player.moveTo(6020,-60,6000);
+            var away=CivicRequirements.contact(player,ORG);
+            System.out.println("R2 contact away: "+away.detail().getString());
+            check(away.check()==dev.otectus.mcakingdoms.interaction.ActionRegistry.Requirement.Check.UNMET&&away.detail().getString().contains("blocks away"),
+                    "an out-of-reach contact is located for the player: "+away.detail().getString());
+            player.moveTo(6001,-60,6000);
             check(!civic.hospitality(player,source.npc()).success(),"neutral hospitality denied before agreement");
             treaty(politics,operator,other,"mcakingdoms:diplomatic_recognition");
             UUID accord=treaty(politics,operator,other,"mcakingdoms:hospitality_accord");

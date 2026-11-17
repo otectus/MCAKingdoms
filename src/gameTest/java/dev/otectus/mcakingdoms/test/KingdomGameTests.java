@@ -189,7 +189,10 @@ public class KingdomGameTests {
             ((KingdomsServiceImpl)service(h)).enqueueChunk(level,cp);
         }
         h.succeedWhen(()->{
-            var records=service(h).getSettlementPage(Optional.empty(),0,64).stream()
+            // Every page: the world holds the settlements of every test in the run, often more than one page of 64.
+            var all=new ArrayList<dev.otectus.mcakingdoms.api.SettlementView>();
+            for(int offset=0;;offset+=64){var page=service(h).getSettlementPage(Optional.empty(),offset,64);all.addAll(page);if(page.size()<64)break;}
+            var records=all.stream()
                     .filter(v->v.detectionSource()==DetectionSource.STRUCTURE&&v.externalRefs().getOrDefault("minecraft:structure","").contains("village_plains"))
                     .filter(v->Math.abs(v.anchor().getX()-base.getX())<50&&Math.abs(v.anchor().getZ()-base.getZ())<50).toList();
             check(records.size()==2,"Actual chunk structure-start detector did not preserve two nearby starts: "+records.size());

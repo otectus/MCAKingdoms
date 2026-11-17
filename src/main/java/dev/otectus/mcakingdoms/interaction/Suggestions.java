@@ -43,8 +43,13 @@ final class Suggestions {
             place.addProperty("id", settlement.id().toString());
             place.addProperty("name", settlement.displayName());
             place.addProperty("kingdom", InteractionNetwork.encode(kingdomName));
+            // UX-01: the start page's second action follows the server: the War Room only where conflict is on.
+            place.addProperty("warRoom", dev.otectus.mcakingdoms.warfare.WarfareConfig.enabled());
+            place.addProperty("life", ActionRegistry.find("townstead.life").map(t -> TaskMeta.availability(t, server).available()).orElse(false));
             out.add("here", place);
         });
+        if (here.isEmpty() && api instanceof dev.otectus.mcakingdoms.core.KingdomsServiceImpl impl)
+            out.addProperty("pending", impl.scanPending(player.serverLevel(), player.blockPosition()));
         List<Suggestion> suggestions = new ArrayList<>();
         // Things waiting on this player come first: they are the reason to open the menu now.
         add(suggestions, () -> transferConsents(player));
@@ -64,6 +69,8 @@ final class Suggestions {
                             s("residence.check.reason", "You have no civic residence yet. Founding and civic services need one.")));
         }
         add(suggestions, () -> guildContacts(player));
+        // UX-01: what can be done here, now: a public work of this settlement taking deliveries, the village's own life.
+        here.ifPresent(settlement -> add(suggestions, () -> localGoals(player, settlement)));
         if (SettlementKnowledge.get(server).all(player, api, Optional.empty(), 1).isEmpty())
             suggestions.add(new Suggestion("guide", "ledger_recipe", Map.of(), s("first_village", "Find and record your first village"),
                     s("first_village.reason", "You do not know any settlement yet. Walk into a village; a Village Ledger lists the ones you find.")));
@@ -91,6 +98,24 @@ final class Suggestions {
                 InteractionNetwork.encode(list.isEmpty() ? s("none", "Nothing is waiting for you. Search for a goal or browse a category.")
                         : s("help", "Suggested from where you are and what is waiting for you.")),
                 List.of(), out.toString(), 0, false, false, false);
+    }
+
+    /** Goals in the settlement the player stands in: deliveries an open public work still needs, and its village life. */
+    private static List<Suggestion> localGoals(ServerPlayer player, dev.otectus.mcakingdoms.api.SettlementView settlement) {
+        var out = new ArrayList<Suggestion>();
+        var server = player.getServer();
+        if (dev.otectus.mcakingdoms.development.DevelopmentMode.current().atLeast(dev.otectus.mcakingdoms.development.DevelopmentMode.PROJECTS)) {
+            var api = McaKingdomsApi.get(server);
+            dev.otectus.mcakingdoms.development.DevelopmentSavedData.get(server).records().projects().stream()
+                    .filter(p -> p.state() == dev.otectus.mcakingdoms.development.DevelopmentSavedData.State.APPROVED && api.resolveSettlementId(p.settlement()).equals(settlement.id()))
+                    .limit(1).forEach(p -> out.add(new Suggestion("task", "development.contribute", Map.of("work", p.id().toString()),
+                            s("deliver", "Deliver to %s", dev.otectus.mcakingdoms.development.DevelopmentService.templateTitle(p.template())),
+                            s("deliver.reason", "%s is collecting materials for it; see what it still needs before handing anything over.", settlement.displayName()))));
+        }
+        if (ActionRegistry.find("townstead.life").map(t -> TaskMeta.availability(t, server).available()).orElse(false))
+            out.add(new Suggestion("task", "townstead.life", Map.of("settlement", settlement.id().toString()), s("life", "Village life in %s", settlement.displayName()),
+                    s("life.reason", "Who lives here, what they need, and ways to help.")));
+        return out;
     }
 
     /** A source that fails (a provider absent, saved data read-only) simply suggests nothing. */

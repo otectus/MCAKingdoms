@@ -1,0 +1,6 @@
+{
+  "schema": "townstead:culture/v1",
+  "name": {
+    "translate": "culture.example.harbor_folk"
+  }
+}

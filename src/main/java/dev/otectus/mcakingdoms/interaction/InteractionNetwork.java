@@ -138,7 +138,7 @@ public final class InteractionNetwork {
                 var requested=task(q.value(),p);
                 // A feature this server has turned off or lacks a provider for is explained before any form is filled in.
                 var availability=TaskMeta.availability(requested,p.getServer());
-                if(!availability.available())return unavailable(q,requested,availability);
+                if(!availability.usable())return unavailable(q,requested,availability);
                 s=new Session();s.startedRequest=q.request();s.task=requested;seed(s,prefill(q.prefill()));SESSIONS.put(p.getUUID(),s);
                 var retained=RETAINED.computeIfAbsent(p.getUUID(),ignored->new LinkedHashMap<>());retained.put(s.id,s);while(retained.size()>16)retained.remove(retained.keySet().iterator().next());
             }else if(q.operation().equals("CHECK")){
@@ -157,6 +157,7 @@ public final class InteractionNetwork {
             if(!q.operation().equals("TASK")&&!s.state.equals(q.state()))throw fail("changed","The form changed. Review the current page before continuing.");
             task(s.task.id(),p); // Operator authority is checked again on every message.
             s.problem=null;s.notice=null;
+            if(q.operation().equals("TASK")){var known=TaskMeta.availability(s.task,p.getServer());if(known.state()==TaskMeta.State.UNKNOWN)s.notice=known.reason().copy().withStyle(ChatFormatting.GOLD);}
             if(q.operation().equals("BACK")){if(s.field>0){s.field--;revisit(s,s.task.fields().get(s.field));}s.page=0;s.search="";}
             else if(q.operation().equals("FILTER")){s.page=q.page();s.search=q.search();}
             else if(q.operation().equals("PICK")){
@@ -185,7 +186,15 @@ public final class InteractionNetwork {
                 edit(s,index);
             }else if(q.operation().equals("APPLY")){
                 if(s.field!=s.task.fields().size())throw fail("apply.incomplete","Complete the form first.");
-                validate(p,s);var c=s.context(p);if(!s.version.equals(s.task.version().apply(c)))throw fail("apply.stale","The record changed since your review. Open the task again and review its new state.");
+                validate(p,s);var c=s.context(p);String now=s.task.version().apply(c);
+                if(!s.version.equals(now)){
+                    // AUD-10: the review stays open with every answer kept; it says what changed and is shown again from current records.
+                    var parts=Review.changed(s.version,now);
+                    if(parts.isEmpty())s.notice=msg("apply.stale","The record changed since your review. Review its new state below, then apply.").copy().withStyle(ChatFormatting.GOLD);
+                    else{var names=Component.empty();for(int i=0;i<parts.size();i++){if(i>0)names.append(", ");names.append(Review.label(parts.get(i)));}
+                        s.notice=msg("apply.changed","Something you reviewed changed (%s). Review it again below, then apply.",names).copy().withStyle(ChatFormatting.GOLD);}
+                    s.state=UUID.randomUUID();s.lastReply=form(p,q,s);return s.lastReply;
+                }
                 return execute(p,q,s,c);
             }else if(!Set.of("TASK","BACK","FILTER","PICK","NEXT").contains(q.operation()))throw fail("operation","Unknown form operation.");
             autoSelect(p,s);
@@ -312,7 +321,9 @@ public final class InteractionNetwork {
     /** Selects prefilled or retained choices, in order, while the server still offers them; stops at the first field needing input. */
     private static void autoSelect(ServerPlayer p,Session s){
         while(s.field<s.task.fields().size()){
-            var f=s.task.fields().get(s.field);if(f.kind()!=Kind.CHOICE)return;String wanted=s.autoSelect.remove(f.key());if(wanted==null)return;
+            var f=s.task.fields().get(s.field);if(f.kind()!=Kind.CHOICE)return;String requested=s.autoSelect.remove(f.key());
+            if(requested==null){var only=f.options().apply(s.context(p));if(only.size()!=1||!only.get(0).metadata().containsKey(ActionRegistry.AUTOMATIC))return;requested=only.get(0).value();}
+            String wanted=requested;
             var found=f.options().apply(s.context(p)).stream().filter(o->o.value().equals(wanted)).findFirst();
             if(found.isEmpty()||found.get().metadata().containsKey(ActionRegistry.UNAVAILABLE)){s.notice=msg("edit.gone","Your earlier choice for %s is no longer available; choose again.",label(s.task,f));return;}
             s.values.put(f.key(),wanted);s.selected.put(f.key(),found.get());s.field++;s.page=0;s.search="";

@@ -173,8 +173,10 @@ public final class LvResidents {
         }
         if (village == null) return Optional.empty();
         try {
-            Class<?> factory = Class.forName("forge.net.mca.entity.VillagerFactory");
-            Class<?> gender = Class.forName("forge.net.mca.entity.ai.relationship.Gender");
+            // MCA 7.6 lives in forge.net.mca, 7.7 in forge.net.conczin.mca; the factory's API is the same in both.
+            String root = dev.otectus.mcakingdoms.compat.mca.McaCompat.root().orElseThrow(() -> new ClassNotFoundException("no MCA package root"));
+            Class<?> factory = Class.forName(root + ".entity.VillagerFactory");
+            Class<?> gender = Class.forName(root + ".entity.ai.relationship.Gender");
             Object builder = factory.getMethod("newVillager", net.minecraft.world.level.Level.class).invoke(null, level);
             builder = factory.getMethod("withGender", gender).invoke(builder, gender.getMethod("getRandom").invoke(null));
             builder = factory.getMethod("withPosition", Vec3.class).invoke(builder, pos);
@@ -213,7 +215,7 @@ public final class LvResidents {
     }
 
     static boolean isMca(Entity entity) {
-        return entity.getClass().getName().startsWith("forge.net.mca.entity.");
+        return dev.otectus.mcakingdoms.compat.mca.McaCompat.root().map(root -> entity.getClass().getName().startsWith(root + ".entity.")).orElse(false);
     }
 
     private static boolean following(Entity entity) {

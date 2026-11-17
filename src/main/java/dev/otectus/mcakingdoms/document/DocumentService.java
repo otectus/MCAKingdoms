@@ -11,6 +11,8 @@ import dev.otectus.mcakingdoms.interaction.ActionRegistry;
 import dev.otectus.mcakingdoms.interaction.Keyed;
 import dev.otectus.mcakingdoms.interaction.Names;
 import dev.otectus.mcakingdoms.item.ModItems;
+import dev.otectus.mcakingdoms.persistence.FaultPoints;
+import dev.otectus.mcakingdoms.persistence.PlayerEvidence;
 import dev.otectus.mcakingdoms.politics.GovernmentActionPolicy;
 import dev.otectus.mcakingdoms.politics.GovernmentService;
 import net.minecraft.nbt.CompoundTag;
@@ -33,6 +35,8 @@ import java.util.*;
 public final class DocumentService {
     public static final int PRESS_RANGE = 4;
     private static final String P = "document.mcakingdoms.";
+    /** The owner name in a {@link PlayerEvidence} marker for a charter delivery. */
+    static final String OWNER = "documents";
 
     /** What an inspection found, from the ledger and the record it names. */
     public enum Verdict { OFFICIAL, OFFICIAL_HISTORICAL, REVOKED, UNVERIFIED, BLANK }
@@ -54,19 +58,36 @@ public final class DocumentService {
         return stack.is(ModItems.KINGDOM_CHARTER.get()) && !stack.hasTag() || stack.is(ModItems.KINGDOM_CHARTER.get()) && !stack.getTag().contains("Charter");
     }
 
-    /** Seals the blank charter in the actor's main hand as {@code kind} for {@code record} in {@code kingdom}. */
-    public static String seal(ServerPlayer actor, UUID request, Kind kind, String kingdom, String record, String text) {
+    /** Whether {@code stack} is a charter carrying exactly {@code document} (its id, hash, kingdom and kind). */
+    public static boolean carries(ItemStack stack, Document document) {
+        if (!stack.is(ModItems.KINGDOM_CHARTER.get()) || !stack.hasTag() || !stack.getTag().contains("Charter")) return false;
+        CompoundTag tag = stack.getTag().getCompound("Charter");
+        return tag.hasUUID("Document") && tag.getUUID("Document").equals(document.id()) && document.hash().equals(tag.getString("Hash"))
+                && document.kingdom().equals(tag.getString("Kingdom")) && document.kind().name().equals(tag.getString("Kind"));
+    }
+
+    /** What a seal or recovery did: its words, whether the charter still waits for the player's save, and the document. */
+    public record Reply(String text, boolean pending, UUID document) { }
+
+    /**
+     * Seals the blank charter in the actor's main hand as {@code kind} for {@code record} in {@code kingdom} (AUD-09). The
+     * ledger records the document and a pending delivery first; in the same tick the charter receives the record and the
+     * player's saved data a marker ({@link PlayerEvidence}); the player's next save confirms the delivery. A repeated
+     * request never seals twice and says only what is true of the charter in hand.
+     */
+    public static Reply seal(ServerPlayer actor, UUID request, Kind kind, String kingdom, String record, String text) {
         var server = actor.getServer();
         Keyed.require(server.isSameThread() && !actor.hasDisconnected(), P + "connected", "You must be connected to this server.");
-        Keyed.require(HeraldryConfig.enabled(), P + "disabled", "Physical heraldry is turned off on this server, so no charter can be sealed.");
         var ledger = DocumentLedger.get(server);
-        Keyed.require(ledger.writable(), P + "read_only", "The document ledger is kept read-only on this server.");
         String fingerprint = GovernmentService.hash(kind + "|" + kingdom + "|" + record + "|" + text);
         var replay = ledger.receipt(request);
         if (replay.isPresent()) {
             Keyed.require(replay.get().actor().equals(actor.getUUID()) && replay.get().fingerprint().equals(fingerprint), P + "request_used", "That request was already used for a different charter.");
-            return Keyed.text(P + "sealed", "Sealed: %s. The charter in your hand now carries this record.", title(server, ledger.document(replay.get().document()).orElseThrow()));
+            return status(actor, replay.get().document());
         }
+        Keyed.require(HeraldryConfig.enabled(), P + "disabled", "Physical heraldry is turned off on this server, so no charter can be sealed.");
+        Keyed.require(ledger.writable(), P + "read_only", "The document ledger is kept read-only on this server.");
+        Keyed.require(PlayerEvidence.room(actor), P + "too_many_pending", "Too many of your charters wait to be saved; try again after the server's next save.");
         ItemStack held = actor.getItemInHand(InteractionHand.MAIN_HAND);
         Keyed.require(blank(held), P + "need_blank", "Hold a blank charter in your main hand.");
         Keyed.require(SealPressBlock.near(actor.level(), actor.blockPosition(), PRESS_RANGE), P + "need_press", "Stand within 4 blocks of a seal press.");
@@ -117,11 +138,118 @@ public final class DocumentService {
         var document = new Document(id, kind, kingdom, record, subject, subjectName, title, actor.getUUID(), now, State.ISSUED, null, 0, "",
                 DocumentLedger.hash(id, kind, kingdom, record, subject, title, now));
         UUID by = actor.getUUID();
-        Keyed.require(ledger.commit(server, l -> { l.put(document); l.putReceipt(request, new DocumentLedger.Receipt(by, fingerprint, id)); }),
+        UUID operation = UUID.nameUUIDFromBytes(("seal|" + request).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        Keyed.require(ledger.commit(server, l -> { l.put(document); l.putReceipt(request, new DocumentLedger.Receipt(by, fingerprint, id));
+                    l.putDelivery(new DocumentLedger.Delivery(id, by, operation, DocumentLedger.Attachment.PENDING, DocumentLedger.Attachment.MISSING, now)); }),
                 P + "seal_failed", "The document could not be saved, so the charter is still blank.");
-        // The record is durable; only now does the blank charter in hand become this document.
-        held.getOrCreateTag().put("Charter", tag(document, server));
-        return Keyed.text(P + "sealed", "Sealed: %s. The charter in your hand now carries this record.", title(server, document));
+        FaultPoints.crash("documents.seal.recorded");
+        // The record is durable; only now does the blank charter in hand become this document, with its marker, in one tick.
+        attach(actor, held, document, operation);
+        return status(actor, id);
+    }
+
+    private static void attach(ServerPlayer actor, ItemStack held, Document document, UUID operation) {
+        held.getOrCreateTag().put("Charter", tag(document, actor.getServer()));
+        var marker = new CompoundTag();
+        marker.putString("Owner", OWNER);
+        marker.putUUID("Document", document.id());
+        PlayerEvidence.mark(actor, operation, marker);
+        actor.inventoryMenu.broadcastChanges();
+    }
+
+    /** The truth about a sealed document's charter for {@code viewer}: never "in your hand" unless it is (AUD-09). */
+    public static Reply status(ServerPlayer viewer, UUID documentId) {
+        var server = viewer.getServer();
+        var ledger = DocumentLedger.get(server);
+        var document = ledger.document(documentId).orElse(null);
+        if (document == null) return new Reply(Keyed.text(P + "status_unknown", "That document is not in the ledger."), false, documentId);
+        Component name = title(server, document);
+        boolean inHand = carries(viewer.getMainHandItem(), document);
+        if (document.state() == State.REVOKED)
+            return new Reply(Keyed.text(P + "status_revoked", "%s was sealed and later revoked; every charter carrying it reads as revoked.", name), false, documentId);
+        return switch (ledger.attachment(documentId)) {
+            case PENDING -> new Reply(inHand ? Keyed.text(P + "sealed", "Sealed: %s. The charter in your hand now carries this record; it is kept with your inventory at the server's next save.", name)
+                    : Keyed.text(P + "status_pending_elsewhere", "%s is sealed and its charter waits for the server's next save; that charter is not in your hand now.", name), true, documentId);
+            case ATTACHED -> new Reply(inHand ? Keyed.text(P + "status_in_hand", "%s is sealed; the charter in your hand carries it.", name)
+                    : Keyed.text(P + "status_elsewhere", "%s is sealed and a charter carries it, but not the one in your hand. Inspect a charter to check it, or Recover a charter for a copy.", name), false, documentId);
+            case MISSING -> new Reply(Keyed.text(P + "status_missing",
+                    "%s is sealed, but the server stopped before its charter was saved, so no charter carries it. Hold a blank charter and use Recover a charter.", name), false, documentId);
+        };
+    }
+
+    /**
+     * Puts an existing sealed record onto the blank charter in the actor's hand (AUD-09): the same document, never a new
+     * one. For a record whose charter never reached a saved inventory this completes the delivery; for one that a charter
+     * already carries it makes a copy at a seal press, and every copy reads the same and is revoked together. A charter
+     * grants nothing by itself. Allowed while heraldry is off, since it restores an existing record.
+     */
+    public static Reply recover(ServerPlayer actor, UUID request, UUID documentId) {
+        var server = actor.getServer();
+        Keyed.require(server.isSameThread() && !actor.hasDisconnected(), P + "connected", "You must be connected to this server.");
+        var ledger = DocumentLedger.get(server);
+        String fingerprint = GovernmentService.hash("recover|" + documentId);
+        var replay = ledger.receipt(request);
+        if (replay.isPresent()) {
+            Keyed.require(replay.get().actor().equals(actor.getUUID()) && replay.get().fingerprint().equals(fingerprint), P + "request_used", "That request was already used for a different charter.");
+            return status(actor, replay.get().document());
+        }
+        Keyed.require(ledger.writable(), P + "read_only", "The document ledger is kept read-only on this server.");
+        var document = ledger.document(documentId).orElseThrow(() -> Keyed.refuse(P + "unknown", "That document is not in the ledger."));
+        Keyed.require(document.state() == State.ISSUED, P + "recover_revoked", "That record is revoked; a charter for it would only read as revoked.");
+        var delivery = ledger.delivery(documentId);
+        boolean holder = delivery.map(d -> d.player().equals(actor.getUUID())).orElse(false) || document.issuer().equals(actor.getUUID());
+        Keyed.require(holder || actor.hasPermissions(2), P + "recover_authority", "Only the official who sealed it, the player who received its charter, or an operator may recover its charter.");
+        var attachment = ledger.attachment(documentId);
+        Keyed.require(attachment != DocumentLedger.Attachment.PENDING, P + "recover_pending", "Its charter is still waiting for the server's next save; check it again after that.");
+        ItemStack held = actor.getItemInHand(InteractionHand.MAIN_HAND);
+        Keyed.require(blank(held), P + "need_blank", "Hold a blank charter in your main hand.");
+        boolean copy = attachment == DocumentLedger.Attachment.ATTACHED;
+        if (copy) Keyed.require(SealPressBlock.near(actor.level(), actor.blockPosition(), PRESS_RANGE), P + "need_press", "Stand within 4 blocks of a seal press.");
+        Keyed.require(PlayerEvidence.room(actor), P + "too_many_pending", "Too many of your charters wait to be saved; try again after the server's next save.");
+        long now = server.overworld().getGameTime();
+        UUID by = actor.getUUID();
+        UUID operation = UUID.nameUUIDFromBytes(("recover|" + request).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        Keyed.require(ledger.commit(server, l -> { l.putReceipt(request, new DocumentLedger.Receipt(by, fingerprint, documentId));
+                    l.putDelivery(new DocumentLedger.Delivery(documentId, by, operation, DocumentLedger.Attachment.PENDING, copy ? DocumentLedger.Attachment.ATTACHED : DocumentLedger.Attachment.MISSING, now)); }),
+                P + "save_failed", "The ledger could not be saved, so nothing changed.");
+        attach(actor, held, document, operation);
+        return new Reply(copy ? Keyed.text(P + "recovered_copy", "This charter is now a copy of %s. Every copy reads the same, revoking the record revokes them all, and none grants anything by itself.", title(server, document))
+                : Keyed.text(P + "recovered", "This charter now carries %s; the earlier one never received it. It is kept with your inventory at the server's next save.", title(server, document)), true, documentId);
+    }
+
+    /**
+     * Settles {@code online}'s pending charter deliveries from the markers their saved data holds: present means the
+     * charter was saved carrying the record ({@code ATTACHED}); absent after a load ({@code fromSave} false) means it was
+     * not, so the delivery returns to its fallback ({@code MISSING}, or {@code ATTACHED} for a copy of a carried record).
+     */
+    public static void settle(ServerPlayer online, java.util.Map<UUID, CompoundTag> markers, boolean fromSave) {
+        var server = online.getServer();
+        var ledger = DocumentLedger.get(server);
+        if (!ledger.writable()) return;
+        long now = server.overworld().getGameTime();
+        var changes = new ArrayList<DocumentLedger.Delivery>();
+        for (var delivery : ledger.deliveries()) {
+            if (!delivery.player().equals(online.getUUID()) || delivery.state() != DocumentLedger.Attachment.PENDING) continue;
+            if (markers.containsKey(delivery.operation())) changes.add(delivery.at(DocumentLedger.Attachment.ATTACHED, now));
+            else if (!fromSave) changes.add(delivery.at(delivery.fallback(), now));
+        }
+        if (!changes.isEmpty() && !ledger.commit(server, l -> changes.forEach(l::putDelivery))) return;
+        for (var entry : markers.entrySet())
+            if (OWNER.equals(entry.getValue().getString("Owner")) && ledger.deliveries().stream().noneMatch(d -> d.operation().equals(entry.getKey()) && d.state() == DocumentLedger.Attachment.PENDING))
+                PlayerEvidence.clear(online, entry.getKey());
+    }
+
+    /** The player's saved data durably holds their markers (see {@link PlayerEvidence}). */
+    public static void playerSaved(ServerPlayer player) {
+        var markers = PlayerEvidence.markers(player);
+        if (markers.values().stream().anyMatch(m -> OWNER.equals(m.getString("Owner")))) settle(player, markers, true);
+    }
+
+    /** At login the player's data was just loaded from the copy that counts. */
+    public static void playerLoggedIn(ServerPlayer player) {
+        var ledger = DocumentLedger.get(player.getServer());
+        if (ledger.deliveries().stream().noneMatch(d -> d.player().equals(player.getUUID()) && d.state() == DocumentLedger.Attachment.PENDING) && !PlayerEvidence.has(player)) return;
+        settle(player, PlayerEvidence.markers(player), false);
     }
 
     private static CompoundTag tag(Document document, net.minecraft.server.MinecraftServer server) {
@@ -184,7 +312,7 @@ public final class DocumentService {
     /** Revokes a document; the issuer, an official with the document's own responsibility, or an operator may. Charters then read as revoked. */
     public static String revoke(ServerPlayer actor, UUID document, String reason) {
         var server = actor.getServer();
-        Keyed.require(HeraldryConfig.enabled(), P + "disabled", "Physical heraldry is turned off on this server, so no charter can be sealed.");
+        // Revocation withdraws an existing record, so it stays available while new sealing is turned off (AUD-08).
         var ledger = DocumentLedger.get(server);
         Keyed.require(ledger.writable(), P + "read_only", "The document ledger is kept read-only on this server.");
         var found = ledger.document(document).orElseThrow(() -> Keyed.refuse(P + "unknown", "That document is not in the ledger."));
@@ -209,7 +337,7 @@ public final class DocumentService {
     /** The ruler chooses the kingdom's two heraldic colours; every loaded banner and shield of the kingdom shows them within seconds. */
     public static String chooseColours(ServerPlayer actor, String kingdom, DyeColor primary, DyeColor secondary) {
         var server = actor.getServer();
-        Keyed.require(HeraldryConfig.enabled(), P + "disabled", "Physical heraldry is turned off on this server, so no charter can be sealed.");
+        Keyed.require(HeraldryConfig.enabled(), P + "disabled_heraldry", "Physical heraldry is turned off on this server, so the kingdom's colours cannot be changed now.");
         var ledger = DocumentLedger.get(server);
         Keyed.require(ledger.writable(), P + "read_only", "The document ledger is kept read-only on this server.");
         var politics = politics(actor);

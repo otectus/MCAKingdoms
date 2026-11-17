@@ -1,6 +1,6 @@
 # Upgrade and recovery runbook
 
-Applies to MCA: Kingdoms 0.3.0. Audience: server operators. For capacity problems, see [Capacity and record maintenance](Capacity-and-Maintenance.md). For the Ultima Kingdoms rename, also read the README's [Upgrading from Ultima Kingdoms](../README.md#upgrading-from-ultima-kingdoms).
+Applies to MCA: Kingdoms 0.3.0 and 0.3.1. Audience: server operators. For capacity problems, see [Capacity and record maintenance](Capacity-and-Maintenance.md). For the Ultima Kingdoms rename, also read the README's [Upgrading from Ultima Kingdoms](../README.md#upgrading-from-ultima-kingdoms).
 
 Never test an upgrade, a failure or a recovery on a player's only copy of a world. Use a copy, and keep the backup.
 
@@ -30,6 +30,29 @@ None of these is a store-format migration. Existing files load as they are.
 - A residence the player registered is recorded with the source **registered**.
 - An applied compaction writes `<world>/mcakingdoms_archive/*.json`.
 
+## Upgrading from 0.3.0 to 0.3.1
+
+1. **Stop the server and back up** the entire world folder and `config/`, as above.
+2. **Replace the jar on the server and on every client.**
+3. **Waystones** is optional. With exactly Waystones 14.1.21 and Balm 7.3.44, new waystones in settlements are named
+   after them; existing names are never changed. See [Waystones integration](Waystones-Integration.md).
+4. **Start the server once, before anyone joins**, and open Server health. Check that **Settlement changes** reports
+   every merge and kingdom change as complete, that the development records are writable, and the Waystones line.
+5. **Review the new settings**: common `waystones.settlementNames` (on) and `waystones.pendingTicks` (6,000 ticks).
+6. Reopen the server.
+
+### What 0.3.1 writes that 0.3.0 does not
+
+- `mcakingdoms_development.dat` moves from schema 1 to **schema 2**: placement stages, each work's kind and blockers,
+  productive assets kept apart from the history of works, inventory operations and request receipts with their issue
+  time. A schema 1 file is read as it is and written back as schema 2 at its next change; nothing in it is dropped.
+- `mcakingdoms_settlements.dat` may hold an **identity outbox** (optional key; the schema stays 1).
+- `mcakingdoms_documents.dat` may hold **charter deliveries** (optional key; the schema stays 1).
+- Each player's saved data may hold markers under `PlayerPersisted` → `mcakingdoms:pending_effects`, one per delivery,
+  refund or charter not yet confirmed.
+- A new store, `mcakingdoms_waystones.dat`, once a waystone is named, waits or is renamed by a player with Waystones
+  installed.
+
 ## Downgrading
 
 **Downgrading in place is not supported.** To go back to 0.2.0, restore the backup taken before the upgrade. Play since then is lost; that is the cost of going back. The reasons:
@@ -38,6 +61,12 @@ None of these is a store-format migration. Existing files load as they are.
 - 0.2.0 reads a registered residence as a migration record, losing how it was verified.
 - 0.2.0 lacks the 0.3.0 load refusals described below. A 0.2.0 server could start empty over a settlement file it cannot read and overwrite it at the next save.
 - The network protocols differ, so 0.2.0 clients cannot join a 0.3.0 server, and the reverse is also refused.
+
+Going back from 0.3.1 to 0.3.0 is also done by restoring the backup. If 0.3.0 is started on a 0.3.1 world anyway:
+it keeps a schema 2 development file read-only, so no public work can change until 0.3.1 runs again; it drops the
+identity outbox and charter delivery records the next time it saves those files, so a settlement change still waiting
+would not reach every record, and an unconfirmed charter delivery is forgotten; and it leaves
+`mcakingdoms_waystones.dat` and the player markers as they are.
 
 A store written by a **newer** build than the one running is refused, not trimmed. Run the newer build, or restore a backup made by the older one.
 
@@ -94,6 +123,11 @@ A save or provider failure leaves a pending operation instead of reporting succe
 - Recruit transfers:
   - An offer nobody acted on expires after its deadline. Ownership and equipment are unchanged, and both parties are told.
   - A transfer that reached Recruits keeps its recovery fence until it is confirmed, restored or reconciled by an operator.
+- Deliveries to public works, refund claims and sealed charters (0.3.1) say **waiting** until the player's next save
+  confirms them; nothing irreversible follows before that. After a crash, each is settled when the player next logs
+  in, from the saved copy Minecraft loaded ([Save durability](Save-Durability.md#items-and-blocks-that-cross-a-save-031)).
+- Settlement changes still reaching some records (0.3.1) are listed in Server health with the stores they wait for.
+  They are retried at start and every minute; a read-only store makes its part wait until it is writable again.
 - Never delete evidence to clear an error message.
 
 ## Companion problems

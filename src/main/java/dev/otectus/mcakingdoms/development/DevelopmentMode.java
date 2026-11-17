@@ -30,5 +30,14 @@ public enum DevelopmentMode {
     static int projectsPerSettlement() { return McaKingdomsConfig.SPEC.isLoaded() ? McaKingdomsConfig.DEVELOPMENT_PROJECTS_PER_SETTLEMENT.get() : 4; }
     static int tradeCap() { return McaKingdomsConfig.SPEC.isLoaded() ? McaKingdomsConfig.DEVELOPMENT_TRADE_CAP.get() : 8; }
     static int homeRadius() { return McaKingdomsConfig.SPEC.isLoaded() ? McaKingdomsConfig.DEVELOPMENT_HOME_RADIUS.get() : 8; }
-    static java.util.List<? extends String> dimensions() { return McaKingdomsConfig.SPEC.isLoaded() ? McaKingdomsConfig.DEVELOPMENT_DIMENSIONS.get() : java.util.List.of("minecraft:overworld"); }
+    private static volatile java.util.List<String> dimensionsOverride;
+
+    static java.util.List<? extends String> dimensions() {
+        var forced = dimensionsOverride;
+        if (forced != null) return forced;
+        return McaKingdomsConfig.SPEC.isLoaded() ? McaKingdomsConfig.DEVELOPMENT_DIMENSIONS.get() : java.util.List.of("minecraft:overworld");
+    }
+
+    /** Test seam: the allowed construction dimensions for GameTests; null restores the setting. */
+    public static void overrideDimensionsForTests(java.util.List<String> dimensions) { dimensionsOverride = dimensions == null ? null : java.util.List.copyOf(dimensions); }
 }

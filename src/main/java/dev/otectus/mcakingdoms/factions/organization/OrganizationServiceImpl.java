@@ -117,8 +117,14 @@ final class OrganizationServiceImpl implements OrganizationService {
         OrganizationDefinition definition = foundDefinition.get();
         OrganizationSavedData.MembershipRecord member = data.records().memberships.get(
                 OrganizationSavedData.key(player.getUUID(), canonical));
-        return OrganizationPolicy.explain(definition, member, servicePermission,
+        OrganizationExplanation explanation = OrganizationPolicy.explain(definition, member, servicePermission,
                 member == null ? data.records().revision : member.revision).withPolicyRevision(data.records().revision);
+        if (explanation.decision() != OrganizationExplanation.Decision.ALLOW) return explanation;
+        // Data-pack Townstead career prerequisites of this service (spec 9.1); one that cannot be read is not applied.
+        List<String> careers = dev.otectus.mcakingdoms.compat.townstead.TownsteadProgression.unmet(player, canonical, servicePermission);
+        if (careers.isEmpty()) return explanation;
+        return new OrganizationExplanation(explanation.organizationId(), servicePermission, OrganizationExplanation.Decision.DENY,
+                explanation.effectiveRank(), careers, explanation.evidenceRevision(), explanation.policyRevision());
     }
 
     @Override

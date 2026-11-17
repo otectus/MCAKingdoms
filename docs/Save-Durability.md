@@ -1,7 +1,8 @@
 # Save durability
 
 This page states what MCA: Kingdoms guarantees about its saved data, store by store, and what an operator does when a
-guarantee cannot be met. It covers the 0.3.0 unification (audit item H06). The code is
+guarantee cannot be met. It covers the 0.3.0 unification (audit item H06) and the 0.3.1 recovery work (AUD-01, AUD-02,
+AUD-03, AUD-09). The code is
 `persistence/AtomicSavedDataWriter` and `persistence/DurableSavedData`; the tests are `AtomicSavedDataWriterTest`
 (unit) and `SettlementLoadRefusalGameTests` (GameTests).
 
@@ -42,7 +43,7 @@ only logs an error. MCA: Kingdoms handles that case in two ways:
 
 | Store file (`<world>/data/`) | Contents | How changes are committed | Unknown or future schema |
 | --- | --- | --- | --- |
-| `mcakingdoms_settlements.dat` | Settlement identity, aliases, redirects | Periodic save | Refused; the server stops (F02) |
+| `mcakingdoms_settlements.dat` | Settlement identity, aliases, redirects, and the identity outbox (0.3.1) | A new settlement, a merge and a kingdom change are written at once, before any event, dependent record or message, and refused if that write fails (0.3.1). Other changes (names, aliases, discovery details): periodic save | Refused; the server stops (F02) |
 | `mcakingdoms_knowledge.dat` | Which players know which settlements | Periodic save | Kept read-only, unchanged |
 | `mcakingdoms_politics.dat` | Governments, offices, agreements, petitions, elections, history | Each decision written before it is acknowledged | Kept read-only, unchanged |
 | `mcakingdoms_factions.dat` | Kingdom standing, receipts and cursors from companion events | Periodic save; companion receipts are acknowledged only after a save succeeds | Kept read-only, unchanged |
@@ -56,13 +57,46 @@ only logs an error. MCA: Kingdoms handles that case in two ways:
 | `mcakingdoms_evolution.dat`, `mcakingdoms_evolution_drama.dat`, `mcakingdoms_protection.dat` | Opportunities, world events, protectorates | Each change written before it is announced (F09) | Kept read-only, unchanged |
 | `mcakingdoms_recruit_transfers.dat` | Negotiated recruit transfers | The intent is written before Recruits changes, and the outcome after Recruits' save is verified | Kept read-only, unchanged |
 | `mcakingdoms_capitals.dat` | MCA Capitals mappings (0.3.0) | Each mapping decision written before it takes effect | Kept read-only, unchanged |
-| `mcakingdoms_documents.dat` | Sealed documents and chosen heraldic colours (0.3.0) | A document is written before its charter is sealed | Kept read-only, unchanged |
+| `mcakingdoms_documents.dat` | Sealed documents, chosen heraldic colours and charter deliveries (0.3.1) | A document is written before its charter is sealed; the charter's delivery is confirmed by the player's next save (0.3.1) | Kept read-only, unchanged |
 | `mcakingdoms_dynasty.dat` | Laws, succession cases, claims, titles, mourning, memorials (0.3.0) | Each decision written before its notices and political step | Kept read-only, unchanged |
-| `mcakingdoms_development.dat` | Public works, construction journals, settlement development (0.3.0; only once `development.mode` is above `OFF`) | Each decision written before it takes effect; deliveries handed back if the write fails; each built block journaled | Kept read-only, unchanged |
+| `mcakingdoms_development.dat` | Public works, construction journals, productive assets, inventory operations, settlement development (0.3.0, schema 2 since 0.3.1; only once `development.mode` is above `OFF`) | Each decision written before it takes effect; deliveries handed back if the write fails. A delivery or refund counts at once and is confirmed by the player's next save (0.3.1). Each built block is journaled before it is placed and verified by later world saves (0.3.1) | Kept read-only, unchanged |
+| `mcakingdoms_townstead.dat` | Operators' Townstead authority decisions and first-sight baselines (0.3.0) | A decision written before it takes effect; baselines with the periodic save | Kept read-only, unchanged |
+| `mcakingdoms_waystones.dat` | Waystone names given, waiting or kept by players (0.3.1; only with Waystones) | Each name written before Waystones receives it; confirmed at the next world save | Kept read-only, unchanged |
 
 Files written once, outside the stores: the legacy-migration report (`mcakingdoms_migration_report.txt`, informational)
 and archives under `<world>/mcakingdoms_archive/` (written as new files, never replaced).
 The client keeps its own preferences in `config/mcakingdoms-client-state.json`, written with the same staged atomic move.
+
+## Settlement identity changes (0.3.1)
+
+A new settlement, a merge and a kingdom change are written to `mcakingdoms_settlements.dat` at once. Only then are events
+posted, other stores updated and the player told. If that write fails, the change is undone in memory and refused, so
+nothing is announced for a change that is not on disk.
+
+Other stores follow a merge or a kingdom change through the **identity outbox**, kept in the same file and written in
+the same commit. Each consumer (discovery, civic, campaigns, politics, development and the others) moves its own records and reports done
+only once its store is written. A consumer whose store is read-only waits. Consumers are retried when the server starts
+and then every minute until every one is done; running one again finds nothing left to move. Server health lists the
+changes still waiting and why. Records that resolve a settlement id through its redirects when they read (documents,
+residence, Townstead decisions, MCA Capitals and Living Villages bindings) need no consumer. A 0.3.0 build ignores the outbox.
+
+## Items and blocks that cross a save (0.3.1)
+
+Kingdoms' stores and the player's inventory are separate files, written at different times. So an item that moves
+between them is confirmed instead of assumed:
+
+- **Deliveries to public works and refund claims** write their intent first, then change the inventory and leave a
+  marker in the player's own saved data in the same tick, so a saved player file holds both or neither. They count at
+  once, and nothing irreversible follows (a work does not start on them) until the player's next save confirms them; no
+  save is forced. A single-player world's owner is confirmed when `level.dat` is written. After a crash, the player's
+  next login settles each one from the copy Minecraft loaded: the marker is there, so the change stands; or it is not,
+  so the items never left (or never arrived) and the operation is rolled back. Nothing is taken twice and nothing is
+  guessed.
+- **Charters** are sealed in the ledger first and handed over second. A charter that never reached a saved inventory can
+  be put back onto a blank charter held in hand, from the same record, never as a new document. A copy of a charter that
+  does exist needs a seal press.
+- **Construction**: a block is journaled before it is placed and counts as built only after two world saves have shown
+  it. After a crash, each journaled block is settled from the world as it loaded.
 
 ## Restoring a backup
 

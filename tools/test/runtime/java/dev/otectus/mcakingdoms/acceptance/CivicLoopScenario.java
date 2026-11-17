@@ -41,9 +41,11 @@ final class CivicLoopScenario {
             var field=workshop.getClass().getDeclaredField("pos"+side+axis);field.setAccessible(true);
             int center=axis.equals("X")?pos.getX():axis.equals("Y")?pos.getY():pos.getZ();field.setInt(workshop,center+(side==0?-2:2));
         }
+        // A built workshop: MCA's own completion counts the blocks it recorded, and recognition needs a complete building.
+        TownsteadScenario.blocks(workshop,Math.max(TownsteadScenario.minimumBlocks(workshop),1));
         Entity npc=ForgeRegistries.ENTITY_TYPES.getValue(new ResourceLocation("mca:male_villager")).create(level);
         net.minecraftforge.event.ForgeEventFactory.onFinalizeSpawn((Mob)npc,level,level.getCurrentDifficultyAt(pos),MobSpawnType.COMMAND,null,null);
-        ((AgeableMob)npc).setAge(0);Class age=Class.forName("forge.net.mca.entity.ai.relationship.AgeState");npc.getClass().getMethod("setAgeState",age).invoke(npc,Enum.valueOf(age,"ADULT"));
+        ((AgeableMob)npc).setAge(0);Class age=Class.forName(TownsteadScenario.mcaRoot()+".entity.ai.relationship.AgeState");npc.getClass().getMethod("setAgeState",age).invoke(npc,Enum.valueOf(age,"ADULT"));
         ((VillagerDataHolder)npc).setVillagerData(((VillagerDataHolder)npc).getVillagerData().setProfession(VillagerProfession.CLERIC));
         ((Mob)npc).setNoAi(true);npc.moveTo(pos.getX(),pos.getY(),pos.getZ());level.addFreshEntity(npc);
         var home=dev.otectus.mcakingdoms.test.McaGameTests.class.getDeclaredMethod("home",Entity.class,int.class);home.setAccessible(true);home.invoke(null,npc,villageId);
@@ -128,10 +130,10 @@ final class CivicLoopScenario {
         var gate=Class.forName(prefix+"conversation.TopicGate").getMethod("allows",entry.getClass(),Entity.class,ServerPlayer.class);
         check((boolean)gate.invoke(null,entry,npc,player),"native civic topic accepts actual nearby guild contact");
         check(!(boolean)gate.invoke(null,entry,npc,stranger),"native civic topic rejects remote speaker submission");
-        var actions=Class.forName("forge.net.mca.resources.data.dialogue.Actions");
+        var actions=Class.forName(TownsteadScenario.mcaRoot()+".resources.data.dialogue.Actions");
         check(((Map<?,?>)actions.getField("TYPES").get(null)).containsKey("conversations_civic"),"native MCA civic action is registered");
         Object action=actions.getMethod("fromJson",com.google.gson.JsonObject.class).invoke(null,JsonParser.parseString("{\"conversations_civic\":\"introduction\"}").getAsJsonObject());
-        var trigger=actions.getMethod("trigger",Class.forName("forge.net.mca.entity.VillagerEntityMCA"),ServerPlayer.class);
+        var trigger=actions.getMethod("trigger",Class.forName(TownsteadScenario.mcaRoot()+".entity.VillagerEntityMCA"),ServerPlayer.class);
         var before=npc.saveWithoutId(new net.minecraft.nbt.CompoundTag());trigger.invoke(action,npc,player);
         check(SettlementKnowledge.get(player.getServer()).visible(player,destination),"native conversation action grants actual private introduction");
         stranger.moveTo(player.getX(),player.getY(),player.getZ());trigger.invoke(action,npc,stranger);

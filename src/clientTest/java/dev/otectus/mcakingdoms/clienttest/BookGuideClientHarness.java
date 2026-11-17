@@ -559,7 +559,11 @@ public final class BookGuideClientHarness {
     }
 
     /** Every packaged translation and topic at the minimum viewport and a normal spread; actual-scale shots are separate. */
+    /** Topics laid out by the last {@link #layoutEveryTopic} pass, for the pass record. */
+    private int topicsLaidOut;
+
     private void layoutEveryTopic(KingdomGuideScreen screen) {
+        topicsLaidOut = entries(screen).size();
         Screen vanilla = screen;
         int oldWidth = vanilla.width, oldHeight = vanilla.height;
         String oldTopic = selected(screen);
@@ -747,7 +751,7 @@ public final class BookGuideClientHarness {
                 "PASS isolated packaged client: actual item use; every topic parsed; live ledger and book recipes from the synchronized recipe manager; "
                         + "data-pack replacement and removal applied by /reload while open; restore; keyboard link activation; Back, Home, bookmarks in the local state file, "
                         + "Saved; synonym search; kingdom gallery from the server; collapsed commands; compact and narrow layouts; Escape; item-use reopen at the last topic; "
-                        + "manuscript page turns; chapter cross-references and restored reading position; Ctrl+F and Alt+Left; all 70 topics at 320x240, 426x240, 640x360 and 960x540 "
+                        + "manuscript page turns; chapter cross-references and restored reading position; Ctrl+F and Alt+Left; all " + topicsLaidOut + " topics at 320x240, 426x240, 640x360 and 960x540 "
                         + "in English, Spanish and Chinese; actual scale-one, scale-two and compact displays; smaller real window; Ledger presentation fixtures with long names and facing record links; "
                         + "real Ledger item use and 23 server records; server paging, search, distance sort, kingdom filtering, selection, contextual Help round-trip and Done.\n");
         finished = true;

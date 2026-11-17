@@ -261,8 +261,17 @@ public final class DynastyService {
 
     /** One decision: replayed from its receipt, or validated, written and only then followed by its notices and political steps. */
     private String change(ServerPlayer actor, UUID request, String fingerprint, Function<Change, String> body) {
+        return change(actor, request, fingerprint, false, body);
+    }
+
+    /**
+     * {@code cleanup}: the decision only ends something already recorded (withdrawing one's claim, resigning or declining
+     * one's title, revoking a title), so it stays available while dynastic succession is turned off (AUD-08); it never
+     * starts or advances a succession.
+     */
+    private String change(ServerPlayer actor, UUID request, String fingerprint, boolean cleanup, Function<Change, String> body) {
         Keyed.require(actor.getServer() == server && server.isSameThread() && !actor.hasDisconnected(), P + "refusal.connected", "You must be connected to this server.");
-        Keyed.require(DynastyConfig.enabled(), P + "refusal.disabled", "Dynastic succession is turned off on this server.");
+        if (!cleanup) Keyed.require(DynastyConfig.enabled(), P + "refusal.disabled", "Dynastic succession is turned off on this server.");
         var replay = data.receipt(request);
         if (replay.isPresent()) {
             Keyed.require(replay.get().actor().equals(actor.getUUID()) && replay.get().fingerprint().equals(fingerprint), P + "refusal.request_used",
@@ -358,7 +367,7 @@ public final class DynastyService {
 
     /** Withdraws one's own open claim. */
     public String withdrawClaim(ServerPlayer actor, UUID request, UUID claimId) {
-        return change(actor, request, "withdraw|" + claimId, c -> {
+        return change(actor, request, "withdraw|" + claimId, true, c -> {
             var claim = Optional.ofNullable(c.next().claims.get(claimId)).filter(x -> x.state() == ClaimState.OPEN && x.claimant().equals(actor.getUUID()))
                     .orElseThrow(() -> Keyed.refuse(P + "refusal.no_own_claim", "You have no such open claim."));
             c.next().claims.put(claimId, claim.decided(ClaimState.WITHDRAWN, actor.getUUID(), now(), c.next().revision));
@@ -550,7 +559,7 @@ public final class DynastyService {
 
     /** An honorable resignation of one's own title. */
     public String resignTitle(ServerPlayer actor, UUID request, UUID titleId) {
-        return change(actor, request, "resign_title|" + titleId, c -> {
+        return change(actor, request, "resign_title|" + titleId, true, c -> {
             var title = ownTitle(c.next(), actor, titleId, TitleState.ACTIVE, TitleState.OFFERED);
             c.next().titles.put(titleId, title.ended(TitleState.RESIGNED, actor.getUUID(), now(), c.next().revision));
             return Keyed.text(P + "result.title_resigned", "You resigned the rank of %s with honor; the record is kept.", rankTitle(title.rank(), title.kingdom()));
@@ -559,7 +568,7 @@ public final class DynastyService {
 
     /** Revokes a title; its grantor, an official who awards honors, or an operator. */
     public String revokeTitle(ServerPlayer actor, UUID request, UUID titleId) {
-        return change(actor, request, "revoke_title|" + titleId, c -> {
+        return change(actor, request, "revoke_title|" + titleId, true, c -> {
             var title = Optional.ofNullable(c.next().titles.get(titleId)).filter(t -> t.state().current())
                     .orElseThrow(() -> Keyed.refuse(P + "refusal.no_title", "That title is not in force."));
             nativeCrown(title.kingdom());

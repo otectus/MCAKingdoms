@@ -224,6 +224,8 @@ final class IntegrationScenario {
         var kingdoms=McaKingdomsApi.get(server);var factions=(FactionServiceImpl)KingdomsFactionsApi.get(server);
         String phase=System.getProperty("mcakingdoms.acceptance.integration","initial");
         if(phase.startsWith("split-village")){SplitVillageScenario.run(server,phase,schedule,finish);return;}
+        if(phase.startsWith("townstead")){TownsteadScenario.run(server,phase,schedule,finish);return;}
+        if(phase.startsWith("waystones")){WaystonesScenario.run(server,phase,schedule,finish);return;}
         if(phase.equals("lv")||phase.startsWith("lv-")){LivingVillagesScenario.run(server,phase,schedule,finish);return;}
         if(phase.equals("r4")||phase.equals("r4-crash")){schedule.accept(2L,()->{try{EvolutionScenario.run(server,finish);}catch(Throwable failure){failure.printStackTrace();finish.accept("FAIL "+failure);}});return;}
         if(phase.equals("r4-service")){R4ServiceScenario.run(server,schedule,finish);return;}

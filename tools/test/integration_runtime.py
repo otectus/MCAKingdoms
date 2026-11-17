@@ -20,6 +20,9 @@ def main():
         pack=work/'world/datapacks/integration';folder=pack/'data/mcakingdoms_acceptance/mcakingdoms/kingdom_gates';folder.mkdir(parents=True)
         (pack/'pack.mcmeta').write_text(json.dumps({'pack':{'pack_format':15,'description':'Named gate runtime fixture'}}))
         (folder/'named.json').write_text(json.dumps({'subject':'giver_residence','include':['mcakingdoms:serenum']}))
+    if args.phase=='townstead':
+        # The example data pack, so its Townstead mappings (and the culture it adds for Townstead) are checked on the real jars.
+        shutil.copytree(root/'examples/datapack/mcakingdoms-example',work/'world/datapacks/mcakingdoms-example')
     if args.phase in ('r2','r2-legacy'):
         shutil.copy2(root/'pack/r2/kubejs/data/ultima/mcaquests/quests/civic/lamplighters/workshop_lanterns.json',work/'workshop_lanterns.json')
         (work/'config').mkdir(exist_ok=True)
@@ -31,6 +34,23 @@ def main():
         # The observation fixture bypasses campaign policy, so military actions are off from launch; toggling the
         # setting at runtime raced Forge's config watcher (F16).
         (work/'config/mcakingdoms-warfare-common.toml').write_text('[political_warfare]\nmilitaryActions = false\n')
+    if args.phase in ('waystones-unsupported','waystones-untested-build'):
+        # WAY-01, unsupported providers on real bytes: the tested jar reporting another version must be refused; the same
+        # version with different bytes binds naming but not the edit observer (mixin/WaystonesGate checks the SHA-256).
+        import zipfile
+        stone=next((work/'mods').glob('waystones-*.jar'))
+        if args.phase=='waystones-untested-build':
+            with zipfile.ZipFile(stone,'a') as jar:jar.writestr('mcakingdoms-acceptance-marker.txt','untested build')
+        else:
+            original=stone.with_suffix('.tested');stone.rename(original)
+            with zipfile.ZipFile(original) as src,zipfile.ZipFile(stone,'w',zipfile.ZIP_DEFLATED) as dst:
+                for item in src.infolist():
+                    data=src.read(item.filename)
+                    if item.filename=='META-INF/mods.toml':data=data.replace(b'version="14.1.21"',b'version="14.1.99"',1)
+                    if item.filename=='META-INF/MANIFEST.MF':data=data.replace(b'Implementation-Version: 14.1.21',b'Implementation-Version: 14.1.99',1)
+                    dst.writestr(item,data)
+            original.unlink()
+        with (work/'artifacts.sha256').open('a') as record:record.write(hashlib.sha256(stone.read_bytes()).hexdigest()+'  '+stone.name+' (modified for '+args.phase+')\n')
     def boot(phase,crash=False):
         log=work/f'{phase}.log'
         with log.open('w') as out:
@@ -107,6 +127,22 @@ def main():
         assert 'Living Villages would discard and respawn them' in body,f'no refusal message: {log}'
         assert hashlib.sha256(store.read_bytes()).hexdigest()==hashlib.sha256(original).hexdigest(),'bridge store changed on the refused start'
         print(f'PASS unaudited Living Villages jar refused before any world change: {log}',flush=True)
+    if args.phase=='townstead':
+        # Townstead: restart, then removed (MCA kept), then restored; MCA: Kingdoms' own store must not change while it is absent.
+        boot('townstead-restart')
+        ts=next((work/'mods').glob('townstead-*.jar'),None)
+        if ts is not None:
+            store=work/'world/data/mcakingdoms_townstead.dat'
+            before=hashlib.sha256(store.read_bytes()).hexdigest() if store.exists() else None
+            retained=work/ts.name;ts.rename(retained)
+            try:boot('townstead-absent')
+            finally:retained.rename(ts)
+            assert before is None or hashlib.sha256(store.read_bytes()).hexdigest()==before,'Townstead store changed while Townstead was absent'
+            print('PASS Townstead authority store byte-identical while Townstead was absent',flush=True)
+            boot('townstead-restored')
+    if args.phase=='waystones':
+        # WAY-01: the same world again; names, numbers, the player's own name and every confirmation survive.
+        boot('waystones-restart')
     if args.phase=='r3-civilian':boot('r3-civilian-restart')
     if args.phase=='r3':
         boot('r3-restart')

@@ -1,5 +1,10 @@
 # Political compatibility and evidence
 
+> **Historical record of the 0.1.0 validation (2026-09-20).** Superseded for Townstead 0.8.0 and MCA 7.7.1-beta.5 by
+> [Townstead 0.8.0 integration](../Townstead-0.8.0-Integration.md) and [certified compatibility](../compatibility-certified.md);
+> NPC adulthood now follows one shared rule (`citizen/NpcAdulthood`: Townstead's life stage, else MCA's age state, else
+> vanilla's baby flag).
+
 Target: Minecraft 1.20.1, Forge 47.4.23, Java 17, MCA: Kingdoms development version 0.1.0. Dependency declarations remain in `gradle.properties`; an accepted version range is not a compatibility claim.
 
 On 2026-09-20, GitHub commit endpoints still returned the guide's exact heads:

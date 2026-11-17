@@ -17,12 +17,40 @@ public final class CoreTasks {
     private static KingdomsServiceImpl impl(Context c){if(api(c) instanceof KingdomsServiceImpl impl)return impl;throw new IllegalStateException("Settlement administration is unavailable on this server.");}
     static void task(String id,String title,String help,boolean operator,boolean change,List<Field> fields,Handler handler){add(new Task(id,operator?"Administration":"Settlements",title,help,operator,change,fields,c->Long.toString(api(c).revision()),handler));}
     private static Component t(String key,String fallback,Object... args){return tr("interaction.mcakingdoms.settlement."+key,fallback,args);}
+    /** The village points of interest within the search radius in loaded chunks, against what a settlement needs (AUD-11). */
+    private static Component poiCount(Context c){
+        int radius=dev.otectus.mcakingdoms.config.McaKingdomsConfig.POI_SEARCH_RADIUS.get(),needed=dev.otectus.mcakingdoms.config.McaKingdomsConfig.POI_MINIMUM_COUNT.get();
+        var level=c.player.serverLevel();var center=c.player.blockPosition();
+        long found=level.getPoiManager().getInSquare(h->h.is(net.minecraft.tags.PoiTypeTags.VILLAGE),center,radius,net.minecraft.world.entity.ai.village.poi.PoiManager.Occupancy.ANY)
+                .filter(r->level.hasChunk(r.getPos().getX()>>4,r.getPos().getZ()>>4)).limit(256).count();
+        boolean bedOrBell=dev.otectus.mcakingdoms.config.McaKingdomsConfig.POI_REQUIRE_HOME_OR_MEETING.get();
+        return bedOrBell?t("scan.count_home","Within %s blocks: %s village bed(s), bell(s) or workstation(s); a settlement needs at least %s close together, including a bed or a bell.",radius,found,needed)
+                :t("scan.count","Within %s blocks: %s village bed(s), bell(s) or workstation(s); a settlement needs at least %s close together.",radius,found,needed);
+    }
+
+    /** "Read this settlement" where none is recognized: why, whether a scan is on its way, and what to do next (AUD-11). */
+    private static List<Object> notHere(Context c){
+        var lines=new ArrayList<Object>();
+        lines.add(t("none_here","You are not inside a recognized settlement."));
+        boolean pending=impl(c).scanPending(c.player.serverLevel(),c.player.blockPosition());
+        lines.add(pending?t("none_here.pending","A look at this area is already on its way; try Read this settlement again in a few seconds.")
+                :t("none_here.why","Settlements are recognized from village structures and from clusters of village beds, bells and workstations in loaded chunks. Walk into the village itself, then try Read this settlement again."));
+        lines.add(poiCount(c));
+        if(!pending)lines.add(t("none_here.scan","If you just built it, use Look for a settlement around me, and the server will look at the loaded area around you now."));
+        lines.add(t("none_here.next","Operators can register a place with Register a settlement here."));
+        return lines;
+    }
+
     public static void init(){
         task("settlement.here","Read this settlement","Names the settlement you are standing in and records it as discovered for you. Read-only.",false,false,List.of(),
                 c->api(c).getSettlementAt(c.player.serverLevel(),c.player.blockPosition()).<Object>map(s->{dev.otectus.mcakingdoms.knowledge.SettlementKnowledge.get(c.server()).discover(c.player.getUUID(),s.id());return describe(c,s);})
-                        .orElseGet(()->List.of(t("none_here","You are not inside a recognized settlement."),
-                                t("none_here.why","Settlements are recognized from village structures and from clusters of village beds, bells and workstations in loaded chunks. Walk into the village itself, then try Read this settlement again."),
-                                t("none_here.next","Operators can register a place with Register a settlement here."))));
+                        .orElseGet(()->notHere(c)));
+        // AUD-11: a player can have the loaded area around them looked at now, instead of waiting or reloading chunks.
+        task("settlement.scan_here","Look for a settlement around me","Asks the server to look at the loaded area around you now for a village or a group of village beds, bells and workstations. Nothing is generated or loaded; at most once every 30 seconds. Then use Read this settlement.",false,false,List.of(),
+                c->{var scan=impl(c).requestScan(c.player);
+                    if(!scan.accepted())return List.of(t("scan.wait","You asked a moment ago; ask again in %s seconds. A scan is already on its way.",(scan.waitTicks()+19)/20));
+                    return List.of(t("scan.queued","The server will look at %s loaded chunk(s) around you within a few seconds. Then use Read this settlement.",scan.queued()),
+                            poiCount(c));});
         task("settlement.inspect","Read a known settlement","Shows a settlement you have discovered or that is public: its kingdom, location and how its kingdom was assigned. Read-only.",false,false,List.of(pick("settlement","Settlement","settlement")),c->describe(c,api(c).getSettlement(c.uuid("settlement")).orElseThrow()));
         task("kingdom.list","Browse kingdoms","Lists the kingdoms defined on this server. Read-only.",false,false,List.of(),c->{var kingdoms=c.choices("kingdom");return kingdoms.isEmpty()?List.of(t("no_kingdoms","No kingdoms are loaded. Kingdom definitions come from data packs.")):kingdoms.stream().map(k->(Object)k.shown()).toList();});
         task("kingdom.inspect","Read a kingdom","Describes a kingdom and counts the settlements of it that you know. Read-only.",false,false,List.of(pick("kingdom","Kingdom","kingdom")),

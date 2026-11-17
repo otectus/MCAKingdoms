@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "organization": "example:harbor_archivists",
+  "service": "example:copying_desk",
+  "requires": {
+    "professions": [
+      "minecraft:librarian",
+      "minecraft:cartographer"
+    ],
+    "minimum_tier": 2
+  }
+}

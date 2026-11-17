@@ -399,6 +399,11 @@
           "id": "p3",
           "type": "paragraph",
           "text": "Use a charter, or Inspect a charter, to ask the ledger. It is official while what it proves holds, official but historical once that no longer holds, revoked after Revoke a sealed document, and unverified when no sealed record matches it, as with an altered copy or one from another world. A charter proves a record; it never grants authority by itself."
+        },
+        {
+          "id": "p_recover",
+          "type": "paragraph",
+          "text": "The ledger records a sealed document before the charter in your hand carries it, and the charter is confirmed when your player data is saved. If the server stopped in between, the record is still there and no charter carries it: hold a blank charter and use Recover a charter, which puts the same record on it, never a new one. Recover a charter also makes an explicit copy of a record a charter already carries, at a seal press; every copy reads the same and is revoked together. Revoking works even while new sealing is turned off."
         }
       ],
       "commands": [],

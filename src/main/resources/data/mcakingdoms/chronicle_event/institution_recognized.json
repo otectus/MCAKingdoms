@@ -1,0 +1,51 @@
+{
+  "schema": "townstead:chronicle_event/v1",
+  "category": "mcakingdoms.civic",
+  "weight": 10,
+  "rarity": "uncommon",
+  "keep": true,
+  "contexts": [
+    "live"
+  ],
+  "trigger": {
+    "type": "external",
+    "key": "mcakingdoms:institution_recognized"
+  },
+  "reach": "village",
+  "news_value": 4.0,
+  "roles": [
+    {
+      "id": "player",
+      "kind": "player"
+    }
+  ],
+  "witnesses": {
+    "radius": 16.0,
+    "max": 8
+  },
+  "display": {
+    "headline": {
+      "translate": "chronicle.mcakingdoms.institution_recognized"
+    },
+    "params": [
+      "player",
+      "institution",
+      "settlement"
+    ]
+  },
+  "impact": {
+    "witness": {
+      "mood": 2.0,
+      "memory": {
+        "valence": 0.6,
+        "strength": 1.0
+      }
+    },
+    "on_learn": {
+      "memory": {
+        "valence": 0.4,
+        "strength": 0.6
+      }
+    }
+  }
+}

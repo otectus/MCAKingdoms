@@ -67,10 +67,12 @@ public final class ServerFacts {
 
         lines.add(heading("guilds.title", "Guilds and service"));
         lines.add(guildLine(server));
-        lines.add(workshopLine());
+        lines.add(workshopLine(server));
 
         lines.add(heading("government.title", "Governments"));
-        if (dev.otectus.mcakingdoms.compat.capitals.CapitalsBridge.installed()) lines.add(f("government.capitals_shared", "MCA Capitals is installed: it governs the crown of each kingdom where it has a governing capital, and MCA: Kingdoms keeps every other kingdom and its civic layer. A kingdom's page says who governs it."));
+        var crowns = TaskMeta.safeCheck(TaskMeta.Feature.GOVERNMENT, server);
+        if (!crowns.available()) lines.add(crowns.reason());
+        else if (dev.otectus.mcakingdoms.compat.capitals.CapitalsBridge.installed()) lines.add(f("government.capitals_shared", "MCA Capitals is installed: it governs the crown of each kingdom where it has a governing capital, and MCA: Kingdoms keeps every other kingdom and its civic layer. A kingdom's page says who governs it."));
         else lines.add(McaKingdomsConfig.OPEN_FOUNDING.get()
                 ? f("government.open", "Available. Resident founding is on: a recorded resident may found their kingdom's first government. Search Check whether you can found a government.")
                 : f("government.closed", "Available. Resident founding is off: operators establish governments."));
@@ -84,6 +86,22 @@ public final class ServerFacts {
         var evolution = dev.otectus.mcakingdoms.evolution.EvolutionRuntime.get(server).worldSettings();
         lines.add(!evolution.enabled() ? f("evolution.off", "Off for this world. Only an operator can enable it; existing records stay readable.")
                 : f("evolution.on", "On for this world; world events (dramatic scenarios) are %s.", onOff(evolution.drama())));
+
+        // AUD-14: the newer systems, from the same checks the tasks use; nothing private is read for this summary.
+        lines.add(heading("newer.title", "Settlement life, works and records"));
+        var mode = dev.otectus.mcakingdoms.development.DevelopmentMode.current();
+        lines.add(switch (mode) {
+            case OFF -> Unavailable.DISABLED.explain(f("development.name", "settlement development"));
+            case OBSERVE -> f("development.observe", "Settlement development: settlements show how they are developing; no public works are run.");
+            case PROJECTS -> f("development.projects", "Settlement development: officials post public works and players fund them with real deliveries; nothing is built.");
+            case MANAGED_GROWTH -> f("development.managed", "Settlement development: funded works are built on surveyed plots in settlements that allow construction.");
+            case FULL_ECONOMY -> f("development.full", "Settlement development: works are built where allowed, and settlements keep an abstract goods ledger (no real items).");
+        });
+        lines.add(feature(server, TaskMeta.Feature.DYNASTY, f("dynasty.on", "Laws of succession and the court: on.")));
+        lines.add(feature(server, TaskMeta.Feature.HERALDRY, f("heraldry.on", "Physical heraldry and sealed charters: on. A charter is proof of a record and grants nothing by itself.")));
+        lines.add(feature(server, TaskMeta.Feature.TOWNSTEAD, f("townstead.on", "Townstead village life: read here, through Townstead's public interface.")));
+        lines.add(feature(server, TaskMeta.Feature.LIVING_VILLAGES, f("lv.on", "Recruits: Living Villages: its villages are settlements and its wars follow this server's rules.")));
+        lines.add(feature(server, TaskMeta.Feature.WAYSTONES, f("waystones.on", "Waystones: a new waystone inside a settlement takes the settlement's name; any name a player gives it is kept.")));
 
         lines.add(heading("standing.title", "Kingdom standing"));
         lines.add(f("standing.mode", "Reputation synchronization: %s.", syncMode()));
@@ -117,13 +135,22 @@ public final class ServerFacts {
         };
     }
 
-    private static Component workshopLine() {
-        if (!CivicConfig.ENABLED.get() || !CivicConfig.INSTITUTIONAL_SERVICES.get())
-            return Unavailable.DISABLED.explain(f("workshop.name", "paid workshop commissions"));
-        if (version("mcacrime").isEmpty()) return f("workshop.no_crime", "Paid workshop commissions: need MCA: Crime's workshop-legality provider, which is not installed.");
-        if (!dev.otectus.mcakingdoms.compat.crime.InstitutionalCrimeBridge.providerPresent())
-            return Unavailable.PROVIDER_UNSUPPORTED.explain(f("crime.name", "MCA: Crime"));
-        return f("workshop.ok", "Paid workshop commissions: on, at recognized workshops.");
+    /**
+     * Paid workshop commissions as the task itself decides them (AUD-14): the same features, in the same order, so the
+     * summary never promises a commission the task would refuse (missing MCA Quests contract included).
+     */
+    private static Component workshopLine(MinecraftServer server) {
+        var task = ActionRegistry.find("civic.workshop");
+        if (task.isEmpty()) return Unavailable.CONTENT_MISSING.explain(f("workshop.name", "paid workshop commissions"));
+        var availability = TaskMeta.availability(task.get(), server);
+        return availability.available() ? f("workshop.ok", "Paid workshop commissions: on, at recognized workshops.")
+                : f("workshop.off", "Paid workshop commissions: %s", availability.reason());
+    }
+
+    /** One feature as the shared capability check reads it: its "on" sentence, or the established reason it is not. */
+    private static Component feature(MinecraftServer server, TaskMeta.Feature feature, Component on) {
+        var availability = TaskMeta.safeCheck(feature, server);
+        return availability.available() ? on : availability.reason();
     }
 
     private static Component warfareLine() {
@@ -133,6 +160,31 @@ public final class ServerFacts {
         if (recruits.isEmpty()) return f("warfare.no_recruits", "Military actions need Recruits 1.15.2, which is not installed.");
         if (!recruits.get().equals("1.15.2")) return f("warfare.recruits_unsupported", "Military actions are unavailable: Recruits %s is installed, and the integration is audited for 1.15.2 only.", recruits.get());
         return f("warfare.on", "Military actions: on, through Recruits 1.15.2.");
+    }
+
+    /**
+     * What waits to be settled (0.3.1): settlement changes whose records still follow them (AUD-01), settlement records
+     * with unsupported bounds kept for repair (AUD-12), the discovery queue (AUD-11), and inventory operations waiting for
+     * a player's save or an operator (AUD-02). Counts only; no player is named.
+     */
+    private static List<Component> recoveryHealth(MinecraftServer server) {
+        var out = new ArrayList<Component>();
+        if (McaKingdomsApi.get(server) instanceof dev.otectus.mcakingdoms.core.KingdomsServiceImpl impl) {
+            var pending = impl.pendingIdentityOperations();
+            out.add(pending.isEmpty() ? f("health.identity_ok", "Settlement changes: every merge and kingdom change has reached all records.")
+                    : f("health.identity_pending", "Settlement changes still reaching some records: %s (stores: %s). They are retried every minute; see the log for each reason.",
+                    pending.size(), String.join(", ", pending.stream().flatMap(op -> op.pending().stream()).distinct().sorted().toList())));
+            if (!impl.isolatedSettlements().isEmpty()) out.add(f("health.isolated", "Settlement records with bounds beyond %s blocks, kept for repair and not found by position: %s.",
+                    dev.otectus.mcakingdoms.api.SettlementBounds.MAX_SPAN, impl.isolatedSettlements().keySet()));
+            long[] queue = impl.discoveryQueue();
+            out.add(f("health.discovery_queue", "Discovery: %s chunk(s) queued, %s waiting for a rescan after a block change, %s offer(s) postponed while the queue was full.",
+                    queue[0], queue[1], queue[2]));
+        }
+        var development = dev.otectus.mcakingdoms.development.DevelopmentSavedData.get(server).records();
+        long waiting = development.operations().stream().filter(o -> o.stage() == dev.otectus.mcakingdoms.development.DevelopmentSavedData.OpStage.PENDING).count();
+        long unresolved = development.operations().stream().filter(o -> o.stage() == dev.otectus.mcakingdoms.development.DevelopmentSavedData.OpStage.UNRESOLVED).count();
+        if (waiting > 0 || unresolved > 0) out.add(f("health.operations", "Development deliveries and refunds: %s wait for a player's save, %s unresolved (/kingdoms development operations).", waiting, unresolved));
+        return out;
     }
 
     /** Server health: every fact the player view has plus switches, storage, reload, migration and reconciliation. */
@@ -146,6 +198,7 @@ public final class ServerFacts {
                 dev.otectus.mcakingdoms.compat.quests.receipts.QuestCompletionBridge.consumerId().toString(),
                 dev.otectus.mcakingdoms.compat.quests.receipts.QuestCompletionBridge.institutionalCapability()));
         lines.add(f("health.townstead", "Townstead: %s; capabilities bound: %s.", installed("townstead"), townsteadCapabilities(server)));
+        lines.addAll(townsteadHealth(server));
         lines.add(f("health.political_presentation", "Political notices %s and office badges %s; they present this mod's own committed record, because Townstead offers no political narrative bridge to hand them to.",
                 onOff(McaKingdomsConfig.POLITICAL_NOTICES.get()), onOff(McaKingdomsConfig.OFFICE_BADGES.get())));
         lines.add(f("health.recruits", "Recruits: %s; the military bridge is gated to exactly 1.15.2 and is %s.", installed("recruits"),
@@ -166,6 +219,9 @@ public final class ServerFacts {
             lines.add(f("health.development", "Development (%s): %s pass(es) this session, last %s µs, longest %s µs; %s work(s) queued to build; %s block(s) placed.",
                     ActionRegistry.enumLabel(mode), development.passes(), development.lastMicros(), development.maxMicros(), development.queue(), development.placed()));
         }
+
+        lines.addAll(WaystonesTasks.health(server));
+        lines.addAll(recoveryHealth(server));
 
         lines.add(heading("health.switches", "Switches"));
         lines.add(f("health.discovery", "Village identity %s; automatic reconciliation %s; start-up reconciliation %s; resident founding %s.",
@@ -208,6 +264,34 @@ public final class ServerFacts {
 
         lines.add(heading("health.reconcile", "Village reconciliation and discovery"));
         lines.addAll(reconcileLines(server));
+        return lines;
+    }
+
+    /**
+     * Townstead 0.8.0 (spec 12.2): the backend, the capabilities that are degraded or switched off and why, the political
+     * delegation state, the notices and the mapping checks. Details are in {@code /kingdoms compat townstead status}.
+     */
+    static List<Component> townsteadHealth(MinecraftServer server) {
+        List<Component> lines = new ArrayList<>();
+        var session = dev.otectus.mcakingdoms.compat.townstead.TownsteadRuntime.session(server);
+        if (session.isEmpty() || !net.minecraftforge.fml.ModList.get().isLoaded("townstead")) return lines;
+        lines.add(f("health.townstead_backend", "Townstead backend: %s; political delegation unavailable (Townstead 0.8.0 accepts no external government); see /kingdoms compat townstead status.",
+                session.get().backend()));
+        try {
+            var states = dev.otectus.mcakingdoms.api.townstead.KingdomsTownsteadApi.get(server).capabilityStates();
+            List<String> weak = new ArrayList<>();
+            states.forEach((capability, state) -> {
+                if (state.status() == dev.otectus.mcakingdoms.api.townstead.TownsteadCapabilityState.Status.DISABLED
+                        || state.status() == dev.otectus.mcakingdoms.api.townstead.TownsteadCapabilityState.Status.DEGRADED
+                        || state.status() == dev.otectus.mcakingdoms.api.townstead.TownsteadCapabilityState.Status.RECOVERY_REQUIRED)
+                    weak.add(capability.serializedName() + " " + state.status().name().toLowerCase(Locale.ROOT));
+            });
+            if (!weak.isEmpty()) lines.add(Component.empty().append(f("health.townstead_weak", "Townstead capabilities not fully usable: %s.", String.join(", ", weak))).withStyle(ChatFormatting.GOLD));
+        } catch (RuntimeException unavailable) {
+            // The integration explains itself through the status command.
+        }
+        var problems = dev.otectus.mcakingdoms.compat.townstead.TownsteadMappings.problems();
+        if (!problems.isEmpty()) lines.add(Component.empty().append(f("health.townstead_mappings", "%s Townstead mapping(s) skipped or disabled; the first: %s", problems.size(), problems.get(0))).withStyle(ChatFormatting.GOLD));
         return lines;
     }
 

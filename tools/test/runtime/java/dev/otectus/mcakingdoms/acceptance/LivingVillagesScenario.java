@@ -517,7 +517,7 @@ final class LivingVillagesScenario {
                 var people = level.getEntitiesOfClass(Mob.class, access().box(village), m -> m.isAlive() && m.getPersistentData().hasUUID("RVVillagerFaction")
                         && m.getPersistentData().getUUID("RVVillagerFaction").equals(id));
                 check(!people.isEmpty(), "the village has residents");
-                check(people.stream().allMatch(m -> m.getClass().getName().startsWith("forge.net.mca.entity.")), "T25: every new resident is an MCA person made by MCA's factory: "
+                check(people.stream().allMatch(m -> m.getClass().getName().startsWith(TownsteadScenario.mcaRoot()+".entity.")), "T25: every new resident is an MCA person made by MCA's factory: "
                         + people.stream().map(m -> m.getClass().getSimpleName()).distinct().toList());
                 var uuids = people.stream().map(Mob::getUUID).toList();
                 method(manager, "dematerialize", type("data.FactionData")).invoke(null, village);

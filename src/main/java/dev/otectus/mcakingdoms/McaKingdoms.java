@@ -58,13 +58,21 @@ public final class McaKingdoms {
         MinecraftForge.EVENT_BUS.register(dev.otectus.mcakingdoms.evolution.ProtectionCommands.class);
         MinecraftForge.EVENT_BUS.register(dev.otectus.mcakingdoms.evolution.RecruitTransferCommands.class);
         var modBus = FMLJavaModLoadingContext.get().getModEventBus();
+        // WAY-01: bound once every mod is constructed, so Balm's event API is ready; absent or untested Waystones changes nothing.
+        modBus.addListener((net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent setup) ->
+                setup.enqueueWork(dev.otectus.mcakingdoms.compat.waystones.WaystonesIntegration::setup));
+        MinecraftForge.EVENT_BUS.register(dev.otectus.mcakingdoms.compat.waystones.WaystonesIntegration.class);
+        MinecraftForge.EVENT_BUS.register(dev.otectus.mcakingdoms.compat.waystones.WaystonesCommands.class);
         Presentation.init(modBus);
         IntegrationBootstrap.init(modBus);
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(dev.otectus.mcakingdoms.politics.PoliticalCommands.class);
         MinecraftForge.EVENT_BUS.register(dev.otectus.mcakingdoms.compat.capitals.CapitalsCommands.class);
+        MinecraftForge.EVENT_BUS.register(dev.otectus.mcakingdoms.compat.townstead.TownsteadCommands.class);
         MinecraftForge.EVENT_BUS.register(dev.otectus.mcakingdoms.politics.dynasty.DynastyEvents.class);
         MinecraftForge.EVENT_BUS.register(dev.otectus.mcakingdoms.development.DevelopmentEvents.class);
+        dev.otectus.mcakingdoms.development.DevelopmentEvents.bootstrap();
+        MinecraftForge.EVENT_BUS.register(dev.otectus.mcakingdoms.persistence.PlayerEvidence.class);
         MinecraftForge.EVENT_BUS.register(dev.otectus.mcakingdoms.data.DefinitionCommands.class);
         MinecraftForge.EVENT_BUS.register(dev.otectus.mcakingdoms.integration.ProviderMatrix.class);
         MinecraftForge.EVENT_BUS.register(dev.otectus.mcakingdoms.warfare.WarfareCommands.class);
@@ -88,6 +96,7 @@ public final class McaKingdoms {
         event.addListener(dev.otectus.mcakingdoms.development.DevelopmentDefinitions.INSTANCE);
         event.addListener(dev.otectus.mcakingdoms.factions.organization.OrganizationRuntime.reloadListener());
         event.addListener(IntegrationBootstrap.gateReloadListener());
+        event.addListener(dev.otectus.mcakingdoms.compat.townstead.TownsteadMappings.INSTANCE);
     }
 
     @SubscribeEvent
@@ -100,6 +109,9 @@ public final class McaKingdoms {
         dev.otectus.mcakingdoms.persistence.AtomicSavedDataWriter.newSession();
         dev.otectus.mcakingdoms.compat.recruits.TransferFenceMetrics.reset();
         dev.otectus.mcakingdoms.development.DevelopmentMetrics.reset();
+        // A new server run: construction placed in an earlier run is checked against the world loaded from disk (AUD-03).
+        dev.otectus.mcakingdoms.development.DevelopmentService.newSession();
+        dev.otectus.mcakingdoms.persistence.PlayerEvidence.reset();
         dev.otectus.mcakingdoms.persistence.LegacyRename.migrateSavedData(dataDirectory);
         dev.otectus.mcakingdoms.persistence.LegacyRename.writeReport(dataDirectory);
         dev.otectus.mcakingdoms.persistence.LegacyRename.requireMigrated();
@@ -113,6 +125,8 @@ public final class McaKingdoms {
         dev.otectus.mcakingdoms.politics.dynasty.DynastyDefinitions.INSTANCE.commitPending();
         dev.otectus.mcakingdoms.development.DevelopmentDefinitions.INSTANCE.commitPending();
         dev.otectus.mcakingdoms.factions.organization.OrganizationRuntime.commitPending();
+        // AUD-13: Townstead mappings join the same commit boundary; provider ids are checked again once the server has started.
+        dev.otectus.mcakingdoms.compat.townstead.TownsteadMappings.INSTANCE.commitPending(null);
         dev.otectus.mcakingdoms.data.ReloadReport.committed();
         PENDING_CHUNKS.computeIfAbsent(event.getServer(), ignored -> ConcurrentHashMap.newKeySet());
     }
@@ -151,6 +165,24 @@ public final class McaKingdoms {
                 });
             }
             enqueueLoadedSpawnChunks(server, service);
+            // Settlement changes committed before a crash or stop finish carrying their records over now (AUD-01).
+            int finished = service.runIdentityOutbox(dev.otectus.mcakingdoms.core.KingdomsServiceImpl.IDENTITY_OUTBOX_BUDGET);
+            int waiting = service.pendingIdentityOperations().size();
+            if (finished > 0 || waiting > 0)
+                org.slf4j.LoggerFactory.getLogger(McaKingdoms.class).info("[MCA: Kingdoms] Settlement identity outbox: {} change(s) completed at start, {} still waiting", finished, waiting);
+            try {
+                dev.otectus.mcakingdoms.development.DevelopmentService.canonicalizeAtStart(server);
+            } catch (RuntimeException failure) {
+                org.slf4j.LoggerFactory.getLogger(McaKingdoms.class).error("[MCA: Kingdoms] Development records could not follow merged settlements at start; maintenance retries", failure);
+            }
+            try {
+                int dropped = dev.otectus.mcakingdoms.compat.townstead.TownsteadSavedData.retainLiveBaselines(server,
+                        id -> service.resolveSettlementId(id).equals(id) && service.getSettlement(id).isPresent());
+                if (dropped > 0)
+                    org.slf4j.LoggerFactory.getLogger(McaKingdoms.class).info("[MCA: Kingdoms] Dropped {} Townstead baseline(s) of settlements that no longer exist", dropped);
+            } catch (RuntimeException failure) {
+                org.slf4j.LoggerFactory.getLogger(McaKingdoms.class).warn("[MCA: Kingdoms] Townstead baselines were not checked at start: {}", failure.toString());
+            }
         } catch (RuntimeException exception) {
             PENDING_CHUNKS.remove(server);
             RuntimeState failedRuntime = RUNTIMES.remove(server);
@@ -188,6 +220,7 @@ public final class McaKingdoms {
         dev.otectus.mcakingdoms.politics.dynasty.DynastyDefinitions.INSTANCE.commitPending();
         dev.otectus.mcakingdoms.development.DevelopmentDefinitions.INSTANCE.commitPending();
         dev.otectus.mcakingdoms.factions.organization.OrganizationRuntime.commitPending();
+        dev.otectus.mcakingdoms.compat.townstead.TownsteadMappings.INSTANCE.commitPending(server);
         RuntimeState runtime = RUNTIMES.get(server);
         if (runtime != null) {
             IntegrationBootstrap.commitPending(runtime.service());
@@ -212,12 +245,36 @@ public final class McaKingdoms {
         }
     }
 
+    /** A village bed, bell or workstation placed in a loaded chunk is rescanned a moment later (AUD-11). */
+    @SubscribeEvent(priority = net.minecraftforge.eventbus.api.EventPriority.LOWEST)
+    public void blockPlaced(net.minecraftforge.event.level.BlockEvent.EntityPlaceEvent event) {
+        if (event.getLevel() instanceof ServerLevel level && pointOfInterest(event.getPlacedBlock())) poiChanged(level, event.getPos());
+    }
+
+    /** A broken village bed, bell or workstation is rescanned too, so the records follow what is really there. */
+    @SubscribeEvent(priority = net.minecraftforge.eventbus.api.EventPriority.LOWEST)
+    public void blockBroken(net.minecraftforge.event.level.BlockEvent.BreakEvent event) {
+        if (event.getLevel() instanceof ServerLevel level && pointOfInterest(event.getState())) poiChanged(level, event.getPos());
+    }
+
+    private static boolean pointOfInterest(net.minecraft.world.level.block.state.BlockState state) {
+        return state.is(net.minecraft.tags.BlockTags.BEDS) || net.minecraft.world.entity.ai.village.poi.PoiTypes.forState(state).isPresent();
+    }
+
+    private static void poiChanged(ServerLevel level, net.minecraft.core.BlockPos pos) {
+        RuntimeState runtime = RUNTIMES.get(level.getServer());
+        if (runtime != null) runtime.service().pointOfInterestChanged(level, pos);
+    }
+
     @SubscribeEvent
     public void serverTick(TickEvent.ServerTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         dev.otectus.mcakingdoms.evolution.drama.DramaRuntime.tick(event.getServer());
         RuntimeState runtime = RUNTIMES.get(event.getServer());
-        if (runtime != null) runtime.service().tickDiscovery();
+        if (runtime == null) return;
+        runtime.service().tickDiscovery();
+        // A store that was read-only or could not be written when a settlement changed is retried once a minute.
+        if (event.getServer().getTickCount() % 1200 == 617) runtime.service().runIdentityOutbox(dev.otectus.mcakingdoms.core.KingdomsServiceImpl.IDENTITY_OUTBOX_BUDGET);
     }
 
     /**
@@ -236,34 +293,8 @@ public final class McaKingdoms {
         }
     }
 
-    /**
-     * Carries every record keyed by the retired settlement over to the survivor, store by store. The merge has already
-     * committed, so a store that cannot be rewritten is logged and left to read-time resolution, never thrown.
-     */
-    @SubscribeEvent
-    public void settlementMerged(dev.otectus.mcakingdoms.api.event.SettlementMergedEvent event) {
-        MinecraftServer server = event.server();
-        java.util.UUID source = event.source().id();
-        java.util.UUID target = event.target().id();
-        carryOver("discovery", () -> dev.otectus.mcakingdoms.knowledge.SettlementKnowledge.get(server).merge(source, target));
-        carryOver("civic network", () -> dev.otectus.mcakingdoms.civic.CivicService.settlementMerged(server, source, target));
-        carryOver("campaigns", () -> dev.otectus.mcakingdoms.warfare.CampaignSavedData.settlementMerged(server, source, target));
-        carryOver("military control", () -> dev.otectus.mcakingdoms.warfare.ControlSavedData.settlementMerged(server, source, target));
-        carryOver("civilian contracts", () -> dev.otectus.mcakingdoms.warfare.contracts.CivilianContractService.settlementMerged(server, source, target));
-        carryOver("world evolution", () -> dev.otectus.mcakingdoms.evolution.EvolutionSavedData.settlementMerged(server, source, target));
-        carryOver("protection pacts", () -> dev.otectus.mcakingdoms.evolution.ProtectionSavedData.settlementMerged(server, source, target));
-        carryOver("dramas", () -> dev.otectus.mcakingdoms.evolution.drama.DramaSavedData.settlementMerged(server, source, target));
-        carryOver("world context", () -> dev.otectus.mcakingdoms.worldcontext.WorldContextSavedData.settlementMerged(server, source, target));
-    }
-
-    private static void carryOver(String store, Runnable rewrite) {
-        try {
-            rewrite.run();
-        } catch (RuntimeException failure) {
-            org.slf4j.LoggerFactory.getLogger(McaKingdoms.class).error(
-                    "[MCA: Kingdoms] Could not carry {} records over to a merged settlement; they still resolve on read", store, failure);
-        }
-    }
+    // Merged and reassigned settlements are carried over by the durable identity outbox (core/IdentityConsumers, AUD-01),
+    // which retries each store until its change is on disk; SettlementMergedEvent stays a notification for add-ons.
 
     /** One welcome line on a player's first login, so the menu key and the ledger are discoverable without the wiki. */
     @SubscribeEvent
@@ -357,6 +388,7 @@ public final class McaKingdoms {
         dev.otectus.mcakingdoms.evolution.EvolutionDefinitions.INSTANCE.clear();
         dev.otectus.mcakingdoms.civic.CivicDefinitions.INSTANCE.clear();
         dev.otectus.mcakingdoms.factions.organization.OrganizationRuntime.clear();
+        dev.otectus.mcakingdoms.compat.townstead.TownsteadMappings.INSTANCE.clearPending();
         dev.otectus.mcakingdoms.data.ReloadReport.reset();
     }
 

@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "charter": "mcakingdoms:learning",
+  "families": [
+    "library",
+    "archives"
+  ],
+  "minimum_tier": 1
+}

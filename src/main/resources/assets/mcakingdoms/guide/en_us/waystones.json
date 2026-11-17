@@ -1,0 +1,27 @@
+{
+  "schema": 2,
+  "entries": [
+    {
+      "id": "waystone_names",
+      "category": "settlements",
+      "task": "waystones.status",
+      "title": "Waystone names",
+      "summary": "With Waystones installed, a new waystone inside a settlement takes the settlement's name; a name you give it is always kept.",
+      "keywords": [
+        "waystones",
+        "waystone",
+        "name",
+        "rename",
+        "teleport"
+      ],
+      "body": [
+        "When a normal waystone inside a recognized settlement first needs a name, it takes the settlement's name: a waystone found in the world when it is first activated, and a waystone you place before its settings screen opens, so you can change it at once. If another waystone already has that name, the new one is numbered, such as Oakfield (2), and keeps its number.",
+        "A name a waystone already has is never replaced, and a name you give it in Waystones' own settings screen is yours for good: the settlement's name is never put back, even if you typed the same words. Settlement renames and merges do not rename waystones. Sharestones, warp plates and portstones keep Waystones' own behaviour, and so does a waystone outside every settlement.",
+        "Place a waystone while a village is being recognized, and it waits a short while for the settlement, then takes its name if nobody has named it meanwhile. Why this waystone has its name explains the one beside you; Name this waystone after the settlement gives it the name when Waystones lets you edit it. Its owner, activations, global setting, costs and cooldowns never change."
+      ],
+      "commands": [
+        "/kingdoms waystones status"
+      ]
+    }
+  ]
+}

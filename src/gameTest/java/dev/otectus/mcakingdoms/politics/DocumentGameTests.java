@@ -24,6 +24,7 @@ import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
+import dev.otectus.mcakingdoms.persistence.PlayerEvidence;
 import java.util.*;
 
 /**
@@ -89,6 +90,95 @@ public class DocumentGameTests {
         var reloaded = DocumentLedger.load(ledger.save(new CompoundTag()));
         check(reloaded.document(document).equals(ledger.document(document)), "The ledger did not survive a reload");
         helper.succeed();
+    }
+
+    /** Makes {@code leader} the leader of Yew with {@code capital} as its capital, in the server's own records. */
+    private static void govern(GameTestHelper helper, FakePlayer leader, SettlementView capital) {
+        var data = PoliticalSavedData.get(helper.getLevel().getServer());
+        var next = data.transaction(); next.revision++;
+        var leaderOffice = new Office("mcakingdoms:leader", McaKingdoms.POLITICS.get("mcakingdoms:leader", "office"), new Person(leader.getUUID(), Kind.PLAYER),
+                null, leader.getUUID(), helper.getLevel().getGameTime());
+        next.governments.put(YEW, new Government(YEW, capital.id(), YEW + "_charter", McaKingdoms.POLITICS.get(YEW + "_charter", "government"), State.ACTIVE,
+                Map.of("mcakingdoms:leader", leaderOffice), Map.of(), null, next.revision));
+        data.commit(next);
+    }
+
+    /**
+     * AUD-09: the record is sealed before the charter carries it; a crash before the player's save leaves a sealed record
+     * and a blank saved charter. A repeated request then says so instead of claiming the hand carries it, and the record
+     * is recovered onto a blank charter with its identity unchanged; a copy is explicit; a revoked record is not recovered.
+     */
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void aCharterLostBeforeItsSaveIsRecovered(GameTestHelper helper) {
+        var server = helper.getLevel().getServer();
+        var leader = new FakePlayer(helper.getLevel(), new GameProfile(UUID.randomUUID(), "CharterRecover")) { @Override public boolean hasPermissions(int level) { return level <= 2; } };
+        govern(helper, leader, settlement(helper, "charter-recover", 2));
+        var press = helper.absolutePos(new BlockPos(1, 2, 1));
+        helper.setBlock(new BlockPos(1, 2, 1), HeraldicBlocks.SEAL_PRESS.get().defaultBlockState());
+        leader.moveTo(press.getX() + 1.5, press.getY(), press.getZ() + 0.5);
+        leader.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.KINGDOM_CHARTER.get()));
+        var ledger = DocumentLedger.get(server);
+        var savedBefore = PlayerEvidence.markers(leader);
+        UUID request = UUID.randomUUID();
+        var sealed = DocumentService.seal(leader, request, DocumentLedger.Kind.FOUNDING, YEW, "", "");
+        check(sealed.pending() && ledger.attachment(sealed.document()) == DocumentLedger.Attachment.PENDING, "A sealed charter was confirmed before the player's save");
+        int documents = ledger.documents().size();
+        // The server stops before the player's data is saved: their saved charter is still blank.
+        leader.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.KINGDOM_CHARTER.get()));
+        DocumentService.settle(leader, savedBefore, false);
+        check(ledger.attachment(sealed.document()) == DocumentLedger.Attachment.MISSING, "A charter that never reached the saved inventory was not marked missing");
+        var replay = DocumentService.seal(leader, request, DocumentLedger.Kind.FOUNDING, YEW, "", "");
+        check(ledger.documents().size() == documents, "A repeated request sealed a second document");
+        check(DocumentService.blank(leader.getMainHandItem()), "A repeated request changed the charter in hand");
+        check(!dev.otectus.mcakingdoms.interaction.Keyed.component(replay.text()).getString().contains("now carries"), "A repeated request claimed the hand carries the record: "
+                + dev.otectus.mcakingdoms.interaction.Keyed.component(replay.text()).getString());
+        // Recovery puts the same record on a blank charter; the player's save confirms it.
+        var recovered = DocumentService.recover(leader, UUID.randomUUID(), sealed.document());
+        check(recovered.pending() && !DocumentService.blank(leader.getMainHandItem()), "Recovery did not put the record on the charter");
+        check(DocumentService.inspect(leader, leader.getMainHandItem()).document().map(d -> d.id().equals(sealed.document())).orElse(false),
+                "The recovered charter does not resolve to the original record");
+        check(ledger.documents().size() == documents, "Recovery created a new record");
+        DocumentService.settle(leader, PlayerEvidence.markers(leader), true);
+        check(ledger.attachment(sealed.document()) == DocumentLedger.Attachment.ATTACHED, "The player's save did not confirm the recovered charter");
+        check(PlayerEvidence.markers(leader).isEmpty(), "A confirmed charter kept its marker");
+        // A copy is explicit and resolves to the same record; it changes nothing if it is lost.
+        leader.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.KINGDOM_CHARTER.get()));
+        var copy = DocumentService.recover(leader, UUID.randomUUID(), sealed.document());
+        check(dev.otectus.mcakingdoms.interaction.Keyed.component(copy.text()).getString().contains("copy"), "A copy was not called a copy");
+        DocumentService.settle(leader, Map.of(), false);
+        check(ledger.attachment(sealed.document()) == DocumentLedger.Attachment.ATTACHED, "A lost copy made the original charter read as missing");
+        // A revoked record is never recovered.
+        DocumentService.revoke(leader, sealed.document(), "Superseded");
+        leader.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.KINGDOM_CHARTER.get()));
+        try { DocumentService.recover(leader, UUID.randomUUID(), sealed.document()); throw new GameTestAssertException("A revoked record was recovered"); }
+        catch (IllegalArgumentException expected) { }
+        helper.succeed();
+    }
+
+    /** AUD-08: with physical heraldry off, nothing new is sealed, but a record is still revoked and a missing charter recovered. */
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void revocationAndRecoveryWorkWhileHeraldryIsOff(GameTestHelper helper) {
+        var server = helper.getLevel().getServer();
+        var leader = new FakePlayer(helper.getLevel(), new GameProfile(UUID.randomUUID(), "CharterOff")) { @Override public boolean hasPermissions(int level) { return level <= 2; } };
+        govern(helper, leader, settlement(helper, "charter-off", 3));
+        var press = helper.absolutePos(new BlockPos(1, 2, 1));
+        helper.setBlock(new BlockPos(1, 2, 1), HeraldicBlocks.SEAL_PRESS.get().defaultBlockState());
+        leader.moveTo(press.getX() + 1.5, press.getY(), press.getZ() + 0.5);
+        leader.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.KINGDOM_CHARTER.get()));
+        var ledger = DocumentLedger.get(server);
+        var sealed = DocumentService.seal(leader, UUID.randomUUID(), DocumentLedger.Kind.FOUNDING, YEW, "", "");
+        leader.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.KINGDOM_CHARTER.get()));
+        DocumentService.settle(leader, Map.of(), false);
+        dev.otectus.mcakingdoms.heraldry.HeraldryConfig.overrideForTests(false);
+        try {
+            try { DocumentService.seal(leader, UUID.randomUUID(), DocumentLedger.Kind.FOUNDING, YEW, "", ""); throw new GameTestAssertException("A charter was sealed while heraldry is off"); }
+            catch (IllegalArgumentException expected) { }
+            DocumentService.recover(leader, UUID.randomUUID(), sealed.document());
+            check(!DocumentService.blank(leader.getMainHandItem()), "A missing charter could not be recovered while heraldry is off");
+            DocumentService.revoke(leader, sealed.document(), "Withdrawn");
+            check(ledger.document(sealed.document()).map(d -> d.state() == DocumentLedger.State.REVOKED).orElse(false), "A record could not be revoked while heraldry is off");
+            helper.succeed();
+        } finally { dev.otectus.mcakingdoms.heraldry.HeraldryConfig.overrideForTests(null); }
     }
 
     @GameTest(template = "empty", timeoutTicks = 100)

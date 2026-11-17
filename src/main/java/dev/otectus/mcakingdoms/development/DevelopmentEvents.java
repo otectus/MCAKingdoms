@@ -3,7 +3,6 @@ package dev.otectus.mcakingdoms.development;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -34,11 +33,29 @@ public final class DevelopmentEvents {
     private DevelopmentEvents() {
     }
 
+    /** Called once from the mod constructor: deliveries and refund claims are confirmed by the player's own save (AUD-02). */
+    public static void bootstrap() {
+        dev.otectus.mcakingdoms.persistence.PlayerEvidence.onSaved(InventoryOps::playerSaved);
+        dev.otectus.mcakingdoms.persistence.PlayerEvidence.onLoaded(InventoryOps::playerLoggedIn);
+        // Charters sealed or recovered are confirmed the same way (AUD-09).
+        dev.otectus.mcakingdoms.persistence.PlayerEvidence.onSaved(dev.otectus.mcakingdoms.document.DocumentService::playerSaved);
+        dev.otectus.mcakingdoms.persistence.PlayerEvidence.onLoaded(dev.otectus.mcakingdoms.document.DocumentService::playerLoggedIn);
+    }
+
+    /** Runs every second; with development off it only moves obligations already recorded (pausing construction, rollbacks). */
     @SubscribeEvent
     public static void tick(TickEvent.ServerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || event.getServer().getTickCount() % DevelopmentService.PERIOD != 11 || DevelopmentMode.current() == DevelopmentMode.OFF) return;
+        if (event.phase != TickEvent.Phase.END || event.getServer().getTickCount() % DevelopmentService.PERIOD != 11) return;
         try { DevelopmentService.get(event.getServer()).maintain(); }
         catch (RuntimeException failure) { LogUtils.getLogger().error("[MCA: Kingdoms] Development maintenance failed; it is retried", failure); }
+    }
+
+    /** A world save wrote the chunks: construction this run placed there and the save holds is verified (AUD-03). */
+    @SubscribeEvent
+    public static void levelSaved(net.minecraftforge.event.level.LevelEvent.Save event) {
+        if (!(event.getLevel() instanceof net.minecraft.server.level.ServerLevel level)) return;
+        try { DevelopmentService.get(level.getServer()).worldSaved(level); }
+        catch (RuntimeException failure) { LogUtils.getLogger().error("[MCA: Kingdoms] Verifying construction after a save failed; it is retried at the next save", failure); }
     }
 
     @SubscribeEvent
@@ -46,19 +63,22 @@ public final class DevelopmentEvents {
         event.getDispatcher().register(Commands.literal("kingdoms").then(Commands.literal("development").requires(source -> source.hasPermission(2))
                 .then(Commands.literal("inspect").then(Commands.argument("settlement", StringArgumentType.string()).executes(DevelopmentEvents::inspect)))
                 .then(Commands.literal("pause").then(Commands.argument("work", StringArgumentType.word())
-                        .executes(c -> run(c, s -> s.pause(c.getSource().getPlayerOrException(), UUID.randomUUID(), work(c))))))
+                        .executes(c -> run(c, s -> s.pause(c.getSource().getPlayerOrException(), DevelopmentService.request(c.getSource().getServer()), work(c)).text()))))
                 .then(Commands.literal("resume").then(Commands.argument("work", StringArgumentType.word())
-                        .executes(c -> run(c, s -> s.resume(c.getSource().getPlayerOrException(), UUID.randomUUID(), work(c))))))
+                        .executes(c -> run(c, s -> s.resume(c.getSource().getPlayerOrException(), DevelopmentService.request(c.getSource().getServer()), work(c)).text()))))
                 .then(Commands.literal("repair").then(Commands.argument("work", StringArgumentType.word())
-                        .executes(c -> run(c, s -> s.repair(c.getSource().getPlayerOrException(), UUID.randomUUID(), work(c), false)))
-                        .then(Commands.argument("rollback", BoolArgumentType.bool())
-                                .executes(c -> run(c, s -> s.repair(c.getSource().getPlayerOrException(), UUID.randomUUID(), work(c), BoolArgumentType.getBool(c, "rollback")))))))
+                        .executes(c -> run(c, s -> s.repair(c.getSource().getPlayerOrException(), DevelopmentService.request(c.getSource().getServer()), work(c), DevelopmentService.Repair.RESURVEY).text()))
+                        .then(Commands.literal("resurvey").executes(c -> run(c, s -> s.repair(c.getSource().getPlayerOrException(), DevelopmentService.request(c.getSource().getServer()), work(c), DevelopmentService.Repair.RESURVEY).text())))
+                        .then(Commands.literal("rollback").executes(c -> run(c, s -> s.repair(c.getSource().getPlayerOrException(), DevelopmentService.request(c.getSource().getServer()), work(c), DevelopmentService.Repair.ROLLBACK).text())))
+                        .then(Commands.literal("finalize").executes(c -> run(c, s -> s.repair(c.getSource().getPlayerOrException(), DevelopmentService.request(c.getSource().getServer()), work(c), DevelopmentService.Repair.FINALIZE).text())))))
                 .then(Commands.literal("dryrun").then(Commands.argument("template", StringArgumentType.string()).executes(DevelopmentEvents::dryrun)))
+                .then(Commands.literal("operations").executes(DevelopmentEvents::operations)
+                        .then(Commands.literal("reconcile").executes(c -> run(c, s -> s.reconcileOperations()))))
                 .then(Commands.literal("export").executes(DevelopmentEvents::export)))
                 .then(Commands.literal("economy").requires(source -> source.hasPermission(2))
                         .then(Commands.literal("inspect").then(Commands.argument("settlement", StringArgumentType.string()).executes(DevelopmentEvents::economy)))
                         .then(Commands.literal("diagnose").executes(DevelopmentEvents::diagnose))
-                        .then(Commands.literal("reconcile").executes(DevelopmentEvents::reconcile))));
+                        .then(Commands.literal("reconcile").executes(c -> run(c, s -> DevelopmentService.reconcile(c.getSource().getServer()))))));
     }
 
     private static UUID work(CommandContext<CommandSourceStack> c) {
@@ -107,7 +127,18 @@ public final class DevelopmentEvents {
         line(c, survey.clear() ? ActionRegistry.tr(DevelopmentService.P + "command.dryrun_clear", "Dry run: %s could be built here (%s blocks). Nothing was recorded or changed.",
                 DevelopmentService.templateTitle(template.get()), survey.plan().size())
                 : ActionRegistry.tr(DevelopmentService.P + "command.dryrun_blocked", "Dry run: %s cannot be built here. Nothing was recorded or changed.", DevelopmentService.templateTitle(template.get())));
-        survey.blockers().stream().limit(8).forEach(blocker -> line(c, Keyed.component(blocker)));
+        survey.blockers().stream().limit(8).forEach(blocker -> line(c, DevelopmentText.component(blocker)));
+        return 1;
+    }
+
+    /** Inventory operations still being confirmed or left unresolved (AUD-02), read-only; reconcile settles them from saved files. */
+    private static int operations(CommandContext<CommandSourceStack> c) {
+        var records = DevelopmentService.get(c.getSource().getServer()).data().records();
+        var open = records.operations().stream().filter(o -> !o.stage().resolved()).sorted(Comparator.comparingLong(InventoryOp::createdAt)).toList();
+        line(c, ActionRegistry.tr(DevelopmentService.P + "command.operations", "%s delivery or refund operation(s) wait to be confirmed; %s are unresolved.",
+                open.stream().filter(o -> o.stage() == OpStage.PENDING).count(), open.stream().filter(o -> o.stage() == OpStage.UNRESOLVED).count()));
+        open.stream().limit(8).forEach(o -> line(c, ActionRegistry.tr(DevelopmentService.P + "command.operation", "  %s · %s · %s item(s) · %s %s", o.id().toString(),
+                ActionRegistry.enumLabel(o.kind()), o.total(), ActionRegistry.enumLabel(o.stage()), o.detail())));
         return 1;
     }
 
@@ -182,35 +213,4 @@ public final class DevelopmentEvents {
         return 1;
     }
 
-    /** Recomputes every settlement's points and roles from its completed works, following merged settlements; idempotent. */
-    private static int reconcile(CommandContext<CommandSourceStack> c) {
-        var server = c.getSource().getServer();
-        var service = DevelopmentService.get(server);
-        var data = service.data();
-        if (!data.writable()) { c.getSource().sendFailure(ActionRegistry.tr(DevelopmentService.P + "refusal.read_only", "The development records are kept read-only on this server, so nothing can change them now.")); return 0; }
-        var next = data.transaction();
-        int moved = 0;
-        for (var p : List.copyOf(next.projects.values())) {
-            var canonical = service.settlement(p.settlement());
-            if (canonical.isPresent() && !canonical.get().id().equals(p.settlement())) { next.projects.put(p.id(), p.movedTo(canonical.get().id(), next.revision)); moved++; }
-        }
-        var points = new HashMap<UUID, Integer>(); var roles = new HashMap<UUID, Map<String, Integer>>();
-        for (var p : next.projects.values()) {
-            if (p.state() != State.COMPLETED) continue;
-            var template = DevelopmentTemplate.get(p.template());
-            if (template.isEmpty()) continue;
-            points.merge(p.settlement(), template.get().tierPoints(), Integer::sum);
-            roles.computeIfAbsent(p.settlement(), x -> new TreeMap<>()).merge(template.get().role().name().toLowerCase(Locale.ROOT), 1, Integer::sum);
-        }
-        var settlements = new HashSet<>(next.economies.keySet()); settlements.addAll(points.keySet());
-        int changed = 0;
-        for (UUID settlement : settlements) {
-            var e = next.economy(settlement);
-            int p = points.getOrDefault(settlement, 0); var r = roles.getOrDefault(settlement, Map.of());
-            if (e.points() != p || !e.roles().equals(r)) { next.economies.put(settlement, new Economy(settlement, p, r, e.optedIn(), e.abstractGoods(), e.lastProduced())); changed++; }
-        }
-        if (!data.commit(server, next)) { c.getSource().sendFailure(ActionRegistry.tr(DevelopmentService.P + "refusal.save_failed", "The development records could not be saved, so nothing changed.")); return 0; }
-        line(c, ActionRegistry.tr(DevelopmentService.P + "command.reconciled", "Reconciled: %s work(s) followed a merged settlement; %s settlement record(s) recomputed.", moved, changed));
-        return 1;
-    }
 }

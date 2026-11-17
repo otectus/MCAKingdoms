@@ -1,0 +1,222 @@
+{
+ "schema": 2,
+ "entries": [
+  {
+   "id": "townstead_village_life",
+   "category": "settlements",
+   "task": "townstead.life",
+   "title": "Townstead 村庄生活",
+   "summary": "安装 Townstead 0.8.0 后，定居点页面会显示居民状况、工人被要求生产什么以及村庄新闻，而不会改变任何东西。",
+   "keywords": [
+    "townstead",
+    "需求",
+    "精神",
+    "文化",
+    "工作订单",
+    "村庄新闻"
+   ],
+   "blocks": [
+    {
+     "id": "p1",
+     "type": "paragraph",
+     "text": "村庄生活读取 Townstead 为你所选定居点保存的记录：Townstead 认识多少居民、读数有多新、它模拟的需求、社区精神、文化以及今日日期。所有查看者共享同一份读数，并在 Townstead 报告变化时刷新。"
+    },
+    {
+     "id": "four",
+     "type": "comparison",
+     "alt": "四个不同的名称：定居点是地点；王国表示其人民是谁；Townstead 文化是村庄的生活方式；Townstead 派系是一个政治团体。彼此互不取代。",
+     "columns": [
+      {
+       "title": "定居点",
+       "points": [
+        "MCA: Kingdoms 记录的地点及其公民名称。",
+        "其身份在改名与合并后依然保留。"
+       ]
+      },
+      {
+       "title": "王国",
+       "points": [
+        "其人民是谁：公民身份、政府、纹章。",
+        "不会因文化而改变。"
+       ]
+      },
+      {
+       "title": "Townstead 文化",
+       "points": [
+        "村庄的生活方式：名字、建筑、习俗。",
+        "不会因征服或新王国而改变。"
+       ]
+      },
+      {
+       "title": "Townstead 派系",
+       "points": [
+        "Townstead 内的议会或团体。",
+        "既不是王国，也不是行会分会。"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "p2",
+     "type": "paragraph",
+     "text": "读数是诚实的：无人模拟的需求显示为未模拟，而不是已满足；当 Townstead 认识的居民太少或读数过旧时，页面会写明当前信息不足；炎热与寒冷同样算作冷热不适。村庄工作把被要求的生产、手头的货物与已交付的货物分开：只有交付给委托的物品才会付款，且只付一次。"
+    },
+    {
+     "id": "callout",
+     "type": "callout",
+     "tone": "note",
+     "title": "建议是可选的",
+     "text": "当某项需求持续存在且抽样充分时，页面可能会建议一项现有任务，例如公共工程。没有任何强制、惩罚或自动发生的事情，也绝不会为世界未模拟的需求给出建议。"
+    },
+    {
+     "id": "links",
+     "type": "links",
+     "links": [
+      {
+       "kind": "task",
+       "target": "townstead.life",
+       "label": "查看村庄生活"
+      },
+      {
+       "kind": "task",
+       "target": "townstead.work",
+       "label": "查看村庄工作"
+      },
+      {
+       "kind": "task",
+       "target": "townstead.news",
+       "label": "查看村庄新闻"
+      },
+      {
+       "kind": "guide",
+       "target": "townstead_government"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "townstead_government",
+   "category": "politics",
+   "task": "townstead.government",
+   "title": "谁管辖一个 Townstead 村庄",
+   "summary": "王冠、地方政府、行会、名称与纹章可以分别属于 MCA: Kingdoms、MCA Capitals 或 Townstead；政府与服务页面会说明归属以及在哪里办理。",
+   "keywords": [
+    "townstead",
+    "议会",
+    "权属",
+    "冲突",
+    "capitals"
+   ],
+   "blocks": [
+    {
+     "id": "p1",
+     "type": "paragraph",
+     "text": "首先适用 MCA Capitals 现有的王冠政策。MCA: Kingdoms 管辖其所管辖王国中各定居点的公民职务；在没有 MCA: Kingdoms 政府覆盖的村庄，Townstead 管辖自己的议会。Townstead 的行会绝不会自动成为这里的行会分会，两个模组都不会导入或删除对方的记录。"
+    },
+    {
+     "id": "p2",
+     "type": "paragraph",
+     "text": "当双方都为同一定居点保留有在任者的记录时，页面会报告冲突，双方继续运行：不合并、不择一、不删除。管理员可以为该定居点采用 MCA: Kingdoms，或将其地方政府移交给 Townstead；移交后 MCA: Kingdoms 会在那里拒绝新的定居点职务与认可。"
+    },
+    {
+     "id": "callout",
+     "type": "callout",
+     "tone": "note",
+     "title": "政治委托不可用",
+     "text": "Townstead 0.8.0 不接受外部政府，因此 MCA: Kingdoms 无法让 Townstead 的议会让位。它会如实报告权属与冲突，绝不更改 Townstead 的政治。"
+    },
+    {
+     "id": "links",
+     "type": "links",
+     "links": [
+      {
+       "kind": "task",
+       "target": "townstead.government",
+       "label": "查看谁管辖一个定居点"
+      },
+      {
+       "kind": "task",
+       "target": "townstead.qualify",
+       "label": "检查你的 Townstead 职业"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "townstead_operations",
+   "category": "operators",
+   "task": "townstead.status",
+   "operator": true,
+   "player_task": "townstead.government",
+   "title": "Townstead：状态、权属与恢复",
+   "summary": "管理员如何读取集成状态、裁定有争议的地方政府，以及在恢复备份后进行恢复。",
+   "blocks": [
+    {
+     "id": "p1",
+     "type": "paragraph",
+     "text": "状态会报告 Townstead 的版本、正在使用的后端（0.8.0 上为公开的 api.v1，0.7.x 上为旧接口，没有 Townstead 时为 MCA 自身的建筑数据）、每项能力的状态与原因、世界的 Townstead 开关以及数据包映射检查。这些都不会改变 Townstead。"
+    },
+    {
+     "id": "steps",
+     "type": "steps",
+     "items": [
+      {
+       "text": "检查集成：版本、后端、能力与映射。",
+       "link": {
+        "kind": "task",
+        "target": "townstead.status",
+        "operator": true
+       }
+      },
+      {
+       "text": "检查一个村庄：其 MCA 引用、建筑及完工情况，以及各领域由谁管辖和相应证据。",
+       "link": {
+        "kind": "task",
+        "target": "townstead.inspect",
+        "operator": true
+       }
+      },
+      {
+       "text": "裁定有争议的地方政府：先预览，再采用 MCA: Kingdoms 或将其移交给 Townstead；清除决定即改由证据重新判断。",
+       "link": {
+        "kind": "task",
+        "target": "townstead.adopt",
+        "operator": true
+       }
+      },
+      {
+       "text": "恢复 Townstead 备份后，复核报告为等待管理员处理的定居点，然后接受 Townstead 的当前数据作为其基准。",
+       "link": {
+        "kind": "task",
+        "target": "townstead.acknowledge",
+        "operator": true
+       }
+      }
+     ]
+    },
+    {
+     "id": "callout",
+     "type": "callout",
+     "tone": "warning",
+     "title": "移除 Townstead",
+     "text": "已移交给 Townstead 的地方政府在 Townstead 缺席期间仍保持移交状态：MCA: Kingdoms 将其报告为不可用，且不会自行收回。依赖建筑的机构会等待而不是迁移，Townstead 回归时不会销毁或授予任何东西。"
+    }
+   ],
+   "commands": [
+    "/kingdoms compat townstead status",
+    "/kingdoms compat townstead village <settlement>",
+    "/kingdoms compat townstead buildings <settlement>",
+    "/kingdoms compat townstead authority <settlement>",
+    "/kingdoms compat townstead authority <settlement> preview adopt",
+    "/kingdoms compat townstead authority <settlement> adopt",
+    "/kingdoms compat townstead authority <settlement> release",
+    "/kingdoms compat townstead authority <settlement> clear",
+    "/kingdoms compat townstead authority <settlement> acknowledge",
+    "/kingdoms compat townstead queues",
+    "/kingdoms compat townstead reconcile <settlement>"
+   ]
+  }
+ ]
+}

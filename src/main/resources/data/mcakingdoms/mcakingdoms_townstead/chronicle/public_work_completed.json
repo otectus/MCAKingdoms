@@ -1,0 +1,5 @@
+{
+  "schema": 1,
+  "trigger": "mcakingdoms:public_work_completed",
+  "enabled": true
+}

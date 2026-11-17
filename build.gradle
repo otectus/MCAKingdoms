@@ -104,6 +104,19 @@ minecraft {
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
+// Townstead's public api.v1, for compat/townstead/v1 only. Townstead publishes no API artifact, so libs/townstead-api holds
+// the api/v1 package compiled from the source of the release tag (townstead_api_source_commit) under the official names
+// this project builds with, pinned by SHA-256; verifyTownsteadApi refuses the build the moment it is swapped.
+// buildTownsteadApi -PtownsteadApiSources=<checkout at that commit> regenerates it. It is compile-only: never shipped, never
+// on a run classpath, and at runtime the classes come from the installed Townstead (the backend is loaded only then).
+// `townsteadPublished` is the published mod jar itself, raw, for TownsteadApiContractTest, which checks that every
+// Townstead member this mod links against exists in the released artifact with the same descriptor.
+ext.townsteadApiJar = file("libs/townstead-api/townstead-api-${townstead_api_version}-v1.jar")
+configurations.create('townsteadPublished') {
+    canBeConsumed = false
+    transitive = false
+}
+
 repositories {
     if (localMcaModule != null || localArchitecturyModule != null || localTownsteadModule != null) {
         flatDir {
@@ -141,17 +154,84 @@ dependencies {
         runtimeOnly fg.deobf(localTownsteadModule)
     }
 
+    compileOnly files(townsteadApiJar)
+    testImplementation files(townsteadApiJar)
+    townsteadPublished "maven.modrinth:townstead:${townstead_api_version}"
+
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.2'
     testImplementation 'org.junit.jupiter:junit-jupiter-params:5.10.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+// The GameTest server and the dev runs never see the compile-only Townstead API: without Townstead installed its classes
+// must be absent, exactly as in a production pack.
+sourceSets.gameTest.runtimeClasspath = sourceSets.gameTest.runtimeClasspath.minus(files(townsteadApiJar))
+
 tasks.named('test', Test).configure {
     useJUnitPlatform()
     testLogging {
         events 'passed', 'skipped', 'failed'
     }
+    def published = configurations.named('townsteadPublished')
+    inputs.files(published)
+    doFirst {
+        systemProperty 'mcakingdoms.townstead.published', published.get().singleFile.absolutePath
+        systemProperty 'mcakingdoms.townstead.publishedSha1', townstead_published_sha1
+        systemProperty 'mcakingdoms.townstead.apiJar', townsteadApiJar.absolutePath
+        systemProperty 'mcakingdoms.mainClasses', sourceSets.main.output.classesDirs.asPath
+    }
+}
+
+tasks.register('compileTownsteadApi', JavaCompile) {
+    description = 'Compiles Townstead api/v1 from -PtownsteadApiSources=<Townstead checkout at townstead_api_source_commit>.'
+    def root = project.findProperty('townsteadApiSources')
+    onlyIf { root != null }
+    source = root == null ? files() : fileTree("${root}/src/main/java") { include 'com/aetherianartificer/townstead/api/v1/**/*.java' }
+    classpath = sourceSets.main.compileClasspath.minus(files(townsteadApiJar))
+    destinationDirectory = layout.buildDirectory.dir('townstead-api/classes')
+    options.release = 17
+    options.encoding = 'UTF-8'
+}
+
+tasks.register('buildTownsteadApi', Jar) {
+    description = 'Regenerates libs/townstead-api from Townstead sources; update townstead_api_jar_sha256 afterwards.'
+    dependsOn tasks.named('compileTownsteadApi')
+    from tasks.named('compileTownsteadApi').flatMap { it.destinationDirectory }
+    destinationDirectory = townsteadApiJar.parentFile
+    archiveFileName = townsteadApiJar.name
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+
+tasks.register('verifyTownsteadApi') {
+    description = 'Checks the vendored Townstead api.v1 jar against its pinned SHA-256 and shape.'
+    inputs.file(townsteadApiJar)
+    inputs.property('sha256', townstead_api_jar_sha256)
+    doLast {
+        if (!townsteadApiJar.isFile()) {
+            throw new GradleException("Townstead api.v1 jar missing at ${townsteadApiJar}; regenerate it with buildTownsteadApi.")
+        }
+        def digest = java.security.MessageDigest.getInstance('SHA-256').digest(townsteadApiJar.bytes).encodeHex().toString()
+        if (digest != townstead_api_jar_sha256) {
+            throw new GradleException("${townsteadApiJar.name} has SHA-256 ${digest}, not the pinned ${townstead_api_jar_sha256}.")
+        }
+        def entryPoint = false
+        def foreign = []
+        new java.util.zip.ZipFile(townsteadApiJar).withCloseable { zip ->
+            zip.entries().each { entry ->
+                if (entry.directory || entry.name.startsWith('META-INF/')) return
+                if (entry.name == 'com/aetherianartificer/townstead/api/v1/TownsteadApiV1.class') entryPoint = true
+                if (!entry.name.startsWith('com/aetherianartificer/townstead/api/v1/') || !entry.name.endsWith('.class')) foreign << entry.name
+            }
+        }
+        if (!entryPoint) throw new GradleException("${townsteadApiJar.name} has no TownsteadApiV1 entry point")
+        if (!foreign.isEmpty()) throw new GradleException("${townsteadApiJar.name} carries entries outside api/v1: ${foreign.take(10)}")
+    }
+}
+
+tasks.named('compileJava').configure {
+    dependsOn tasks.named('verifyTownsteadApi')
 }
 
 tasks.named('processResources', ProcessResources).configure {
@@ -166,9 +246,12 @@ tasks.named('processResources', ProcessResources).configure {
             townstead_version_range: townstead_version_range,
             recruits_version_range : recruits_version_range,
             recruitsvillages_version_range: recruitsvillages_version_range,
+            waystones_version_range: waystones_version_range,
+            balm_version_range     : balm_version_range,
             mcacrime_version_range : mcacrime_version_range,
             mcareputation_version_range: mcareputation_version_range,
             politics_townstead_version: politics_townstead_version,
+            townstead_validated_tuples: townstead_validated_tuples,
             mod_id                 : mod_id,
             mod_name               : mod_name,
             mod_license            : mod_license,
@@ -245,7 +328,7 @@ tasks.register('verifyApiJar') {
         }
 
         def forbiddenReferences = ['dev/otectus/mcakingdoms/core/', 'dev/otectus/mcakingdoms/client/',
-                                   'dev/otectus/mcakingdoms/compat/', 'forge/net/mca/']
+                                   'dev/otectus/mcakingdoms/compat/', 'forge/net/mca/', 'com/aetherianartificer/']
         def linking = []
         new java.util.zip.ZipFile(jarFile).withCloseable { zip ->
             zip.entries().each { entry ->

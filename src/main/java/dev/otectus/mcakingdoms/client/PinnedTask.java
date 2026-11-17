@@ -55,6 +55,14 @@ public final class PinnedTask {
     }
 
     /** Narrates and returns the pin state after toggling {@code task}. */
+    /**
+     * Forgets what the last server said about the pinned task (AUD-16). The pin is a local preference and stays; whether
+     * the task works is unknown until the next server sends its own catalogue, and unknown is never shown as unavailable.
+     */
+    public static void forgetServer() {
+        reason = null;
+    }
+
     static boolean toggle(String task) {
         boolean pinned = ClientState.get().togglePin(task);
         reason = null;

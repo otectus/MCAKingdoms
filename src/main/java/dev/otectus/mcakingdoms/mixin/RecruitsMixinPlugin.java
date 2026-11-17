@@ -13,6 +13,8 @@ public final class RecruitsMixinPlugin implements IMixinConfigPlugin {
     @Override public String getRefMapperConfig() { return null; }
     @Override public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
         String simple = mixinClassName.substring(mixinClassName.lastIndexOf('.') + 1);
+        // The Waystones edit observer: the tested 14.1.21 jar only (WaystonesGate).
+        if (simple.startsWith("Waystones")) return WaystonesGate.applies();
         if (simple.startsWith("Lv")) {
             // Living Villages hooks: the audited 1.1.0 jar with Recruits 1.15.2 only (LvGate); never a partial set.
             if (!LvGate.applies()) return false;

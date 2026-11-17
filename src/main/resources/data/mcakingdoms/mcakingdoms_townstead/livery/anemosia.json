@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "kingdom": "mcakingdoms:anemosia",
+  "base": "yellow",
+  "patterns": [
+    {
+      "pattern": "minecraft:stripe_middle",
+      "color": "brown"
+    },
+    {
+      "pattern": "minecraft:stripe_center",
+      "color": "brown"
+    }
+  ]
+}

@@ -120,8 +120,8 @@ public final class CivicViews {
         var civic = CivicRuntime.get(player.getServer());
         var contact = civic.nearbyContact(player, id);
         Component contactLine = contact.map(npc -> t("contact.found", "%s is %s blocks away.", npc.getName(), Math.round(Math.sqrt(npc.distanceToSqr(player)))))
-                .orElse(t("contact.missing", "No contact of this guild is within %s blocks. Contacts are appointed residents at a guild branch; their services start when you stand near one and can see them.",
-                        CivicConfig.CONTACT_RANGE.get()));
+                .orElseGet(() -> CivicRequirements.away(player, id, t("contact.missing", "No contact of this guild is within %s blocks. Contacts are appointed residents at a guild branch; their services start when you stand near one and can see them.",
+                        CivicConfig.CONTACT_RANGE.get())));
 
         List<Service> services = new ArrayList<>();
         definition.ifPresent(d -> d.services().stream().limit(6).forEach(rule -> {

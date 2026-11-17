@@ -8,7 +8,8 @@ import java.util.UUID;
 public record InstitutionView(UUID id, ResourceLocation kingdom, UUID settlement,
                               ResourceLocation dimension, BlockPos position, String type,
                               String titleKey, Status status, long revision) {
-    public enum Status { AVAILABLE, UNLOADED, PROVIDER_UNAVAILABLE, SUSPENDED, DEFINITION_UNAVAILABLE, BUILDING_CHANGED }
+    /** Appended in 0.3.0: {@code BUILDING_INCOMPLETE}, a recognized building MCA records as no longer complete. */
+    public enum Status { AVAILABLE, UNLOADED, PROVIDER_UNAVAILABLE, SUSPENDED, DEFINITION_UNAVAILABLE, BUILDING_CHANGED, BUILDING_INCOMPLETE }
     public InstitutionView { position = position.immutable(); }
     public boolean operational() { return status == Status.AVAILABLE; }
 }

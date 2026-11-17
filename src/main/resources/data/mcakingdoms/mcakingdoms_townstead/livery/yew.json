@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "kingdom": "mcakingdoms:yew",
+  "base": "green",
+  "patterns": [
+    {
+      "pattern": "minecraft:flower",
+      "color": "lime"
+    },
+    {
+      "pattern": "minecraft:curly_border",
+      "color": "brown"
+    }
+  ]
+}

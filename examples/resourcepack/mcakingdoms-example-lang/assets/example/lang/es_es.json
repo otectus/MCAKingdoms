@@ -8,5 +8,6 @@
   "dynasty.example.rank.harbor_warden.league": "Guardián de los muelles",
   "development.example.template.harbor_beacon": "Faro del puerto",
   "organization.example.harbor_archivists": "Archiveros del Puerto",
-  "organization.example.harbor_archivists.description": "Custodios de los registros de mareas y las cartas de la Liga; abiertos a miembros de cualquier reino."
+  "organization.example.harbor_archivists.description": "Custodios de los registros de mareas y las cartas de la Liga; abiertos a miembros de cualquier reino.",
+  "culture.example.harbor_folk": "Gente del puerto"
 }

@@ -147,7 +147,10 @@ public final class CivicService implements dev.otectus.mcakingdoms.api.civic.Ins
         var home=seed.settlement()!=null?kingdoms.getSettlement(seed.settlement()):kingdoms.getSettlementForMcaVillage(new ResourceLocation(seed.dimension()),seed.village());
         if(rules.isEmpty()||home.isEmpty()||!resident(npc,home.get().id()))return;
         var town=KingdomsTownsteadApi.get(server);
-        var building=town.buildings((net.minecraft.server.level.ServerLevel)npc.level(),home.get().id()).stream()
+        // A new chapter takes a finished building only (spec 7.2); one of unknown completion keeps the 0.2.x rule.
+        var building=town.buildingEvidence((net.minecraft.server.level.ServerLevel)npc.level(),home.get().id()).stream()
+                .filter(dev.otectus.mcakingdoms.api.townstead.TownsteadBuildingEvidence::acceptsNewUse)
+                .map(dev.otectus.mcakingdoms.api.townstead.TownsteadBuildingEvidence::building)
                 .filter(b->rules.get().buildingFamilies().contains(b.family()))
                 .filter(b->((net.minecraft.server.level.ServerLevel)npc.level()).hasChunkAt(b.center()))
                 .min(Comparator.comparingInt(TownsteadBuildingView::buildingId));
@@ -179,10 +182,12 @@ public final class CivicService implements dev.otectus.mcakingdoms.api.civic.Ins
             var town=KingdomsTownsteadApi.get(server);
             if(!town.capabilities().contains(TownsteadCapability.READ_BUILDING))status=InstitutionView.Status.PROVIDER_UNAVAILABLE;
             else {
-                var live=town.buildingAt(level,pos);
+                var evidence=town.buildingEvidenceAt(level,pos);var live=evidence.map(dev.otectus.mcakingdoms.api.townstead.TownsteadBuildingEvidence::building);
                 if(live.isEmpty()||live.get().buildingId()!=b.buildingId()||live.get().villageId()!=b.villageId()
                         ||!live.get().family().equals(b.family())||!kingdoms.getSettlement(live.get().settlementId()).map(s->s.id().equals(home.get().id())).orElse(false))
                     status=InstitutionView.Status.BUILDING_CHANGED;
+                else if(evidence.get().completion()==dev.otectus.mcakingdoms.api.townstead.TownsteadBuildingEvidence.Completion.INCOMPLETE)
+                    status=InstitutionView.Status.BUILDING_INCOMPLETE;
             }
         }
         return Optional.of(new InstitutionView(chapter.id(),home.get().kingdomId(),home.get().id(),dimension,pos,b.type(),
@@ -196,11 +201,8 @@ public final class CivicService implements dev.otectus.mcakingdoms.api.civic.Ins
         if(!(npc instanceof LivingEntity)||!npc.isAlive())return false;
         var type=ForgeRegistries.ENTITY_TYPES.getKey(npc.getType());
         if(type==null||(!type.getNamespace().equals("mca")&&!type.equals(new ResourceLocation("minecraft:villager"))))return false;
-        if(npc instanceof Villager villager)return !villager.isBaby();
-        var town=KingdomsTownsteadApi.get(server);var view=town.villager(npc);
-        if(view.isEmpty())return false;
-        return view.get().rootId().flatMap(town::origin).stream().flatMap(root->root.lifeStages().stream())
-                .anyMatch(stage->stage.id().equalsIgnoreCase(view.get().lifeStage())&&Set.of("adult","senior").contains(stage.presentsAs().toLowerCase(Locale.ROOT)));
+        // The shared rule (spec 8.3): an appointment, a guild contact and a dynasty check agree about the same NPC.
+        return dev.otectus.mcakingdoms.citizen.NpcAdulthood.evaluate(server,npc).adult();
     }
     private boolean resident(Entity npc,UUID settlement) {
         return kingdoms.getResidence(npc).map(s->s.id().equals(settlement)).orElse(false);
@@ -229,6 +231,18 @@ public final class CivicService implements dev.otectus.mcakingdoms.api.civic.Ins
         return Optional.of(new CivicContactContext(npc.getUUID(),chapter.organization(),definition.get().nameKey(),"guild_steward",
                 available,intro.decision()==OrganizationExplanation.Decision.ALLOW,commission.decision()==OrganizationExplanation.Decision.ALLOW,
                 reasons,commission.reasons(),data.state().revision,definition.get().definitionRevision()));
+    }
+    /**
+     * The nearest appointed contact of {@code organization} who lives in the settlement the player stands in and is loaded,
+     * but not within reach: someone the player could be told about. Loads nothing; at most the saved contacts are scanned.
+     */
+    public Optional<Entity> absentContact(ServerPlayer player,ResourceLocation organization) {
+        actor(player);
+        var here=kingdoms.getSettlementAt(player.serverLevel(),player.blockPosition());if(here.isEmpty())return Optional.empty();
+        return data.state().contacts.values().stream()
+                .filter(c->{var chapter=data.state().chapters.get(c.chapter());return chapter!=null&&chapter.organization().equals(organization.toString());})
+                .map(c->player.serverLevel().getEntity(c.npc())).filter(e->e!=null&&e.isAlive()&&!near(player,e)&&resident(e,here.get().id()))
+                .min(Comparator.comparingDouble(e->e.distanceToSqr(player)));
     }
     public Optional<Entity> nearbyContact(ServerPlayer player,ResourceLocation organization) {
         actor(player);int range=CivicConfig.CONTACT_RANGE.get();

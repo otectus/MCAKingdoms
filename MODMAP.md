@@ -24,18 +24,18 @@ Machine-generated map of this mod. Read this first when picking the project up.
 dev.otectus.mcakingdoms                              1 file
 dev.otectus.mcakingdoms.api                          21 files
 dev.otectus.mcakingdoms.api.civic                    4 files
-dev.otectus.mcakingdoms.api.event                    10 files
+dev.otectus.mcakingdoms.api.event                    11 files
 dev.otectus.mcakingdoms.api.factions                 11 files
 dev.otectus.mcakingdoms.api.factions.event           1 file
 dev.otectus.mcakingdoms.api.factions.organization    18 files
 dev.otectus.mcakingdoms.api.gating                   7 files
 dev.otectus.mcakingdoms.api.politics                 9 files
 dev.otectus.mcakingdoms.api.progression              3 files
-dev.otectus.mcakingdoms.api.townstead                19 files
+dev.otectus.mcakingdoms.api.townstead                28 files
 dev.otectus.mcakingdoms.api.townstead.event          1 file
 dev.otectus.mcakingdoms.api.warfare                  1 file
 dev.otectus.mcakingdoms.api.worldcontext             1 file
-dev.otectus.mcakingdoms.citizen                      2 files
+dev.otectus.mcakingdoms.citizen                      3 files
 dev.otectus.mcakingdoms.civic                        11 files
 dev.otectus.mcakingdoms.client                       21 files
 dev.otectus.mcakingdoms.client.book                  9 files
@@ -53,12 +53,14 @@ dev.otectus.mcakingdoms.compat.quests                2 files
 dev.otectus.mcakingdoms.compat.quests.receipts       2 files
 dev.otectus.mcakingdoms.compat.recruits              10 files
 dev.otectus.mcakingdoms.compat.reputation            2 files
-dev.otectus.mcakingdoms.compat.townstead             6 files
+dev.otectus.mcakingdoms.compat.townstead             26 files
 dev.otectus.mcakingdoms.compat.townstead.network     3 files
+dev.otectus.mcakingdoms.compat.townstead.v1          2 files
+dev.otectus.mcakingdoms.compat.waystones             5 files
 dev.otectus.mcakingdoms.config                       1 file
-dev.otectus.mcakingdoms.core                         10 files
+dev.otectus.mcakingdoms.core                         13 files
 dev.otectus.mcakingdoms.data                         6 files
-dev.otectus.mcakingdoms.development                  10 files
+dev.otectus.mcakingdoms.development                  15 files
 dev.otectus.mcakingdoms.document                     2 files
 dev.otectus.mcakingdoms.evolution                    15 files
 dev.otectus.mcakingdoms.evolution.drama              6 files
@@ -70,14 +72,14 @@ dev.otectus.mcakingdoms.guide                        2 files
 dev.otectus.mcakingdoms.heraldry                     7 files
 dev.otectus.mcakingdoms.integration                  3 files
 dev.otectus.mcakingdoms.integration.gating           1 file
-dev.otectus.mcakingdoms.interaction                  32 files
+dev.otectus.mcakingdoms.interaction                  35 files
 dev.otectus.mcakingdoms.item                         5 files
 dev.otectus.mcakingdoms.kingdom                      3 files
 dev.otectus.mcakingdoms.knowledge                    1 file
-dev.otectus.mcakingdoms.mixin                        22 files
+dev.otectus.mcakingdoms.mixin                        24 files
 dev.otectus.mcakingdoms.naming                       3 files
 dev.otectus.mcakingdoms.network                      10 files
-dev.otectus.mcakingdoms.persistence                  7 files
+dev.otectus.mcakingdoms.persistence                  11 files
 dev.otectus.mcakingdoms.politics                     11 files
 dev.otectus.mcakingdoms.politics.dynasty             12 files
 dev.otectus.mcakingdoms.presentation                 5 files
@@ -150,19 +152,26 @@ Run `check_mod.py` for a full consistency check (missing models, lang keys, text
 
 ## Current focus
 
-0.3.0 on the local `release/0.3.0` branch (not pushed) implements two handoffs of 2026-10-27: the review findings
-(F01–F17, A01, A02; `docs/Completion-Ledger.md`) and the audit handoff (`MCAKingdoms_Audit_and_Implementation_Handoff_2026-10-27.md`):
-H01–H12, the P01–P08 reconciliation (`docs/Roadmap-Delta-Ledger.md`), and the approved A dynasty (`politics/dynasty/`),
-B heraldry and charters (`heraldry/`, `document/`), C MCA Capitals read bridge (`compat/capitals/`) and D development
-(`development/`). Status per item: `docs/audit-implementation-status.md`; tests: `docs/testing/0.3.0/`. The audit work is
-uncommitted on top of `b0b40b4`. `build/v030-evidence/` holds the work plans, logs, language tables
-(`audit/lang/t_*.py` applied by `audit/lang/apply.py`) and runtime evidence. Companion publishing (MCA Quests 1.7.2,
-the MCA Reputation outbox handoff) waits for its owner. NeoForge (E) is out of scope.
+State on 2026-11-10. `main` at `5602f2c` holds the committed 0.3.0 work: the review findings (F01–F17, A01, A02;
+`docs/Completion-Ledger.md`), the audit handoff of 2026-10-27 (H01–H12, P01–P08, A dynasty, B heraldry and charters,
+C MCA Capitals read bridge, D development; `docs/audit-implementation-status.md`, `docs/testing/0.3.0/`) and the Recruits:
+Living Villages integration (`compat/livingvillages/`, the `Lv*` mixins, `docs/Living-Villages-Integration.md`). The
+local `release/0.3.0` branch is where 0.3.0 was developed. Nothing is published.
 
-The Recruits: Living Villages integration (`MCAKingdoms_Recruits_Living_Villages_Integration_Plan.md`, requested as
-"0.2.1" and shipped inside 0.3.0) is also uncommitted on that branch: `compat/livingvillages/`, the `Lv*` mixins,
-`interaction/LivingVillagesTasks`, `docs/Living-Villages-Integration.md`. `build/lv-evidence/` holds the audited jar, its
-decompiled source and symbol map, the language and Book tables, and the packaged runs (`runtime/lv-*`, `logs/`).
+Uncommitted on top of `5602f2c`:
+
+- The Townstead 0.8.0 compatibility work (`mca_kingdoms_townstead_compat.md`, shipped inside 0.3.0): `compat/townstead/`
+  (backends `TownsteadBackends` → `v1/TownsteadV1Backend` | `TownsteadLegacyBackend`, `TownsteadEventBridge`,
+  `TownsteadBuildingReconciler`, `TownsteadAuthority`, `TownsteadChronicleBridge`, `TownsteadMappings`,
+  `TownsteadPresentation`, `TownsteadCommands`), `citizen/NpcAdulthood`, `interaction/TownsteadTasks`,
+  `libs/townstead-api/` (compile-only, SHA-pinned), `docs/Townstead-0.8.0-Integration.md` and
+  `docs/Townstead-Upstream-API-Proposal.md`. Evidence: `build/ts080-evidence/`.
+- 0.3.1, the review brief of 2026-11-09 (`MCAKingdoms_Review_and_Implementation_Brief_2026-11-09.md`): AUD-01 to AUD-18,
+  WAY-01 Waystones names (`compat/waystones/`, `mixin/WaystonesEditMixin`, `docs/Waystones-Integration.md`) and UX-01.
+  Plan, verified provider contracts, language and Book tables and runtime evidence: `build/v031-evidence/`
+  (`WORKPLAN.md`, `lang/apply.py`, `guide/update.py`, `runtime/`, `logs/`). Record: `docs/testing/0.3.1/`.
+
+Companion publishing (MCA Quests 1.7.2, the MCA Reputation outbox handoff) waits for its owner. NeoForge is out of scope.
 
 The 0.2.0 manuscript interface (`docs/Book-Interface-Design.md`) and the usability record
 (`docs/Usability-Implementation-Record.md`) remain the design references for every screen.
@@ -176,8 +185,16 @@ The 0.2.0 manuscript interface (`docs/Book-Interface-Design.md`) and the usabili
 - [ ] Reference-aware compaction for the collections that still refuse at their bound (`docs/Capacity-and-Maintenance.md`).
 - [x] Key the remaining English result sentences produced inside the political, mobilization and campaign services (H03).
 - [ ] Delegated crown actions with MCA Capitals, once Capitals publishes a mutation API (`docs/Capitals-Upstream-API-Proposal.md`).
+- [ ] Townstead political delegation, shared renames, a heraldry provider, idempotent Chronicle events and order,
+  storage and career-reward transactions, once Townstead publishes those contracts (`docs/Townstead-Upstream-API-Proposal.md`).
+  Each stays unavailable until then.
 - [ ] Deferred from the audit handoff: JEI hand-off, Map Atlases link, physical caravans, inter-house mediation, the
   optional funeral contract; human usability sessions and the D performance matrix (`docs/audit-implementation-status.md`).
+- [ ] Open from 0.3.1 (`docs/testing/0.3.1/README.md`, Not executed): sessions with real first-time players, the
+  10/50/200-settlement performance matrix with queued scans and a large Waystones registry, and two-client runs of
+  development, charters, dynasty and native Waystones screens.
+- [ ] A Waystones follow mode (renaming managed stones after a settlement rename) only with explicit opt-in and the
+  ownership rules of the 0.3.1 brief, section 5.5; 0.3.1 names once.
 
 ## Decisions
 
@@ -194,13 +211,27 @@ The 0.2.0 manuscript interface (`docs/Book-Interface-Design.md`) and the usabili
   names (fallback `mcakingdoms:regional_civic_network`), never its own spelling. Paid institutional work needs that
   method to name an `mcakingdoms` consumer: `QuestCompletionBridge.institutionalContract` probes methods only and
   `CivicService.workshop` refuses before any offer otherwise (F04). The companion tuple is `tools/test/companions.json`.
-- **Townstead is probed, not version-matched.** Political evidence needs the capabilities it reads;
-  `politics_townstead_version` is only the validated version logged at start-up. Building evidence falls back
-  to MCA's loaded-village buildings when Townstead's query is absent (`TownsteadBinding.buildingFallback`).
+- **Townstead is probed, not version-matched.** Each capability binds member by member and fails closed;
+  `politics_townstead_version` (the validated Townstead versions) and `townstead_validated_tuples` (Townstead@MCA pairs)
+  are only reported. One backend per session (`v1`, `legacy`, `mca`, `none`), chosen in `TownsteadBackends`; buildings
+  come from one source per session, MCA's loaded-village buildings when Townstead's query is absent
+  (`TownsteadBinding.buildingFallback`). Only `compat/townstead/v1` may name a Townstead type, so nothing links to
+  Townstead when it is absent (`TownsteadApiContractTest`); the v1 backend is loaded by reflection. The compile-only
+  `libs/townstead-api` jar is built from the tagged 0.8.0 source (`-PtownsteadApiSources`, `buildTownsteadApi`) and
+  checked by `verifyTownsteadApi` and against the published jar member by member.
+- **Townstead is never written.** Kingdoms reads, asks for reactions and Chronicle stories, and keeps its own
+  decisions and restored-backup baselines in `mcakingdoms_townstead.dat`. Political conflicts are reported, never merged;
+  operator adopt/release/clear/acknowledge decide on the Kingdoms side only (`TownsteadAuthority.decideLocal`, pure and
+  unit-tested). Chronicle projections are claimed before the call and never retried. No reward, payment or reservation
+  comes from a Townstead event, story or stock count.
 - **One contact distance.** `regional_civic_network.contactRange` bounds the `nearby_npc` picker and every guild
   and contract validator; MCA: Crime keeps its own 8-block workshop rule.
 - **Mixins.** Forge 47 reads mixin configs only from the jar manifest (`MixinConfigs`); dev runs pass
-  `-mixin.config=mcakingdoms.mixins.json`. `modmap.py`'s "Mixins: no" is a heuristic miss, not a fact.
+  `-mixin.config=mcakingdoms.mixins.json`. `modmap.py`'s "Mixins: no" is a heuristic miss, not a fact: the config lists
+  21 common mixins, each targeting a companion's class by name with `remap = false`: eight for Recruits, twelve for
+  Living Villages and, since 0.3.1, the `@Pseudo` `WaystonesEditMixin`. `mixin/RecruitsMixinPlugin` filters them:
+  Recruits mixins only with Recruits 1.15.2, `Lv*` through `LvGate`, `Waystones*` through `WaystonesGate`. There is no
+  refmap and no mixin targeting a Minecraft class.
 - **Petition honors** come from kingdom metadata `petition_honor` (default `mcakingdoms:open_bell`).
 - **Village identity is the structure start; reconciliation merges fragments** into the record holding it (D1–D6 in
   `docs/MCAKingdoms-Village-Identity-Diagnosis-and-Plan.md`); compare stored settlement ids through `resolveSettlementId`.
@@ -274,6 +305,24 @@ The 0.2.0 manuscript interface (`docs/Book-Interface-Design.md`) and the usabili
   it at the next Overworld save, once Living Villages' own data is no longer dirty. Realms are not kingdoms: a realm is a
   provider faction with a stable id, a kingdom represents one only through an operator association
   (`api/politics/PoliticalPartyRef`). Policies are pure functions in `LvPolicy` (unit-tested).
+- **Settlement identity commits first** (AUD-01): a new settlement, a merge and a kingdom change are written by
+  `SettlementSavedData.commitRoot` before any event; a failed write restores the snapshot and throws. The durable
+  `IdentityOutbox` (optional key in the same file) carries each change to the other stores through
+  `core/IdentityConsumers` (idempotent, `guarded` by store writability), run at start and every 1,200 ticks.
+- **Inventory effects are confirmed, not forced** (AUD-02, AUD-09): `persistence/PlayerEvidence` puts a marker in
+  `PlayerPersisted` in the same tick as the inventory change; `PlayerEvent.SaveToFile` (or, for a single-player owner,
+  the end of the tick that wrote `level.dat`) confirms it, and login settles it from the copy loaded. No save is forced:
+  a forced player save would run ahead of the chunks. Deliveries count provisionally; nothing irreversible depends on an
+  unconfirmed one.
+- **Construction is verified by saves** (AUD-03): `LevelEvent.Save` fires after chunks are handed to the async IO worker,
+  so a placed cell moves APPLIED → SAVED → VERIFIED over two saves; a later run that loads it verifies it too.
+- **Development keeps assets apart from history** (AUD-07): `DevelopmentSavedData` schema 2 holds productive assets,
+  inventory operations and receipts with server-issued, time-stamped request ids (`persistence/RequestIds`) and a
+  watermark; `retain` drops history only when its effects are kept elsewhere.
+- **Waystones is reflection-only** (WAY-01): `compat/waystones/WaystonesAccess` binds Waystones 14.1.21 / Balm 7.3.44 by
+  exact version and member; naming listens to the two Balm events, and `WaystonesEditMixin` observes accepted edits only
+  on the tested jar (`WaystonesGate`, SHA-256). One-time naming; `WaystonesNamingData` records each name before it is
+  handed over and confirms it at the next save.
 - **Portable acceptance** (F16): `tools/test/environment.py` resolves the EULA, installation, pack, Java, Xvfb and
   wrapper from `MCAKINGDOMS_*` variables or the ignored `tools/test/local-environment.json`. Historical provider-patch
   checks live in `tools/history/`.
@@ -301,6 +350,13 @@ The 0.2.0 manuscript interface (`docs/Book-Interface-Design.md`) and the usabili
   continues a recorded war as an abstract siege. Its map markers go to every player. Road grading between its own
   buildings and the fixed layout of command-founded villages are not checked by `protectExternalBuildings`. Development
   runs cannot apply the resident guard (SRG names); use the packaged `lv` phases.
+- **Townstead limits.** Townstead 0.8.0 accepts no external government, so a released or adopted settlement still has
+  Townstead's own council running inside Townstead; Chronicle stories need a player present; civic and village names
+  are not synchronized. Townstead 0.8.0 requires exactly MCA 7.7.1-beta.5, so it cannot be tested beside the pack's
+  MCA 7.6.26. Packaged fixtures that recognize an MCA building must give it its required blocks (MCA's completion is a
+  block count, `TownsteadScenario.blocks`), and its type must be defined by data: MCA gives an undefined type a
+  billion-bed requirement. No MCA or Townstead release defines `workshop`, the Lamplighters' family, so the acceptance
+  mod defines it (`tools/test/runtime/resources/data/mcakingdoms_acceptance/building_types/workshop.json`); a pack must too.
 - Generated-section heuristics: the language row counts only `en_us`, `es_es`, `zh_cn` files (each holds every key), and
   "Mixins: no" is a miss (see Decisions).
 - **0.3.0 audit decisions.** Every A–D feature defaults to doing nothing on upgraded worlds (law Manual only,

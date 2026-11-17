@@ -1,0 +1,3 @@
+townstead
+careers/archivist_scribes.json
+requires names a skill or professions, not both

@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "signal": "exhaustion",
+  "enter": 0.25,
+  "exit": 0.1,
+  "minimum_coverage": 0.5,
+  "maximum_age_days": 3,
+  "sustain": 2,
+  "cooldown_days": 1,
+  "message": "townstead.mcakingdoms.suggestion.rest"
+}

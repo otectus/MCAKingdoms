@@ -56,7 +56,7 @@ final class NativeQuestScenario {
         level.setChunkForced(pos.getX()>>4,pos.getZ()>>4,true);
         Entity giver=Objects.requireNonNull(ForgeRegistries.ENTITY_TYPES.getValue(new ResourceLocation("mca:male_villager"))).create(level);
         ((Mob)giver).setNoAi(true);giver.moveTo(pos.getX(),pos.getY(),pos.getZ());
-        Class age=Class.forName("forge.net.mca.entity.ai.relationship.AgeState");giver.getClass().getMethod("setAgeState",age).invoke(giver,Enum.valueOf(age,"ADULT"));
+        Class age=Class.forName(TownsteadScenario.mcaRoot()+".entity.ai.relationship.AgeState");giver.getClass().getMethod("setAgeState",age).invoke(giver,Enum.valueOf(age,"ADULT"));
         level.addFreshEntity(giver);kingdoms.setOrigin(giver,settlement.id());kingdoms.setResidence(giver,settlement.id());
         Object data=((Optional<?>)invoke("state.QuestCapabilities","get",player)).orElseThrow();
         Object offer=definition("offer_only","offer_only",false);Object active=accept(player,giver,data,offer);

@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "charter": "mcakingdoms:hospitality",
+  "families": [
+    "inn",
+    "tavern"
+  ],
+  "minimum_tier": 1
+}

@@ -32,6 +32,7 @@ A definition never implements a provider operation by itself: naming an outcome,
 | `data/<ns>/mcakingdoms/succession_laws/` | laws of succession built on a lineage law | `"schema": 1` required | that domain keeps its previous laws and ranks |
 | `data/<ns>/mcakingdoms/noble_ranks/` | court ranks and their per-kingdom styles | `"schema": 1` required | that domain keeps its previous laws and ranks |
 | `data/<ns>/mcakingdoms/development_templates/` | public works for settlement development | `"schema": 1` required | that domain keeps its previous templates |
+| `data/<ns>/mcakingdoms_townstead/<kind>/` | Townstead mappings (see [below](#townstead-mappings)) | `"schema": 1` optional | that file is skipped; the others apply |
 
 Any other folder under `data/<ns>/mcakingdoms/` is an error ("unknown definition folder").
 
@@ -167,6 +168,12 @@ One file per organization; at most 128. Unknown fields are errors.
 | `building_families` | 1–16 building families a chapter's institution may use (`a-z0-9_`) |
 | `commissions` | quest ids offered as commissions, at most 32 |
 
+A family is an MCA building type id without its tier suffix (`library_l2` is the `library` family, tier 2). The type
+itself must be defined by data (`data/<ns>/building_types/<type>.json`, MCA's format), and a new chapter needs the
+building complete by MCA's own block count; MCA treats a type no data defines as never complete. The built-in
+Lamplighters use `workshop`, which neither MCA Reborn 7.6/7.7 nor Townstead 0.7.6/0.8.0 defines: a pack that offers
+Lamplighters chapters defines it.
+
 The quests themselves come from the pack's MCA Quests content; if none of the listed commission quests is installed, the service says so instead of opening an empty menu. Example: [Lamplighters](../src/main/resources/data/mcakingdoms/mcakingdoms_factions/civic_network/lamplighters.json).
 
 ## World context — `warfare/world/`
@@ -268,6 +275,52 @@ milestones, never built).
 
 Example: `data/example/mcakingdoms/development_templates/harbor_beacon.json`.
 
+## Townstead mappings — `mcakingdoms_townstead/<kind>/`
+
+How MCA: Kingdoms content meets Townstead's. Every kind is optional and needs no Townstead to load. Each file is checked
+on its own: an invalid file is skipped with a diagnostic and only its own content is disabled. Ids only Townstead can
+confirm (professions, skills, cultures, founding profiles) are checked against the installed Townstead after each
+reload, when it can list them; an entry it does not know is disabled with a diagnostic. The reload report counts each
+kind and the skipped files; each skipped file and its reason is in the server log and in
+`/kingdoms compat townstead status`. A field a kind does not list is refused ("unknown field"), and an id without a
+namespace means `minecraft:`. A kind with more than 256 files is skipped as a whole, with a diagnostic. A file's id is
+`<ns>:<path inside the kind folder>`, as elsewhere.
+
+| Kind | Fields | Effect |
+| --- | --- | --- |
+| `institutions` | `charter` (an institution charter id, required), `families` (1–16 lower-case building family words, required), `minimum_tier` (1–16, default 1) | The charter also accepts buildings of these families at this tier or above. One rule per charter. A newly recognized building must still be complete. |
+| `careers` | `organization` (a guild id, required), `service` (one of its service permission ids; default: every service), `requires` (below) | The service also needs this Townstead career. Read only. Applied while `careerRequirements` is on and Townstead's careers can be read (installed, bound and switched on in the world); otherwise the service works without it. |
+| `culture_hints` | `kingdom` (required), and `culture`, `founding_profile` or both | Suggests the kingdom for a new, unassigned settlement whose Townstead village has that culture or founding profile. Explicit and locked assignments come first. |
+| `suggestions` | `signal`, `enter`, `exit`, `minimum_coverage`, `maximum_age_days`, `sustain`, `cooldown_days`, `task`, `message` (below) | An optional civic-aid line on the Village life page. |
+| `livery` | `kingdom` (required), `base` (a dye colour name, required), `patterns` (required, 0–6 `{"pattern": "<banner pattern id>", "color": "<dye colour>"}`) | The kingdom's design for the heraldry fallback (`heraldryFallback`). One design per kingdom. |
+| `chronicle` | `trigger` (`mcakingdoms:institution_recognized`, `mcakingdoms:agreement_concluded` or `mcakingdoms:public_work_completed`), `enabled` (default `true`) | Switches one Chronicle projection on or off. |
+| `reactions` | `event` (`standing_improved`, `standing_worsened` or `settlement_allegiance_changed`), `reaction` (a Townstead reaction id) | Which Townstead reaction nearby villagers play for the event. |
+
+`requires` names exactly one of:
+
+- `"profession": "<id>"` with an optional `minimum_tier` (1–64, default 1): that profession at that tier or above;
+- `"professions": ["<id>", …]` (1–16) with an optional `minimum_tier`: any one of them at that tier;
+- `"skill": "<id>"`: a learned Townstead skill. A skill is learned or not, so `minimum_tier` is refused here.
+
+Suggestion fields: `signal` is `hunger`, `thirst`, `thermal` (heat or cold), `exhaustion`, `learning` or `spirit_tier`.
+For the needs, the value is the share (0 to 1) of sampled residents in crisis, and `exhaustion` also counts collapsed
+residents; `learning` is 1 where a complete learning building stands and careers are readable; `spirit_tier` is the
+village's spirit tier. The suggestion shows while the value stays at or above `enter` (0 to 1000, required) for
+`sustain` consecutive readings (1–64, default 2), and hides again below `exit` (at most `enter`, default `enter`), then
+waits `cooldown_days` (0–365, default 1). It needs `minimum_coverage` of the roll known (0 to 1, default 0.5) and
+readings no older than `maximum_age_days` (0–365, default 3). `message` is a translation key; `task`, when present, is
+the Kingdom Tasks id the page offers as its next step.
+
+The six bundled suggestions, three institution rules, six kingdom designs, three Chronicle triggers and three reaction
+mappings are under `data/mcakingdoms/mcakingdoms_townstead/`. The Chronicle story texts are Townstead Chronicle templates
+in `data/mcakingdoms/chronicle_event/` (Townstead's own format, `townstead:chronicle_event/v1`), and the reactions they
+name are Townstead reactions in `data/mcakingdoms/townstead/reactions/`; a pack can replace either like any data pack
+file.
+
+Example: `data/example/mcakingdoms_townstead/careers/archivist_scribes.json` and
+`data/example/mcakingdoms_townstead/culture_hints/coastal.json`, whose culture `example:harbor_folk` the example pack
+adds for Townstead in `data/example/culture/harbor_folk.json`.
+
 ## Authoring commands
 
 | Command | What it does |
@@ -333,5 +386,6 @@ The folders under [examples/datapack/invalid](../examples/datapack/invalid) each
 | `unsupported_schema` | `"schema": 2` | `… unsupported schema 2; this version reads schema 1 only` |
 | `wrong_political_kind` | a government file says `"kind": "office"` | `example:mcakingdoms/governments/harbor_league_charter.json: kind must be "government" for the governments folder (found "office")` |
 | `duplicate_world_structure` | a selector lists `minecraft:village_plains`, which the built-in defaults already list | `World-context selectors rejected — data/example/warfare/world/harbor_sites.json: structure minecraft:village_plains is listed twice`, and only that domain keeps its previous selectors |
+| `townstead_mapping` | the career rule's `requires` names both a profession and a skill | `data/example/mcakingdoms_townstead/careers/archivist_scribes.json: requires names a skill or professions, not both` in the server log and `/kingdoms compat townstead status`; the culture hint still applies |
 
-The first five fail the whole reload ("Reload failed. No definitions changed…"); the last one is domain-local ("Reload completed with rejected definitions; previous definitions remain active for the affected domains.").
+The first five fail the whole reload ("Reload failed. No definitions changed…"); `duplicate_world_structure` is domain-local ("Reload completed with rejected definitions; previous definitions remain active for the affected domains."); `townstead_mapping` skips only its own file and the reload completes.

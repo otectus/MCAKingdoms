@@ -43,7 +43,8 @@ public final class ReloadReport {
         CIVIC(false, "Civic network rules"),
         WORLD_CONTEXT(false, "World-context selectors"),
         DYNASTY(false, "Succession laws and court ranks"),
-        DEVELOPMENT(false, "Development templates");
+        DEVELOPMENT(false, "Development templates"),
+        TOWNSTEAD(false, "Townstead mappings");
 
         public final boolean fatal;
         final String english;

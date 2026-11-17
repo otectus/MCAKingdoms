@@ -38,6 +38,9 @@ public final class ProgressionBridge {
         catch(ReflectiveOperationException|LinkageError failure){HEALTH.put(kind,ProgressionResult.Status.UNSUPPORTED);}
     }
     private static ProgressionResult evaluate(ServerPlayer player,ProgressionPredicate predicate) {
+        // Townstead careers are read through the Townstead integration's own backend (its public api.v1), not bound here.
+        if(dev.otectus.mcakingdoms.compat.townstead.TownsteadProgression.handles(predicate.kind()))
+            return dev.otectus.mcakingdoms.compat.townstead.TownsteadProgression.evaluate(player,predicate);
         var status=HEALTH.getOrDefault(predicate.kind(),ProgressionResult.Status.UNAVAILABLE);
         if(status!=ProgressionResult.Status.AVAILABLE)return new ProgressionResult(status,false,"progression.provider_"+status.name().toLowerCase(Locale.ROOT));
         var b=BINDINGS.get(predicate.kind());

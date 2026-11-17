@@ -40,6 +40,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
@@ -52,12 +53,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import net.minecraft.nbt.CompoundTag;
+import dev.otectus.mcakingdoms.persistence.FaultPoints;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -79,6 +83,8 @@ public final class KingdomsServiceImpl implements KingdomsService {
     /** MCA's external-reference namespace; see {@code McaAccess.EXTERNAL_REF}. */
     private static final String MCA_REF = "mca";
     private static final Logger LOGGER = com.mojang.logging.LogUtils.getLogger();
+    /** Pending identity operations retried per pass (start-up, then once a minute). */
+    public static final int IDENTITY_OUTBOX_BUDGET = 32;
 
     private boolean validatingMutation;
     private final MinecraftServer server;
@@ -99,14 +105,21 @@ public final class KingdomsServiceImpl implements KingdomsService {
     /** The finished start-up pass of this server run, for health reports; zero when none ran. */
     private int lastStartupExamined, lastStartupMerged, lastStartupReads;
     private long lastStartupElapsed, startupBegan;
-    private final Deque<QueuedChunk> chunkQueue = new ArrayDeque<>();
-    private final Set<QueuedChunk> queuedChunks = new LinkedHashSet<>();
+    private final DiscoveryQueue discovery = new DiscoveryQueue();
+    /** Per online player: the 4x4-chunk cell of their last recovery sweep and when it ran (AUD-11). */
+    private final Map<UUID, long[]> sweeps = new HashMap<>();
+    /** Per player: when they may next ask for a scan of their surroundings. */
+    private final Map<UUID, Long> scanRequests = new HashMap<>();
+    private int sweepCursor;
 
     public KingdomsServiceImpl(MinecraftServer server, DefinitionRegistry definitions) {
         this.server = Objects.requireNonNull(server, "server");
         this.definitions = Objects.requireNonNull(definitions, "definitions");
         this.data = SettlementSavedData.get(server);
         spatialIndex.rebuild(data.records().stream().map(SettlementRecord::snapshot).toList());
+        if (!spatialIndex.isolated().isEmpty())
+            LOGGER.error("[MCA: Kingdoms] {} settlement record(s) have bounds beyond {} blocks per axis. They stay loaded and unchanged but are not found by position until an operator repairs them: {}",
+                    spatialIndex.isolated().size(), dev.otectus.mcakingdoms.api.SettlementBounds.MAX_SPAN, spatialIndex.isolated());
         detectors.put(BUILTIN_STRUCTURE, new VillageStructureDetector());
         detectors.put(BUILTIN_POI, new PoiClusterDetector(footprints));
         reconciler = new SettlementReconciler(data, new SettlementReconciler.Mutations() {
@@ -299,6 +312,7 @@ public final class KingdomsServiceImpl implements KingdomsService {
         // One village, one identity: a candidate inside a generated village resolves to that village's structure key.
         Resolution resolution = structureIdentity() ? normalise(level, offered) : new Resolution(offered, Optional.empty());
         SettlementCandidate candidate = resolution.candidate();
+        candidate.bounds().requireSupported();
         Optional<String> village = structureIdentity() ? VillageFootprints.villageKey(candidate) : Optional.empty();
         if (village.isPresent() && reconciling()) claim(level, candidate, village.get(), resolution.village());
         Optional<SettlementRecord> matched = match(candidate, village);
@@ -347,11 +361,14 @@ public final class KingdomsServiceImpl implements KingdomsService {
         }
         // The first record of a village holds its key, so every later detector's candidate matches it by identity.
         village.ifPresent(key -> record.addStrongStructureIdentity(SettlementReconciler.BUILTIN_STRUCTURE, key));
+        CompoundTag before = data.snapshotTag();
         data.add(record);
         SettlementSnapshot snapshot = record.snapshot();
         spatialIndex.add(snapshot);
-        MinecraftForge.EVENT_BUS.post(new SettlementCreatedEvent(snapshot));
-        MinecraftForge.EVENT_BUS.post(new SettlementDiscoveredEvent(snapshot, created.sourceId()));
+        // The new identity is on disk before anything can record a reference to it (AUD-01).
+        commitRoot(before, "new settlement " + record.displayName);
+        post(new SettlementCreatedEvent(snapshot));
+        post(new SettlementDiscoveredEvent(snapshot, created.sourceId()));
         return snapshot;
     }
 
@@ -398,15 +415,17 @@ public final class KingdomsServiceImpl implements KingdomsService {
         }
         ResourceLocation oldKingdom = record.kingdomId;
         if (!oldKingdom.equals(resolution.kingdomId())) preflight(record, null, resolution.kingdomId());
+        CompoundTag before = data.snapshotTag();
         record.kingdomId = resolution.kingdomId();
         record.assignmentSource = resolution.source();
         record.assignmentTrace.clear();
         record.assignmentTrace.addAll(resolution.trace());
         data.changed(record);
+        UUID operation = oldKingdom.equals(record.kingdomId) ? null : reassigned(record, oldKingdom, before);
         SettlementSnapshot snapshot = record.snapshot();
-        if (!oldKingdom.equals(record.kingdomId)) {
-            MinecraftForge.EVENT_BUS.post(new SettlementKingdomChangedEvent(snapshot, oldKingdom,
-                    record.kingdomId, ChangeReason.RECLASSIFICATION));
+        if (operation != null) {
+            post(new SettlementKingdomChangedEvent(snapshot, oldKingdom, record.kingdomId, ChangeReason.RECLASSIFICATION));
+            runIdentityOperation(operation);
         }
         return snapshot;
     }
@@ -450,20 +469,104 @@ public final class KingdomsServiceImpl implements KingdomsService {
         preflight(source, target, plan.kingdom());
         SettlementSnapshot retired = source.snapshot();
         SettlementSnapshot before = target.snapshot();
+        CompoundTag saved = data.snapshotTag();
         spatialIndex.remove(retired);
         spatialIndex.remove(before);
-        SettlementReconciler.combine(data, source, target, plan, maxSpan());
+        UUID operation = UUID.randomUUID();
+        try {
+            SettlementReconciler.combine(data, source, target, plan, maxSpan());
+            // The redirect and the list of stores still to update reach disk in one atomic write (AUD-01).
+            data.enqueueIdentity(new IdentityOperation(operation, IdentityOperation.Kind.MERGE, retired.id(), before.id(),
+                    before.kingdomId().toString(), target.kingdomId.toString(), server.overworld().getGameTime(), retired.displayName(),
+                    IdentityConsumers.names(IdentityOperation.Kind.MERGE), Map.of()));
+        } catch (RuntimeException refused) {
+            rollback(saved);
+            throw refused;
+        }
+        commitRoot(saved, "merge of " + retired.displayName() + " into " + before.displayName());
         SettlementSnapshot merged = target.snapshot();
         spatialIndex.add(merged);
-        MinecraftForge.EVENT_BUS.post(new dev.otectus.mcakingdoms.api.event.SettlementMergedEvent(server, retired, merged));
+        FaultPoints.crash("identity.merge.committed");
+        post(new dev.otectus.mcakingdoms.api.event.SettlementMergedEvent(server, retired, merged));
         if (!before.displayName().equals(merged.displayName())) {
-            MinecraftForge.EVENT_BUS.post(new SettlementRenamedEvent(merged, before.displayName(), ChangeReason.MERGE));
+            post(new SettlementRenamedEvent(merged, before.displayName(), ChangeReason.MERGE));
         }
         if (!before.kingdomId().equals(merged.kingdomId())) {
-            MinecraftForge.EVENT_BUS.post(new SettlementKingdomChangedEvent(merged, before.kingdomId(), merged.kingdomId(),
-                    ChangeReason.MERGE));
+            post(new SettlementKingdomChangedEvent(merged, before.kingdomId(), merged.kingdomId(), ChangeReason.MERGE));
         }
+        runIdentityOperation(operation);
         return merged;
+    }
+
+    /**
+     * Writes the settlement store now (AUD-01). On failure the store, the spatial index and the in-memory records go back
+     * to {@code before} and the change is refused, so nothing is published for a change that is not on disk.
+     */
+    private void commitRoot(CompoundTag before, String change) {
+        boolean saved;
+        try {
+            FaultPoints.reach("settlements.root.write");
+            saved = data.commitRoot(server);
+        } catch (RuntimeException failure) {
+            LOGGER.error("[MCA: Kingdoms] The settlement records could not be written for the {}", change, failure);
+            saved = false;
+        }
+        if (saved) return;
+        rollback(before);
+        throw new IllegalStateException("The settlement records could not be saved, so the " + change + " was not made. Nothing changed.");
+    }
+
+    private void rollback(CompoundTag before) {
+        data.restore(before);
+        spatialIndex.rebuild(data.records().stream().map(SettlementRecord::snapshot).toList());
+    }
+
+    /** Posts a notification about a change already on disk; a listener's failure is logged and never undoes or repeats it. */
+    private void post(net.minecraftforge.eventbus.api.Event event) {
+        try {
+            MinecraftForge.EVENT_BUS.post(event);
+        } catch (RuntimeException failure) {
+            LOGGER.error("[MCA: Kingdoms] A listener failed on {} after the change was saved; the change stands", event.getClass().getSimpleName(), failure);
+        }
+    }
+
+    /** Settlement records whose saved bounds exceed the supported span (AUD-12): loaded, not indexed, kept for repair. */
+    public Map<UUID, dev.otectus.mcakingdoms.api.SettlementBounds> isolatedSettlements() {
+        requireServerThread();
+        return spatialIndex.isolated();
+    }
+
+    /** Identity operations still waiting for some stores, oldest first (AUD-01), for Server health and the maintenance command. */
+    public List<IdentityOperation> pendingIdentityOperations() {
+        requireServerThread();
+        return data.pendingIdentity();
+    }
+
+    /** Runs every consumer still pending for one operation; each confirmed one leaves the outbox. True when none is left. */
+    public boolean runIdentityOperation(UUID id) {
+        requireServerThread();
+        Optional<IdentityOperation> found = data.identityOperation(id);
+        if (found.isEmpty() || data.refused()) return found.isEmpty();
+        for (String consumer : List.copyOf(found.get().pending())) {
+            IdentityConsumers.Outcome outcome = IdentityConsumers.run(server, found.get(), consumer);
+            if (outcome.result() == IdentityConsumers.Result.DONE) data.identityConsumerDone(id, consumer);
+            else {
+                data.identityConsumerFailed(id, consumer, outcome.reason());
+                LOGGER.warn("[MCA: Kingdoms] Settlement change {} is saved; {} records still wait to follow it: {}", id, consumer, outcome.reason());
+            }
+        }
+        boolean finished = data.identityOperation(id).isEmpty();
+        if (finished) FaultPoints.crash("identity.operation.finished");
+        return finished;
+    }
+
+    /** Retries up to {@code budget} pending operations, oldest first; started at server start and then periodically. */
+    public int runIdentityOutbox(int budget) {
+        requireServerThread();
+        int finished = 0;
+        for (IdentityOperation operation : data.pendingIdentity().stream().limit(Math.max(0, budget)).toList())
+            if (runIdentityOperation(operation.id())) finished++;
+        return finished;
     }
 
     /**
@@ -523,8 +626,7 @@ public final class KingdomsServiceImpl implements KingdomsService {
 
     public ReconcileStatus reconcileStatus() {
         requireServerThread();
-        int queued;
-        synchronized (chunkQueue) { queued = chunkQueue.size(); }
+        int queued = discovery.size() + discovery.delayedSize();
         var running = startup;
         return new ReconcileStatus(structureIdentity(), McaKingdomsConfig.AUTO_RECONCILE.get(), McaKingdomsConfig.RECONCILE_ON_STARTUP.get(),
                 data.reconciled(), SettlementSavedData.RECONCILIATION_VERSION,
@@ -627,31 +729,103 @@ public final class KingdomsServiceImpl implements KingdomsService {
     }
 
     public void enqueueChunk(ServerLevel level, ChunkPos chunkPos) {
-        QueuedChunk queued = new QueuedChunk(level.dimension(), chunkPos.toLong());
-        synchronized (chunkQueue) {
-            if (queuedChunks.add(queued)) chunkQueue.addLast(queued);
-        }
+        discovery.offer(level.dimension(), chunkPos.toLong(), false);
+    }
+
+    /** Ticks a village point of interest needs before its records are certain to show it; changes inside it coalesce. */
+    static final int POI_RESCAN_DELAY = 40;
+    /** Ticks between two scans a player may ask for. */
+    static final int SCAN_REQUEST_COOLDOWN = 600;
+    /** Ticks after which a player who stayed in one place is swept again. */
+    static final int SWEEP_INTERVAL = 600;
+    /** Chunks between the samples of a recovery sweep; the detector searches about this far around each. */
+    static final int SWEEP_STEP = 4;
+
+    /**
+     * A village bed, bell or workstation was placed or broken at {@code pos} (AUD-11): its chunk is scanned again a
+     * moment later, so a village built in chunks that were already loaded is recognized without reloading them.
+     */
+    public void pointOfInterestChanged(ServerLevel level, BlockPos pos) {
+        discovery.delay(level.dimension(), ChunkPos.asLong(pos.getX() >> 4, pos.getZ() >> 4), level.getGameTime() + POI_RESCAN_DELAY);
+    }
+
+    /** Whether a scan near {@code pos} is queued or about to be (a chunk within one of its own). */
+    public boolean scanPending(ServerLevel level, BlockPos pos) {
+        int cx = pos.getX() >> 4, cz = pos.getZ() >> 4;
+        for (int x = cx - 1; x <= cx + 1; x++) for (int z = cz - 1; z <= cz + 1; z++)
+            if (discovery.waiting(level.dimension(), ChunkPos.asLong(x, z))) return true;
+        return false;
+    }
+
+    /** What a player's request to scan their surroundings did. */
+    public record ScanRequest(int queued, long waitTicks) {
+        public boolean accepted() { return waitTicks == 0; }
+    }
+
+    /**
+     * A player asks for the loaded chunks around them to be inspected now (AUD-11): at most once every
+     * {@link #SCAN_REQUEST_COOLDOWN} ticks, loaded chunks only, at the front of the queue. Nothing is loaded or generated.
+     */
+    public ScanRequest requestScan(ServerPlayer player) {
+        requireServerThread();
+        long now = player.serverLevel().getGameTime();
+        long next = scanRequests.getOrDefault(player.getUUID(), Long.MIN_VALUE);
+        if (now < next) return new ScanRequest(0, next - now);
+        scanRequests.put(player.getUUID(), now + SCAN_REQUEST_COOLDOWN);
+        if (scanRequests.size() > 4_096) scanRequests.values().removeIf(due -> due < now);
+        ServerLevel level = player.serverLevel();
+        int cx = player.blockPosition().getX() >> 4, cz = player.blockPosition().getZ() >> 4, queued = 0;
+        for (int x = cx - 1; x <= cx + 1; x++) for (int z = cz - 1; z <= cz + 1; z++)
+            if (level.hasChunk(x, z) && discovery.offer(level.dimension(), ChunkPos.asLong(x, z), true)) queued++;
+        return new ScanRequest(queued, 0);
+    }
+
+    /**
+     * One step of the recovery sweep (AUD-11): the next online player, in turn, has their chunk and four samples
+     * {@link #SWEEP_STEP} chunks away queued, when they moved to another area or {@link #SWEEP_INTERVAL} ticks passed.
+     * The detector searches a radius around each queued chunk, so a few samples cover the surroundings; changes made by
+     * other mods near players are recognized within that interval. Loaded chunks only.
+     */
+    private void sweep() {
+        var players = server.getPlayerList().getPlayers();
+        if (players.isEmpty()) { sweeps.clear(); return; }
+        if (sweepCursor >= players.size()) sweepCursor = 0;
+        ServerPlayer player = players.get(sweepCursor++);
+        ServerLevel level = player.serverLevel();
+        int cx = player.blockPosition().getX() >> 4, cz = player.blockPosition().getZ() >> 4;
+        long cell = ChunkPos.asLong(Math.floorDiv(cx, SWEEP_STEP), Math.floorDiv(cz, SWEEP_STEP)) ^ level.dimension().location().hashCode();
+        long now = level.getGameTime();
+        long[] last = sweeps.get(player.getUUID());
+        if (last != null && last[0] == cell && now - last[1] < SWEEP_INTERVAL) return;
+        sweeps.put(player.getUUID(), new long[]{cell, now});
+        if (sweeps.size() > players.size() * 2 + 16) sweeps.keySet().retainAll(players.stream().map(ServerPlayer::getUUID).toList());
+        int[][] samples = {{0, 0}, {SWEEP_STEP, SWEEP_STEP}, {-SWEEP_STEP, SWEEP_STEP}, {SWEEP_STEP, -SWEEP_STEP}, {-SWEEP_STEP, -SWEEP_STEP}};
+        for (int[] offset : samples)
+            if (level.hasChunk(cx + offset[0], cz + offset[1])) discovery.offer(level.dimension(), ChunkPos.asLong(cx + offset[0], cz + offset[1]), false);
     }
 
     public void tickDiscovery() {
         requireServerThread();
         stepStartupReconciliation();
+        discovery.release(server.overworld().getGameTime());
+        if (server.getTickCount() % 20 == 3) sweep();
         int budget = McaKingdomsConfig.CHUNK_SCANS_PER_TICK.get();
         for (int i = 0; i < budget; i++) {
-            QueuedChunk queued;
-            synchronized (chunkQueue) {
-                queued = chunkQueue.pollFirst();
-                if (queued != null) queuedChunks.remove(queued);
-            }
-            if (queued == null) return;
-            ServerLevel level = server.getLevel(queued.dimension());
-            int x = ChunkPos.getX(queued.chunk());
-            int z = ChunkPos.getZ(queued.chunk());
+            var queued = discovery.poll();
+            if (queued.isEmpty()) return;
+            ServerLevel level = server.getLevel(queued.get().dimension());
+            int x = ChunkPos.getX(queued.get().chunk());
+            int z = ChunkPos.getZ(queued.get().chunk());
             if (level == null || !level.hasChunk(x, z)) continue;
             BlockPos center = new BlockPos((x << 4) + 8, level.getSeaLevel(), (z << 4) + 8);
             discover(level, center, 0);
             if (reconciling()) reconcileChunk(level, new ChunkPos(x, z));
         }
+    }
+
+    /** Discovery queue figures for Server health: queued, delayed, and offers postponed while full since start. */
+    public long[] discoveryQueue() {
+        return new long[]{discovery.size(), discovery.delayedSize(), discovery.postponed()};
     }
 
     /**
@@ -819,14 +993,31 @@ public final class KingdomsServiceImpl implements KingdomsService {
         if (record.kingdomId.equals(kingdomId)) return record.snapshot();
         ResourceLocation oldKingdom = record.kingdomId;
         preflight(record, null, kingdomId);
+        CompoundTag before = data.snapshotTag();
         record.kingdomId = kingdomId;
         record.assignmentSource = AssignmentSource.MANUAL;
         record.assignmentTrace.clear();
         record.assignmentTrace.add("Kingdom assigned through " + reason.name().toLowerCase(Locale.ROOT));
         data.changed(record);
+        UUID operation = reassigned(record, oldKingdom, before);
         SettlementSnapshot snapshot = record.snapshot();
-        MinecraftForge.EVENT_BUS.post(new SettlementKingdomChangedEvent(snapshot, oldKingdom, kingdomId, reason));
+        post(new SettlementKingdomChangedEvent(snapshot, oldKingdom, kingdomId, reason));
+        runIdentityOperation(operation);
         return snapshot;
+    }
+
+    /** Journals and commits a kingdom change of {@code record} (AUD-01/AUD-06): stores that act on current authority follow it. */
+    private UUID reassigned(SettlementRecord record, ResourceLocation oldKingdom, CompoundTag before) {
+        UUID operation = UUID.randomUUID();
+        try {
+            data.enqueueIdentity(new IdentityOperation(operation, IdentityOperation.Kind.REASSIGN, record.id, record.id, oldKingdom.toString(),
+                    record.kingdomId.toString(), server.overworld().getGameTime(), record.displayName, IdentityConsumers.names(IdentityOperation.Kind.REASSIGN), Map.of()));
+        } catch (RuntimeException refused) {
+            rollback(before);
+            throw refused;
+        }
+        commitRoot(before, "kingdom change of " + record.displayName);
+        return operation;
     }
 
     private void preflight(SettlementRecord source, SettlementRecord target, ResourceLocation kingdom) {
@@ -1239,7 +1430,4 @@ public final class KingdomsServiceImpl implements KingdomsService {
         };
     }
 
-    private record QueuedChunk(net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> dimension,
-                               long chunk) {
-    }
 }

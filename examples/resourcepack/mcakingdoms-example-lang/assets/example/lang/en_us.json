@@ -8,5 +8,6 @@
   "dynasty.example.rank.harbor_warden.league": "Warden of the Quays",
   "development.example.template.harbor_beacon": "Harbor beacon",
   "organization.example.harbor_archivists": "Harbor Archivists",
-  "organization.example.harbor_archivists.description": "Keepers of the League's tide ledgers and charters; open to members of any kingdom."
+  "organization.example.harbor_archivists.description": "Keepers of the League's tide ledgers and charters; open to members of any kingdom.",
+  "culture.example.harbor_folk": "Harbor folk"
 }

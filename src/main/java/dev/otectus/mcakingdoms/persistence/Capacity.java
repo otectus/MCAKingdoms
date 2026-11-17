@@ -7,15 +7,16 @@ import java.util.List;
 import java.util.function.Function;
 
 /**
- * How full one bounded collection of a saved-data store is, and what relieves it (F12). Bounds are defensive limits that
- * keep saves, packets and ticks bounded; when one is reached the owning service refuses new records rather than dropping
- * old ones. Relief differs by collection: some are pruned automatically, two (finished recruit transfers and finished
- * opportunities) can be archived by an operator, and the rest keep refusing until the documented offline procedure is
- * run, because their records are still referenced by history, clauses or receipts.
+ * How full one bounded collection of a saved-data store is, and what relieves it (F12, AUD-07). Bounds are defensive
+ * limits that keep saves, packets and ticks bounded. A record still in use (open, owed, or referenced by another record)
+ * is never dropped to make room: when only such records remain, the owning service refuses new records of that kind.
+ * Relief differs by collection: retention drops the oldest finished records automatically once their effects and
+ * references are kept elsewhere; two (finished recruit transfers and finished opportunities) can be archived by an
+ * operator; evidence is kept; and the rest keep refusing at the bound until the documented offline procedure is run.
  */
 public record Capacity(String store, String collection, long used, long limit, Relief relief) {
     public enum Relief {
-        /** Pruned automatically by retention; nothing to do. */
+        /** The oldest finished records go automatically once nothing depends on them; records in use never do, so a full collection still refuses. */
         RETENTION,
         /** {@code /kingdoms maintenance compact transfers} archives finished records. */
         COMPACT_TRANSFERS,
@@ -54,7 +55,9 @@ public record Capacity(String store, String collection, long used, long limit, R
                 dev.otectus.mcakingdoms.document.DocumentLedger::capacity,
                 dev.otectus.mcakingdoms.politics.dynasty.DynastySavedData::capacity,
                 dev.otectus.mcakingdoms.development.DevelopmentSavedData::capacity,
-                dev.otectus.mcakingdoms.compat.livingvillages.LvBridgeSavedData::capacity);
+                dev.otectus.mcakingdoms.compat.waystones.WaystonesNamingData::capacity,
+                dev.otectus.mcakingdoms.compat.livingvillages.LvBridgeSavedData::capacity,
+                dev.otectus.mcakingdoms.compat.townstead.TownsteadSavedData::capacity);
         List<Capacity> out = new ArrayList<>();
         for (var store : stores) {
             try {

@@ -7,17 +7,21 @@ import dev.otectus.mcakingdoms.api.townstead.BoundCivicBuilding;
 import dev.otectus.mcakingdoms.api.townstead.BuildingRecoveryPolicy;
 import dev.otectus.mcakingdoms.api.townstead.BuildingRecoveryResult;
 import dev.otectus.mcakingdoms.api.townstead.BuildingRecoveryStatus;
+import dev.otectus.mcakingdoms.api.townstead.TownsteadBuildingAvailability;
+import dev.otectus.mcakingdoms.api.townstead.TownsteadBuildingEvidence;
+import dev.otectus.mcakingdoms.api.townstead.TownsteadBuildingState;
 import dev.otectus.mcakingdoms.api.townstead.TownsteadBuildingView;
 import dev.otectus.mcakingdoms.api.townstead.TownsteadCalendarView;
 import dev.otectus.mcakingdoms.api.townstead.TownsteadCapability;
-import dev.otectus.mcakingdoms.api.townstead.TownsteadGeneVariantView;
+import dev.otectus.mcakingdoms.api.townstead.TownsteadCapabilityState;
+import dev.otectus.mcakingdoms.api.townstead.TownsteadCareerView;
 import dev.otectus.mcakingdoms.api.townstead.TownsteadGeneView;
-import dev.otectus.mcakingdoms.api.townstead.TownsteadLifeStageView;
-import dev.otectus.mcakingdoms.api.townstead.TownsteadNeedsView;
 import dev.otectus.mcakingdoms.api.townstead.TownsteadOriginView;
-import dev.otectus.mcakingdoms.api.townstead.TownsteadScheduleView;
 import dev.otectus.mcakingdoms.api.townstead.TownsteadService;
 import dev.otectus.mcakingdoms.api.townstead.TownsteadSpiritView;
+import dev.otectus.mcakingdoms.api.townstead.TownsteadVillageLifeView;
+import dev.otectus.mcakingdoms.api.townstead.TownsteadVillageView;
+import dev.otectus.mcakingdoms.api.townstead.TownsteadVillagerNeedsView;
 import dev.otectus.mcakingdoms.api.townstead.TownsteadVillagerView;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
@@ -36,59 +40,213 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * The published {@link TownsteadService} over the selected backends. Townstead villages are mapped to settlements only by
+ * their exact dimension-qualified MCA reference (spec 6.1), including references kept from merged records, and each
+ * building keeps its original village id.
+ */
 final class TownsteadServiceImpl implements TownsteadService {
-    private static final TownsteadScheduleView EMPTY_SCHEDULE = new TownsteadScheduleView(
-            "", "", false, false, 0, 0, 0, "", "", "", List.of(), List.of());
-    private static final TownsteadNeedsView EMPTY_NEEDS =
-            new TownsteadNeedsView(0, 0, 0, 0, 0, 0, 0, false, false);
-
     private final MinecraftServer server;
     private final KingdomsService kingdoms;
-    private final TownsteadBinding binding;
+    private final TownsteadBackends.Selection selection;
+    private final TownsteadBackend backend;
+    private final TownsteadBackend buildingBackend;
+    private final TownsteadCapabilities capabilities;
+    private final TownsteadVillageLife life = new TownsteadVillageLife();
     private final AtomicLong revision = new AtomicLong();
+    /** The last consistent building reading per settlement, for {@link TownsteadBuildingAvailability#STALE}. */
+    private final Map<UUID, List<TownsteadBuildingState>> lastGood = new ConcurrentHashMap<>();
 
-    TownsteadServiceImpl(MinecraftServer server, KingdomsService kingdoms, TownsteadBinding binding) {
+    TownsteadServiceImpl(MinecraftServer server, KingdomsService kingdoms, TownsteadBackends.Selection selection) {
         this.server = Objects.requireNonNull(server, "server");
         this.kingdoms = Objects.requireNonNull(kingdoms, "kingdoms");
-        this.binding = Objects.requireNonNull(binding, "binding");
+        this.selection = Objects.requireNonNull(selection, "selection");
+        this.backend = selection.backend();
+        this.buildingBackend = selection.buildings();
+        this.capabilities = new TownsteadCapabilities(selection);
+    }
+
+    TownsteadBackend backendImpl() {
+        return backend;
+    }
+
+    TownsteadBackend buildingBackend() {
+        return buildingBackend;
+    }
+
+    TownsteadCapabilities states() {
+        return capabilities;
+    }
+
+    TownsteadVillageLife lifeCache() {
+        return life;
+    }
+
+    KingdomsService kingdoms() {
+        return kingdoms;
+    }
+
+    MinecraftServer server() {
+        return server;
     }
 
     @Override public int apiVersion() { return 1; }
-    @Override public Set<TownsteadCapability> capabilities() { return binding.capabilities(); }
-    @Override public Map<TownsteadCapability, String> diagnostics() { return binding.diagnostics(); }
+    @Override public String backend() { return backend.id(); }
+
+    @Override
+    public Set<TownsteadCapability> capabilities() {
+        Set<TownsteadCapability> out = new java.util.HashSet<>(backend.capabilities());
+        out.removeAll(TownsteadCapabilities.BUILDING);
+        for (TownsteadCapability capability : TownsteadCapabilities.BUILDING) {
+            if (buildingBackend.capabilities().contains(capability)) out.add(capability);
+        }
+        // MCA's list answers a point query too when no provider has one (unchanged from 0.2.x).
+        if (out.contains(TownsteadCapability.READ_BUILDINGS)) out.add(TownsteadCapability.READ_BUILDING);
+        return Set.copyOf(out);
+    }
+
+    @Override
+    public Map<TownsteadCapability, String> diagnostics() {
+        Map<TownsteadCapability, String> out = new LinkedHashMap<>(backend.diagnostics());
+        for (TownsteadCapability capability : TownsteadCapabilities.BUILDING) out.put(capability, buildingBackend.diagnostics().getOrDefault(capability, "unavailable"));
+        return Map.copyOf(out);
+    }
+
+    @Override
+    public Map<TownsteadCapability, TownsteadCapabilityState> capabilityStates() {
+        return capabilities.states();
+    }
 
     @Override
     public Optional<TownsteadVillagerView> villager(Entity entity) {
         if (entity.getServer() != server) return Optional.empty();
-        return binding.entity(entity).flatMap(this::villagerView);
+        return backend.villager(entity);
+    }
+
+    @Override
+    public Optional<TownsteadVillagerNeedsView> villagerNeeds(Entity entity) {
+        if (entity.getServer() != server) return Optional.empty();
+        return backend.needs(entity);
+    }
+
+    @Override
+    public Optional<TownsteadCareerView> career(Entity entity) {
+        if (entity.getServer() != server) return Optional.empty();
+        return backend.career(entity);
+    }
+
+    @Override
+    public Optional<Boolean> systemEnabled(String system) {
+        return backend.systemEnabled(system);
     }
 
     @Override
     public Optional<TownsteadCalendarView> calendar() {
-        return binding.calendar(server).flatMap(this::calendarView);
+        return backend.calendar(server);
+    }
+
+    // ---- identity ----
+
+    /** Every MCA village the settlement holds in this level, its own reference first, then those kept from merges. */
+    List<Integer> villageIds(SettlementView settlement, ResourceLocation dimension) {
+        List<Integer> out = new ArrayList<>();
+        Optional.ofNullable(settlement.externalRefs().get(McaCommunityRef.EXTERNAL_REF_NAMESPACE)).flatMap(McaCommunityRef::parse)
+                .filter(ref -> ref.dimension().equals(dimension)).ifPresent(ref -> out.add(ref.villageId()));
+        for (String value : kingdoms.getSettlementExternalRefs(settlement.id()).getOrDefault(McaCommunityRef.EXTERNAL_REF_NAMESPACE, Set.of())) {
+            McaCommunityRef.parse(value).filter(ref -> ref.dimension().equals(dimension)).map(McaCommunityRef::villageId)
+                    .filter(id -> !out.contains(id)).ifPresent(out::add);
+        }
+        List<Integer> merged = new ArrayList<>(out.subList(Math.min(1, out.size()), out.size()));
+        merged.sort(Comparator.naturalOrder());
+        List<Integer> ordered = new ArrayList<>(out.isEmpty() ? List.of() : List.of(out.get(0)));
+        ordered.addAll(merged);
+        return List.copyOf(ordered);
+    }
+
+    private Optional<SettlementView> settlementIn(ServerLevel level, UUID settlementId) {
+        if (level.getServer() != server) return Optional.empty();
+        return kingdoms.getSettlement(settlementId).filter(settlement -> settlement.dimension().equals(level.dimension()));
+    }
+
+    // ---- buildings ----
+
+    /** One settlement's buildings with how consistently they were read. */
+    record SettlementBuildings(List<TownsteadBuildingEvidence> buildings, boolean consistent, boolean villages, String detail) {
+    }
+
+    SettlementBuildings read(ServerLevel level, UUID settlementId) {
+        Optional<SettlementView> settlement = settlementIn(level, settlementId);
+        if (settlement.isEmpty()) return new SettlementBuildings(List.of(), false, false, "settlement not in this level");
+        List<Integer> villages = villageIds(settlement.get(), level.dimension().location());
+        if (villages.isEmpty()) return new SettlementBuildings(List.of(), true, false, "no MCA village reference");
+        List<TownsteadBuildingEvidence> out = new ArrayList<>();
+        boolean consistent = true;
+        List<String> details = new ArrayList<>();
+        for (int villageId : villages) {
+            TownsteadBackend.BuildingRead read = buildingBackend.buildings(level, villageId);
+            if (read.status() != TownsteadBackend.BuildingRead.Status.OK) {
+                consistent = false;
+                details.add(read.status().name().toLowerCase(java.util.Locale.ROOT) + ": " + read.detail());
+            }
+            for (TownsteadBackend.RawBuilding raw : read.buildings()) {
+                view(level, settlement.get(), raw).ifPresent(out::add);
+            }
+        }
+        if (consistent) capabilities.recovered(TownsteadCapability.READ_BUILDINGS);
+        else capabilities.degraded(TownsteadCapability.READ_BUILDINGS, String.join("; ", details));
+        out.sort(Comparator.comparingInt((TownsteadBuildingEvidence e) -> e.building().villageId()).thenComparingInt(e -> e.building().buildingId()));
+        return new SettlementBuildings(List.copyOf(out), consistent, true, String.join("; ", details));
+    }
+
+    private Optional<TownsteadBuildingEvidence> view(ServerLevel level, SettlementView settlement, TownsteadBackend.RawBuilding raw) {
+        try {
+            UUID bindingId = TownsteadBuildingView.bindingId(level.dimension().location(), settlement.id(), raw.villageId(), raw.id());
+            TownsteadBuildingView view = new TownsteadBuildingView(level.dimension().location(), settlement.id(), bindingId,
+                    raw.villageId(), raw.id(), raw.type(), raw.family(), Math.max(1, raw.tier()), raw.size(),
+                    raw.center().getX(), raw.center().getY(), raw.center().getZ(),
+                    raw.min().getX(), raw.min().getY(), raw.min().getZ(), raw.max().getX(), raw.max().getY(), raw.max().getZ());
+            return Optional.of(new TownsteadBuildingEvidence(view, raw.completion(), raw.source()));
+        } catch (RuntimeException invalid) {
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public List<TownsteadBuildingView> buildings(ServerLevel level, UUID settlementId) {
+        return read(level, settlementId).buildings().stream().map(TownsteadBuildingEvidence::building).toList();
+    }
+
+    @Override
+    public List<TownsteadBuildingEvidence> buildingEvidence(ServerLevel level, UUID settlementId) {
+        return read(level, settlementId).buildings();
     }
 
     @Override
     public Optional<TownsteadBuildingView> buildingAt(ServerLevel level, BlockPos pos) {
-        if (level.getServer() != server) return Optional.empty();
-        if (!binding.buildingFallback()) {
-            return binding.buildingAt(level, pos).flatMap(snapshot -> publicBuilding(level, snapshot));
-        }
-        // No Townstead building query: the same MCA building, found in the loaded village's own list.
-        // When bounds overlap the smallest building wins, which is the one a position most plausibly means.
-        return kingdoms.getSettlementAt(level, pos).stream()
-                .flatMap(settlement -> buildings(level, settlement.id()).stream())
-                .filter(building -> contains(building, pos))
-                .min(Comparator.comparingLong(TownsteadServiceImpl::volume)
-                        .thenComparingInt(TownsteadBuildingView::buildingId));
+        return buildingEvidenceAt(level, pos).map(TownsteadBuildingEvidence::building);
     }
 
-    private static boolean contains(TownsteadBuildingView building, BlockPos pos) {
-        return pos.getX() >= building.minX() && pos.getX() <= building.maxX()
-                && pos.getY() >= building.minY() && pos.getY() <= building.maxY()
-                && pos.getZ() >= building.minZ() && pos.getZ() <= building.maxZ();
+    /**
+     * Townstead's own point query when it has one (exact footprints for pens, wharves and open-air buildings); otherwise
+     * MCA's list, the smallest box containing the position winning, as in 0.2.x.
+     */
+    @Override
+    public Optional<TownsteadBuildingEvidence> buildingEvidenceAt(ServerLevel level, BlockPos pos) {
+        if (level.getServer() != server) return Optional.empty();
+        if (buildingBackend.capabilities().contains(TownsteadCapability.READ_BUILDING)
+                && !(buildingBackend instanceof TownsteadLegacyBackend legacy && legacy.buildingFallback())) {
+            return buildingBackend.buildingAt(level, pos).flatMap(raw -> kingdoms.getSettlementForMcaVillage(level.dimension().location(), raw.villageId())
+                    .filter(settlement -> settlement.dimension().equals(level.dimension()))
+                    .flatMap(settlement -> view(level, settlement, raw)));
+        }
+        return kingdoms.getSettlementAt(level, pos).stream()
+                .flatMap(settlement -> buildingEvidence(level, settlement.id()).stream())
+                .filter(evidence -> evidence.building().contains(pos))
+                .min(Comparator.comparingLong((TownsteadBuildingEvidence e) -> volume(e.building()))
+                        .thenComparingInt(e -> e.building().buildingId()));
     }
 
     private static long volume(TownsteadBuildingView building) {
@@ -96,44 +254,95 @@ final class TownsteadServiceImpl implements TownsteadService {
                 * (building.maxZ() - building.minZ() + 1);
     }
 
+    void rememberGood(UUID settlement, List<TownsteadBuildingState> states) {
+        lastGood.put(settlement, List.copyOf(states));
+    }
+
+    void forget(UUID settlement) {
+        lastGood.remove(settlement);
+    }
+
     @Override
-    public List<TownsteadBuildingView> buildings(ServerLevel level, UUID settlementId) {
+    public TownsteadBuildingAvailability availability(ServerLevel level, BoundCivicBuilding binding) {
+        if (level.getServer() != server || !level.dimension().location().equals(binding.dimension())) return TownsteadBuildingAvailability.UNLOADED;
+        if (!buildingBackend.capabilities().contains(TownsteadCapability.READ_BUILDINGS)) return TownsteadBuildingAvailability.PROVIDER_UNAVAILABLE;
+        Optional<SettlementView> settlement = kingdoms.getSettlement(binding.settlementId());
+        if (settlement.isEmpty()) return TownsteadBuildingAvailability.UNKNOWN;
+        BlockPos anchor = settlement.get().anchor();
+        if (!level.hasChunkAt(anchor)) return TownsteadBuildingAvailability.UNLOADED;
+        SettlementBuildings read = read(level, settlement.get().id());
+        boolean present = read.buildings().stream().anyMatch(e -> e.building().villageId() == binding.villageId()
+                && e.building().buildingId() == binding.buildingId());
+        if (present) return read.consistent() ? TownsteadBuildingAvailability.CURRENT : TownsteadBuildingAvailability.STALE;
+        if (!read.villages()) return TownsteadBuildingAvailability.UNKNOWN;
+        if (!read.consistent()) {
+            boolean seen = lastGood.getOrDefault(settlement.get().id(), List.of()).stream()
+                    .anyMatch(s -> s.villageId() == binding.villageId() && s.buildingId() == binding.buildingId());
+            return seen ? TownsteadBuildingAvailability.STALE : TownsteadBuildingAvailability.UNKNOWN;
+        }
+        return TownsteadBuildingAvailability.CONFIRMED_REMOVED;
+    }
+
+    @Override
+    public List<TownsteadBuildingEvidence> replacementCandidates(ServerLevel level, BoundCivicBuilding binding, int minimumTier) {
         if (level.getServer() != server) return List.of();
-        Optional<SettlementView> settlement = kingdoms.getSettlement(settlementId);
-        if (settlement.isEmpty() || !settlement.get().dimension().equals(level.dimension())) return List.of();
-        Optional<McaCommunityRef> community = Optional.ofNullable(
-                        settlement.get().externalRefs().get(McaCommunityRef.EXTERNAL_REF_NAMESPACE))
-                .flatMap(McaCommunityRef::parse)
-                .filter(ref -> ref.dimension().equals(level.dimension().location()));
-        if (community.isEmpty()) return List.of();
-        return binding.buildings(level, community.get().villageId()).stream()
-                .map(raw -> internalBuilding(level, settlement.get(), community.get().villageId(), raw))
-                .flatMap(Optional::stream)
-                .sorted(Comparator.comparingInt(TownsteadBuildingView::buildingId))
+        UUID settlement = kingdoms.resolveSettlementId(binding.settlementId());
+        SettlementBuildings read = read(level, settlement);
+        if (!read.consistent()) return List.of();
+        return read.buildings().stream()
+                .filter(e -> e.building().family().equals(binding.family()))
+                .filter(e -> !(e.building().villageId() == binding.villageId() && e.building().buildingId() == binding.buildingId()))
+                .filter(TownsteadBuildingEvidence::verifiedComplete)
+                .filter(e -> e.building().level() >= Math.max(1, minimumTier))
+                .sorted(Comparator.comparingInt((TownsteadBuildingEvidence e) -> e.building().villageId()).thenComparingInt(e -> e.building().buildingId()))
                 .toList();
     }
 
     @Override
     public Optional<TownsteadOriginView> origin(ResourceLocation id) {
-        return binding.origin(id).flatMap(this::originView);
+        return backend.origin(id);
     }
 
     @Override
     public Optional<TownsteadGeneView> gene(ResourceLocation id) {
-        return binding.gene(id).flatMap(this::geneView);
+        return backend.gene(id);
     }
 
     @Override
     public Optional<TownsteadSpiritView> spirit(ServerLevel level, UUID settlementId) {
-        if (level.getServer() != server) return Optional.empty();
+        return settlementIn(level, settlementId).flatMap(settlement -> villageIds(settlement, level.dimension().location()).stream().findFirst())
+                .flatMap(villageId -> backend.spirit(level, villageId));
+    }
+
+    @Override
+    public List<TownsteadVillageView> villages(UUID settlementId) {
         Optional<SettlementView> settlement = kingdoms.getSettlement(settlementId);
-        if (settlement.isEmpty() || !settlement.get().dimension().equals(level.dimension())) return Optional.empty();
-        Optional<McaCommunityRef> community = Optional.ofNullable(
-                        settlement.get().externalRefs().get(McaCommunityRef.EXTERNAL_REF_NAMESPACE))
-                .flatMap(McaCommunityRef::parse)
-                .filter(ref -> ref.dimension().equals(level.dimension().location()));
-        return community.flatMap(ref -> binding.spirit(level, ref.villageId())
-                .flatMap(entry -> spiritView(ref.villageId(), entry)));
+        if (settlement.isEmpty()) return List.of();
+        ServerLevel level = server.getLevel(settlement.get().dimension());
+        if (level == null) return List.of();
+        return villageIds(settlement.get(), level.dimension().location()).stream()
+                .map(villageId -> backend.village(level, villageId)).flatMap(Optional::stream).toList();
+    }
+
+    @Override
+    public Optional<TownsteadVillageLifeView> villageLife(UUID settlementId) {
+        if (!server.isSameThread()) return Optional.empty();
+        Optional<SettlementView> settlement = kingdoms.getSettlement(settlementId);
+        if (settlement.isEmpty() || !capabilities.usable(TownsteadCapability.READ_NEEDS_SUMMARY)) return Optional.empty();
+        long now = server.getTickCount();
+        UUID id = settlement.get().id();
+        Optional<TownsteadVillageLifeView> cached = life.cached(id, now, TownsteadIntegrationConfig.VILLAGE_LIFE_REFRESH_TICKS.get());
+        if (cached.isPresent()) return cached;
+        ResourceLocation dimension = settlement.get().dimension().location();
+        Map<Integer, TownsteadBackend.NeedsSummary> summaries = new LinkedHashMap<>();
+        for (int villageId : villageIds(settlement.get(), dimension)) {
+            backend.needsSummary(server, dimension, villageId).ifPresent(summary -> summaries.put(villageId, summary));
+        }
+        if (summaries.isEmpty()) return Optional.empty();
+        TownsteadVillageLifeView view = TownsteadVillageLife.interpret(id, dimension, summaries, new TownsteadVillageLife.Limits(
+                TownsteadIntegrationConfig.WELFARE_MINIMUM_COVERAGE.get(), TownsteadIntegrationConfig.WELFARE_MAXIMUM_SAMPLE_AGE_DAYS.get()));
+        life.put(id, view, now);
+        return Optional.of(view);
     }
 
     @Override
@@ -148,9 +357,10 @@ final class TownsteadServiceImpl implements TownsteadService {
         if (settlement.isEmpty()) {
             return result(BuildingRecoveryStatus.FAILED, bound, null, "settlement no longer exists");
         }
-        List<TownsteadBuildingView> buildings = buildings(level, settlement.get().id());
+        SettlementBuildings read = read(level, settlement.get().id());
+        List<TownsteadBuildingView> buildings = read.buildings().stream().map(TownsteadBuildingEvidence::building).toList();
         Optional<TownsteadBuildingView> exact = buildings.stream()
-                .filter(building -> building.buildingId() == bound.buildingId())
+                .filter(building -> building.villageId() == bound.villageId() && building.buildingId() == bound.buildingId())
                 .filter(building -> building.family().equals(bound.family()))
                 .findFirst();
         if (exact.isPresent()) {
@@ -158,9 +368,13 @@ final class TownsteadServiceImpl implements TownsteadService {
             return result(BuildingRecoveryStatus.FOUND, bound.forSettlement(settlement.get().id()), exact.get(),
                     "building resolved");
         }
-        if (!capabilities().contains(TownsteadCapability.READ_BUILDINGS)) {
+        if (!buildingBackend.capabilities().contains(TownsteadCapability.READ_BUILDINGS)) {
             return result(missingBuildingStatus(policy, false), bound, null,
                     "loaded-village building capability is unavailable");
+        }
+        // An unreadable provider or a missing village record is not evidence that the building is gone (spec 7.3).
+        if (!read.consistent() || !read.villages()) {
+            return result(BuildingRecoveryStatus.WAITING, bound, null, "building records could not be read consistently; waiting");
         }
         return switch (policy) {
             case WAIT -> result(missingBuildingStatus(policy, true), bound, null, "bound building is absent");
@@ -185,199 +399,12 @@ final class TownsteadServiceImpl implements TownsteadService {
                                 ResourceLocation reactionId, Set<String> contextTags) {
         if (!TownsteadIntegrationConfig.ENABLE_REACTIONS.get()
                 || level.getServer() != server || villager.level() != level) return false;
-        return binding.fireReaction(level, villager, playerCause, reactionId, contextTags);
+        return backend.fireReaction(level, villager, playerCause, reactionId, contextTags);
     }
 
     @Override public long revision() { return revision.get(); }
 
     void reconciledChange() { revision.incrementAndGet(); }
-
-    private Optional<TownsteadVillagerView> villagerView(Object snapshot) {
-        UUID id = uuid(value(TownsteadCapability.READ_VILLAGER, snapshot, "uuid"));
-        ResourceLocation entityType = resource(value(TownsteadCapability.READ_VILLAGER, snapshot, "entityType"));
-        if (id == null || entityType == null) return Optional.empty();
-        TownsteadScheduleView schedule = binding.call(TownsteadCapability.READ_SCHEDULE, snapshot, "schedule")
-                .flatMap(this::scheduleView).orElse(EMPTY_SCHEDULE);
-        TownsteadNeedsView needs = binding.call(TownsteadCapability.READ_NEEDS, snapshot, "needs")
-                .flatMap(this::needsView).orElse(EMPTY_NEEDS);
-        return Optional.of(new TownsteadVillagerView(
-                id, string(value(TownsteadCapability.READ_VILLAGER, snapshot, "name")), entityType,
-                optionalResource(value(TownsteadCapability.READ_VILLAGER, snapshot, "rootId")),
-                string(value(TownsteadCapability.READ_VILLAGER, snapshot, "lifeStage")),
-                number(value(TownsteadCapability.READ_VILLAGER, snapshot, "biologicalAgeDays")).longValue(),
-                integer(value(TownsteadCapability.READ_VILLAGER, snapshot, "apparentAgeYears")),
-                bool(value(TownsteadCapability.READ_VILLAGER, snapshot, "immortal")),
-                bool(value(TownsteadCapability.READ_VILLAGER, snapshot, "ageless")),
-                bool(value(TownsteadCapability.READ_VILLAGER, snapshot, "senior")),
-                string(value(TownsteadCapability.READ_VILLAGER, snapshot, "personalityId")),
-                optionalResource(value(TownsteadCapability.READ_VILLAGER, snapshot, "professionId")),
-                integer(value(TownsteadCapability.READ_VILLAGER, snapshot, "professionLevel")),
-                integer(value(TownsteadCapability.READ_VILLAGER, snapshot, "professionXp")),
-                number(value(TownsteadCapability.READ_VILLAGER, snapshot, "fertility")).floatValue(),
-                schedule, needs,
-                stringMap(value(TownsteadCapability.READ_VILLAGER, snapshot, "carriedVariants")),
-                stringList(value(TownsteadCapability.READ_VILLAGER, snapshot, "expressedAlleles")),
-                resourceFloatMap(value(TownsteadCapability.READ_VILLAGER, snapshot, "heritage"))));
-    }
-
-    private Optional<TownsteadScheduleView> scheduleView(Object value) {
-        return Optional.of(new TownsteadScheduleView(
-                string(value(TownsteadCapability.READ_SCHEDULE, value, "mode")),
-                string(value(TownsteadCapability.READ_SCHEDULE, value, "templateId")),
-                bool(value(TownsteadCapability.READ_SCHEDULE, value, "customShifts")),
-                bool(value(TownsteadCapability.READ_SCHEDULE, value, "nonDefaultCustomShifts")),
-                integer(value(TownsteadCapability.READ_SCHEDULE, value, "currentTickHour")),
-                integer(value(TownsteadCapability.READ_SCHEDULE, value, "currentDisplayHour")),
-                integer(value(TownsteadCapability.READ_SCHEDULE, value, "currentShiftOrdinal")),
-                string(value(TownsteadCapability.READ_SCHEDULE, value, "currentActivity")),
-                string(value(TownsteadCapability.READ_SCHEDULE, value, "plannedActivity")),
-                string(value(TownsteadCapability.READ_SCHEDULE, value, "currentTemplateId")),
-                intList(value(TownsteadCapability.READ_SCHEDULE, value, "shifts")),
-                stringList(value(TownsteadCapability.READ_SCHEDULE, value, "weekDayTemplates"))));
-    }
-
-    private Optional<TownsteadNeedsView> needsView(Object value) {
-        return Optional.of(new TownsteadNeedsView(
-                integer(value(TownsteadCapability.READ_NEEDS, value, "hunger")),
-                number(value(TownsteadCapability.READ_NEEDS, value, "saturation")).floatValue(),
-                number(value(TownsteadCapability.READ_NEEDS, value, "hungerExhaustion")).floatValue(),
-                integer(value(TownsteadCapability.READ_NEEDS, value, "thirst")),
-                integer(value(TownsteadCapability.READ_NEEDS, value, "quenched")),
-                number(value(TownsteadCapability.READ_NEEDS, value, "thirstExhaustion")).floatValue(),
-                integer(value(TownsteadCapability.READ_NEEDS, value, "fatigue")),
-                bool(value(TownsteadCapability.READ_NEEDS, value, "collapsed")),
-                bool(value(TownsteadCapability.READ_NEEDS, value, "gated"))));
-    }
-
-    private Optional<TownsteadCalendarView> calendarView(Object value) {
-        return Optional.of(new TownsteadCalendarView(
-                string(value(TownsteadCapability.READ_CALENDAR, value, "profileId")),
-                number(value(TownsteadCapability.READ_CALENDAR, value, "worldDay")).longValue(),
-                integer(value(TownsteadCapability.READ_CALENDAR, value, "epochYearOffset")),
-                string(value(TownsteadCapability.READ_CALENDAR, value, "timeMode")),
-                integer(value(TownsteadCapability.READ_CALENDAR, value, "year")),
-                integer(value(TownsteadCapability.READ_CALENDAR, value, "month")),
-                integer(value(TownsteadCapability.READ_CALENDAR, value, "day")),
-                integer(value(TownsteadCapability.READ_CALENDAR, value, "dayOfYear")),
-                integer(value(TownsteadCapability.READ_CALENDAR, value, "dayOfWeek")),
-                string(value(TownsteadCapability.READ_CALENDAR, value, "season"))));
-    }
-
-    private Optional<TownsteadBuildingView> publicBuilding(ServerLevel level, Object value) {
-        try {
-            int villageId = integer(value(TownsteadCapability.READ_BUILDING, value, "villageId"));
-            Optional<SettlementView> settlement = kingdoms.getSettlementForMcaVillage(
-                    level.dimension().location(), villageId);
-            return settlement.map(found -> building(level, found, villageId, value,
-                    TownsteadCapability.READ_BUILDING, false));
-        } catch (RuntimeException ignored) {
-            return Optional.empty();
-        }
-    }
-
-    private Optional<TownsteadBuildingView> internalBuilding(ServerLevel level, SettlementView settlement,
-                                                             int villageId, Object value) {
-        try {
-            return Optional.of(building(level, settlement, villageId, value, TownsteadCapability.READ_BUILDINGS, true));
-        } catch (RuntimeException ignored) {
-            return Optional.empty();
-        }
-    }
-
-    private TownsteadBuildingView building(ServerLevel level, SettlementView settlement, int villageId,
-                                            Object value, TownsteadCapability capability, boolean beanAccessors) {
-        String prefix = beanAccessors ? "get" : "";
-        int id = integer(value(capability, value, prefix + (beanAccessors ? "Id" : "id")));
-        String type = string(value(capability, value, prefix + (beanAccessors ? "Type" : "type")));
-        int size = integer(value(capability, value, prefix + (beanAccessors ? "Size" : "size")));
-        int cx, cy, cz, minX, minY, minZ, maxX, maxY, maxZ;
-        if (beanAccessors) {
-            BlockPos center = (BlockPos) value(capability, value, "getCenter");
-            BlockPos p0 = (BlockPos) value(capability, value, "getPos0");
-            BlockPos p1 = (BlockPos) value(capability, value, "getPos1");
-            if (center == null || p0 == null || p1 == null) throw new IllegalArgumentException("missing building bounds");
-            cx = center.getX(); cy = center.getY(); cz = center.getZ();
-            minX = Math.min(p0.getX(), p1.getX()); minY = Math.min(p0.getY(), p1.getY()); minZ = Math.min(p0.getZ(), p1.getZ());
-            maxX = Math.max(p0.getX(), p1.getX()); maxY = Math.max(p0.getY(), p1.getY()); maxZ = Math.max(p0.getZ(), p1.getZ());
-        } else {
-            cx = integer(value(capability, value, "centerX")); cy = integer(value(capability, value, "centerY"));
-            cz = integer(value(capability, value, "centerZ")); minX = integer(value(capability, value, "minX"));
-            minY = integer(value(capability, value, "minY")); minZ = integer(value(capability, value, "minZ"));
-            maxX = integer(value(capability, value, "maxX")); maxY = integer(value(capability, value, "maxY"));
-            maxZ = integer(value(capability, value, "maxZ"));
-        }
-        String family = TownsteadBuildingView.familyOf(type);
-        UUID bindingId = TownsteadBuildingView.bindingId(level.dimension().location(), settlement.id(), villageId, id);
-        return new TownsteadBuildingView(level.dimension().location(), settlement.id(), bindingId,
-                villageId, id, type, family, TownsteadBuildingView.levelOf(type), size,
-                cx, cy, cz, minX, minY, minZ, maxX, maxY, maxZ);
-    }
-
-    private Optional<TownsteadOriginView> originView(Object value) {
-        ResourceLocation id = resource(value(TownsteadCapability.READ_ORIGIN, value, "id"));
-        if (id == null) return Optional.empty();
-        List<TownsteadLifeStageView> stages = objectList(value(TownsteadCapability.READ_ORIGIN, value, "lifeStages"))
-                .stream().map(this::lifeStage).toList();
-        return Optional.of(new TownsteadOriginView(id,
-                string(value(TownsteadCapability.READ_ORIGIN, value, "displayName")),
-                optionalResource(value(TownsteadCapability.READ_ORIGIN, value, "species")),
-                optionalResource(value(TownsteadCapability.READ_ORIGIN, value, "ancestry")),
-                optionalResource(value(TownsteadCapability.READ_ORIGIN, value, "lineage")),
-                optionalResource(value(TownsteadCapability.READ_ORIGIN, value, "effectiveSpecies")),
-                resourceList(value(TownsteadCapability.READ_ORIGIN, value, "defaultGenes")), stages));
-    }
-
-    private TownsteadLifeStageView lifeStage(Object value) {
-        return new TownsteadLifeStageView(
-                string(callRaw(value, "id")), string(callRaw(value, "label")), integer(callRaw(value, "days")),
-                number(callRaw(value, "scale")).floatValue(), string(callRaw(value, "presentsAs")),
-                number(callRaw(value, "narrativeStart")).floatValue(),
-                number(callRaw(value, "narrativeEnd")).floatValue());
-    }
-
-    private Optional<TownsteadGeneView> geneView(Object value) {
-        ResourceLocation id = resource(value(TownsteadCapability.READ_GENE, value, "id"));
-        if (id == null) return Optional.empty();
-        List<TownsteadGeneVariantView> variants = objectList(value(TownsteadCapability.READ_GENE, value, "variants"))
-                .stream().map(this::geneVariant).toList();
-        return Optional.of(new TownsteadGeneView(id,
-                string(value(TownsteadCapability.READ_GENE, value, "displayName")),
-                string(value(TownsteadCapability.READ_GENE, value, "description")),
-                string(value(TownsteadCapability.READ_GENE, value, "category")),
-                string(value(TownsteadCapability.READ_GENE, value, "dominance")),
-                optionalResource(value(TownsteadCapability.READ_GENE, value, "locus")),
-                integer(value(TownsteadCapability.READ_GENE, value, "weight")),
-                string(value(TownsteadCapability.READ_GENE, value, "displayMode")), variants));
-    }
-
-    private TownsteadGeneVariantView geneVariant(Object value) {
-        return new TownsteadGeneVariantView(string(callRaw(value, "id")), string(callRaw(value, "displayName")),
-                integer(callRaw(value, "weight")), string(callRaw(value, "type")));
-    }
-
-    private Optional<TownsteadSpiritView> spiritView(int villageId, Object entry) {
-        Object totals = value(TownsteadCapability.READ_SPIRIT, entry, "totals");
-        Object readout = value(TownsteadCapability.READ_SPIRIT, entry, "readout");
-        if (totals == null || readout == null) return Optional.empty();
-        Object classification = value(TownsteadCapability.READ_SPIRIT, readout, "classification");
-        return Optional.of(new TownsteadSpiritView(villageId,
-                integerMap(value(TownsteadCapability.READ_SPIRIT, totals, "perSpirit")),
-                integer(value(TownsteadCapability.READ_SPIRIT, totals, "total")),
-                integer(value(TownsteadCapability.READ_SPIRIT, totals, "contributingBuildings")),
-                integer(value(TownsteadCapability.READ_SPIRIT, readout, "tierIndex")),
-                classification == null ? "" : classification.toString().toLowerCase(java.util.Locale.ROOT),
-                optionalString(value(TownsteadCapability.READ_SPIRIT, readout, "primarySpiritId")),
-                optionalString(value(TownsteadCapability.READ_SPIRIT, readout, "secondarySpiritId"))));
-    }
-
-    private Object value(TownsteadCapability capability, Object target, String accessor) {
-        return binding.call(capability, target, accessor).orElse(null);
-    }
-
-    private Object callRaw(Object target, String accessor) {
-        try { return target.getClass().getMethod(accessor).invoke(target); }
-        catch (Throwable ignored) { return null; }
-    }
 
     private static BuildingRecoveryResult result(BuildingRecoveryStatus status, BoundCivicBuilding binding,
                                                  TownsteadBuildingView building, String reason) {
@@ -391,36 +418,5 @@ final class TownsteadServiceImpl implements TownsteadService {
         return buildings.stream()
                 .filter(building -> building.family().equals(family))
                 .min(Comparator.comparingInt(TownsteadBuildingView::buildingId));
-    }
-
-    private static String string(Object value) { return value == null ? "" : String.valueOf(value); }
-    private static boolean bool(Object value) { return value instanceof Boolean b && b; }
-    private static Number number(Object value) { return value instanceof Number n ? n : 0; }
-    private static int integer(Object value) { return number(value).intValue(); }
-    private static UUID uuid(Object value) { try { return UUID.fromString(string(value)); } catch (Exception ignored) { return null; } }
-    private static ResourceLocation resource(Object value) { return ResourceLocation.tryParse(string(value)); }
-    private static Optional<ResourceLocation> optionalResource(Object value) {
-        String raw = string(value); return raw.isBlank() ? Optional.empty() : Optional.ofNullable(ResourceLocation.tryParse(raw));
-    }
-    private static Optional<String> optionalString(Object value) {
-        return value == null || string(value).isBlank() ? Optional.empty() : Optional.of(string(value));
-    }
-    private static List<Object> objectList(Object value) { return value instanceof List<?> list ? new ArrayList<>(list) : List.of(); }
-    private static List<String> stringList(Object value) { return objectList(value).stream().map(String::valueOf).toList(); }
-    private static List<Integer> intList(Object value) { return objectList(value).stream().map(TownsteadServiceImpl::integer).toList(); }
-    private static List<ResourceLocation> resourceList(Object value) { return objectList(value).stream().map(TownsteadServiceImpl::resource).filter(Objects::nonNull).toList(); }
-    private static Map<String, String> stringMap(Object value) {
-        if (!(value instanceof Map<?, ?> map)) return Map.of();
-        Map<String, String> out = new LinkedHashMap<>(); map.forEach((key, item) -> out.put(String.valueOf(key), String.valueOf(item))); return Map.copyOf(out);
-    }
-    private static Map<ResourceLocation, Float> resourceFloatMap(Object value) {
-        if (!(value instanceof Map<?, ?> map)) return Map.of();
-        Map<ResourceLocation, Float> out = new LinkedHashMap<>();
-        map.forEach((key, item) -> { ResourceLocation id = ResourceLocation.tryParse(String.valueOf(key)); if (id != null && item instanceof Number n) out.put(id, n.floatValue()); });
-        return Map.copyOf(out);
-    }
-    private static Map<String, Integer> integerMap(Object value) {
-        if (!(value instanceof Map<?, ?> map)) return Map.of();
-        Map<String, Integer> out = new LinkedHashMap<>(); map.forEach((key, item) -> out.put(String.valueOf(key), integer(item))); return Map.copyOf(out);
     }
 }

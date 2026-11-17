@@ -21,20 +21,24 @@ for key, english in lang['en_us'].items():
             problems.append(f'{locale} {key}: placeholder count differs from en_us')
 for locale in ('es_es', 'zh_cn'):
     problems.extend(f'{locale} has extra key {key}' for key in lang[locale] if key not in lang['en_us'])
-# A key is a literal, or a file's own prefix constant plus a literal (static final String P = "a.b."; P + "c").
+# A key is a literal, or a file's own prefix constant plus a literal (static final String P = "a.b."; P + "c"). A prefix
+# constant may be built on another class's constant (P = DynastyService.P + "page.") or be that constant
+# (P = DevelopmentService.P;); the class is looked up by name, so several classes may each have their own P.
 call = re.compile(r'Keyed\.(?:text|refuse|require)\((?:[^"]*?[,(]\s*)??(?:([A-Z]+)\s*\+\s*)?"([a-z0-9_.]+)"\s*,\s*"((?:[^"\\]|\\.)*)"')
-constant = re.compile(r'static final String ([A-Z]+)\s*=\s*(?:[A-Za-z]+\.([A-Z]+)\s*\+\s*)?"([a-z0-9_.]*)"')
-prefixes = {}
+constant = re.compile(r'static final String ([A-Z]+)\s*=\s*(?:([A-Za-z]+)\.([A-Z]+)\s*(?:\+\s*)?)?(?:"([a-z0-9_.]*)")?\s*;')
+prefixes, classes = {}, {}
 for path in (ROOT / 'src/main/java').rglob('*.java'):
-    for name, outer, value in constant.findall(path.read_text(encoding='utf-8')):
-        prefixes.setdefault(path, {})[name] = (outer, value)
-def prefix(path, name):
-    outer, value = prefixes.get(path, {}).get(name, ('', None))
-    if value is None: return None
-    if not outer: return value
-    # A prefix built on another class's constant of the same name (P = DynastyService.P + "page.").
-    found = [v for p, names in prefixes.items() for n, (o, v) in names.items() if n == outer and not o and p != path]
-    return found[0] + value if len(found) == 1 else None
+    classes.setdefault(path.stem, []).append(path)
+    for name, owner, outer, value in constant.findall(path.read_text(encoding='utf-8')):
+        prefixes.setdefault(path, {})[name] = (owner, outer, value)
+def prefix(path, name, depth=0):
+    entry = prefixes.get(path, {}).get(name)
+    if entry is None or depth > 8: return None
+    owner, outer, value = entry
+    if not owner: return value
+    found = [p for p in classes.get(owner, []) if outer in prefixes.get(p, {})]
+    head = prefix(found[0], outer, depth + 1) if len(found) == 1 else None
+    return None if head is None else head + value
 for path in sorted((ROOT / 'src/main/java').rglob('*.java')):
     for match in call.finditer(path.read_text(encoding='utf-8')):
         head = prefix(path, match.group(1)) if match.group(1) else ''

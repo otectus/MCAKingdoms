@@ -33,6 +33,11 @@ public final class ActionRegistry {
      * so players see the reason instead of a missing entry, and refuses the pick (H02).
      */
     public static final String UNAVAILABLE="unavailable";
+    /**
+     * Choice metadata marking the only sensible answer of a field that depends on an earlier one (a skill needs no tier):
+     * when it is the field's single choice, the form selects it and moves on; the review still shows and edits it (AUD-15).
+     */
+    public static final String AUTOMATIC="automatic";
     public enum Kind { CHOICE, MULTI, TEXT, NUMBER }
     /**
      * Bounds and units of a numeric field. The form shows them before submission, checks them before advancing, and

@@ -24,7 +24,8 @@ import java.util.function.Consumer;
 
 /** Dedicated bounded request channel for the optional Blueprint civic header. */
 public final class TownsteadCivicNetwork {
-    private static final String PROTOCOL = "1";
+    /** 2 since 0.3.0: the header carries the local-government owner and the settlement id. */
+    private static final String PROTOCOL = "2";
     private static final ResourceLocation CHANNEL_ID = new ResourceLocation("mcakingdoms", "townstead_civic");
     private static final SimpleChannel CHANNEL = NetworkRegistry.ChannelBuilder.named(CHANNEL_ID)
             .networkProtocolVersion(() -> PROTOCOL)
@@ -113,7 +114,29 @@ public final class TownsteadCivicNetwork {
         } catch (RuntimeException ignored) {
             // Faction and local standing are optional presentation inputs.
         }
+        String authority = "";
+        try {
+            authority = dev.otectus.mcakingdoms.compat.townstead.TownsteadAuthority.get(player.getServer())
+                    .map(a -> a.resolve(settlement.id(), dev.otectus.mcakingdoms.compat.townstead.TownsteadAuthority.Domain.LOCAL_GOVERNMENT))
+                    .map(TownsteadCivicNetwork::authorityKey).orElse("");
+        } catch (RuntimeException ignored) {
+            // The owner line is optional presentation; the header still shows the settlement and kingdom.
+        }
         return new TownsteadCivicHeaderPacket.Header(settlement.displayName(), kingdom.id(),
-                kingdom.translationKey(), kingdom.heraldryIcon(), kingdom.uiColor(), standing);
+                kingdom.translationKey(), kingdom.heraldryIcon(), kingdom.uiColor(), standing, authority, settlement.id());
+    }
+
+    static String authorityKey(dev.otectus.mcakingdoms.compat.townstead.TownsteadAuthority.Resolution local) {
+        String base = dev.otectus.mcakingdoms.compat.townstead.TownsteadText.PREFIX + "header.local_";
+        return switch (local.state()) {
+            case CONFLICT -> base + "conflict";
+            case EXTERNAL_UNAVAILABLE, RECOVERY_REQUIRED -> base + "waiting";
+            default -> switch (local.owner()) {
+                case MCA_KINGDOMS -> base + "kingdoms";
+                case TOWNSTEAD -> base + "townstead";
+                case MCA_CAPITALS -> base + "capitals";
+                default -> base + "none";
+            };
+        };
     }
 }

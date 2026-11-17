@@ -1,0 +1,51 @@
+{
+  "schema": "townstead:chronicle_event/v1",
+  "category": "mcakingdoms.diplomacy",
+  "weight": 10,
+  "rarity": "uncommon",
+  "keep": true,
+  "contexts": [
+    "live"
+  ],
+  "trigger": {
+    "type": "external",
+    "key": "mcakingdoms:agreement_concluded"
+  },
+  "reach": "village",
+  "news_value": 5.0,
+  "roles": [
+    {
+      "id": "player",
+      "kind": "player"
+    }
+  ],
+  "witnesses": {
+    "radius": 16.0,
+    "max": 8
+  },
+  "display": {
+    "headline": {
+      "translate": "chronicle.mcakingdoms.agreement_concluded"
+    },
+    "params": [
+      "player",
+      "kingdom",
+      "counterpart"
+    ]
+  },
+  "impact": {
+    "witness": {
+      "mood": 2.5,
+      "memory": {
+        "valence": 0.6,
+        "strength": 1.0
+      }
+    },
+    "on_learn": {
+      "memory": {
+        "valence": 0.4,
+        "strength": 0.6
+      }
+    }
+  }
+}

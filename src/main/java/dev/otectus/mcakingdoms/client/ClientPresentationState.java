@@ -113,6 +113,7 @@ public final class ClientPresentationState {
 
     @SubscribeEvent
     public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
+        PinnedTask.forgetServer();
         clearAll();
         // The next server has its own kingdoms; nothing from this one is shown there.
         dev.otectus.mcakingdoms.client.guide.GuideKingdoms.clear();

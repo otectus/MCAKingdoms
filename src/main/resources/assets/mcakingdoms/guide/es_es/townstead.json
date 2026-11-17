@@ -1,0 +1,222 @@
+{
+ "schema": 2,
+ "entries": [
+  {
+   "id": "townstead_village_life",
+   "category": "settlements",
+   "task": "townstead.life",
+   "title": "Vida de las aldeas de Townstead",
+   "summary": "Con Townstead 0.8.0, la página de un asentamiento muestra cómo están sus residentes, qué se pide producir a sus trabajadores y sus noticias, sin cambiar nada.",
+   "keywords": [
+    "townstead",
+    "necesidades",
+    "espíritu",
+    "cultura",
+    "pedidos de trabajo",
+    "noticias de la aldea"
+   ],
+   "blocks": [
+    {
+     "id": "p1",
+     "type": "paragraph",
+     "text": "La vida de la aldea lee los registros propios de Townstead para el asentamiento que elijas: cuántos residentes conoce Townstead y lo recientes que son sus lecturas, las necesidades que simula, el espíritu comunitario, la cultura y la fecha de hoy. Todos los que miran comparten una misma lectura, que se renueva cuando Townstead informa de un cambio."
+    },
+    {
+     "id": "four",
+     "type": "comparison",
+     "alt": "Cuatro nombres distintos: el asentamiento es el lugar; el reino es quién es su gente; la cultura de Townstead es cómo vive la aldea; una facción de Townstead es un cuerpo político. Ninguno sustituye a otro.",
+     "columns": [
+      {
+       "title": "Asentamiento",
+       "points": [
+        "El lugar que registra MCA: Kingdoms, con su nombre cívico.",
+        "Su identidad sobrevive a cambios de nombre y fusiones."
+       ]
+      },
+      {
+       "title": "Reino",
+       "points": [
+        "Quién es su gente: identidad cívica, gobierno, heráldica.",
+        "Ninguna cultura lo cambia."
+       ]
+      },
+      {
+       "title": "Cultura de Townstead",
+       "points": [
+        "Cómo vive la aldea: nombres, edificios, costumbres.",
+        "Ni una conquista ni un nuevo reino la cambian."
+       ]
+      },
+      {
+       "title": "Facción de Townstead",
+       "points": [
+        "Un consejo o una asociación dentro de Townstead.",
+        "No es un reino ni un capítulo de gremio."
+       ]
+      }
+     ]
+    },
+    {
+     "id": "p2",
+     "type": "paragraph",
+     "text": "Las lecturas son honestas: una necesidad que nadie simula aparece como no simulada, nunca como satisfecha; si Townstead conoce a muy pocos residentes o sus lecturas son antiguas, la página dice información actual insuficiente; el calor y el frío cuentan por igual como malestar térmico. El trabajo de la aldea separa la producción solicitada de los bienes disponibles y de los bienes entregados: solo una entrega a un encargo se paga, una vez."
+    },
+    {
+     "id": "callout",
+     "type": "callout",
+     "tone": "note",
+     "title": "Las sugerencias son opcionales",
+     "text": "Cuando una necesidad se mantiene y está bien muestreada, la página puede sugerir una tarea existente, como una obra pública. Nada es obligatorio, se penaliza ni ocurre solo, y nunca aparece una sugerencia para una necesidad que el mundo no simula."
+    },
+    {
+     "id": "links",
+     "type": "links",
+     "links": [
+      {
+       "kind": "task",
+       "target": "townstead.life",
+       "label": "Leer la vida de la aldea"
+      },
+      {
+       "kind": "task",
+       "target": "townstead.work",
+       "label": "Leer el trabajo de la aldea"
+      },
+      {
+       "kind": "task",
+       "target": "townstead.news",
+       "label": "Leer las noticias de la aldea"
+      },
+      {
+       "kind": "guide",
+       "target": "townstead_government"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "townstead_government",
+   "category": "politics",
+   "task": "townstead.government",
+   "title": "Quién gobierna una aldea de Townstead",
+   "summary": "La corona, el gobierno local, los gremios, los nombres y las armas pueden pertenecer cada uno a MCA: Kingdoms, a MCA Capitals o a Townstead; la página de Gobierno y servicios dice a quién y dónde actuar.",
+   "keywords": [
+    "townstead",
+    "consejo",
+    "autoridad",
+    "conflicto",
+    "capitals"
+   ],
+   "blocks": [
+    {
+     "id": "p1",
+     "type": "paragraph",
+     "text": "Primero rige la política de corona existente de MCA Capitals. MCA: Kingdoms gobierna los cargos cívicos de los asentamientos de los reinos que gobierna; Townstead gobierna sus propios consejos donde ningún gobierno de MCA: Kingdoms cubre la aldea. Un gremio de Townstead nunca es automáticamente un capítulo de gremio aquí, y ningún mod importa ni borra los registros del otro."
+    },
+    {
+     "id": "p2",
+     "type": "paragraph",
+     "text": "Cuando ambos mantienen registros con titulares para el mismo asentamiento, la página informa de un conflicto y ambos siguen funcionando: no se fusiona, elige ni borra nada. Un operador puede adoptar MCA: Kingdoms para ese asentamiento, o ceder su gobierno local a Townstead, tras lo cual MCA: Kingdoms rechaza allí nuevos cargos del asentamiento y nuevos reconocimientos."
+    },
+    {
+     "id": "callout",
+     "type": "callout",
+     "tone": "note",
+     "title": "La delegación política no está disponible",
+     "text": "Townstead 0.8.0 no acepta un gobierno externo, así que MCA: Kingdoms no puede pedir al consejo de Townstead que se retire. Informa con honestidad de la titularidad y de los conflictos y nunca cambia la política de Townstead."
+    },
+    {
+     "id": "links",
+     "type": "links",
+     "links": [
+      {
+       "kind": "task",
+       "target": "townstead.government",
+       "label": "Leer quién gobierna un asentamiento"
+      },
+      {
+       "kind": "task",
+       "target": "townstead.qualify",
+       "label": "Comprobar tu oficio de Townstead"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "townstead_operations",
+   "category": "operators",
+   "task": "townstead.status",
+   "operator": true,
+   "player_task": "townstead.government",
+   "title": "Townstead: estado, autoridad y recuperación",
+   "summary": "Cómo leen los operadores el estado de la integración, deciden un gobierno local disputado y se recuperan tras restaurar una copia de seguridad.",
+   "blocks": [
+    {
+     "id": "p1",
+     "type": "paragraph",
+     "text": "El estado informa de la versión de Townstead, del motor en uso (la api.v1 pública en 0.8.0, la fachada anterior en 0.7.x, los edificios propios de MCA sin Townstead), de cada capacidad con su estado y motivo, de los interruptores de Townstead del mundo y de las comprobaciones de asignaciones del paquete de datos. Nada de esto cambia Townstead."
+    },
+    {
+     "id": "steps",
+     "type": "steps",
+     "items": [
+      {
+       "text": "Comprueba la integración: versiones, motor, capacidades y asignaciones.",
+       "link": {
+        "kind": "task",
+        "target": "townstead.status",
+        "operator": true
+       }
+      },
+      {
+       "text": "Inspecciona una aldea: sus referencias de MCA, sus edificios con su estado de terminación y quién gobierna cada ámbito, con las pruebas.",
+       "link": {
+        "kind": "task",
+        "target": "townstead.inspect",
+        "operator": true
+       }
+      },
+      {
+       "text": "Decide un gobierno local disputado: previsualiza y luego adopta MCA: Kingdoms o cédelo a Townstead; borra una decisión para que vuelvan a decidir las pruebas.",
+       "link": {
+        "kind": "task",
+        "target": "townstead.adopt",
+        "operator": true
+       }
+      },
+      {
+       "text": "Tras restaurar una copia de seguridad de Townstead, revisa los asentamientos que esperan a un operador y acepta los datos actuales de Townstead como su referencia.",
+       "link": {
+        "kind": "task",
+        "target": "townstead.acknowledge",
+        "operator": true
+       }
+      }
+     ]
+    },
+    {
+     "id": "callout",
+     "type": "callout",
+     "tone": "warning",
+     "title": "Quitar Townstead",
+     "text": "Un gobierno local cedido a Townstead sigue cedido mientras Townstead no está: MCA: Kingdoms lo indica como no disponible y no lo recupera por su cuenta. Las instituciones ligadas a edificios esperan en lugar de moverse, y no se destruye ni se concede nada cuando Townstead vuelve."
+    }
+   ],
+   "commands": [
+    "/kingdoms compat townstead status",
+    "/kingdoms compat townstead village <settlement>",
+    "/kingdoms compat townstead buildings <settlement>",
+    "/kingdoms compat townstead authority <settlement>",
+    "/kingdoms compat townstead authority <settlement> preview adopt",
+    "/kingdoms compat townstead authority <settlement> adopt",
+    "/kingdoms compat townstead authority <settlement> release",
+    "/kingdoms compat townstead authority <settlement> clear",
+    "/kingdoms compat townstead authority <settlement> acknowledge",
+    "/kingdoms compat townstead queues",
+    "/kingdoms compat townstead reconcile <settlement>"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "organization": "example:harbor_archivists",
+  "requires": {
+    "profession": "minecraft:librarian",
+    "skill": "townstead:copying"
+  }
+}

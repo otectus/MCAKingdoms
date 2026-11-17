@@ -13,8 +13,11 @@ A small, working data pack that adds one of each common MCA: Kingdoms definition
 | `data/example/mcakingdoms/kingdom_gates/harbor_league_only.json` | the gate `example:harbor_league_only`: true only where the player stands in a Harbor League settlement |
 | `data/example/warfare/world/harbor_sites.json` | shipwrecks and warm and cold ocean ruins as world sites, drowned as a site-defense encounter |
 | `data/example/evolution/scenarios/harbor_relief.json` | an ordinary relief opportunity (aid, mediate or decline; two contributions) |
+| `data/example/mcakingdoms_townstead/careers/archivist_scribes.json` | with Townstead: the Harbor Archivists' copying desk also needs a Townstead librarian or cartographer career at tier 2 or above |
+| `data/example/mcakingdoms_townstead/culture_hints/coastal.json` | with Townstead: new, unassigned settlements whose Townstead village has the culture `example:harbor_folk` are suggested for the Harbor League |
+| `data/example/culture/harbor_folk.json` | for Townstead itself: the culture `example:harbor_folk` the hint names (Townstead 0.8.0 ships no cultures of its own; this one claims no village, so a village gets it only where a culture pack or this file's Townstead `villages` list assigns it). Ignored without Townstead. |
 
-The matching resource pack, [`../resourcepack/mcakingdoms-example-lang`](../resourcepack/mcakingdoms-example-lang), names the kingdom and the charter in English, Spanish and Simplified Chinese. Data packs cannot carry language files; without the resource pack, players see `kingdom.example.harbor_league` instead of the name.
+The matching resource pack, [`../resourcepack/mcakingdoms-example-lang`](../resourcepack/mcakingdoms-example-lang), names the kingdom, the charter and the Townstead culture in English, Spanish and Simplified Chinese. Data packs cannot carry language files; without the resource pack, players see `kingdom.example.harbor_league` instead of the name.
 
 ## Try it
 
@@ -31,6 +34,10 @@ Expected results:
 - **Establish a government** offers the Harbor League Charter as a government type.
 - An MCA Quests condition `{"type": "mcakingdoms:kingdom", "gate": "example:harbor_league_only"}` passes only for a player standing in a Harbor League settlement.
 - The relief opportunity can appear only in a world an operator opted in with **Configure world evolution**.
+- With Townstead 0.8.0, `/kingdoms compat townstead status` reports "Townstead mappings: all valid": the career rule's
+  professions and the hint's culture are known to the installed Townstead. **Check service requirements** for the Harbor
+  Archivists' copying desk names the Townstead career it needs, and **Check a Townstead career** (`minecraft:librarian`, tier 2) tells a
+  player whether they have it.
 
 Removing the pack later does not rewrite saves. A settlement already assigned to the Harbor League keeps that kingdom id and shows it as an unavailable kingdom until the pack returns or an operator reassigns it; a government founded with the charter becomes dormant.
 

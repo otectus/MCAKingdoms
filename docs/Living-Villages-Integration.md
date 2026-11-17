@@ -15,7 +15,7 @@ and the operator tools. Players' explanations are in the Book of Kingdoms under 
 | --- | --- | --- |
 | Recruits | `1.15.2` | Exact version, as for the existing Recruits integration. |
 | Recruits: Living Villages | `1.1.0` release jar, SHA-256 `55a7da18…46dda8` | `mixin/LvGate` applies the hooks only to that exact jar, so a patched jar with the same version string is not mistaken for it. |
-| MCA Reborn (optional) | `7.6.26+1.20.1` with Architectury `9.2.14` | Residents of integrated villages are created through MCA's own `VillagerFactory`. |
+| MCA Reborn (optional) | `7.6.26+1.20.1` with Architectury `9.2.14`; `7.7.1-beta.5+1.20.1` | Residents of integrated villages are created through MCA's own `VillagerFactory`. |
 
 `mods.toml` accepts `recruitsvillages` `[1.1.0,)`, so a newer release launches. With any other build, the hooks are not
 applied: the integration stays off, saved bridge records stay as they are (read-only), nothing new is bound, and
@@ -261,7 +261,8 @@ audited Living Villages 1.1.0 jar (`tools/test/integration_runtime.py --phase lv
 residents, an abstract conquest, capital succession, AI peace, arbitration, the war preflight and AI target selection;
 then a restart, Living Villages removed, reinstalled, a future-schema bridge store, and an unaudited jar refused before
 any world change. The `lv-mca` phase adds MCA Reborn 7.6.26: new residents are MCA villagers made by MCA's factory and
-survive the provider folding the village. Results and jar hashes are in [certified compatibility](compatibility-certified.md);
+survive the provider folding the village. It passes with MCA Reborn 7.7.1-beta.5 too, whose classes moved to
+`forge.net.conczin.mca` (the factory is found under either package). Results and jar hashes are in [certified compatibility](compatibility-certified.md);
 the policies and the bridge document have unit tests (`compat/livingvillages`).
 
 ## Limits

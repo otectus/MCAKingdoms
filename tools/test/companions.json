@@ -1,5 +1,5 @@
 {
-  "about": "The MCA: Kingdoms 0.3.0 companion tuple (F04/F16). 'accepted' is the optional range in gradle.properties (never a launch blocker); 'validated' lists the exact jars used for acceptance, by SHA-256; 'publicSource' is the newest public commit inspected and whether it carries the contract; 'pendingRelease' is local work that is not published. A version string alone does not identify a contract: the pack's mcaquests-1.7.1.jar was built from local work and carries the current contract, while the public 1.7.1 source does not. 'tuples' lists whole mod combinations: only a tuple with certified=true passed a packaged run; others record why they are not certified.",
+  "about": "The MCA: Kingdoms companion tuple (0.3.0 F04/F16; Waystones and Balm added in 0.3.1). 'accepted' is the optional range in gradle.properties (never a launch blocker); 'validated' lists the exact jars used for acceptance, by SHA-256; 'publicSource' is the newest public commit inspected and whether it carries the contract; 'pendingRelease' is local work that is not published. A version string alone does not identify a contract: the pack's mcaquests-1.7.1.jar was built from local work and carries the current contract, while the public 1.7.1 source does not. 'tuples' lists whole mod combinations: only a tuple with certified=true passed a packaged run; others record why they are not certified.",
   "inspected": "2026-10-27",
   "companions": [
     {
@@ -185,17 +185,29 @@
       "accepted": "[0.7.6,0.9)",
       "contract": {
         "classes": {},
-        "needed_for": "political building evidence (probed by capability)",
-        "without_it": "MCA loaded-village buildings are used"
+        "needed_for": "village life, careers, work, news, reactions and building evidence with completion (api.v1 on 0.8.0, the older facade on 0.7.x); every capability is probed member by member",
+        "without_it": "MCA's own village buildings and completion are used; the Village life, work and news pages say Townstead is not installed"
       },
       "validated": [
         {
           "file": "townstead-0.7.6+1.20.1.jar",
           "sha256": "78ab52d551dfaf2ca3366da565ccb501918f73affe7b48f339ce63b17de1513e",
-          "builtFrom": "pack copy",
+          "builtFrom": "pack copy (needs Patchouli 1.20.1-85)",
+          "carriesContract": true
+        },
+        {
+          "file": "townstead-0.8.0+1.20.1.jar",
+          "sha256": "bc7e292397bf769ae334a63bfcc84abbcfeb54ab65cbe50794a022acb33c1035",
+          "builtFrom": "Modrinth release b8VnGFDu (SHA-1 b64727e8076259a697187662963c54e39dc5827d); the pack's townstead-0.8.0-1.20.1.jar is the same file",
           "carriesContract": true
         }
-      ]
+      ],
+      "publicSource": {
+        "commit": "c0c1634c498c0cba192bd1391d1141880c8223fb",
+        "version": "0.8.0+1.20.1",
+        "carriesContract": true,
+        "detail": "tag 0.8.0; the compile-only api.v1 jar in libs/townstead-api is built from it and pinned by SHA-256 in gradle.properties"
+      }
     },
     {
       "mod": "mca",
@@ -216,6 +228,12 @@
           "file": "architectury-9.2.14-forge.jar",
           "sha256": "218b471d0b8a1f6cda14cfc1beb9eeb0df54304500acc6c5613d9b88ec65d9af",
           "builtFrom": "pack copy (MCA dependency)",
+          "carriesContract": true
+        },
+        {
+          "file": "minecraft-comes-alive-reborn-7.7.1-beta.5+1.20.1.jar",
+          "sha256": "0661e8d59918143f1d6c89d279dbdd7c2772b64ac51806394b2ba291c1449771",
+          "builtFrom": "Modrinth release KJixRMB5 (SHA-1 66955aac...); the pack's minecraft-comes-alive-7.7.1-beta.5+1.20.1-universal.jar is the same file; needs no Architectury",
           "carriesContract": true
         }
       ]
@@ -258,6 +276,102 @@
         "detail": "no public mutation API, so delegation of crown actions is blocked upstream (docs/Capitals-Upstream-API-Proposal.md)"
       },
       "pendingRelease": null
+    },
+    {
+      "mod": "waystones",
+      "accepted": "[14.1.21,) permits launch; settlement naming binds only to exactly 14.1.21 with Balm 7.3.44, and the edit observer only to the tested 14.1.21 jar, identified by SHA-256 (mixin/WaystonesGate)",
+      "contract": {
+        "classes": {
+          "net/blay09/mods/waystones/api/GenerateWaystoneNameEvent.class": [
+            "getWaystone",
+            "getName",
+            "setName"
+          ],
+          "net/blay09/mods/waystones/api/WaystoneActivatedEvent.class": [
+            "getPlayer",
+            "getWaystone"
+          ],
+          "net/blay09/mods/waystones/api/IWaystone.class": [
+            "getWaystoneUid",
+            "getName",
+            "getDimension",
+            "getPos",
+            "getWaystoneType",
+            "hasName"
+          ],
+          "net/blay09/mods/waystones/api/IMutableWaystone.class": [
+            "setName"
+          ],
+          "net/blay09/mods/waystones/api/WaystonesAPI.class": [
+            "getWaystone",
+            "getAllWaystones"
+          ],
+          "net/blay09/mods/waystones/core/WaystoneManager.class": [
+            "get"
+          ],
+          "net/blay09/mods/waystones/core/WaystoneSyncManager.class": [
+            "sendWaystoneUpdateToAll"
+          ],
+          "net/blay09/mods/waystones/core/PlayerWaystoneManager.class": [
+            "mayEditWaystone"
+          ],
+          "net/blay09/mods/waystones/network/message/EditWaystoneMessage.class": [
+            "handle",
+            "waystoneUid"
+          ]
+        },
+        "needed_for": "settlement names for waystones (docs/Waystones-Integration.md)",
+        "without_it": "waystones keep Waystones' own names; Server health and /kingdoms waystones status say why"
+      },
+      "validated": [
+        {
+          "file": "waystones-forge-1.20.1-14.1.21.jar",
+          "sha256": "fd6fe3c645328ea7be5bc6723d02c881e34650e0cbd4527ba59e42fa4cbe3c80",
+          "builtFrom": "pack copy of the public 14.1.21 release; contract read from its class files on 2026-11-09 (build/v031-evidence/WORKPLAN.md)",
+          "carriesContract": true
+        }
+      ],
+      "publicSource": {
+        "commit": "public release jar 14.1.21 (class files inspected with javap; no source repository inspected)",
+        "version": "14.1.21",
+        "carriesContract": true,
+        "detail": "the two events are public API (net.blay09.mods.waystones.api); the manager, update broadcast, edit permission check, proxy backing record and edit message field are resolved by exact name and signature in compat/waystones/WaystonesAccess"
+      },
+      "pendingRelease": null
+    },
+    {
+      "mod": "balm",
+      "accepted": "[7.3.44,) permits launch; naming binds only with exactly 7.3.44 beside Waystones 14.1.21",
+      "contract": {
+        "classes": {
+          "net/blay09/mods/balm/api/Balm.class": [
+            "getEvents"
+          ],
+          "net/blay09/mods/balm/api/event/BalmEvents.class": [
+            "onEvent"
+          ],
+          "net/blay09/mods/balm/api/event/EventPriority.class": [
+            "Low"
+          ]
+        },
+        "needed_for": "delivering the two Waystones events the naming listens to",
+        "without_it": "Waystones itself does not load; MCA: Kingdoms is unaffected"
+      },
+      "validated": [
+        {
+          "file": "balm-forge-1.20.1-7.3.44.jar",
+          "sha256": "ad11d968770bb1ce73377626b6f1dcd4ae6f8be1ef6f37cee9b872b8176aebd3",
+          "builtFrom": "pack copy of the public 7.3.44 release",
+          "carriesContract": true
+        }
+      ],
+      "publicSource": {
+        "commit": "public release jar 7.3.44 (class files inspected with javap)",
+        "version": "7.3.44",
+        "carriesContract": true,
+        "detail": "public Balm event API"
+      },
+      "pendingRelease": null
     }
   ],
   "tuples": [
@@ -292,7 +406,7 @@
       "mca": "7.6.26",
       "mcacapitals": "1.3.7",
       "certified": false,
-      "reason": "Capitals 1.3.7 (and 1.3.0-1.3.6) require MCA [7.7.0-beta.2,7.7.1) or later; with the pack's MCA 7.6.26 Forge refuses to load it. Its read API was checked by class inspection only."
+      "reason": "Capitals 1.3.7 (and 1.3.0-1.3.6) require MCA [7.7.0-beta.2,7.7.1) or later; with the pack's MCA 7.6.26 Forge refuses to load it. With MCA 7.7.1-beta.5 it is certified as capitals-1.3.7-mca-7.7.1."
     },
     {
       "name": "living-villages-1.1.0",
@@ -313,6 +427,80 @@
       "recruitsvillages": "1.1.0 (audited jar)",
       "certified": true,
       "evidence": "build/lv-evidence/runtime/lv-mca-2/lv-mca.log (packaged phase lv-mca: PASS)"
+    },
+    {
+      "name": "townstead-0.8.0",
+      "minecraft": "1.20.1",
+      "forge": "47.4.23",
+      "mca": "7.7.1-beta.5",
+      "townstead": "0.8.0",
+      "certified": true,
+      "evidence": "build/ts080-evidence/runtime/ts080-10 (packaged phase townstead: first boot, restart, Townstead removed, restored: PASS) and ts080-initial-6"
+    },
+    {
+      "name": "townstead-0.7.6",
+      "minecraft": "1.20.1",
+      "forge": "47.4.23",
+      "mca": "7.6.26",
+      "architectury": "9.2.14",
+      "townstead": "0.7.6",
+      "patchouli": "1.20.1-85",
+      "certified": true,
+      "evidence": "build/ts080-evidence/runtime/ts076-6 (packaged phase townstead on the legacy backend: PASS) and ts076-initial-4"
+    },
+    {
+      "name": "pack-townstead-0.8.0",
+      "minecraft": "1.20.1",
+      "forge": "47.4.23",
+      "mca": "7.7.1-beta.5",
+      "townstead": "0.8.0",
+      "recruits": "1.15.2",
+      "mcaquests": "1.7.1 (local build)",
+      "mcacrime": "0.7.5",
+      "mcareputation": "0.6.1 (local build, migration phase)",
+      "certified": true,
+      "evidence": "build/ts080-evidence/runtime/reg-{r2,r3-civilian,r4,r4-service,r4-family,r4-extensions,r4-crash,migration}-ts080-1 (packaged phases: PASS)",
+      "architectury": "9.2.14 (installed; MCA 7.7.1 does not require it)"
+    },
+    {
+      "name": "townstead-0.8.0-with-mca-7.6.26",
+      "minecraft": "1.20.1",
+      "forge": "47.4.23",
+      "mca": "7.6.26",
+      "townstead": "0.8.0",
+      "certified": false,
+      "reason": "Townstead 0.8.0 declares mca [1.20.1-SNAPSHOT],[7.7.1-beta.5+1.20.1]; Forge refuses to load it beside MCA 7.6.26 (build/ts080-evidence/runtime/ts080-mca76-4)"
+    },
+    {
+      "name": "capitals-1.3.7-mca-7.7.1",
+      "minecraft": "1.20.1",
+      "forge": "47.4.23",
+      "mca": "7.7.1-beta.5",
+      "mcacapitals": "1.3.7",
+      "townstead": "0.8.0",
+      "certified": true,
+      "evidence": "build/ts080-evidence/runtime/reg-capitals-137-ts080-1/capitals.log (packaged phase capitals: PASS)",
+      "architectury": "9.2.14 (installed; MCA 7.7.1 does not require it)"
+    },
+    {
+      "name": "living-villages-mca-7.7.1",
+      "minecraft": "1.20.1",
+      "forge": "47.4.23",
+      "mca": "7.7.1-beta.5",
+      "recruits": "1.15.2",
+      "recruitsvillages": "1.1.0 (audited jar)",
+      "certified": true,
+      "evidence": "build/ts080-evidence/runtime/reg-lv-mca-ts080-2/lv-mca.log (packaged phase lv-mca: PASS)",
+      "architectury": "9.2.14 (installed; MCA 7.7.1 does not require it)"
+    },
+    {
+      "name": "waystones-14.1.21",
+      "minecraft": "1.20.1",
+      "forge": "47.4.23",
+      "waystones": "14.1.21",
+      "balm": "7.3.44",
+      "certified": true,
+      "evidence": "build/v031-evidence/runtime/waystones-6 (phases waystones and waystones-restart), waystones-unsupported-4 and waystones-untested-build-4 (copies of the tested jar: another version, other bytes), and r4-full-waystones-1 and initial-full-waystones-1 (the pack on Townstead 0.8.0 with Waystones), all on mcakingdoms-0.3.1.jar 1e5e6a7b"
     }
   ]
 }

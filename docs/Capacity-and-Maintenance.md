@@ -1,15 +1,18 @@
 # Capacity and record maintenance
 
-Applies to MCA: Kingdoms 0.3.0 and later. Audience: server operators.
+Applies to MCA: Kingdoms 0.3.1. Audience: server operators.
 
-Every saved-data store has defensive bounds. They keep save files, network replies and server ticks bounded no matter how long a world runs. When a collection reaches its bound, the owning service **refuses new records of that kind**, with a message naming the capacity. Nothing is ever deleted to make room. Everything else keeps working: existing records stay readable, other systems keep running, and saves are unaffected.
+Every saved-data store has defensive bounds. They keep save files, network replies and server ticks bounded no matter how long a world runs.
+
+**A record that is still in use is never deleted to make room.** In use means open (a work in progress, an unfinished transfer), still owed (a refund not yet claimed), still being confirmed (a delivery waiting for the next save), or referred to by another record. Some collections drop their oldest *finished* records automatically once nothing depends on them; that is **retention**. When only records in use remain, the owning service **refuses new records of that kind**, with a message. Everything else keeps working: existing records stay readable, other systems keep running, and saves are unaffected.
 
 This page covers:
 
 - reading how full each collection is;
 - what relieves each one;
+- history, lasting effects and replay evidence;
 - the two supported compactions;
-- the offline procedure for collections that 0.3.0 cannot safely compact.
+- the offline procedure for collections that this version cannot safely compact.
 
 ## Reading capacity
 
@@ -22,7 +25,7 @@ This page covers:
 
 The store is the file under `world/data/` (`<store>.dat`). The **Relief** column says what frees the collection:
 
-- **Retention**: pruned automatically.
+- **Retention**: the oldest finished records go automatically once nothing depends on them. Records in use never go, so a full collection of records in use still refuses new ones. The Why column says what counts as finished.
 - **Compaction**: an operator can archive finished records with `/kingdoms maintenance compact …`.
 - **Kept as evidence**: the bound is the guarantee; these records stop a receipt, proof or cause from being used twice.
 - **Offline procedure**: refused at the bound. See [the offline procedure](#offline-procedure).
@@ -59,16 +62,22 @@ The store is the file under `world/data/` (`<store>.dat`). The **Relief** column
 | `mcakingdoms_civic_network` | chapter introductions | 100,000 | Kept as evidence | Make an introduction once-only per player and guild. |
 | `mcakingdoms_institutional_commissions` | commission contracts | 16,384 | Offline procedure | Payment, provider receipts and refusal state. |
 | `mcakingdoms_documents` | documents | 8,192 | Offline procedure | Charters in players' hands name these records. |
-| `mcakingdoms_documents` | receipts | 4,096 | Retention | Oldest go first; a reused request is then refused instead of replayed. |
+| `mcakingdoms_documents` | receipts | 4,096 | Retention | Oldest go first. Every confirmed task or command makes a new request id, so no shipped path repeats an old one; a receipt answers an exact repeat with the first result. |
 | `mcakingdoms_dynasty` | succession cases | 2,048 | Offline procedure | Closed cases beyond the bound are dropped oldest first; open cases never. |
 | `mcakingdoms_dynasty` | claims | 4,096 | Offline procedure | Decisions are kept as the record of each claim. |
 | `mcakingdoms_dynasty` | titles | 4,096 | Offline procedure | Title charters name these records. |
-| `mcakingdoms_dynasty` | receipts | 4,096 | Retention | As above. |
-| `mcakingdoms_development` | projects | 512 | Offline procedure | Completed and cancelled works beyond the bound are dropped oldest first; open works never. |
-| `mcakingdoms_development` | refunds | 4,096 | Offline procedure | Owed to contributors of cancelled works until claimed. |
-| `mcakingdoms_development` | receipts | 4,096 | Retention | As above. |
+| `mcakingdoms_dynasty` | receipts | 4,096 | Retention | As for documents. |
+| `mcakingdoms_development` | projects | 512 | Retention | The display history of works. A finished work beyond the bound goes oldest first, but only once its effects are kept elsewhere: a completed work's productive asset is recorded; a cancelled work owes no refund and has no delivery being confirmed. Open works never go; if nothing can go, a new work is refused. |
+| `mcakingdoms_development` | productive assets | 8,192 | Offline procedure | What each completed work produces and earned (points, role, output), kept apart from the history. A work that would complete past the bound waits, with the reason shown. |
+| `mcakingdoms_development` | refunds | 4,096 | Offline procedure | Owed to contributors of cancelled works until claimed. A cancellation that would owe more than the bound is refused. |
+| `mcakingdoms_development` | inventory operations | 1,024 | Retention | Deliveries and refund claims. Settled ones go oldest first once half the bound is used; one still waiting for its save never goes. |
+| `mcakingdoms_development` | receipts | 4,096 | Retention | Oldest go first. Each dropped receipt raises a watermark, and a request issued at or before it is refused as expired instead of being applied again. |
 | `mcakingdoms_knowledge` | discoveries | 100,000 | Offline procedure | Each player's private settlement knowledge. |
 | `mcakingdoms_knowledge` | visits | 100,000 | Offline procedure | First-visit titles already shown. |
+| `mcakingdoms_waystones` | named waystones | 16,384 | Retention | One entry per waystone the integration named or is waiting for, and per waystone a player renamed. Settled entries (confirmed, expired, unresolved) go oldest first, then players' renames; a waystone keeps its current name either way, and a clash is checked against the current names of registered waystones. A name just given and not yet confirmed never goes. |
+| `mcakingdoms_waystones` | waystones waiting for a settlement | 256 | Retention | Unnamed stones placed where a settlement may soon be recognized. Each waits at most `waystones.pendingTicks`; after that, or at once when the list is full, it is left as Waystones leaves it. |
+| `mcakingdoms_townstead` | decisions | 4,096 | Offline procedure | An operator's decision about who governs a settlement's local government. |
+| `mcakingdoms_townstead` | baselines | 8,192 | Retention | First sight of each settlement with Townstead, used to notice a restored Townstead backup. Baselines of settlements that no longer exist (merged into another) are dropped at server start. |
 | `mcakingdoms_living_villages` | village bindings | 4,096 | Offline procedure | One per Living Villages village; settlements, conflicts and residents refer to them. |
 | `mcakingdoms_living_villages` | realms | 4,096 | Offline procedure | Realm ids outlive capital changes; agreements, associations and history refer to them. |
 | `mcakingdoms_living_villages` | conflicts | 2,048 | Retention | Finished conflicts beyond the bound are dropped oldest first; open ones never. |
@@ -78,6 +87,14 @@ The store is the file under `world/data/` (`<store>.dat`). The **Relief** column
 | `mcakingdoms_living_villages` | history | 2,048 | Retention | The oldest entry is dropped first. |
 
 Other bounds hold only open or per-request state and recover as it closes. Examples are per-government limits (64 offices, 128 mandates), per-request page sizes and pending-death queues. They are not listed.
+
+## History, lasting effects and replay evidence
+
+Records of one activity can play three different parts, and each is kept on its own terms. Public works (development) show all three:
+
+- **History** is what players read: the list of finished works. It is disposable and goes by retention, but only after the next two are safe.
+- **Lasting effects** are what the history caused: a completed work's productive asset (its output, earned points and role). Assets have their own collection and are never dropped with the history. Production and earned points come from the assets, so pruning history changes neither, and neither does removing a work's template from the datapacks.
+- **Replay evidence** stops one request from acting twice. Development requests are issued by the server and carry their issue time. A receipt answers an exact repeat with its first result. Once a receipt is dropped for room, every request issued at or before it is refused as expired, so a delivery, refund or award never happens twice.
 
 ## Supported compaction
 
@@ -139,7 +156,7 @@ The collections marked **Offline procedure** hold records that other records poi
 - control history;
 - private discovery.
 
-0.3.0 cannot yet prove that removing any of them is safe. So it keeps **refusing new records at the bound** and does not delete anything. This is deliberate: deleting a record that something else still points at could re-award old work, erase current authority or free a recruit whose native state is uncertain.
+This version cannot yet prove that removing any of them is safe. So it keeps **refusing new records at the bound** and does not delete anything. This is deliberate: deleting a record that something else still points at could re-award old work, erase current authority or free a recruit whose native state is uncertain.
 
 The bounds are large compared with ordinary play. The smallest are 128 governments, 256 world events and 512 elections. When one of these collections reaches **near capacity**:
 

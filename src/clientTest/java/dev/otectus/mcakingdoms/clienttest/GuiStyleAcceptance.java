@@ -417,7 +417,7 @@ final class GuiStyleAcceptance {
             renderBackground(graphics);
             try {
                 var draw=TownsteadBlueprintHeader.class.getDeclaredMethod("draw",GuiGraphics.class,Screen.class,Header.class);draw.setAccessible(true);
-                draw.invoke(null,graphics,this,new Header("Willowbrook",new ResourceLocation("mcakingdoms:serenum"),"kingdom.mcakingdoms.serenum",new ResourceLocation("mcakingdoms:serenum"),0x426946,"respected"));
+                draw.invoke(null,graphics,this,new Header("Willowbrook",new ResourceLocation("mcakingdoms:serenum"),"kingdom.mcakingdoms.serenum",new ResourceLocation("mcakingdoms:serenum"),0x426946,"respected","townstead.mcakingdoms.header.local_kingdoms",java.util.UUID.nameUUIDFromBytes("willowbrook".getBytes(java.nio.charset.StandardCharsets.UTF_8))));
             }catch(ReflectiveOperationException failure){throw new RuntimeException(failure);}
             super.render(graphics,x,y,tick);
         }

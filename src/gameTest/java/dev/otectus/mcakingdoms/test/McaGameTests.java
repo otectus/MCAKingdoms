@@ -22,21 +22,24 @@ public class McaGameTests {
     private static Object invoke(Object obj,String name,Class<?>[] types,Object...args)throws Exception{return obj.getClass().getMethod(name,types).invoke(obj,args);}
     private static void field(Object obj,String name,Object value)throws Exception{Field f=obj.getClass().getDeclaredField(name);f.setAccessible(true);f.set(obj,value);}
     @SuppressWarnings("unchecked")
+    /** MCA's package root: forge.net.mca (7.6) or forge.net.conczin.mca (7.7), so the fixtures run on either release. */
+    private static String root(){for(String r:new String[]{"forge.net.conczin.mca","forge.net.mca"}){try{Class.forName(r+".server.world.data.Village");return r;}catch(ClassNotFoundException ignored){}}return "forge.net.mca";}
     private static Object village(ServerLevel level,int id,BlockPos pos)throws Exception {
-        Class<?> vc=Class.forName("forge.net.mca.server.world.data.Village");
+        String root=root();
+        Class<?> vc=Class.forName(root+".server.world.data.Village");
         Object v=vc.getConstructor(int.class,ServerLevel.class).newInstance(id,level);
-        Object box=Class.forName("forge.net.mca.util.BlockBoxExtended").getConstructor(int.class,int.class,int.class,int.class,int.class,int.class)
+        Object box=Class.forName(root+".util.BlockBoxExtended").getConstructor(int.class,int.class,int.class,int.class,int.class,int.class)
                 .newInstance(pos.getX()-8,pos.getY()-2,pos.getZ()-8,pos.getX()+8,pos.getY()+5,pos.getZ()+8);
         field(v,"box",box);invoke(v,"setAutoScan",new Class[]{boolean.class},false);
         Map<Integer,Object> buildings=(Map<Integer,Object>)invoke(v,"getBuildings",new Class[]{});
-        for(int i=0;i<8;i++)buildings.put(i,Class.forName("forge.net.mca.server.world.data.Building").getConstructor(BlockPos.class).newInstance(pos.offset(i,0,0)));
-        Class<?> mc=Class.forName("forge.net.mca.server.world.data.VillageManager");
+        for(int i=0;i<8;i++)buildings.put(i,Class.forName(root+".server.world.data.Building").getConstructor(BlockPos.class).newInstance(pos.offset(i,0,0)));
+        Class<?> mc=Class.forName(root+".server.world.data.VillageManager");
         Object manager=mc.getMethod("get",ServerLevel.class).invoke(null,level);
         Field villages=mc.getDeclaredField("villages");villages.setAccessible(true);((Map<Integer,Object>)villages.get(manager)).put(id,v);
         check((boolean)invoke(v,"isVillage",new Class[]{}),"Fixture not recognized by exact MCA release");return v;
     }
     private static void home(Entity e,int id)throws Exception {
-        Class<?> residency=Class.forName("forge.net.mca.entity.ai.Residency");Field f=residency.getDeclaredField("VILLAGE");f.setAccessible(true);
+        Class<?> residency=Class.forName(root()+".entity.ai.Residency");Field f=residency.getDeclaredField("VILLAGE");f.setAccessible(true);
         Method setter=Arrays.stream(e.getClass().getMethods()).filter(m->m.getName().equals("setTrackedValue")&&m.getParameterCount()==2).findFirst().orElseThrow();
         setter.invoke(e,f.get(null),id);
     }

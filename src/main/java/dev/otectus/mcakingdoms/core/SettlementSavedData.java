@@ -9,6 +9,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import org.slf4j.Logger;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -25,6 +26,14 @@ final class SettlementSavedData extends dev.otectus.mcakingdoms.persistence.Dura
     private final Map<UUID, SettlementRecord> settlements = new LinkedHashMap<>();
     private final Map<UUID, UUID> redirects = new LinkedHashMap<>();
     private final ExternalRefIndex externalRefs = new ExternalRefIndex();
+    /**
+     * Optional root key {@code IdentityOutbox} (AUD-01): committed identity changes whose dependent stores are still
+     * being updated. Written in the same atomic write as the change. A version that does not know the key ignores it
+     * and its stores fall back to read-time redirect resolution, as before 0.3.1.
+     */
+    private final Map<UUID, IdentityOperation> outbox = new LinkedHashMap<>();
+    /** The most identity operations kept waiting; a new identity change is refused beyond it, never an old one dropped. */
+    static final int OUTBOX_LIMIT = 4_096;
     private long revision;
     /** Optional root key {@code Reconciled}: the reconciliation version whose start-up pass completed; absent is 0. */
     private int reconciled;
@@ -110,6 +119,80 @@ final class SettlementSavedData extends dev.otectus.mcakingdoms.persistence.Dura
         setDirty();
     }
 
+    /** Committed identity changes with stores still to update, oldest first. */
+    java.util.List<IdentityOperation> pendingIdentity() {
+        return java.util.List.copyOf(outbox.values());
+    }
+
+    Optional<IdentityOperation> identityOperation(UUID id) {
+        return Optional.ofNullable(outbox.get(id));
+    }
+
+    /** Records an identity operation in memory; it reaches disk with the change in the next {@link #commitRoot}. */
+    void enqueueIdentity(IdentityOperation operation) {
+        writable();
+        if (operation.pending().isEmpty()) return;
+        if (outbox.size() >= OUTBOX_LIMIT && !outbox.containsKey(operation.id()))
+            throw new IllegalStateException("Too many settlement changes are still waiting for their records to be updated ("
+                    + outbox.size() + "); see /kingdoms maintenance identity before changing more settlements");
+        outbox.put(operation.id(), operation);
+        setDirty();
+    }
+
+    /** A consumer confirmed its durable update; the operation leaves the outbox once none is left. */
+    void identityConsumerDone(UUID id, String consumer) {
+        writable();
+        IdentityOperation operation = outbox.get(id);
+        if (operation == null || !operation.pending().contains(consumer)) return;
+        IdentityOperation next = operation.done(consumer);
+        if (next.pending().isEmpty()) outbox.remove(id); else outbox.put(id, next);
+        setDirty();
+    }
+
+    void identityConsumerFailed(UUID id, String consumer, String reason) {
+        writable();
+        IdentityOperation operation = outbox.get(id);
+        if (operation == null) return;
+        outbox.put(id, operation.failed(consumer, reason));
+        setDirty();
+    }
+
+    /** The whole store as it would be saved now; {@link #restore} puts it back exactly. */
+    CompoundTag snapshotTag() {
+        writable();
+        return save(new CompoundTag());
+    }
+
+    /** Puts the store back to a {@link #snapshotTag}, for a change whose root commit failed. Stays clean: disk already holds it. */
+    void restore(CompoundTag snapshot) {
+        settlements.clear();
+        redirects.clear();
+        externalRefs.clear();
+        outbox.clear();
+        revision = 0;
+        reconciled = 0;
+        read(snapshot);
+        setDirty(false);
+    }
+
+    /**
+     * The root commit boundary of settlement identity (AUD-01): writes the whole store atomically now and reports
+     * whether it reached disk. A change that creates, retires, redirects or reassigns a settlement is published (events,
+     * dependent stores, a success message) only after this returns true; on false the caller restores its snapshot.
+     */
+    boolean commitRoot(MinecraftServer server) {
+        writable();
+        java.io.File file = server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).resolve("data").resolve(DATA_NAME + ".dat").toFile();
+        try {
+            dev.otectus.mcakingdoms.persistence.AtomicSavedDataWriter.write(file, save(new CompoundTag()));
+            setDirty(false);
+            return true;
+        } catch (java.io.IOException failure) {
+            LOGGER.error("[MCA: Kingdoms] The settlement records could not be saved; the change was not made", failure);
+            return false;
+        }
+    }
+
     void validateExternalRefs(UUID owner, Map<String, String> references) {
         externalRefs.validate(owner, references, Set.of(owner));
     }
@@ -150,6 +233,11 @@ final class SettlementSavedData extends dev.otectus.mcakingdoms.persistence.Dura
             redirectList.add(redirect);
         });
         tag.put("Redirects", redirectList);
+        if (!outbox.isEmpty()) {
+            ListTag operations = new ListTag();
+            outbox.values().forEach(operation -> operations.add(operation.save()));
+            tag.put("IdentityOutbox", operations);
+        }
         return tag;
     }
 
@@ -228,6 +316,24 @@ final class SettlementSavedData extends dev.otectus.mcakingdoms.persistence.Dura
         } catch (RuntimeException conflict) {
             throw new IllegalArgumentException("Conflicting MCA: Kingdoms settlement external references: " + conflict.getMessage(), conflict);
         }
+        ListTag operations = compoundList(tag, "IdentityOutbox");
+        if (operations.size() > OUTBOX_LIMIT) throw new IllegalArgumentException("The settlement identity outbox holds " + operations.size() + " operations");
+        for (int i = 0; i < operations.size(); i++) {
+            IdentityOperation operation;
+            try {
+                operation = IdentityOperation.load(operations.getCompound(i));
+            } catch (RuntimeException malformed) {
+                throw new IllegalArgumentException("Settlement identity operation " + i + " is malformed (" + malformed + ")", malformed);
+            }
+            // A pending operation names settlements by their ids at the time; both must still resolve to a live settlement.
+            for (UUID id : List.of(operation.source(), operation.target())) {
+                UUID current = id;
+                for (int hop = 0; hop < 64 && redirects.containsKey(current); hop++) current = redirects.get(current);
+                if (!settlements.containsKey(current))
+                    throw new IllegalArgumentException("Settlement identity operation " + operation.id() + " names " + id + ", which resolves to no settlement");
+            }
+            if (outbox.putIfAbsent(operation.id(), operation) != null) throw new IllegalArgumentException("Two identity operations share the id " + operation.id());
+        }
     }
 
     /** A root list that is absent reads as empty; one of the wrong type would silently drop records, so it is refused. */
@@ -245,6 +351,7 @@ final class SettlementSavedData extends dev.otectus.mcakingdoms.persistence.Dura
         settlements.clear();
         redirects.clear();
         externalRefs.clear();
+        outbox.clear();
         LOGGER.error(loadError, failure);
     }
 

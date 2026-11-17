@@ -35,6 +35,31 @@ class TaskIntentTest {
         }
     }
 
+    /** AUD-08: development, documents and the court classify each operation; stopping and recovering need no creation switch. */
+    @Test
+    void developmentDocumentAndCourtRecoveryNeedsNoCreationSwitch() {
+        for (String id : List.of("development.pause", "development.cancel", "development.opt_out", "development.rollback", "development.refunds",
+                "development.status", "development.read", "documents.revoke", "documents.recover", "documents.inspect", "dynasty.withdraw",
+                "dynasty.resign_title", "dynasty.revoke_title")) {
+            var features = TaskMeta.features(task(id));
+            assertTrue(features.isEmpty(), id + " must not need a creation switch: " + features);
+        }
+        assertEquals(TaskMeta.Intent.RESTORE, TaskMeta.intent(task("development.refunds")));
+        assertEquals(TaskMeta.Intent.CANCEL, TaskMeta.intent(task("documents.revoke")));
+    }
+
+    /** AUD-08/14: new development work names the mode its service needs; sealing still needs physical heraldry; the court needs succession. */
+    @Test
+    void newWorkKeepsTheGateItsServiceApplies() {
+        assertEquals(List.of(TaskMeta.Feature.DEVELOPMENT_PROJECTS), TaskMeta.features(task("development.propose")));
+        assertEquals(List.of(TaskMeta.Feature.DEVELOPMENT_PROJECTS, TaskMeta.Feature.DEVELOPMENT_DELIVERIES), TaskMeta.features(task("development.contribute")));
+        assertEquals(List.of(TaskMeta.Feature.DEVELOPMENT_CONSTRUCTION), TaskMeta.features(task("development.repair")));
+        assertEquals(List.of(TaskMeta.Feature.DEVELOPMENT), TaskMeta.features(task("development.opt_in")));
+        assertTrue(TaskMeta.features(task("documents.seal")).contains(TaskMeta.Feature.HERALDRY));
+        assertTrue(TaskMeta.features(task("dynasty.claim")).contains(TaskMeta.Feature.DYNASTY));
+        assertTrue(TaskMeta.features(task("dynasty.law")).contains(TaskMeta.Feature.DYNASTY));
+    }
+
     @Test
     void nativeRecoveryStillNeedsItsProvider() {
         for (String id : List.of("warfare.deployment_dismiss", "warfare.deployment_recover", "transfer.restore", "transfer.confirm")) {
@@ -68,7 +93,10 @@ class TaskIntentTest {
                 "warfare.accord_reject", "warfare.muster", "warfare.muster_nearby", "warfare.deployment_dismiss", "warfare.deployment_recover",
                 "drama.propose", "drama.consent", "drama.execute", "drama.negotiate", "drama.exit", "drama.recover",
                 "evolution.contribute", "evolution.withdraw", "evolution.resolve", "evolution.retry", "evolution.release",
-                "politics.propose", "politics.sign", "politics.petition_honor", "politics.election_close")) {
+                "politics.propose", "politics.sign", "politics.petition_honor", "politics.election_close",
+                // AUD-10: development and charter operations are read again by Check without repeating them.
+                "development.propose", "development.approve", "development.contribute", "development.pause", "development.resume",
+                "development.cancel", "development.repair", "development.rollback", "development.refunds", "documents.seal", "documents.recover")) {
             assertTrue(ActionRegistry.probed(task(id)), id + " must be readable again by Check");
         }
     }

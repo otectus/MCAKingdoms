@@ -40,11 +40,21 @@ public final class TaskMeta {
         }
     }
 
+    /**
+     * Groups chosen by subject rather than by provider (AUD-15): Townstead's village pages are about places, its
+     * government page about government, its career check about one's guild and job progression.
+     */
+    private static final Map<String, Group> EXPLICIT = Map.of(
+            "townstead.life", Group.PLACES, "townstead.work", Group.PLACES, "townstead.news", Group.PLACES,
+            "townstead.government", Group.GOVERNMENT, "townstead.qualify", Group.GUILDS);
+
     public static Group group(ActionRegistry.Task task) {
         if (task.operator()) return Group.OPERATOR;
+        var explicit = EXPLICIT.get(task.id());
+        if (explicit != null) return explicit;
         String prefix = task.id().substring(0, task.id().indexOf('.'));
         return switch (prefix) {
-            case "settlement", "kingdom", "citizen", "development", "villages" -> Group.PLACES;
+            case "settlement", "kingdom", "citizen", "development", "villages", "waystones" -> Group.PLACES;
             case "civic", "organization" -> Group.GUILDS;
             case "politics", "dynasty", "documents", "heraldry" -> Group.GOVERNMENT;
             case "world" -> Group.EXPLORATION;
@@ -72,7 +82,16 @@ public final class TaskMeta {
         DYNASTY("dynastic succession", "dynasty_succession"),
         HERALDRY("physical heraldry", "heraldry_and_charters"),
         DEVELOPMENT("settlement development", "settlement_development"),
-        LIVING_VILLAGES("Recruits: Living Villages", "living_villages");
+        DEVELOPMENT_PROJECTS("public works (development mode Projects or above)", "settlement_development"),
+        DEVELOPMENT_CONSTRUCTION("construction of public works (development mode Managed growth or above)", "settlement_development"),
+        DEVELOPMENT_DELIVERIES("deliveries to public works", "settlement_development"),
+        LIVING_VILLAGES("Recruits: Living Villages", "living_villages"),
+        TOWNSTEAD("Townstead 0.8.0 village life", "townstead_village_life"),
+        WAYSTONES("settlement names for waystones", "waystone_names"),
+        TOWNSTEAD_LIFE("Townstead village life", "townstead_village_life"),
+        TOWNSTEAD_WORK("Townstead work orders", "townstead_village_life"),
+        TOWNSTEAD_NEWS("Townstead village news", "townstead_village_life"),
+        TOWNSTEAD_CAREERS("Townstead careers", "townstead_village_life");
 
         public final String english, learnMore;
 
@@ -86,12 +105,18 @@ public final class TaskMeta {
         }
     }
 
-    /** Whether a task can be used here, and if not, the one cause the server can establish. */
-    public enum State { AVAILABLE, DISABLED, PROVIDER_MISSING, PROVIDER_UNSUPPORTED }
+    /**
+     * Whether a task can be used here, and if not, the one cause the server can establish. {@code UNKNOWN} means a check
+     * failed and nothing could be established (AUD-14): the task stays usable, is never presented as available, and its
+     * own service decides.
+     */
+    public enum State { AVAILABLE, DISABLED, PROVIDER_MISSING, PROVIDER_UNSUPPORTED, UNKNOWN }
 
     public record Availability(State state, Component reason, String learnMore) {
         public static final Availability AVAILABLE = new Availability(State.AVAILABLE, Component.empty(), "");
         public boolean available() { return state == State.AVAILABLE; }
+        /** Available, or not determinable now: the task may be opened and its service decides. */
+        public boolean usable() { return state == State.AVAILABLE || state == State.UNKNOWN; }
     }
 
     private static final Set<String> MILITARY_TASKS = Set.of("warfare.map_here", "warfare.bind_here", "warfare.declare", "warfare.retry_campaign",
@@ -101,6 +126,8 @@ public final class TaskMeta {
     private static final Set<String> EVOLUTION_TASKS = Set.of("evolution.contribute", "evolution.withdraw", "evolution.resolve", "evolution.retry",
             "evolution.release", "evolution.contract", "evolution.family");
     private static final Set<String> DRAMA_TASKS = Set.of("drama.propose", "drama.consent", "drama.negotiate", "drama.execute", "drama.exit", "drama.recover");
+    /** Pages that read Townstead's public api.v1; the government page and the operator tasks explain absence themselves. */
+    private static final Set<String> TOWNSTEAD_TASKS = Set.of("townstead.life", "townstead.work", "townstead.news", "townstead.qualify");
     private static final Set<String> RECRUIT_TASKS = Set.of("transfer.propose", "transfer.share_destination", "transfer.consent", "transfer.apply",
             "transfer.confirm", "transfer.restore");
 
@@ -123,7 +150,15 @@ public final class TaskMeta {
             Map.entry("evolution.release", Intent.CANCEL), Map.entry("drama.exit", Intent.CANCEL),
             Map.entry("transfer.confirm", Intent.VERIFY), Map.entry("evolution.retry", Intent.VERIFY),
             Map.entry("transfer.restore", Intent.RESTORE), Map.entry("warfare.deployment_dismiss", Intent.RESTORE),
-            Map.entry("warfare.deployment_recover", Intent.RESTORE));
+            Map.entry("warfare.deployment_recover", Intent.RESTORE),
+            // AUD-08: stopping, withdrawing and recovering development, documents and court records need no creation switch.
+            Map.entry("development.read", Intent.INSPECT), Map.entry("development.status", Intent.INSPECT),
+            Map.entry("development.pause", Intent.CANCEL), Map.entry("development.cancel", Intent.CANCEL), Map.entry("development.opt_out", Intent.CANCEL),
+            Map.entry("development.rollback", Intent.RESTORE), Map.entry("development.refunds", Intent.RESTORE),
+            Map.entry("documents.inspect", Intent.INSPECT), Map.entry("documents.browse", Intent.INSPECT),
+            Map.entry("documents.revoke", Intent.CANCEL), Map.entry("documents.recover", Intent.RESTORE),
+            Map.entry("dynasty.court", Intent.INSPECT), Map.entry("dynasty.withdraw", Intent.CANCEL),
+            Map.entry("dynasty.resign_title", Intent.CANCEL), Map.entry("dynasty.revoke_title", Intent.CANCEL));
 
     /** The task's intent; anything not listed starts or expands an operation. */
     public static Intent intent(ActionRegistry.Task task) {
@@ -150,8 +185,16 @@ public final class TaskMeta {
         if (id.equals("civic.workshop")) out.add(Feature.WORKSHOP_LEGALITY);
         if (id.startsWith("politics.") && task.consequential()) out.add(Feature.GOVERNMENT);
         if (id.startsWith("dynasty.") && task.consequential()) { out.add(Feature.DYNASTY); out.add(Feature.GOVERNMENT); }
-        if (id.equals("documents.seal") || id.equals("documents.revoke") || id.equals("heraldry.colours")) out.add(Feature.HERALDRY);
-        if (id.startsWith("development.") && task.consequential()) out.add(Feature.DEVELOPMENT);
+        if (id.equals("documents.seal") || id.equals("heraldry.colours")) out.add(Feature.HERALDRY);
+        if (id.startsWith("development.") && task.consequential()) {
+            // Each decision names the mode its service needs, so the list never offers what the service would refuse (AUD-14).
+            switch (id) {
+                case "development.propose", "development.approve", "development.resume" -> out.add(Feature.DEVELOPMENT_PROJECTS);
+                case "development.contribute" -> { out.add(Feature.DEVELOPMENT_PROJECTS); out.add(Feature.DEVELOPMENT_DELIVERIES); }
+                case "development.repair" -> out.add(Feature.DEVELOPMENT_CONSTRUCTION);
+                default -> out.add(Feature.DEVELOPMENT);
+            }
+        }
         if (id.startsWith("warfare.")) out.add(Feature.WARFARE);
         if (MILITARY_TASKS.contains(id)) out.add(Feature.MILITARY);
         if (id.equals("warfare.contract")) out.add(Feature.CONTRACTS);
@@ -160,6 +203,18 @@ public final class TaskMeta {
         if (DRAMA_TASKS.contains(id)) out.add(Feature.DRAMA);
         if (RECRUIT_TASKS.contains(id)) out.add(Feature.RECRUITS);
         if (id.startsWith("villages.") || id.startsWith("warfare.realm_")) out.add(Feature.LIVING_VILLAGES);
+        if (TOWNSTEAD_TASKS.contains(id)) {
+            out.add(Feature.TOWNSTEAD);
+            // AUD-14: each page also needs its own switch and the capability it reads, not just a v1 backend.
+            switch (id) {
+                case "townstead.life" -> out.add(Feature.TOWNSTEAD_LIFE);
+                case "townstead.work" -> out.add(Feature.TOWNSTEAD_WORK);
+                case "townstead.news" -> out.add(Feature.TOWNSTEAD_NEWS);
+                case "townstead.qualify" -> out.add(Feature.TOWNSTEAD_CAREERS);
+                default -> { }
+            }
+        }
+        if (id.startsWith("waystones.") && task.consequential()) out.add(Feature.WAYSTONES);
         return out;
     }
 
@@ -203,6 +258,25 @@ public final class TaskMeta {
             case DYNASTY -> dev.otectus.mcakingdoms.politics.dynasty.DynastyConfig.enabled() ? Availability.AVAILABLE : disabled(feature);
             case HERALDRY -> dev.otectus.mcakingdoms.heraldry.HeraldryConfig.enabled() ? Availability.AVAILABLE : disabled(feature);
             case DEVELOPMENT -> dev.otectus.mcakingdoms.development.DevelopmentMode.current() != dev.otectus.mcakingdoms.development.DevelopmentMode.OFF ? Availability.AVAILABLE : disabled(feature);
+            case DEVELOPMENT_PROJECTS -> dev.otectus.mcakingdoms.development.DevelopmentMode.current().atLeast(dev.otectus.mcakingdoms.development.DevelopmentMode.PROJECTS) ? Availability.AVAILABLE : disabled(feature);
+            case DEVELOPMENT_CONSTRUCTION -> dev.otectus.mcakingdoms.development.DevelopmentMode.current().atLeast(dev.otectus.mcakingdoms.development.DevelopmentMode.MANAGED_GROWTH) ? Availability.AVAILABLE : disabled(feature);
+            case DEVELOPMENT_DELIVERIES -> !dev.otectus.mcakingdoms.development.DevelopmentMode.economyPaused() ? Availability.AVAILABLE : disabled(feature);
+            case TOWNSTEAD -> !ModList.get().isLoaded("townstead") ? missing(feature)
+                    : dev.otectus.mcakingdoms.compat.townstead.TownsteadRuntime.session(server).map(s -> s.backend().equals("v1")).orElse(false)
+                    ? Availability.AVAILABLE : !dev.otectus.mcakingdoms.compat.townstead.TownsteadIntegrationConfig.ENABLED.get() ? disabled(feature) : unsupported(feature);
+            case TOWNSTEAD_LIFE -> townsteadPage(feature, server, dev.otectus.mcakingdoms.compat.townstead.TownsteadIntegrationConfig.ENABLE_VILLAGE_LIFE.get(),
+                    dev.otectus.mcakingdoms.api.townstead.TownsteadCapability.READ_VILLAGE);
+            case TOWNSTEAD_WORK -> townsteadPage(feature, server, dev.otectus.mcakingdoms.compat.townstead.TownsteadIntegrationConfig.ENABLE_VILLAGE_LIFE.get(),
+                    dev.otectus.mcakingdoms.api.townstead.TownsteadCapability.READ_WORK_ORDERS);
+            case TOWNSTEAD_NEWS -> townsteadPage(feature, server, dev.otectus.mcakingdoms.compat.townstead.TownsteadIntegrationConfig.ENABLE_VILLAGE_LIFE.get(),
+                    dev.otectus.mcakingdoms.api.townstead.TownsteadCapability.READ_CHRONICLES);
+            case TOWNSTEAD_CAREERS -> townsteadPage(feature, server, true, dev.otectus.mcakingdoms.api.townstead.TownsteadCapability.READ_CAREERS);
+            case WAYSTONES -> switch (dev.otectus.mcakingdoms.compat.waystones.WaystonesIntegration.status().readiness()) {
+                case READY -> Availability.AVAILABLE;
+                case ABSENT -> missing(feature);
+                case DISABLED -> disabled(feature);
+                case UNSUPPORTED -> unsupported(feature);
+            };
             // One shared capability snapshot decides the tasks, the Book and the services alike.
             case LIVING_VILLAGES -> {
                 if (!dev.otectus.mcakingdoms.compat.livingvillages.LvCompat.installed()) yield missing(feature);
@@ -214,6 +288,12 @@ public final class TaskMeta {
                 };
             }
         };
+    }
+
+    /** One Townstead page: its switch, then the capability it reads from the installed Townstead. */
+    private static Availability townsteadPage(Feature feature, MinecraftServer server, boolean switchOn, dev.otectus.mcakingdoms.api.townstead.TownsteadCapability capability) {
+        if (!switchOn) return disabled(feature);
+        return dev.otectus.mcakingdoms.api.townstead.KingdomsTownsteadApi.get(server).capabilities().contains(capability) ? Availability.AVAILABLE : unsupported(feature);
     }
 
     private static Availability disabled(Feature feature) {
@@ -228,19 +308,34 @@ public final class TaskMeta {
         return new Availability(State.PROVIDER_UNSUPPORTED, Unavailable.PROVIDER_UNSUPPORTED.explain(feature.subject()), feature.learnMore);
     }
 
-    /** The first unavailable feature of {@code task}, or {@link Availability#AVAILABLE}. */
+    /**
+     * The first unavailable feature of {@code task}, or {@link Availability#AVAILABLE}. A probe that fails is "could not
+     * determine", never proof of availability (AUD-14); a feature that is certainly off still wins over an unknown one.
+     */
     public static Availability availability(ActionRegistry.Task task, MinecraftServer server) {
+        Availability unknown = null;
         for (Feature feature : features(task)) {
             Availability state;
             try {
                 state = check(feature, server);
-            } catch (RuntimeException unknown) {
-                // A provider probe that fails says nothing certain; the task itself will explain if it cannot run.
+            } catch (RuntimeException | LinkageError failure) {
+                if (unknown == null) unknown = unknown(feature);
                 continue;
             }
             if (!state.available()) return state;
         }
-        return Availability.AVAILABLE;
+        return unknown == null ? Availability.AVAILABLE : unknown;
+    }
+
+    static Availability unknown(Feature feature) {
+        return new Availability(State.UNKNOWN, Component.translatableWithFallback("interaction.mcakingdoms.unavailable.unknown",
+                "Whether %s works here could not be checked just now; the task checks again when you use it.", feature.subject()), feature.learnMore);
+    }
+
+    /** One feature's state, with a failing probe reported as {@code UNKNOWN} (for summaries and the Book's status). */
+    public static Availability safeCheck(Feature feature, MinecraftServer server) {
+        try { return check(feature, server); }
+        catch (RuntimeException | LinkageError failure) { return unknown(feature); }
     }
 
     /** Translation key of a task's goal phrases ("paid work, earn money"), searched after its title. */

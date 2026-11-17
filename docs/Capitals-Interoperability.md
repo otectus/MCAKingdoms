@@ -87,8 +87,9 @@ founding or record is erased, transferred or recreated.
 - GameTest `DynastyGameTests.aCrownGovernedElsewhereIsNeverDecidedHere`: no law and no succession case for a crown
   governed elsewhere.
 - Packaged co-install (phase `capitals`) with the real Capitals **1.1.1** jar, MCA Reborn 7.6.26 and Architectury 9.2.14:
-  PASS. Capitals 1.2.1 and later cannot load with MCA 7.6.26 (they require MCA 7.7.x), so 1.3.7's read API was checked
-  by class inspection only. Results: [Testing 0.3.0](testing/0.3.0/README.md); tuples:
+  PASS. Capitals 1.2.1 and later cannot load with MCA 7.6.26 (they require MCA 7.7.x). With MCA Reborn 7.7.1-beta.5 and
+  Townstead 0.8.0, the same phase passes with the real Capitals **1.3.7** jar
+  (`build/ts080-evidence/runtime/reg-capitals-137-ts080-1`). Results: [Testing 0.3.0](testing/0.3.0/README.md); tuples:
   [Certified compatibility](compatibility-certified.md).
 
 Not delivered, and why:

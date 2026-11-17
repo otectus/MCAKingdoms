@@ -28,7 +28,11 @@ public record SettlementCandidate(
         if (radius < 0) {
             throw new IllegalArgumentException("Settlement radius must be non-negative");
         }
-        Objects.requireNonNull(bounds, "bounds");
+        if (radius > SettlementBounds.MAX_SPAN) {
+            throw new IllegalArgumentException("Settlement radius " + radius + " exceeds the supported " + SettlementBounds.MAX_SPAN + " blocks; report the settlement's real extent");
+        }
+        // AUD-12: refused here, before anything is indexed or saved, so an add-on learns which candidate was too large.
+        Objects.requireNonNull(bounds, "bounds").requireSupported();
         Objects.requireNonNull(sourceId, "sourceId");
         if (Objects.requireNonNull(sourceKey, "sourceKey").isBlank()) {
             throw new IllegalArgumentException("Settlement source key must not be blank");

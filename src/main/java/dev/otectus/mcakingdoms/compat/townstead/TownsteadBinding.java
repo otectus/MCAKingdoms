@@ -22,7 +22,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Reflection manifest for Townstead's public 0.7.x API and two missing public capabilities.
+ * Reflection manifest for Townstead's public 0.7.x API and two missing public capabilities. Used by
+ * {@link TownsteadLegacyBackend}; Townstead 0.8.0 is read through {@code compat/townstead/v1} instead.
  *
  * <p>Two capabilities read MCA rather than Townstead and bind whenever MCA is present, with or without
  * Townstead: {@code READ_BUILDINGS}, MCA's loaded-village building list, and, when Townstead's own
@@ -50,6 +51,7 @@ final class TownsteadBinding {
     private Method managerGet;
     private Method managerGetOrEmpty;
     private Method villageGetBuildings;
+    private Method buildingIsComplete;
     private Method spiritGet;
     private Constructor<?> reactionContext;
     private Object reactionContextSource;
@@ -123,17 +125,38 @@ final class TownsteadBinding {
     }
 
     List<Object> buildings(ServerLevel level, int villageId) {
-        if (!capabilities.contains(TownsteadCapability.READ_BUILDINGS)) return List.of();
+        return mcaBuildings(level, villageId).buildings();
+    }
+
+    /** MCA's own building map, saying whether the village was found and the read succeeded. */
+    record McaRead(boolean villageFound, boolean failed, List<Object> buildings) {
+    }
+
+    McaRead mcaBuildings(ServerLevel level, int villageId) {
+        if (!capabilities.contains(TownsteadCapability.READ_BUILDINGS)) return new McaRead(false, true, List.of());
         try {
             Object manager = managerGet.invoke(null, level);
             Object optional = managerGetOrEmpty.invoke(manager, villageId);
-            if (!(optional instanceof Optional<?> village) || village.isEmpty()) return List.of();
+            if (!(optional instanceof Optional<?> village) || village.isEmpty()) return new McaRead(false, false, List.of());
             Object values = villageGetBuildings.invoke(village.get());
-            if (!(values instanceof Map<?, ?> map)) return List.of();
-            return List.copyOf(map.values());
+            if (!(values instanceof Map<?, ?> map)) return new McaRead(true, true, List.of());
+            return new McaRead(true, false, List.copyOf(map.values()));
         } catch (Throwable throwable) {
             disable(TownsteadCapability.READ_BUILDINGS, "runtime MCA building query failed", throwable);
-            return List.of();
+            return new McaRead(false, true, List.of());
+        }
+    }
+
+    /** MCA's own completion flag for one building of its map, or empty when it cannot be read. */
+    Optional<Boolean> complete(Object building) {
+        if (building == null || buildingIsComplete == null || !capabilities.contains(TownsteadCapability.READ_BUILDING_COMPLETION)) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(Boolean.TRUE.equals(buildingIsComplete.invoke(building)));
+        } catch (Throwable throwable) {
+            disable(TownsteadCapability.READ_BUILDING_COMPLETION, "runtime MCA completion read failed", throwable);
+            return Optional.empty();
         }
     }
 
@@ -229,6 +252,13 @@ final class TownsteadBinding {
             if (managerGet != null && managerGetOrEmpty != null && villageGetBuildings != null
                     && hasAccessors(building, "getId", "getType", "getSize", "getCenter", "getPos0", "getPos1")) {
                 enable(TownsteadCapability.READ_BUILDINGS, "MCA direct loaded-village query (" + root + ")");
+                buildingIsComplete = method(building, "isComplete");
+                if (buildingIsComplete != null && buildingIsComplete.getReturnType() == boolean.class) {
+                    enable(TownsteadCapability.READ_BUILDING_COMPLETION, "MCA Building#isComplete (" + root + ")");
+                } else {
+                    buildingIsComplete = null;
+                    diagnostics.put(TownsteadCapability.READ_BUILDING_COMPLETION, "MCA Building#isComplete unavailable");
+                }
                 return;
             }
         }

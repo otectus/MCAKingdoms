@@ -93,6 +93,16 @@ public final class CivicRequirements {
         } else {
             rows.add(Requirement.of(false, t("membership", "Membership"), t("membership.only", "Only members of %s can use this service; join first.", organizationName(definition.get()))));
         }
+        // Townstead career prerequisites a data pack attached to this service; the guild policy applies the same rule.
+        for (var career : dev.otectus.mcakingdoms.compat.townstead.TownsteadMappings.careers(organization, permission)) {
+            var result = dev.otectus.mcakingdoms.compat.townstead.TownsteadProgression.evaluate(player,
+                    dev.otectus.mcakingdoms.compat.townstead.TownsteadProgression.predicateOf(career.requires()));
+            var described = dev.otectus.mcakingdoms.compat.townstead.TownsteadProgression.describe(career.requires());
+            rows.add(result.status() == dev.otectus.mcakingdoms.api.progression.ProgressionResult.Status.AVAILABLE
+                    ? Requirement.of(result.matches(), t("townstead_career", "Townstead career"), described)
+                    : new Requirement(t("townstead_career", "Townstead career"), Requirement.Check.NOTE,
+                    t("townstead_career.unavailable", "%s (not applied: %s)", described, Component.translatable(result.reason()))));
+        }
         return rows;
     }
 
@@ -106,7 +116,21 @@ public final class CivicRequirements {
         int range = CivicConfig.CONTACT_RANGE.get();
         boolean near = CivicRuntime.get(player.getServer()).nearbyContact(player, organization).isPresent();
         return Requirement.of(near, t("contact", "A guild contact within %s blocks and in sight", range),
-                near ? t("contact.found", "Found nearby.") : t("contact.missing", "Move within %s blocks of a known contact of this guild and keep them in sight.", range));
+                near ? t("contact.found", "Found nearby.") : away(player, organization, t("contact.missing", "Move within %s blocks of a known contact of this guild and keep them in sight.", range)));
+    }
+
+    /**
+     * The missing-contact advice, with where this settlement's own contact is and, from Townstead's schedule and
+     * hangouts, what they are doing (spec 8.3). Read only: nobody is moved, woken or called.
+     */
+    static Component away(ServerPlayer player, ResourceLocation organization, Component advice) {
+        var contact = CivicRuntime.get(player.getServer()).absentContact(player, organization);
+        if (contact.isEmpty()) return advice;
+        var npc = contact.get();
+        var line = Component.empty().append(advice).append(" ").append(t("contact.away", "%s, its contact here, is %s blocks away.", npc.getName(),
+                Math.round(Math.sqrt(npc.distanceToSqr(player)))));
+        dev.otectus.mcakingdoms.compat.townstead.TownsteadPresentation.whereabouts(player.getServer(), npc).ifPresent(why -> line.append(" ").append(why));
+        return line;
     }
 
     /** Whether any guild contact is within reach (before a guild is chosen). */

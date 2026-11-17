@@ -1,5 +1,8 @@
 # Testing 0.3.0 (audit handoff)
 
+> **Historical record.** This page records the 0.3.0 runs as they happened and is not updated. For what the current
+> build was tested with, see [Testing 0.3.1](../0.3.1/README.md) and [Certified compatibility](../../compatibility-certified.md).
+
 Commands, results and logs for the 27 October 2026 audit handoff work (A dynasty, B heraldry, C MCA Capitals, D
 development, H01–H12, P08). The earlier review handoff's evidence is in the [completion ledger](../../Completion-Ledger.md).
 Logs named below are kept locally under `build/v030-evidence/audit/` (git-ignored), with each run's own working
@@ -181,5 +184,7 @@ These are not passed; they were not run:
 - A full-pack client walkthrough from founding to a memorial (A5).
 - GUI-scale, shader and texture-memory profiling of the new blocks (B4).
 - The D performance matrix at 10/50/200 settlements and 1/10/50 works (D6, D7).
-- MCA Capitals 1.2.1–1.3.7 in a packaged run: they cannot load with the pack's MCA 7.6.26.
+- MCA Capitals 1.2.1–1.3.7 in a packaged run: they cannot load with the pack's MCA 7.6.26. *(Superseded after this
+  record: Capitals 1.3.7 passed the packaged `capitals` phase with MCA 7.7.1-beta.5 and Townstead 0.8.0; see
+  [Certified compatibility](../../compatibility-certified.md).)*
 - The Ledger's places sketch and direction in a client tour: the tour does not select a settlement.

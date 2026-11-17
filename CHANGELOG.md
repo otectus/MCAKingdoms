@@ -1,5 +1,98 @@
 # Changelog
 
+## 0.3.1 — unreleased
+
+Recovery, lifecycle and interaction repairs from the 9 November 2026 review (AUD-01 to AUD-18), settlement names for
+Waystones (WAY-01) and a clearer first session (UX-01). Update clients and servers together. Upgrade and downgrade steps
+are in [Upgrade and recovery](docs/Upgrade-and-Recovery.md#upgrading-from-030-to-031); what was tested, and what was not,
+is in [Testing 0.3.1](docs/testing/0.3.1/README.md).
+
+### Waystones
+
+- With exactly Waystones 14.1.21 and Balm 7.3.44 installed, a normal waystone inside a recognized settlement takes the
+  settlement's name the first time it needs one: a generated stone at its first activation, a newly placed unnamed stone
+  before its settings screen opens. A clash gets a number, such as `Oakfield (2)`. Existing names, and every name a
+  player chooses, are kept. Sharestones, warp plates and portstones are unchanged. Naming happens once; established
+  stones are never renamed when a settlement is renamed or merged.
+- A stone placed where a settlement is about to be recognized waits briefly (`waystones.pendingTicks`) and is named once
+  the settlement is found, unless someone named it meanwhile. No chunk is loaded.
+- On the tested Waystones jar, renames accepted in Waystones' settings screen are recorded, so the player's choice wins
+  for good. Each name given is recorded before Waystones receives it and confirmed at the next save; after a crash,
+  names are settled from what Waystones saved, never renumbered or applied twice.
+- Kingdom Tasks *Why this waystone has its name* and *Name this waystone after the settlement*; Server health and
+  `/kingdoms waystones status`; `/kingdoms waystones backfill [apply]` for existing worlds, which never touches a named
+  stone. A Book topic in English, Spanish and Chinese. See [Waystones integration](docs/Waystones-Integration.md).
+
+### Durability and recovery
+
+- **Settlement identity** (AUD-01): a new settlement, a merge and a kingdom change are written at once, before any event,
+  dependent record or message, and refused if the write fails. Other stores follow merges and kingdom changes through a
+  durable identity outbox, retried at start and every minute until each store has its records. Server health lists what
+  still waits.
+- **Deliveries and refunds** (AUD-02): items moving between a player's inventory and a public work are journaled with a
+  marker in the player's own saved data. They count at once and are confirmed by the player's next save; after a crash,
+  each is settled from the saved copy Minecraft loaded. Nothing is taken or refunded twice.
+- **Construction** (AUD-03 to AUD-05): each block is journaled before it is placed and counts as built only after world
+  saves show it; after a crash, each journaled block is settled from the world. Every placement rechecks the settlement's
+  consent, the approver's authority in the settlement's current kingdom, protected homes, claims and the block there. A
+  changed block stops the work with a stated reason instead of being placed again. Only cells proved to be the work's
+  count as its blocks, and block states are compared in full (only neighbour-derived shape properties are normalized).
+  A resurvey never builds over a newly occupied cell. A rollback restores only blocks still exactly the work's, under
+  every protection mod, and reads each restore back; changed, protected and unloaded cells are reported, and the
+  rollback stays open while any cell waits.
+- **Charters** (AUD-09): a charter is sealed in the ledger first; its delivery is confirmed by the player's next save.
+  A charter that never reached a saved inventory can be put back onto a blank charter from the same record.
+- **Disabled features** (AUD-08): stopping or cancelling a work, withdrawing consent, protecting a home, rolling back,
+  claiming refunds, revoking charters and the dynasty's cleanup decisions (withdrawing a claim, resigning or revoking
+  a title) stay available while their feature is off; only new activity is refused, with the reason.
+
+### Development records
+
+- **Merges and kingdom changes** (AUD-06): works, assets and goods follow the surviving settlement, and authority comes
+  from the settlement's current kingdom. Merged goods beyond the cap are kept as overflow, never discarded.
+- **Assets and retention** (AUD-07): what each completed work produces and earned is kept as a productive asset, apart
+  from the history of works, so pruning history or removing a template changes no output or points. Development
+  requests are issued by the server with their issue time; once an old receipt is dropped, a request issued before it
+  is refused as expired instead of being applied again. A full works register now says so instead of reporting a save
+  failure.
+- The store moves to schema 2; a schema 1 file is read as it is and written back as schema 2 at its next change.
+
+### Discovery, bounds and reloads
+
+- **Discovery** (AUD-11): a village bed, bell or workstation placed or broken schedules a rescan of its chunk, so a
+  settlement built in loaded chunks is recognized without reloading them. Players are swept in turn, and *Look for a
+  settlement around me* asks for the loaded area now, at most once every 30 seconds. The queue is bounded (16,384
+  chunks), deduplicated and fair between dimensions; requested scans go first.
+- **Bounds** (AUD-12): settlement bounds are limited to 16,384 blocks a side before anything is allocated. A saved record
+  beyond that is kept for repair and reported, not indexed by position; very large settlements are found without
+  per-chunk index entries.
+- **Townstead mappings** (AUD-13) are staged during a reload and published only when the reload succeeds; a failed
+  reload keeps the previous mappings.
+
+### Interaction
+
+- **One capability model** (AUD-14): task availability, start-view features and summaries come from the same checks,
+  and a check that cannot be answered shows as *unknown* with its reason instead of available or unavailable.
+- **Reviews** (AUD-10): a review is stale only when a part it shows changed, and names that part; unrelated activity on
+  the server no longer invalidates it. *Check this action* reads the live state of a waiting operation.
+- **Townstead tasks** (AUD-15): village life, work and news are listed under Places, government and services under
+  Government, and *Check a Townstead career* under Guilds. The career check offers Townstead's professions and skills by
+  name, asks for a tier only for a profession, and says it cannot check right now, not "not qualified", when Townstead's
+  answer is unavailable.
+- **Pinned task** (AUD-16): a pinned task's status is cleared on disconnect, so another server never shows it.
+- **First session** (UX-01): inside a settlement, the start view's second action follows what the server offers: its
+  War Room where conflict is on, otherwise its village life when Townstead reads it, otherwise how it is developing.
+  Outside one, it offers *Why not here?* and *Look for a settlement around me*, and says when a look at the area is
+  already on its way. *Where you are* now comes before the introduction, so it shows without scrolling at large GUI
+  scales.
+
+### Documentation and testing
+
+- Capacity, configuration, durability, upgrade, political usage, README and compatibility pages corrected to the
+  implemented behaviour (AUD-17), with the matching Book and task text in English, Spanish and Chinese.
+- `tools/test/run_gametests.py` uses the run directory Gradle actually uses, starts each run in a fresh directory with
+  a pinned seed, and judges the result from that run's own log (AUD-18).
+
 ## 0.3.0 — unreleased
 
 Reliability, recovery and documentation repairs from the 27 October 2026 review, plus two approved additions: verified
@@ -67,11 +160,58 @@ Without it, or with another build, nothing changes and saved bridge records stay
   MCA people.
 - **Construction**: Living Villages does not found a natural village or place a new building on another settlement's
   ground, a protected home or someone's standing bed, chest, furnace or other block entity (`protectExternalBuildings`).
+- With MCA Reborn 7.7.x, new residents of integrated villages are MCA people too: MCA's villager factory is looked up
+  under MCA 7.7's new package as well as 7.6's (before, they fell back to the provider's own villagers).
 - Ordinary villages can be placed under Living Villages management deliberately, with construction held; supply
   deliveries; 23 Kingdom Tasks, a War Room section, a Ledger link, a Book chapter, and `/kingdoms livingvillages`.
 - Server health and the provider matrix (`/kingdoms integrations`, the start-up log) report the integration. The Kingdom
   Tasks index now sends each distinct unavailability reason once, which keeps the larger catalogue well inside its
   payload budget.
+
+### Townstead 0.8.0 integration
+
+Optional. Townstead 0.8.0 is read through its public `api.v1`; Townstead 0.7.6 keeps working through its older facade,
+and nothing changes without Townstead. Townstead is never written. See
+[Townstead 0.8.0 integration](docs/Townstead-0.8.0-Integration.md).
+
+- **One backend per session**, chosen at start (`v1`, `legacy`, `mca` or `none`), with every capability probed member by
+  member and reported with its state and reason (`/kingdoms compat townstead status`, Server health). A capability
+  whose Townstead system the world switched off reads `DISABLED` and recovers live when it is switched back on.
+- **Buildings with completion**: Townstead's effective types, families and tiers, and MCA's own completion record. A
+  new recognition or guild chapter needs a complete building, and the Development page names unfinished buildings
+  without counting them; a recognized building that becomes incomplete suspends its institution
+  (`BUILDING_INCOMPLETE`) and keeps its charter and history. Unloaded or unreadable
+  villages mean "wait", never "removed", and nothing is rebound on its own. Townstead's change events refresh a
+  settlement promptly; the bounded fair poll catches the rest.
+- **Village life, Village work, Village news and Government and services** pages (Kingdom Tasks and the Village
+  Ledger): residents and coverage, needs read honestly (switched-off needs left out, heat and cold both distress),
+  spirit, culture, worksites and advisory storage counts, Townstead's village digest, and who governs each part of a
+  settlement. Optional civic-aid suggestions point at existing tasks. The Blueprint header shows the local-government
+  answer and links to Kingdom Tasks.
+- **Who governs what**: one resolver per settlement and domain (crown, local government, guilds, names, arms). MCA
+  Capitals' crown policy applies unchanged. Where both mods keep a local government, the conflict is reported and
+  nothing is merged; operators preview and then adopt, release, clear or acknowledge with
+  `/kingdoms compat townstead authority`. Decisions and restored-backup baselines live in
+  `mcakingdoms_townstead.dat`. Political delegation is unavailable: Townstead 0.8.0 accepts no external government.
+- **Careers**: data packs can make guild services require a Townstead profession at a tier, one of several professions,
+  or a learned skill; *Check a Townstead career* explains a requirement. Qualification reads only.
+- **Where a guild contact is**: with no contact in reach, a guild's requirements and page name this settlement's own
+  contact, their distance, and what Townstead's hangouts or schedule say they are doing. Nobody is moved or woken.
+- **Village news**: an institution recognized, an agreement concluded and a public work completed are told to Townstead's
+  Chronicles once each, only with a player present, and never read back into rewards (`chronicleProjection`).
+  `PublicWorkCompletedEvent` is posted after a public work is committed.
+- **Data-driven mappings** under `data/<namespace>/mcakingdoms_townstead/` (institutions, careers, culture hints,
+  suggestions, livery, Chronicle triggers, reactions), validated per file and against the installed Townstead after each
+  reload. An opt-in heraldry fallback paints only plain guard shields (`heraldryFallback`, off by default).
+- One adulthood rule for officeholders, guild contacts and dynasty checks (Townstead's life stage, else MCA's age state,
+  else vanilla's baby flag).
+- The Townstead civic header channel is protocol 2: clients and servers must update together.
+- 14 new `TownsteadCapability` constants (appended), `TownsteadCapabilityState`, building evidence and availability,
+  village-life, needs and career views, `systemEnabled`, the detailed `TownsteadBuildingsChangedEvent` states,
+  `InstitutionView.Status.BUILDING_INCOMPLETE` and three Townstead `ProgressionPredicate` kinds. The API jar still
+  contains no Townstead types; the compile-only Townstead `api.v1` jar is built from Townstead's tagged source, pinned by
+  SHA-256 and checked member by member against the published 0.8.0 jar.
+- Book of Kingdoms topic **Townstead villages**; 13 Kingdom Tasks; English, Spanish and Simplified Chinese throughout.
 
 ### New for players
 
@@ -161,6 +301,14 @@ Without it, or with another build, nothing changes and saved bridge records stay
 - `tools/test/companions.json` lists Recruits: Living Villages 1.1.0 by SHA-256, and `verify_companions.py` reads a
   `modId` followed by a TOML comment. The packaged `lv` phases of `tools/test/integration_runtime.py` cover the
   integration, its restart, removal, reinstallation, a future-schema store and the refusal of an unaudited jar.
+- `companions.json` records Townstead 0.8.0 and MCA 7.7.1-beta.5 by SHA-256 and certifies the Townstead 0.8.0 tuple. The
+  packaged `townstead` phase covers the 0.8.0 tuple (live switches, completion, authority, one Chronicle story, the
+  example data pack), its restart, a boot without Townstead and the restored install, and runs on 0.7.6, MCA alone and
+  no companion. Townstead 0.8.0 beside MCA 7.6.26 is refused by Forge, as Townstead's own metadata requires.
+- The pack phases also pass on MCA Reborn 7.7.1-beta.5 with Townstead 0.8.0, and MCA Capitals 1.3.7 (which needs MCA
+  7.7.1) passes the packaged `capitals` phase there; it was checked by class inspection only before. Acceptance fixtures
+  find MCA's package under 7.6 or 7.7, give recognized buildings the blocks MCA's completion counts, and define the
+  `workshop` building type, which no MCA or Townstead release defines.
 
 ### Documentation
 
@@ -169,6 +317,9 @@ Without it, or with another build, nothing changes and saved bridge records stay
   versus on-disk migration.
 - New: [Living Villages integration](docs/Living-Villages-Integration.md), and the `[livingVillages]` settings in the
   configuration reference.
+- New: [Townstead 0.8.0 integration](docs/Townstead-0.8.0-Integration.md) (ownership, tested tuples, operator recovery,
+  API limits) and the [Townstead upstream API proposal](docs/Townstead-Upstream-API-Proposal.md); the Townstead settings
+  and mapping formats in the configuration and datapack references.
 - README, CurseForge text, configuration reference, compatibility table and MODMAP updated together. Historical reviews
   and audits are labelled as such.
 
@@ -178,6 +329,10 @@ Without it, or with another build, nothing changes and saved bridge records stay
   is documented; reference-aware compaction is future work.
 - Old-name runtime aliases remain until the companion contract is published and tested.
 - MCA Capitals is read only: delegating crown actions to Capitals waits for a public mutation API.
+- Townstead: political delegation, a shared rename, a heraldry provider, actorless or idempotent Chronicle events, and
+  procurement, storage or career-reward transactions all wait for Townstead contracts (see the
+  [upstream proposal](docs/Townstead-Upstream-API-Proposal.md)). Until then conflicts are resolved by operator decisions
+  on the MCA: Kingdoms side, names are shown side by side, and no reward or payment comes from Townstead data.
 - Living Villages: Overworld only, as the provider. Its live battle does not survive a restart (the war continues as an
   abstract siege). Resident protection needs the production runtime. Living Villages 1.1.0 has no adoption API and no
   food shortage, so adoption creates the provider record directly and supplies are its currency and materials. Its own

@@ -1,0 +1,222 @@
+{
+ "schema": 2,
+ "entries": [
+  {
+   "id": "townstead_village_life",
+   "category": "settlements",
+   "task": "townstead.life",
+   "title": "Townstead village life",
+   "summary": "With Townstead 0.8.0, a settlement's page shows how its residents are doing, what its workers are asked to make and its village news, without changing anything.",
+   "keywords": [
+    "townstead",
+    "needs",
+    "spirit",
+    "culture",
+    "work orders",
+    "village news"
+   ],
+   "blocks": [
+    {
+     "id": "p1",
+     "type": "paragraph",
+     "text": "Village life reads Townstead's own records for the settlement you choose: how many residents Townstead knows and how recent its readings are, the needs it simulates, the community spirit, the culture and today's date. Every viewer shares one reading, refreshed when Townstead reports a change."
+    },
+    {
+     "id": "four",
+     "type": "comparison",
+     "alt": "Four separate names: the settlement is the place; the kingdom is who its people are; the Townstead culture is how the village lives; a Townstead faction is a political body. None replaces another.",
+     "columns": [
+      {
+       "title": "Settlement",
+       "points": [
+        "The place MCA: Kingdoms records, with its civic name.",
+        "Its identity survives renames and merges."
+       ]
+      },
+      {
+       "title": "Kingdom",
+       "points": [
+        "Who its people are: civic identity, government, heraldry.",
+        "Never changed by a culture."
+       ]
+      },
+      {
+       "title": "Townstead culture",
+       "points": [
+        "How the village lives: names, buildings, customs.",
+        "Never changed by conquest or a new kingdom."
+       ]
+      },
+      {
+       "title": "Townstead faction",
+       "points": [
+        "A council or association inside Townstead.",
+        "Not a kingdom and not a guild chapter."
+       ]
+      }
+     ]
+    },
+    {
+     "id": "p2",
+     "type": "paragraph",
+     "text": "Readings are honest: a need nobody simulates reads not simulated, never satisfied; when Townstead knows too few residents or its readings are old the page says insufficient current information; heat and cold both count as thermal distress. Village work separates production requested from goods on hand and goods delivered: only a delivery to a commission pays, once."
+    },
+    {
+     "id": "callout",
+     "type": "callout",
+     "tone": "note",
+     "title": "Suggestions are optional",
+     "text": "When a need is sustained and well sampled, the page may suggest an existing task, such as a public work. Nothing is required, penalized or automatic, and a suggestion never appears for a need the world does not simulate."
+    },
+    {
+     "id": "links",
+     "type": "links",
+     "links": [
+      {
+       "kind": "task",
+       "target": "townstead.life",
+       "label": "Read village life"
+      },
+      {
+       "kind": "task",
+       "target": "townstead.work",
+       "label": "Read village work"
+      },
+      {
+       "kind": "task",
+       "target": "townstead.news",
+       "label": "Read village news"
+      },
+      {
+       "kind": "guide",
+       "target": "townstead_government"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "townstead_government",
+   "category": "politics",
+   "task": "townstead.government",
+   "title": "Who governs a Townstead village",
+   "summary": "The crown, the local government, guilds, names and arms can each belong to MCA: Kingdoms, MCA Capitals or Townstead; the Government and services page says which, and where to act.",
+   "keywords": [
+    "townstead",
+    "council",
+    "authority",
+    "conflict",
+    "capitals"
+   ],
+   "blocks": [
+    {
+     "id": "p1",
+     "type": "paragraph",
+     "text": "MCA Capitals' existing crown policy comes first. MCA: Kingdoms governs the civic offices of settlements in kingdoms it governs; Townstead governs its own councils where no MCA: Kingdoms government covers the village. A Townstead guild is never automatically a guild chapter here, and neither mod imports or deletes the other's records."
+    },
+    {
+     "id": "p2",
+     "type": "paragraph",
+     "text": "When both keep populated records for the same settlement, the page reports a conflict and both keep running: nothing is merged, chosen or erased. An operator may adopt MCA: Kingdoms for that settlement, or release its local government to Townstead, after which MCA: Kingdoms refuses new settlement offices and recognitions there."
+    },
+    {
+     "id": "callout",
+     "type": "callout",
+     "tone": "note",
+     "title": "Political delegation is unavailable",
+     "text": "Townstead 0.8.0 accepts no outside government, so MCA: Kingdoms cannot tell Townstead's council to stand down. It reports ownership and conflicts honestly and never changes Townstead's politics."
+    },
+    {
+     "id": "links",
+     "type": "links",
+     "links": [
+      {
+       "kind": "task",
+       "target": "townstead.government",
+       "label": "Read who governs a settlement"
+      },
+      {
+       "kind": "task",
+       "target": "townstead.qualify",
+       "label": "Check your Townstead career"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "townstead_operations",
+   "category": "operators",
+   "task": "townstead.status",
+   "operator": true,
+   "player_task": "townstead.government",
+   "title": "Townstead: status, authority and recovery",
+   "summary": "How operators read the integration's state, decide a contested local government and recover after a restored backup.",
+   "blocks": [
+    {
+     "id": "p1",
+     "type": "paragraph",
+     "text": "The status reports Townstead's version, the backend in use (the public api.v1 on 0.8.0, the older facade on 0.7.x, MCA's own buildings without Townstead), every capability with its state and reason, the world's Townstead switches and the data-pack mapping checks. Nothing here changes Townstead."
+    },
+    {
+     "id": "steps",
+     "type": "steps",
+     "items": [
+      {
+       "text": "Check the integration: versions, backend, capabilities and mappings.",
+       "link": {
+        "kind": "task",
+        "target": "townstead.status",
+        "operator": true
+       }
+      },
+      {
+       "text": "Inspect a village: its MCA references, buildings with completion, and who governs each domain with the evidence.",
+       "link": {
+        "kind": "task",
+        "target": "townstead.inspect",
+        "operator": true
+       }
+      },
+      {
+       "text": "Decide a contested local government: preview, then adopt MCA: Kingdoms or release it to Townstead; clear a decision to let the evidence decide again.",
+       "link": {
+        "kind": "task",
+        "target": "townstead.adopt",
+        "operator": true
+       }
+      },
+      {
+       "text": "After restoring a Townstead backup, review the settlements reported waiting for an operator, then accept Townstead's current data as their baseline.",
+       "link": {
+        "kind": "task",
+        "target": "townstead.acknowledge",
+        "operator": true
+       }
+      }
+     ]
+    },
+    {
+     "id": "callout",
+     "type": "callout",
+     "tone": "warning",
+     "title": "Removing Townstead",
+     "text": "A local government released to Townstead stays released while Townstead is absent: MCA: Kingdoms reports it unavailable and does not take it back on its own. Building-backed institutions wait instead of moving, and nothing is destroyed or awarded when Townstead returns."
+    }
+   ],
+   "commands": [
+    "/kingdoms compat townstead status",
+    "/kingdoms compat townstead village <settlement>",
+    "/kingdoms compat townstead buildings <settlement>",
+    "/kingdoms compat townstead authority <settlement>",
+    "/kingdoms compat townstead authority <settlement> preview adopt",
+    "/kingdoms compat townstead authority <settlement> adopt",
+    "/kingdoms compat townstead authority <settlement> release",
+    "/kingdoms compat townstead authority <settlement> clear",
+    "/kingdoms compat townstead authority <settlement> acknowledge",
+    "/kingdoms compat townstead queues",
+    "/kingdoms compat townstead reconcile <settlement>"
+   ]
+  }
+ ]
+}

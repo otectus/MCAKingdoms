@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "kingdom": "mcakingdoms:madera",
+  "base": "orange",
+  "patterns": [
+    {
+      "pattern": "minecraft:flower",
+      "color": "brown"
+    },
+    {
+      "pattern": "minecraft:border",
+      "color": "brown"
+    }
+  ]
+}

@@ -60,6 +60,8 @@ final class PoliticalScenario {
             for(String axis:new String[]{"X","Y","Z"})for(int side=0;side<=1;side++){
                 var field=library.getClass().getDeclaredField("pos"+side+axis);field.setAccessible(true);int center=axis.equals("X")?pos.getX():axis.equals("Y")?pos.getY():pos.getZ();field.setInt(library,center+(side==0?-2:2));
             }
+            // A built library: MCA's own completion counts the blocks it recorded, and recognition needs a complete building.
+            TownsteadScenario.blocks(library,Math.max(TownsteadScenario.minimumBlocks(library),1));
             npc=ForgeRegistries.ENTITY_TYPES.getValue(new ResourceLocation("mca:male_villager")).create(server.overworld());
             var home=dev.otectus.mcakingdoms.test.McaGameTests.class.getDeclaredMethod("home",Entity.class,int.class);home.setAccessible(true);home.invoke(null,npc,99101);
         } else npc=EntityType.VILLAGER.create(server.overworld());

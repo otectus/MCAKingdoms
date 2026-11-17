@@ -68,26 +68,12 @@ public final class LineageAdapter {
 
     /** A loaded villager's verified life stage: Townstead's when installed (unknown if unreadable), else MCA's age state. */
     static Lineage.Stage stage(MinecraftServer server, Entity entity) {
-        if (!(entity instanceof LivingEntity living) || !living.isAlive()) return Lineage.Stage.UNKNOWN;
-        if (ModList.get() != null && ModList.get().isLoaded("townstead")) {
-            var townstead = KingdomsTownsteadApi.get(server);
-            if (!townstead.capabilities().contains(TownsteadCapability.READ_VILLAGER) || !townstead.capabilities().contains(TownsteadCapability.READ_ORIGIN))
-                return Lineage.Stage.UNKNOWN;
-            var view = townstead.villager(entity);
-            if (view.isEmpty()) return Lineage.Stage.UNKNOWN;
-            String presents = view.get().rootId().flatMap(townstead::origin).stream().flatMap(root -> root.lifeStages().stream())
-                    .filter(stage -> stage.id().equalsIgnoreCase(view.get().lifeStage())).map(TownsteadLifeStageView::presentsAs).findFirst().orElse("");
-            if (presents.isBlank()) return Lineage.Stage.UNKNOWN;
-            return Set.of("adult", "senior").contains(presents.toLowerCase(Locale.ROOT)) ? Lineage.Stage.ADULT : Lineage.Stage.MINOR;
-        }
-        var age = McaFamilyEvidence.ageState(entity);
-        if (age.isPresent()) return switch (age.get()) {
-            case "ADULT" -> Lineage.Stage.ADULT;
-            case "BABY", "TODDLER", "CHILD", "TEEN" -> Lineage.Stage.MINOR;
-            default -> Lineage.Stage.UNKNOWN;
+        // The shared rule (spec 8.3), so a dynasty check never disagrees with an appointment about the same NPC.
+        return switch (dev.otectus.mcakingdoms.citizen.NpcAdulthood.evaluate(server, entity).verdict()) {
+            case ADULT -> Lineage.Stage.ADULT;
+            case MINOR -> Lineage.Stage.MINOR;
+            case UNKNOWN -> Lineage.Stage.UNKNOWN;
         };
-        if (entity instanceof Villager villager) return villager.isBaby() ? Lineage.Stage.MINOR : Lineage.Stage.ADULT;
-        return Lineage.Stage.UNKNOWN;
     }
 
     private static String playerName(MinecraftServer server, UUID id) {

@@ -51,9 +51,9 @@ final class R4FamilyScenario {
             kingdoms.setResidence(actor,seatA.id());kingdoms.setResidence(spouse,seatB.id());
             for(var viewer:List.of(actor,outsider))for(var settlement:List.of(seatA,seatB))SettlementKnowledge.get(server).discover(viewer.getUUID(),settlement.id());
 
-            Class<?> treeType=Class.forName("forge.net.mca.server.world.data.FamilyTree");
-            Class<?> genderType=Class.forName("forge.net.mca.entity.ai.relationship.Gender");
-            Class<?> relationshipType=Class.forName("forge.net.mca.entity.ai.relationship.RelationshipState");
+            Class<?> treeType=Class.forName(TownsteadScenario.mcaRoot()+".server.world.data.FamilyTree");
+            Class<?> genderType=Class.forName(TownsteadScenario.mcaRoot()+".entity.ai.relationship.Gender");
+            Class<?> relationshipType=Class.forName(TownsteadScenario.mcaRoot()+".entity.ai.relationship.RelationshipState");
             Object tree=treeType.getMethod("get",net.minecraft.server.level.ServerLevel.class).invoke(null,level);
             Object male=Enum.valueOf((Class<? extends Enum>)genderType.asSubclass(Enum.class),"MALE");
             Object female=Enum.valueOf((Class<? extends Enum>)genderType.asSubclass(Enum.class),"FEMALE");

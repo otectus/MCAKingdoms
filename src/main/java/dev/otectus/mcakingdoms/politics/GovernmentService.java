@@ -385,6 +385,7 @@ public final class GovernmentService implements PoliticalService {
             }
             case APPOINT -> {
                 UUID scope = r.target().isEmpty() ? null : settlement(r.target(), r.kingdom()).id();
+                townsteadLocal(scope);
                 GovernmentActionPolicy.require(facts(actor, g.kingdom(), g, s), Action.APPOINT, GovernmentActionPolicy.Target.office(officeKey(r.definition(), scope)));
                 check(g.constitution().offices().contains(r.definition()), Keyed.text("politics.mcakingdoms.refusal.office_not_in_constitution","That office is not part of this constitution."));
                 Definition office = definitions.get(r.definition(), "office");
@@ -463,10 +464,11 @@ public final class GovernmentService implements PoliticalService {
                 Building original = recognition.building();
                 ServerLevel level = server.getLevel(ResourceKey.create(Registries.DIMENSION, new ResourceLocation(original.dimension())));
                 check(level != null && level.hasChunkAt(new BlockPos(original.x(), original.y(), original.z())), Keyed.text("politics.mcakingdoms.refusal.building_unloaded","The building's status is unknown because its location is not loaded."));
-                Optional<TownsteadBuildingView> observed = townstead().buildingAt(level, new BlockPos(original.x(), original.y(), original.z()));
+                var observed = townstead().buildingEvidenceAt(level, new BlockPos(original.x(), original.y(), original.z()));
                 check(townstead().capabilities().contains(TownsteadCapability.READ_BUILDING), Keyed.text("politics.mcakingdoms.refusal.building_capability","Building records cannot be read on this server."));
-                boolean valid = observed.filter(b -> b.villageId() == original.villageId() && b.buildingId() == original.buildingId()
-                        && b.type().equals(original.type())).isPresent();
+                boolean valid = observed.filter(e -> e.building().villageId() == original.villageId() && e.building().buildingId() == original.buildingId()
+                        && (e.building().type().equals(original.type()) || covers(recognition.definitionId(), recognition.terms(), e.building().type()))
+                        && e.acceptsNewUse()).isPresent();
                 s.recognitions.put(recognition.id(), new Recognition(recognition.id(), recognition.kingdom(), recognition.definitionId(), recognition.terms(), original, actor.getUUID(), valid, s.revision));
             }
             case HONOR -> {
@@ -686,11 +688,18 @@ public final class GovernmentService implements PoliticalService {
         check(permitted(actor, g, permission), GovernmentActionPolicy.permissionKey(permission));
     }
     private void authorizeScoped(ServerPlayer actor, Government g, Permission permission, UUID settlement) {
+        townsteadLocal(settlement);
         if (permitted(actor, g, permission)) return;
         check(g.state() == State.ACTIVE && g.offices().values().stream().anyMatch(o -> o.settlement() != null
                 && o.holder().equals(new Person(actor.getUUID(), Kind.PLAYER)) && definitions.available(o.definitionId())
                 && o.terms().permissions().contains(permission) && kingdoms.getSettlement(o.settlement()).map(v -> v.id().equals(settlement)).orElse(false)),
                 Keyed.text("politics.mcakingdoms.refusal.scoped_permission", "This needs the %s responsibility for this settlement.", permission));
+    }
+    /** A settlement whose local government an operator released to Townstead takes no new local offices or recognitions here (spec 4.2). */
+    private void townsteadLocal(UUID settlement) {
+        if (settlement == null) return;
+        var refusal = dev.otectus.mcakingdoms.compat.townstead.TownsteadAuthority.localRefusal(server, settlement);
+        if (refusal.isPresent()) throw refusal.get();
     }
     private SettlementView settlement(String id, String kingdom) {
         SettlementView result = kingdoms.findSettlement(id).orElseThrow(() -> new IllegalArgumentException("Settlement unavailable"));
@@ -710,26 +719,26 @@ public final class GovernmentService implements PoliticalService {
         UUID residence = identity.residenceSettlement().orElseThrow(() -> Keyed.refuse("politics.mcakingdoms.refusal.no_residence","That villager has no known civic residence."));
         SettlementView home = settlement(residence.toString(), kingdom);
         check(scope == null || scope.equals(home.id()), Keyed.text("politics.mcakingdoms.refusal.not_resident_here","That person does not live in this office's settlement."));
-        if (ModList.get().isLoaded("townstead")) {
-            // Whether Townstead's life stages can be read is a capability probe, not a version match: a
-            // release that moved these members fails closed here, one that kept them works.
-            check(townstead().capabilities().contains(TownsteadCapability.READ_VILLAGER)
-                    && townstead().capabilities().contains(TownsteadCapability.READ_ORIGIN),
-                    Keyed.text("politics.mcakingdoms.refusal.townstead_unreadable","Townstead's life stages cannot be read: its villager and origin data are unavailable."));
-            TownsteadVillagerView view = townstead().villager(entity).orElseThrow(() -> Keyed.refuse("politics.mcakingdoms.refusal.townstead_unavailable","Townstead's life stage for this villager is unavailable."));
-            String presentation = view.rootId().flatMap(townstead()::origin).stream().flatMap(root -> root.lifeStages().stream())
-                    .filter(stage -> stage.id().equalsIgnoreCase(view.lifeStage())).map(TownsteadLifeStageView::presentsAs).findFirst().orElse("");
-            check(Set.of("adult", "senior").contains(presentation.toLowerCase(Locale.ROOT)), Keyed.text("politics.mcakingdoms.refusal.not_adult", "That villager is not confirmed as an adult (life stage %s).", view.lifeStage()));
-        } else {
-            check(entity instanceof Villager && !((Villager) entity).isBaby(), Keyed.text("politics.mcakingdoms.refusal.adult_unknown","Adulthood cannot be confirmed for this kind of villager."));
+        // One adulthood rule for appointments, guild contacts and dynasty checks (spec 8.3): Townstead's Root life stage for
+        // an MCA villager when Townstead is installed (a capability probe, never a version match), else MCA's or vanilla's age.
+        var adulthood = dev.otectus.mcakingdoms.citizen.NpcAdulthood.evaluate(server, entity);
+        switch (adulthood.reason()) {
+            case TOWNSTEAD_UNREADABLE -> check(false, Keyed.text("politics.mcakingdoms.refusal.townstead_unreadable","Townstead's life stages cannot be read: its villager and origin data are unavailable."));
+            case TOWNSTEAD_UNAVAILABLE -> check(false, Keyed.text("politics.mcakingdoms.refusal.townstead_unavailable","Townstead's life stage for this villager is unavailable."));
+            case UNSUPPORTED_KIND, NOT_LOADED -> check(false, Keyed.text("politics.mcakingdoms.refusal.adult_unknown","Adulthood cannot be confirmed for this kind of villager."));
+            default -> { }
         }
+        check(adulthood.adult(), Keyed.text("politics.mcakingdoms.refusal.not_adult", "That villager is not confirmed as an adult (life stage %s).", adulthood.stage()));
         return candidate;
     }
     private Building building(ServerLevel level, BlockPos position, String kingdom) {
         check(level.hasChunkAt(position), Keyed.text("politics.mcakingdoms.refusal.building_unloaded","The building's status is unknown because its location is not loaded."));
         // Townstead's building query, or MCA's own building list without it; either way a probed capability.
         check(townstead().capabilities().contains(TownsteadCapability.READ_BUILDING), Keyed.text("politics.mcakingdoms.refusal.building_capability","Building records cannot be read on this server."));
-        TownsteadBuildingView b = townstead().buildingAt(level, position).orElseThrow(() -> Keyed.refuse("politics.mcakingdoms.refusal.building_evidence","No building record was found at that position."));
+        var evidence = townstead().buildingEvidenceAt(level, position).orElseThrow(() -> Keyed.refuse("politics.mcakingdoms.refusal.building_evidence","No building record was found at that position."));
+        // A new recognition needs a finished building; a provider that cannot say keeps the 0.2.x rule (spec 7.2).
+        check(evidence.acceptsNewUse(), Keyed.text("politics.mcakingdoms.refusal.building_incomplete", "This building is not complete yet; MCA counts it once it is finished."));
+        TownsteadBuildingView b = evidence.building();
         SettlementView settlement = settlement(b.settlementId().toString(), kingdom);
         return new Building("townstead", b.dimension().toString(), b.villageId(), b.buildingId(), settlement.id(), b.type(), b.centerX(), b.centerY(), b.centerZ());
     }
@@ -856,7 +865,7 @@ public final class GovernmentService implements PoliticalService {
                 check(level != null, Keyed.text("politics.mcakingdoms.refusal.building_dimension","The building's dimension is not available."));
                 Building observed = building(level, new BlockPos(b.x(), b.y(), b.z()), g.kingdom());
                 check(observed.villageId() == b.villageId() && observed.buildingId() == b.buildingId(), Keyed.text("politics.mcakingdoms.refusal.institution_gone","The original institution no longer exists."));
-                String definition = definitions.snapshot().entrySet().stream().filter(e -> e.getValue().kind().equals("institution") && e.getValue().buildingTypes().contains(observed.type()))
+                String definition = definitions.snapshot().entrySet().stream().filter(e -> e.getValue().kind().equals("institution") && covers(e.getKey(), e.getValue(), observed.type()))
                         .map(Map.Entry::getKey).sorted().findFirst().orElseThrow(() -> Keyed.refuse("politics.mcakingdoms.refusal.no_charter_type","No institution charter covers this building type."));
                 recognize(actor, s, g.kingdom(), definition, observed);
             }
@@ -893,9 +902,19 @@ public final class GovernmentService implements PoliticalService {
         return receipts + "; building evidence " + (townstead().capabilities().contains(TownsteadCapability.READ_BUILDING)
                 ? "available" : "unavailable") + ".";
     }
+    /**
+     * Whether an institution charter covers a building type: its exact type, its family (any tier: {@code kitchen} covers
+     * {@code kitchen_l3}, as the data-pack reference documents), or a Townstead mapping's families at its minimum tier.
+     */
+    static boolean covers(String charter, Definition terms, String type) {
+        String family = TownsteadBuildingView.familyOf(type);
+        if (terms.buildingTypes().contains(type) || terms.buildingTypes().contains(family)) return true;
+        return dev.otectus.mcakingdoms.compat.townstead.TownsteadMappings.institution(charter)
+                .filter(rule -> rule.families().contains(family) && TownsteadBuildingView.levelOf(type) >= rule.minimumTier()).isPresent();
+    }
     private UUID recognize(ServerPlayer actor, PoliticalSavedData.Records s, String kingdom, String id, Building b) {
         Definition terms = definitions.get(id, "institution");
-        check(terms.buildingTypes().contains(b.type()), Keyed.text("politics.mcakingdoms.refusal.charter_type", "This charter does not cover the building type %s.", b.type()));
+        check(covers(id, terms, b.type()), Keyed.text("politics.mcakingdoms.refusal.charter_type", "This charter does not cover the building type %s.", b.type()));
         check(s.recognitions.values().stream().noneMatch(v -> v.building().dimension().equals(b.dimension()) && v.building().villageId() == b.villageId() && v.building().buildingId() == b.buildingId()), Keyed.text("politics.mcakingdoms.refusal.already_recognized","This institution is already recognized; use Revalidate instead."));
         UUID record = UUID.randomUUID(); s.recognitions.put(record, new Recognition(record, kingdom, id, terms, b, actor.getUUID(), true, s.revision)); return record;
     }
@@ -965,12 +984,16 @@ public final class GovernmentService implements PoliticalService {
         else if (!townstead().capabilities().contains(TownsteadCapability.READ_BUILDING))
             status = dev.otectus.mcakingdoms.api.politics.InstitutionView.Status.PROVIDER_UNAVAILABLE;
         else {
-            var current = townstead().buildingAt(level,position);
+            var evidence = townstead().buildingEvidenceAt(level,position);
+            var current = evidence.map(dev.otectus.mcakingdoms.api.townstead.TownsteadBuildingEvidence::building);
             if (current.isEmpty() || current.get().buildingId()!=original.buildingId()
                     || current.get().villageId()!=original.villageId()
-                    || !recognition.terms().buildingTypes().contains(current.get().type())
+                    || !(current.get().type().equals(original.type()) || covers(recognition.definitionId(), recognition.terms(), current.get().type()))
                     || !kingdoms.getSettlement(current.get().settlementId()).map(s -> s.id().equals(settlement.get().id())).orElse(false))
                 status = dev.otectus.mcakingdoms.api.politics.InstitutionView.Status.BUILDING_CHANGED;
+            // Suspended, not forgotten: the charter and its history stay and it works again once the building is finished.
+            else if (evidence.get().completion() == dev.otectus.mcakingdoms.api.townstead.TownsteadBuildingEvidence.Completion.INCOMPLETE)
+                status = dev.otectus.mcakingdoms.api.politics.InstitutionView.Status.BUILDING_INCOMPLETE;
         }
         return Optional.of(new dev.otectus.mcakingdoms.api.politics.InstitutionView(recognition.id(),
                 settlement.get().kingdomId(),settlement.get().id(),new ResourceLocation(original.dimension()),position,
@@ -1477,13 +1500,30 @@ public final class GovernmentService implements PoliticalService {
                 .anyMatch(r -> r.active() && kingdoms.getSettlement(r.building().settlement()).map(v -> v.id().equals(source)).orElse(false)))
             event.reject(Keyed.text("politics.mcakingdoms.refusal.reassign.charters","This settlement has active institution charters; suspend them before changing its kingdom."));
     }
-    @SubscribeEvent public void merged(SettlementMergedEvent event) {
-        if (event.server() != server || !data.writable()) return;
+    /** A government whose capital was the retired settlement gets the survivor as its capital, in memory; idempotent. */
+    private void carryCapital(UUID source, UUID target) {
         PoliticalSavedData.Records s = data.transaction(); boolean changed = false;
-        for (Government g : List.copyOf(s.governments.values())) if (g.capital().equals(event.source().id())) {
-            s.governments.put(g.kingdom(), government(g, event.target().id(), g.offices(), g.mandates(), g.successor(), s.revision + 1)); changed = true;
+        for (Government g : List.copyOf(s.governments.values())) if (g.capital().equals(source)) {
+            s.governments.put(g.kingdom(), government(g, target, g.offices(), g.mandates(), g.successor(), s.revision + 1)); changed = true;
         }
         if (changed) { s.revision++; data.commit(s); }
+    }
+
+    /** The merge as it happens, for this service's own records; the identity outbox below makes it durable (AUD-01). */
+    @SubscribeEvent public void merged(SettlementMergedEvent event) {
+        if (event.server() != server || !data.writable()) return;
+        carryCapital(event.source().id(), event.target().id());
+    }
+
+    /**
+     * The identity outbox's political consumer (AUD-01): the capital follows the merge (if the event has not already moved
+     * it) and the political records are on disk before it reports done. Returns false when they are read-only or could not
+     * be written, so the merge stays pending for them and is retried.
+     */
+    public boolean settlementMerged(UUID source, UUID target) {
+        if (!data.writable()) return false;
+        carryCapital(source, target);
+        return !data.isDirty() || dev.otectus.mcakingdoms.persistence.DurableSave.now(server, data, PoliticalSavedData.NAME);
     }
     @SubscribeEvent(priority = net.minecraftforge.eventbus.api.EventPriority.LOWEST)
     public void deathObserved(LivingDeathEvent event) {

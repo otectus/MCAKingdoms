@@ -271,10 +271,13 @@ public final class KingdomActionsScreen extends Screen {
     }
     private List<RichPanel.Piece> startPieces(){
         var pieces=new ArrayList<RichPanel.Piece>();
+        // UX-01: where the player stands and what they can do there come first, so large GUI scales show them without
+        // scrolling; the introduction follows.
+        var intro=new ArrayList<RichPanel.Piece>();
         if(PresentationConfig.SHOW_INTRO.get()){
-            pieces.add(Pieces.heading("intro_heading",text("start.intro.title","Welcome")));
-            pieces.add(BookPieces.opening("intro",text("start.intro","Kingdom Tasks is where you read records and act. Tasks that change records end on a review page; nothing happens until you confirm. Press %s to come back here.",Component.keybind("key.mcakingdoms.actions"))));
-            pieces.add(Pieces.actions("intro_actions",List.of(Pieces.button("hide_intro",text("start.intro.hide","Hide this introduction"),text("start.intro.hide.help","You can show it again in Settings."),()->{PresentationConfig.SHOW_INTRO.set(false);PresentationConfig.SPEC.save();focusedControl=null;rebuildWidgets();},true))));
+            intro.add(Pieces.heading("intro_heading",text("start.intro.title","Welcome")));
+            intro.add(BookPieces.opening("intro",text("start.intro","Kingdom Tasks is where you read records and act. Tasks that change records end on a review page; nothing happens until you confirm. Press %s to come back here.",Component.keybind("key.mcakingdoms.actions"))));
+            intro.add(Pieces.actions("intro_actions",List.of(Pieces.button("hide_intro",text("start.intro.hide","Hide this introduction"),text("start.intro.hide.help","You can show it again in Settings."),()->{PresentationConfig.SHOW_INTRO.set(false);PresentationConfig.SPEC.save();focusedControl=null;rebuildWidgets();},true))));
         }
         try{
             var json=JsonParser.parseString(start.value()).getAsJsonObject();
@@ -282,9 +285,23 @@ public final class KingdomActionsScreen extends Screen {
             if(json.has("here")){var here=json.getAsJsonObject("here");
                 pieces.add(Pieces.text("where",text("start.here.line","%s, a settlement of %s.",here.get("name").getAsString(),InteractionNetwork.component(here.get("kingdom").getAsString()))));
                 String id=here.get("id").getAsString();
-                pieces.add(Pieces.actions("where_actions",List.of(Pieces.button("inspect_here",text("start.inspect","Read this settlement"),text("start.inspect.help","Its kingdom, location and what you can do there."),()->open("settlement.here"),true),
-                        Pieces.button("ledger_here",text("start.war_room","Open its War Room"),text("start.war_room.help","Who controls it, current campaigns and civilian options."),()->minecraft.setScreen(new WarRoomScreen(this,UUID.fromString(id),here.get("name").getAsString())),true))));
-            }else pieces.add(Pieces.text("where",text("start.nowhere","You are not inside a recognized settlement. Walk into a village; the first time, a banner names it."),Pieces.MUTED,0));
+                // UX-01: the second action follows what this server offers: the War Room only where conflict is on;
+                // otherwise the village's own life, when Townstead reads it, or how the settlement is developing.
+                var actions=new ArrayList<RichPanel.Target>();
+                actions.add(Pieces.button("inspect_here",text("start.inspect","Read this settlement"),text("start.inspect.help","Its kingdom, location and what you can do there."),()->open("settlement.here"),true));
+                boolean warRoom=!here.has("warRoom")||here.get("warRoom").getAsBoolean();
+                if(warRoom)actions.add(Pieces.button("ledger_here",text("start.war_room","Open its War Room"),text("start.war_room.help","Who controls it, current campaigns and civilian options."),()->minecraft.setScreen(new WarRoomScreen(this,UUID.fromString(id),here.get("name").getAsString())),true));
+                else if(here.has("life")&&here.get("life").getAsBoolean())actions.add(Pieces.button("life_here",text("start.life_here","Village life here"),text("start.life_here.help","Its residents, needs and news, as Townstead knows them."),()->sendTask("townstead.life","{\"settlement\":\""+id+"\"}"),true));
+                else actions.add(Pieces.button("development_here",text("start.development","How it is developing"),text("start.development.help","Its public works and what they still need."),()->sendTask("development.read","{\"settlement\":\""+id+"\"}"),true));
+                pieces.add(Pieces.actions("where_actions",actions));
+            }else{
+                boolean pending=json.has("pending")&&json.get("pending").getAsBoolean();
+                pieces.add(Pieces.text("where",pending?text("start.nowhere.pending","You are not inside a recognized settlement yet. A look at this area is on its way; check again in a few seconds.")
+                        :text("start.nowhere","You are not inside a recognized settlement. Walk into a village; the first time, a banner names it."),Pieces.MUTED,0));
+                pieces.add(Pieces.actions("where_actions",List.of(Pieces.button("why_here",text("start.nowhere.why","Why not here?"),text("start.nowhere.why.help","What a settlement needs, and how close this place is."),()->open("settlement.here"),true),
+                        Pieces.button("scan_here",text("start.nowhere.scan","Look for a settlement around me"),text("start.nowhere.scan.help","The server looks at the loaded area around you now. Nothing is generated."),()->open("settlement.scan_here"),true))));
+            }
+            pieces.addAll(intro);intro.clear();
             pieces.add(Pieces.heading("next_heading",text("start.next","Suggested next steps")));
             var suggestions=json.getAsJsonArray("suggestions");
             if(suggestions.isEmpty())pieces.add(Pieces.text("next_none",start.detailComponent(),Pieces.MUTED,0));
@@ -295,7 +312,7 @@ public final class KingdomActionsScreen extends Screen {
                 pieces.add(Pieces.text("next_reason_"+n,reason,Pieces.MUTED,0));
                 pieces.add(Pieces.actions("next_"+n,List.of(Pieces.button("suggestion:"+target,label,reason,()->{if(kind.equals("guide"))minecraft.setScreen(new KingdomGuideScreen(this,target));else sendTask(target,prefill);},true))));
             }
-        }catch(RuntimeException malformed){pieces.add(Pieces.text("start_unreadable",text("start.unreadable","The start view could not be read; use All tasks."),Pieces.MUTED,0));}
+        }catch(RuntimeException malformed){pieces.addAll(intro);intro.clear();pieces.add(Pieces.text("start_unreadable",text("start.unreadable","The start view could not be read; use All tasks."),Pieces.MUTED,0));}
         var favorites=shortcuts(ClientState.get().favoriteTasks());
         if(!favorites.isEmpty()){pieces.add(Pieces.heading("favorites_heading",text("start.favorites","Your favourite tasks")));pieces.add(Pieces.actions("favorites",favorites));}
         var recent=shortcuts(ClientState.get().recentTasks());
@@ -444,9 +461,11 @@ public final class KingdomActionsScreen extends Screen {
             var rank=SearchText.rank(tokens,List.of(title.getString(),english("task.mcakingdoms."+entry.id()+".title",entry.title())),aliases,
                     List.of(category.getString(),english("task.mcakingdoms.category."+slug(entry.category()),entry.category()),groupLabel(entry.group()).getString()),other);
             if(rank==SearchText.Rank.NONE)continue;
-            boolean unavailable=!entry.unavailable().isEmpty();
-            Component label=unavailable?text("unavailable.row","%s — not available here",title):title;
-            Component detailLine=unavailable?InteractionNetwork.component(entry.reason()):category.copy().append(" · ").append(help);
+            // AUD-14: "could not check" is neither available nor refused; the task opens and its service decides.
+            boolean unknown=entry.unavailable().equals("UNKNOWN");
+            boolean unavailable=!entry.unavailable().isEmpty()&&!unknown;
+            Component label=unknown?text("unknown.row","%s — could not check here",title):unavailable?text("unavailable.row","%s — not available here",title):title;
+            Component detailLine=unavailable||unknown?InteractionNetwork.component(entry.reason()):category.copy().append(" · ").append(help);
             // Unavailable tasks sort after available ones of the same rank; they stay listed so players learn why.
             int score=SearchText.phrase(catalogueSearch,aliases)?-1:rank.ordinal();
             ranked.add(Map.entry(score*100_000+(unavailable?50_000:0)+order,new InteractionNetwork.Option(entry.id(),InteractionNetwork.encode(label),InteractionNetwork.encode(detailLine),entry.consequential()&&!unavailable,entry.id())));
@@ -471,7 +490,7 @@ public final class KingdomActionsScreen extends Screen {
                 out.add(new IndexEntry(o.get("i").getAsString(),o.get("c").getAsBoolean(),o.get("t").getAsString(),o.get("g").getAsString(),o.has("h")?o.get("h").getAsString():"",
                         o.has("p")?o.get("p").getAsString():"HELP",o.has("a")?o.get("a").getAsString():"",reason,o.has("l")?o.get("l").getAsString():""));}
             index=List.copyOf(out);operatorIndex=json.has("operator")&&json.get("operator").getAsBoolean();
-            var availability=new java.util.HashMap<String,String>();for(var e:index)availability.put(e.id(),e.unavailable().isEmpty()?"":e.reason());
+            var availability=new java.util.HashMap<String,String>();for(var e:index)availability.put(e.id(),e.unavailable().isEmpty()||e.unavailable().equals("UNKNOWN")?"":e.reason());
             PinnedTask.catalogue(availability,true);
         }catch(RuntimeException malformed){index=List.of();}
         if(wantStart){wantStart=false;send("START","","",0);return;}

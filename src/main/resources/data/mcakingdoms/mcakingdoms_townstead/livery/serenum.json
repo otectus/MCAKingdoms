@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "kingdom": "mcakingdoms:serenum",
+  "base": "yellow",
+  "patterns": [
+    {
+      "pattern": "minecraft:circle",
+      "color": "white"
+    },
+    {
+      "pattern": "minecraft:border",
+      "color": "brown"
+    }
+  ]
+}

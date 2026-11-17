@@ -49,9 +49,26 @@ public final class DocumentLedger extends dev.otectus.mcakingdoms.persistence.Du
     public record Colours(DyeColor primary, DyeColor secondary, UUID chosenBy, long revision) { }
     record Receipt(UUID actor, String fingerprint, UUID document) { }
 
+    /**
+     * Whether a charter carries a sealed record (AUD-09), kept apart from the record itself: issuing a document and
+     * delivering it onto a charter are separate steps. {@code PENDING}: written onto the charter in the player's hand and
+     * confirmed when the player's data is saved; {@code ATTACHED}: a saved charter carries it; {@code MISSING}: the
+     * server stopped before the charter was saved, so no charter carries it and the record waits to be recovered.
+     * {@code fallback} is the state a copy's delivery returns to if it is lost. Documents sealed before 0.3.1 have no
+     * delivery entry and read as attached.
+     */
+    public enum Attachment { PENDING, ATTACHED, MISSING }
+    public record Delivery(UUID document, UUID player, UUID operation, Attachment state, Attachment fallback, long at) {
+        public Delivery { Objects.requireNonNull(document); Objects.requireNonNull(player); Objects.requireNonNull(operation); Objects.requireNonNull(state);
+            fallback = fallback == null ? Attachment.MISSING : fallback; }
+        Delivery at(Attachment next, long when) { return new Delivery(document, player, operation, next, fallback, when); }
+    }
+
     private final Map<UUID, Document> documents = new LinkedHashMap<>();
     private final Map<String, Colours> colours = new LinkedHashMap<>();
     private final Map<UUID, Receipt> receipts = new LinkedHashMap<>();
+    /** Optional root key {@code Deliveries} (0.3.1): a version that does not know it ignores it. */
+    private final Map<UUID, Delivery> deliveries = new LinkedHashMap<>();
     private long revision;
     private boolean readOnly;
     private CompoundTag preserved;
@@ -106,8 +123,14 @@ public final class DocumentLedger extends dev.otectus.mcakingdoms.persistence.Du
                 CompoundTag r = (CompoundTag) entry;
                 data.receipts.put(r.getUUID("Request"), new Receipt(r.getUUID("Actor"), r.getString("Fingerprint"), r.getUUID("Document")));
             }
+            for (Tag entry : tag.getList("Deliveries", Tag.TAG_COMPOUND)) {
+                CompoundTag d = (CompoundTag) entry;
+                var delivery = new Delivery(d.getUUID("Document"), d.getUUID("Player"), d.getUUID("Operation"), Attachment.valueOf(d.getString("State")),
+                        d.contains("Fallback") ? Attachment.valueOf(d.getString("Fallback")) : Attachment.MISSING, d.getLong("At"));
+                if (data.documents.containsKey(delivery.document())) data.deliveries.put(delivery.document(), delivery);
+            }
         } catch (IllegalArgumentException | NullPointerException damaged) {
-            data.readOnly = true; data.preserved = tag.copy(); data.documents.clear(); data.colours.clear(); data.receipts.clear();
+            data.readOnly = true; data.preserved = tag.copy(); data.documents.clear(); data.colours.clear(); data.receipts.clear(); data.deliveries.clear();
         }
         return data;
     }
@@ -134,6 +157,10 @@ public final class DocumentLedger extends dev.otectus.mcakingdoms.persistence.Du
         receipts.forEach((request, r) -> { CompoundTag t = new CompoundTag(); t.putUUID("Request", request); t.putUUID("Actor", r.actor());
             t.putString("Fingerprint", r.fingerprint()); t.putUUID("Document", r.document()); list.add(t); });
         tag.put("Receipts", list);
+        ListTag sent = new ListTag();
+        deliveries.values().forEach(d -> { CompoundTag t = new CompoundTag(); t.putUUID("Document", d.document()); t.putUUID("Player", d.player());
+            t.putUUID("Operation", d.operation()); t.putString("State", d.state().name()); t.putString("Fallback", d.fallback().name()); t.putLong("At", d.at()); sent.add(t); });
+        tag.put("Deliveries", sent);
         return tag;
     }
 
@@ -143,11 +170,16 @@ public final class DocumentLedger extends dev.otectus.mcakingdoms.persistence.Du
     public Collection<Document> documents() { return Collections.unmodifiableCollection(documents.values()); }
     public Optional<Colours> colours(String kingdom) { return Optional.ofNullable(colours.get(kingdom)); }
     Optional<Receipt> receipt(UUID request) { return Optional.ofNullable(receipts.get(request)); }
+    /** How the document reached a charter; a document without an entry was sealed before 0.3.1 and reads as attached. */
+    public Optional<Delivery> delivery(UUID document) { return Optional.ofNullable(deliveries.get(document)); }
+    public Attachment attachment(UUID document) { return delivery(document).map(Delivery::state).orElse(Attachment.ATTACHED); }
+    public Collection<Delivery> deliveries() { return Collections.unmodifiableCollection(deliveries.values()); }
 
     /** One change, written before it takes effect; false (and nothing changed) when the store is full, read-only or the write failed. */
     boolean commit(MinecraftServer server, java.util.function.Consumer<DocumentLedger> change) {
         if (readOnly) return false;
         var documentsBefore = new LinkedHashMap<>(documents); var coloursBefore = new LinkedHashMap<>(colours); var receiptsBefore = new LinkedHashMap<>(receipts);
+        var deliveriesBefore = new LinkedHashMap<>(deliveries);
         long before = revision;
         change.accept(this);
         revision++;
@@ -155,11 +187,13 @@ public final class DocumentLedger extends dev.otectus.mcakingdoms.persistence.Du
         while (receipts.size() > RECEIPTS) receipts.remove(receipts.keySet().iterator().next());
         try {
             if (!bounded) throw new java.io.IOException("document ledger bound reached");
+            dev.otectus.mcakingdoms.persistence.FaultPoints.reach("documents.commit");
             AtomicSavedDataWriter.write(server.getWorldPath(LevelResource.ROOT).resolve("data").resolve(NAME + ".dat").toFile(), save(new CompoundTag()));
             setDirty(false);
             return true;
-        } catch (java.io.IOException failure) {
+        } catch (java.io.IOException | RuntimeException failure) {
             documents.clear(); documents.putAll(documentsBefore); colours.clear(); colours.putAll(coloursBefore); receipts.clear(); receipts.putAll(receiptsBefore);
+            deliveries.clear(); deliveries.putAll(deliveriesBefore);
             revision = before;
             com.mojang.logging.LogUtils.getLogger().error("[MCA: Kingdoms] The document ledger was not changed: {}", failure.getMessage());
             return false;
@@ -169,4 +203,5 @@ public final class DocumentLedger extends dev.otectus.mcakingdoms.persistence.Du
     void put(Document document) { documents.put(document.id(), document); }
     void putColours(String kingdom, Colours value) { colours.put(kingdom, value); }
     void putReceipt(UUID request, Receipt receipt) { receipts.put(request, receipt); }
+    void putDelivery(Delivery delivery) { deliveries.put(delivery.document(), delivery); }
 }

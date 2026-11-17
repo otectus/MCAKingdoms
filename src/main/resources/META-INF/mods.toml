@@ -52,6 +52,20 @@ ordering="AFTER"
 side="BOTH"
 
 [[dependencies.${mod_id}]]
+modId="waystones"
+mandatory=false
+versionRange="${waystones_version_range}"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="balm"
+mandatory=false
+versionRange="${balm_version_range}"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
 modId="recruitsvillages"
 mandatory=false
 versionRange="${recruitsvillages_version_range}"

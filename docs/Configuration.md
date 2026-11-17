@@ -52,8 +52,8 @@ mapping changes anything until an operator or a kingdom's leader turns it on.
 | --- | --- | --- | --- | --- |
 | `migration.legacyProgress` | `false` | — | start | Once per world, before players load: move advancement and statistic progress recorded under the pre-rename namespace `ultima_kingdoms:` to `mcakingdoms:`. Each changed player file is kept as `<file>.ultima-bak` first. Recipe-book entries are not rewritten. |
 | `capitals.interop` | `PER_KINGDOM` | `PER_KINGDOM`, `ALL_READ_ONLY` | live | With MCA Capitals installed: `PER_KINGDOM` lets Capitals govern the crown of each kingdom whose village is one of its governing capitals (MCA: Kingdoms then refuses crown actions there and keeps the civic layer); other kingdoms keep their MCA: Kingdoms governments. `ALL_READ_ONLY` keeps every crown action read-only, as before 0.3.0. Capitals is only read. Ignored without Capitals. See [Capitals interoperability](Capitals-Interoperability.md). |
-| `heraldry.enabled` | `true` | — | live | Kingdom banners, shields and noticeboards bind to a kingdom when placed, and officials seal charters at a seal press. Off: new placements stand for no kingdom and no charter is sealed or revoked; existing records stay readable and the items still exist. |
-| `dynasty.enabled` | `true` | — | live | Dynastic succession and the court. Every government starts with the law Manual only, which changes nothing; nothing happens until a leader or operator adopts another law. Off: no law is adopted, no succession case opens or advances and no title is granted; records stay readable. |
+| `heraldry.enabled` | `true` | — | live | Kingdom banners, shields and noticeboards bind to a kingdom when placed, and officials seal charters at a seal press. Off: new placements stand for no kingdom, no new charter is sealed and no kingdom's colours change. Revoking a sealed record, and putting an existing record back onto a charter, still work. Existing records stay readable and the items still exist. |
+| `dynasty.enabled` | `true` | — | live | Dynastic succession and the court. Every government starts with the law Manual only, which changes nothing; nothing happens until a leader or operator adopts another law. Off: no law is adopted, no succession case opens or advances, and no title is granted or accepted; records stay readable. A claimant can still withdraw a claim, a holder can still resign a title (an offered one too), and its grantor, an official who awards honors or an operator can still revoke one. |
 | `dynasty.acceptanceTicks` | 72000 | 1200–2400000 | live | Game ticks a player heir has to accept or decline the crown before the succession waits for review (three Minecraft days). |
 | `dynasty.mourningTicks` | 24000 | 0–2400000 | live | Game ticks a kingdom mourns a ruler whose death was observed: its pages say so and its banners darken. Shown only; nobody is changed. 0 turns mourning off. |
 | `dynasty.claimCooldownTicks` | 24000 | 0–2400000 | live | Game ticks after a claim is decided before the same person may file the same kind of claim again (an appeal). |
@@ -66,7 +66,7 @@ mapping changes anything until an operator or a kingdom's leader turns it on.
 | `dynasty.legitimacy.recognitionWeight` | 1 | 0–10 | live | Points when the kingdom is party to an agreement in force. |
 | `dynasty.legitimacy.governanceWeight` | 1 | 0–10 | live | Points when at least two other officials are seated. |
 | `dynasty.legitimacy.contestWeight` | 2 | 0–10 | live | Points subtracted for each open contest of the succession, at most two. |
-| `development.mode` | `OFF` | `OFF`, `OBSERVE`, `PROJECTS`, `MANAGED_GROWTH`, `FULL_ECONOMY` | live | How far settlement development may act; each mode includes the ones before it. `OFF`: nothing is planned, saved or built. `OBSERVE`: pages explain development from verified buildings and completed works. `PROJECTS`: officials post public works players fund with real deliveries; a funded work is a milestone, nothing is built. `MANAGED_GROWTH`: funded works with a small template are built on their surveyed plot in settlements that opted in, a few blocks at a time, in loaded chunks only. `FULL_ECONOMY`: adds an abstract, labelled goods ledger and capped abstract trade between settlements of kingdoms with an agreement in force; no real item or coin is created or moved. Lowering the mode pauses work and keeps every record. |
+| `development.mode` | `OFF` | `OFF`, `OBSERVE`, `PROJECTS`, `MANAGED_GROWTH`, `FULL_ECONOMY` | live | How far settlement development may act; each mode includes the ones before it. `OFF`: nothing is planned, saved or built. `OBSERVE`: pages explain development from verified buildings and completed works. `PROJECTS`: officials post public works players fund with real deliveries; a funded work is a milestone, nothing is built. `MANAGED_GROWTH`: funded works with a small template are built on their surveyed plot in settlements that opted in, a few blocks at a time, in loaded chunks only. `FULL_ECONOMY`: adds an abstract, labelled goods ledger and capped abstract trade between settlements of kingdoms with an agreement in force; no real item or coin is created or moved. Lowering the mode pauses work and keeps every record. Stopping or cancelling a work, withdrawing consent, protecting a home, rolling back and claiming refunds work in every mode, `OFF` included, while the development records are writable. |
 | `development.constructionPaused` | `false` | — | live | Pause all construction; funding and records continue. |
 | `development.economyPaused` | `false` | — | live | Pause deliveries, abstract production and abstract trade; construction continues. |
 | `development.blocksPerPass` | 4 | 1–32 | live | Most blocks construction places each second across the whole server. |
@@ -77,6 +77,15 @@ mapping changes anything until an operator or a kingdom's leader turns it on.
 | `development.dimensions` | `["minecraft:overworld"]` | dimension ids | live | Dimensions where construction may happen; others are never built in. |
 
 There is no tax, wallet or currency setting: no payment provider is integrated, so works are funded with items only.
+
+### 0.3.1 additions: Waystones
+
+Section `waystones` of `mcakingdoms-common.toml`. Both keys only matter with Waystones and Balm installed; see [Waystones integration](Waystones-Integration.md).
+
+| Key | Default | Allowed | Applies | Meaning |
+| --- | --- | --- | --- | --- |
+| `waystones.settlementNames` | `true` | — | live | A normal waystone inside a recognized settlement takes the settlement's name when it first needs a name: a generated stone at its first activation, or a newly placed unnamed stone before its settings screen opens. A clash gets a number, such as `Oakfield (2)`. Existing names and every name a player chooses are kept. Off: no stone is named, waiting stones are not retried, and *Name this waystone after the settlement* and the backfill are refused; renames players make in Waystones' screen are still recorded, so turning it back on never overrides them. |
+| `waystones.pendingTicks` | 6000 | 200–72000 | live | Game ticks an unnamed new stone waits for the settlement around it to be recognized (five minutes by default). After that it is left as Waystones leaves it. |
 
 With the defaults, a point-of-interest cluster counts only with at least five points, a bed or bell among them, and near the surface. Generated villages are recognized from their structure regardless of those three rules.
 
@@ -221,16 +230,34 @@ The [Recruits: Living Villages integration](Living-Villages-Integration.md). It 
 
 ## `mcakingdoms-townstead-common.toml` — Townstead adapter
 
-Owner: `compat/townstead/TownsteadIntegrationConfig`. 7 keys, section `townstead`. Used only when Townstead is installed.
+Owner: `compat/townstead/TownsteadIntegrationConfig`. 21 keys, section `townstead`. Used only when Townstead is installed,
+except that building evidence falls back to MCA's own village buildings without it. Townstead's own world settings are
+never changed. See [Townstead 0.8.0 integration](Townstead-0.8.0-Integration.md).
 
 | Key | Default | Allowed | Applies | Meaning |
 | --- | --- | --- | --- | --- |
 | `enabled` | `true` | — | start | Use Townstead for building evidence, NPC life stages, calendar, needs, schedule, spirit and reactions. Without it, building evidence comes from MCA's own village buildings. |
-| `allowInternalFallback` | `true` | — | start | Permit isolated reflection for Townstead spirit and reaction data missing from its public API. |
-| `buildingReconcileIntervalTicks` | 200 | 20–24000 | live | Ticks between building fingerprint checks for settlements near players. |
-| `maxActiveSettlements` | 32 | 1–256 | live | Most settlements rechecked per interval. |
+| `allowInternalFallback` | `true` | — | start | Permit isolated reflection for Townstead 0.7.x spirit and reaction data missing from its facade. Townstead 0.8.0's `api.v1` has both, so this only affects 0.7.x. |
+| `buildingReconcileIntervalTicks` | 200 | 20–24000 | live | Ticks between building fingerprint checks for settlements near players. Townstead 0.8.0's building events refresh a settlement sooner; this poll catches what no event reports. |
+| `maxActiveSettlements` | 32 | 1–256 | live | Most settlements rechecked per interval; the rest wait their turn. |
 | `enablePoliticalReactions` | `true` | — | live | Let nearby Townstead villagers react when a player's kingdom standing changes. |
 | `enableBlueprintCivicHeader` | `true` | — | live | Show the settlement's civic header above Townstead's Blueprint screen. |
 | `blueprintRequestRange` | 192 | 32–1024 | live | Largest distance from a settlement anchor for Blueprint header requests. |
+| `usePublicApi` | `true` | — | start | Read Townstead 0.8.0 and later through its public `api.v1`. Off: the 0.7.x facade is used even on 0.8.0. |
+| `enableVillageLife` | `true` | — | live | Offer the Village life, Village work and Village news pages. Public summaries only; individual records are not shown. |
+| `villageLifeRefreshTicks` | 600 | 20–72000 | live | Ticks one settlement's village-life reading is shared by every viewer before it is read again; Townstead's change events refresh it sooner. |
+| `welfareMinimumCoverage` | 0.5 | 0.0–1.0 | live | Share of a village's roll Townstead must know before its welfare is described rather than called insufficient information. |
+| `welfareMaximumSampleAgeDays` | 3 | 0–365 | live | Oldest last-known reading, in Minecraft days, that still counts as current when no resident is loaded. |
+| `welfareSuggestions` | `true` | — | live | Suggest optional civic aid (existing tasks and commissions) when a village shows sustained, well-sampled need. Suggestions never penalize anyone, create a mandatory task or change a village. |
+| `careerRequirements` | `true` | — | live | Let qualifications and civic content require a Townstead profession tier or skill. Read only: no career is changed. Off: those requirements are not applied. |
+| `politicalOwnership` | `true` | — | live | Resolve who governs each civic domain between MCA: Kingdoms, MCA Capitals and Townstead, and report conflicts. Off: MCA: Kingdoms acts on its own records as before; operator decisions are kept. |
+| `chronicleProjection` | `true` | — | live | Tell Townstead's Chronicles about an institution recognized, an agreement concluded and a public work completed: best effort, at most once, never used for a reward or decision, nothing replayed from history. |
+| `heraldryFallback` | `false` | — | live | Paint plain shields issued to guards of a kingdom's settlements with the kingdom's mapped design when no local or faction arms apply. Decorated or personal equipment is never changed. |
+| `eventQueueCapacity` | 512 | 16–8192 | live | Most distinct Townstead change notices waiting at once; further notices are counted as dropped and caught by the slow poll. |
+| `eventBudgetPerTick` | 8 | 1–256 | live | Townstead change notices (and dirty settlements) handled per server tick. |
+| `stockRefreshTicks` | 1200 | 100–72000 | live | Ticks an advisory storage count is reused before Townstead is asked again. Counts never reserve or pay for anything. |
+| `advisoryStock` | `["minecraft:bread", "minecraft:wheat", "#minecraft:logs"]` | item ids or `#tag` ids | live | Goods whose advisory counts the Village work page shows; at most 8 are read. |
 
-Townstead bindings are probed member by member at start. Server health lists the capabilities that bound; an installed version other than the validated one is reported, and a capability whose members moved fails closed on its own.
+Townstead bindings are probed member by member at start. Server health and `/kingdoms compat townstead status` list each
+capability's state and reason and whether the installed Townstead and MCA pair is a validated tuple; a capability whose
+members moved fails closed on its own.

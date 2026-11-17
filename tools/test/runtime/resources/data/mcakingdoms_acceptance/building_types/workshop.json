@@ -1,0 +1,9 @@
+{
+  "color": "ffcc8844",
+  "visible": true,
+  "priority": 4,
+  "blocks": {
+    "minecraft:crafting_table": 1,
+    "minecraft:smithing_table": 1
+  }
+}

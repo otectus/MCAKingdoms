@@ -53,13 +53,49 @@ The other services follow the same pattern: `KingdomsPoliticsApi.get`, `Kingdoms
 
 - Settlement mutations (`rename`, `setKingdom`, `reclassify`, `setLocks`, `merge`) and civic mutations (`setOrigin`, `setResidence`) apply immediately and return the new view. Repeating a call with the current values changes nothing. A refusal throws `IllegalArgumentException` and leaves the records unchanged: an unknown record, a locked name or kingdom, a name in use, a bound out of range, or a provider preflight.
 - Other mods can refuse settlement changes through `SettlementMutationPreflightEvent` (it is cancelable, and runs on the server thread). A listener must only decide; mutating settlements during a preflight throws.
+- Since 0.3.1, a new settlement (`registerCandidate`), `merge` and `setKingdom` are written to disk before the call returns and before any event is posted. If that write fails, the call throws `IllegalStateException`, the records are unchanged and nothing is announced. Other stores then follow the merge or kingdom change through a durable outbox; read a store's records, not the event, to learn whether it has caught up.
 - `registerCandidate` returns the existing settlement when the candidate belongs to one, so it is safe to repeat.
+- **Bounds** (0.3.1): a settlement spans at most `SettlementBounds.MAX_SPAN` (16,384) blocks on each axis. `SettlementCandidate` refuses a larger radius or wider bounds with `IllegalArgumentException` naming the measured span; `SettlementBounds.supported()` and `requireSupported()` let you check first, and `spanX()`, `spanZ()` and `chunkCount()` never overflow. `SettlementBounds.around` refuses a radius that would leave the integer coordinate range instead of wrapping. Report a settlement's real extent, not a whole region.
 - A `CivicEvidenceProvider` hint whose `residenceSettlement()` names a settlement for a **player** is used by Register my residence (0.3.0) as that player's home evidence, ahead of the bed check. The player must still be standing in that settlement, and only their explicit request records it: providers never move a player's residence by themselves. A provider that throws counts as no evidence.
 - **Political requests** (`PoliticalService.execute`) carry a request id and the political revision you read. Keep the same request id when retrying: the same request returns the original result instead of applying twice, a reused id with different content is refused, and a stale revision is refused with "Political state changed; refresh before retrying". The actor is the authenticated player making the request, and their current permissions are checked again when it runs.
 
 ## Events are notifications
 
-The Forge events under `dev.otectus.mcakingdoms.api.event` (settlement created, discovered, renamed, kingdom changed, merged; residents joined and left; civic identity changed; definitions reloaded) and `PoliticalCommittedEvent` and `OrganizationCommittedEvent` report changes after they are made. They are not durable receipts: an event does not prove that a save completed, that a quest reward was delivered, that a troop handoff happened, or that another listener succeeded. When your addon needs proof, read the owning record (or the provider's own receipt) instead.
+The Forge events under `dev.otectus.mcakingdoms.api.event` (settlement created, discovered, renamed, kingdom changed, merged; residents joined and left; civic identity changed; definitions reloaded) and `PoliticalCommittedEvent` and `OrganizationCommittedEvent` report changes after they are made; since 0.3.1 the created, merged and kingdom-changed events come only after the change is on disk, and a listener that throws is logged without undoing or repeating the change. They are not durable receipts: an event does not prove that a save completed, that a quest reward was delivered, that a troop handoff happened, or that another listener succeeded. When your addon needs proof, read the owning record (or the provider's own receipt) instead.
+
+## Townstead
+
+`KingdomsTownsteadApi.get(server)` returns a `TownsteadService` that answers whether Townstead is installed or not; it
+never exposes a Townstead type. Additions in 0.3.0 (all default methods, so existing implementations still compile):
+
+- `backend()`: `v1` (Townstead's public `api.v1`, Townstead 0.8.0), `legacy` (0.7.x), `mca` (MCA only) or `none`.
+- `capabilityStates()`: every `TownsteadCapability` with a `TownsteadCapabilityState` (`ABSENT`, `DISABLED`,
+  `UNSUPPORTED`, `READY`, `DEGRADED`, `STALE`, `RECOVERY_REQUIRED`, plus its source and reason), in declaration order.
+  `DISABLED` means bound but switched off by the world's Townstead settings; it can become usable again without a
+  restart. `TownsteadCapability` gained 14 appended constants; keep a default branch, since later versions may append
+  more. `POLITICAL_DELEGATION` is never bound by this release. `systemEnabled(id)` reports one Townstead system switch,
+  empty when unknown.
+- `buildingEvidence(level, settlement)` and `buildingEvidenceAt(level, pos)`: each building with `Completion`
+  (`COMPLETE`, `INCOMPLETE`, `UNKNOWN`) and `Source` (`TOWNSTEAD_V1`, `TOWNSTEAD_LEGACY`, `MCA_DIRECT`).
+  `verifiedComplete()` is true only for MCA's own complete record; `acceptsNewUse()` also accepts `UNKNOWN`, the
+  pre-0.3.0 rule, which must not be called verified.
+- `availability(level, binding)`: `CURRENT`, `STALE`, `UNLOADED`, `UNKNOWN`, `PROVIDER_UNAVAILABLE` or
+  `CONFIRMED_REMOVED`. Only `CONFIRMED_REMOVED` is evidence that a building is gone; every other non-current answer means
+  wait, never rebind or destroy. `replacementCandidates(level, binding, minimumTier)` lists complete buildings of the
+  same family for an explicit choice; nothing is rebound.
+- `villages(settlement)`, `villageLife(settlement)`, `villagerNeeds(entity)` and `career(entity)`: read-only views.
+  `TownsteadVillageLifeView` is a shared, cached summary of live and last-known readings, not an offline simulation:
+  `coverage()` and `coverageFraction()` say how much of the roll it describes (capped at 1, with `inconsistentCounts()`
+  when Townstead still files a resident under a village it left), and each need's `Simulation` separates
+  `NOT_SIMULATED` from `NO_SAMPLES`.
+- `TownsteadBuildingsChangedEvent` keeps its 0.2.x `previous()`/`current()` fingerprints and adds
+  `previousStates()`/`currentStates()` (`TownsteadBuildingState`: family, tier, completion and geometry), so a completion
+  or shape change with the same type and size is posted too; the legacy lists are then equal.
+- `InstitutionView.Status.BUILDING_INCOMPLETE` (appended): a recognized building MCA records as no longer complete.
+- `ProgressionPredicate.Kind` gained `TOWNSTEAD_PROFESSION_TIER`, `TOWNSTEAD_SKILL` and `TOWNSTEAD_PROFESSION_ANY`, which
+  read the player's own Townstead career. A Townstead tier is not a vanilla trade level or a guild rank.
+- `PublicWorkCompletedEvent` (in `api.event`) is posted once after a public work's completion is saved. `project()`
+  identifies the completion for at-most-once handling; like the other events it is a notification, not a receipt.
 
 ## Capabilities and optional providers
 

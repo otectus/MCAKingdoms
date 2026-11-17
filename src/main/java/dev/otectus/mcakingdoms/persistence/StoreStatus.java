@@ -39,7 +39,9 @@ public record StoreStatus(String name, boolean writable, String diagnostic) {
                 dev.otectus.mcakingdoms.document.DocumentLedger::status,
                 dev.otectus.mcakingdoms.politics.dynasty.DynastySavedData::status,
                 dev.otectus.mcakingdoms.development.DevelopmentSavedData::status,
-                dev.otectus.mcakingdoms.compat.livingvillages.LvBridgeSavedData::status);
+                dev.otectus.mcakingdoms.compat.livingvillages.LvBridgeSavedData::status,
+                dev.otectus.mcakingdoms.compat.townstead.TownsteadSavedData::status,
+                dev.otectus.mcakingdoms.compat.waystones.WaystonesNamingData::status);
         List<StoreStatus> out = new ArrayList<>();
         for (var store : stores) {
             try {

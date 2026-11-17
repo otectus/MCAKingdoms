@@ -8,5 +8,6 @@
   "dynasty.example.rank.harbor_warden.league": "码头守护",
   "development.example.template.harbor_beacon": "港口灯塔",
   "organization.example.harbor_archivists": "港口档案员",
-  "organization.example.harbor_archivists.description": "联盟潮汐账册与特许状的保管者；向任何王国的成员开放。"
+  "organization.example.harbor_archivists.description": "联盟潮汐账册与特许状的保管者；向任何王国的成员开放。",
+  "culture.example.harbor_folk": "港湾民"
 }

@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "signal": "learning",
+  "enter": 1.0,
+  "exit": 1.0,
+  "minimum_coverage": 0.5,
+  "sustain": 1,
+  "cooldown_days": 1,
+  "message": "townstead.mcakingdoms.suggestion.learning",
+  "task": "civic.chapters"
+}

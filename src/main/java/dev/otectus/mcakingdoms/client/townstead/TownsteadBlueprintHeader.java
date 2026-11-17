@@ -31,6 +31,7 @@ public final class TownsteadBlueprintHeader {
     private static final int HEADER_HEIGHT = 22;
     private static final int LEFT_CONTROL_EDGE = 29;
     private static final int RIGHT_CONTROL_WIDTH = 55;
+    private static final int NAVIGATION_WIDTH = 46;
     private static final String[] SCREEN_CLASSES = {
             "forge.net.conczin.mca.client.gui.BlueprintScreen",
             "forge.net.mca.client.gui.BlueprintScreen",
@@ -44,6 +45,8 @@ public final class TownsteadBlueprintHeader {
     private static long lastRequestMillis;
     private static boolean responseReceived;
     private static TownsteadCivicHeaderPacket.Header header;
+    /** A real widget, so the control is reachable by keyboard and read by narration; shown only with the header. */
+    private static net.minecraft.client.gui.components.Button navigation;
 
     private TownsteadBlueprintHeader() {
     }
@@ -74,9 +77,26 @@ public final class TownsteadBlueprintHeader {
                 sendRequest(dimension, villageId.get());
             }
         }
-        if (header != null && !isTownsteadPage(event.getScreen())) {
+        boolean shown = header != null && !isTownsteadPage(event.getScreen());
+        if (shown) {
             draw(event.getGuiGraphics(), event.getScreen(), header);
-        }
+            // The plaque is painted after the screen's own widgets, so the control is painted again on top of it.
+            if (navigation != null && navigation.visible) navigation.render(event.getGuiGraphics(), event.getMouseX(), event.getMouseY(), event.getPartialTick());
+        } else if (navigation != null) navigation.visible = false;
+    }
+
+    @SubscribeEvent
+    public static void init(ScreenEvent.Init.Post event) {
+        if (!TownsteadIntegrationConfig.ENABLE_BLUEPRINT_HEADER.get() || !isBlueprint(event.getScreen())) return;
+        Screen screen = event.getScreen();
+        navigation = net.minecraft.client.gui.components.Button.builder(Component.translatable("townstead.mcakingdoms.header.services"), button -> {
+                    var shown = header;
+                    if (shown != null) dev.otectus.mcakingdoms.client.InteractionClient.open(screen, "townstead.government", "",
+                            dev.otectus.mcakingdoms.client.InteractionClient.prefill("settlement", shown.settlement()));
+                }).bounds(0, 0, NAVIGATION_WIDTH, 12)
+                .tooltip(net.minecraft.client.gui.components.Tooltip.create(Component.translatable("townstead.mcakingdoms.header.services_help"))).build();
+        navigation.visible = false;
+        event.addListener(navigation);
     }
 
     @SubscribeEvent
@@ -88,6 +108,7 @@ public final class TownsteadBlueprintHeader {
             requestId = 0;
             lastRequestMillis = 0;
             responseReceived = false;
+            navigation = null;
         }
     }
 
@@ -121,9 +142,16 @@ public final class TownsteadBlueprintHeader {
                 Component.literal(value.settlementName()).append(" · ").append(kingdom), textWidth);
         graphics.drawString(minecraft.font,
                 title, x + 25, y + 2, BookSkin.INK, false);
-        graphics.drawString(minecraft.font,
-                fit(minecraft, Component.translatable("menu.mcakingdoms.header.standing", display(value.standingTier())), textWidth),
-                x + 25, y + 11, BookSkin.MUTED, false);
+        Component second = Component.translatable("menu.mcakingdoms.header.standing", display(value.standingTier()));
+        if (!value.authorityKey().isBlank()) second = Component.empty().append(second).append(" · ").append(Component.translatable(value.authorityKey()));
+        boolean button = navigation != null && width - 29 - NAVIGATION_WIDTH - 4 >= 60;
+        int secondWidth = button ? textWidth - NAVIGATION_WIDTH - 4 : textWidth;
+        graphics.drawString(minecraft.font, fit(minecraft, second, secondWidth), x + 25, y + 11, BookSkin.MUTED, false);
+        if (navigation != null) {
+            // Only where it fits inside the plaque; a narrow window keeps the header text and drops the control.
+            navigation.visible = button;
+            navigation.setPosition(x + width - NAVIGATION_WIDTH - 3, y + 9);
+        }
     }
 
     private static Component fit(Minecraft minecraft, Component value, int maxWidth) {

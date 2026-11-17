@@ -399,6 +399,11 @@
           "id": "p3",
           "type": "paragraph",
           "text": "Usa una carta, o Examinar una carta, para consultar el registro. Es oficial mientras se mantenga lo que acredita, oficial pero histórica cuando ya no se mantiene, revocada tras Revocar un documento sellado, y sin verificar cuando ningún registro sellado coincide, como una copia alterada o de otro mundo. Una carta prueba un registro; nunca concede autoridad por sí misma."
+        },
+        {
+          "id": "p_recover",
+          "type": "paragraph",
+          "text": "El registro anota un documento sellado antes de que lo lleve la carta de tu mano, y la carta se confirma cuando se guardan tus datos de jugador. Si el servidor se detuvo en medio, el registro sigue ahí y ninguna carta lo lleva: sostén una carta en blanco y usa Recuperar una carta, que pone en ella el mismo registro, nunca uno nuevo. Recuperar una carta también hace una copia explícita de un registro que ya lleva una carta, en una prensa de sellos; todas las copias dicen lo mismo y se revocan juntas. Revocar funciona incluso con el sellado nuevo desactivado."
         }
       ],
       "commands": [],

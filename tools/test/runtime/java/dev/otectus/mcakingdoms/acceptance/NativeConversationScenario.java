@@ -18,7 +18,7 @@ final class NativeConversationScenario {
         var kingdoms=McaKingdomsApi.get(server);var pos=settlement.anchor();var level=server.overworld();level.getChunkAt(pos);
         Entity giver=Objects.requireNonNull(ForgeRegistries.ENTITY_TYPES.getValue(IntegrationScenario.id("mca:male_villager"))).create(level);
         ((Mob)giver).setNoAi(true);giver.moveTo(pos.getX(),pos.getY(),pos.getZ());
-        Class age=Class.forName("forge.net.mca.entity.ai.relationship.AgeState");giver.getClass().getMethod("setAgeState",age).invoke(giver,Enum.valueOf(age,"ADULT"));level.addFreshEntity(giver);kingdoms.setResidence(giver,settlement.id());
+        Class age=Class.forName(TownsteadScenario.mcaRoot()+".entity.ai.relationship.AgeState");giver.getClass().getMethod("setAgeState",age).invoke(giver,Enum.valueOf(age,"ADULT"));level.addFreshEntity(giver);kingdoms.setResidence(giver,settlement.id());
         Class<?> loader=Class.forName(PREFIX+"conversation.ConversationCatalogLoader"),catalogClass=Class.forName(PREFIX+"conversation.ConversationCatalog"),entryClass=Class.forName(PREFIX+"conversation.TopicEntry");
         Object original=loader.getMethod("active").invoke(null);Object selected=null;
         var constraints=Class.forName(PREFIX+"compat.McaCompat").getMethod("checkConstraints",Entity.class,ServerPlayer.class,String.class,String.class);

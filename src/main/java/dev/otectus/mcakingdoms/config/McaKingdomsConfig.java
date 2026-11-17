@@ -35,6 +35,8 @@ public final class McaKingdomsConfig {
     public static final ForgeConfigSpec.BooleanValue LEGACY_PROGRESS;
     public static final ForgeConfigSpec.EnumValue<CapitalsInterop> CAPITALS_INTEROP;
     public static final ForgeConfigSpec.BooleanValue PHYSICAL_HERALDRY;
+    public static final ForgeConfigSpec.BooleanValue WAYSTONE_SETTLEMENT_NAMES;
+    public static final ForgeConfigSpec.IntValue WAYSTONE_PENDING_TICKS;
     public static final ForgeConfigSpec.BooleanValue DYNASTY, DYNASTY_ANNOUNCEMENTS;
     public static final ForgeConfigSpec.EnumValue<dev.otectus.mcakingdoms.development.DevelopmentMode> DEVELOPMENT_MODE;
     public static final ForgeConfigSpec.BooleanValue DEVELOPMENT_CONSTRUCTION_PAUSED, DEVELOPMENT_ECONOMY_PAUSED;
@@ -147,15 +149,17 @@ public final class McaKingdomsConfig {
         builder.push("heraldry");
         PHYSICAL_HERALDRY = builder
                 .comment("Physical heraldry: kingdom banners, shields and noticeboards bind to a kingdom when placed, and authorized officials",
-                        "seal charters at a seal press. Off: new placements stand for no kingdom and no charter is sealed or revoked; existing",
-                        "records stay readable. The items exist either way, so worlds keep loading.")
+                        "seal charters at a seal press. Off: new placements stand for no kingdom, no new charter is sealed and no colours change;",
+                        "revoking a sealed record and recovering a charter still work, and existing records stay readable. The items exist",
+                        "either way, so worlds keep loading.")
                 .define("enabled", true);
         builder.pop();
         builder.push("dynasty");
         DYNASTY = builder
                 .comment("Dynastic succession and the court. Every government starts with the law Manual only, which changes nothing: until",
                         "its leader or an operator adopts another law, a vacant leadership waits for officials exactly as before 0.3.0. Off: no",
-                        "law is adopted, no succession case opens or advances and no title is granted; existing records stay readable.")
+                        "law is adopted, no succession case opens or advances and no title is granted or accepted; existing records stay",
+                        "readable, and withdrawing a claim, resigning a title and revoking a title still work.")
                 .define("enabled", true);
         DYNASTY_ACCEPTANCE = builder
                 .comment("Game ticks a player heir has to accept or decline the crown before the succession waits for review (72000 = three",
@@ -194,7 +198,8 @@ public final class McaKingdomsConfig {
                         "and no block is placed. MANAGED_GROWTH: as PROJECTS, and a funded work with a small template is built on its surveyed",
                         "plot in settlements that opted in, a few blocks at a time, in loaded chunks only. FULL_ECONOMY: as MANAGED_GROWTH, plus",
                         "an abstract, clearly labelled goods ledger and capped abstract trade between settlements of kingdoms with an",
-                        "agreement in force; no real item or currency is ever created by it. Lowering the mode pauses work and keeps every record.")
+                        "agreement in force; no real item or currency is ever created by it. Lowering the mode pauses work and keeps every record;",
+                        "stopping or cancelling a work, withdrawing consent, protecting a home, rolling back and claiming refunds work in every mode.")
                 .defineEnum("mode", dev.otectus.mcakingdoms.development.DevelopmentMode.OFF);
         DEVELOPMENT_CONSTRUCTION_PAUSED = builder.comment("Pause all construction; funding and records continue.").define("constructionPaused", false);
         DEVELOPMENT_ECONOMY_PAUSED = builder.comment("Pause deliveries, abstract production and abstract trade; construction continues.").define("economyPaused", false);
@@ -206,6 +211,15 @@ public final class McaKingdomsConfig {
         DEVELOPMENT_HOME_RADIUS = builder.comment("Blocks around a player's protected home (their bed) that no construction touches.").defineInRange("homeProtectionRadius", 8, 0, 32);
         DEVELOPMENT_DIMENSIONS = builder.comment("Dimensions where construction may happen. Other dimensions are never built in.")
                 .defineListAllowEmpty(List.of("dimensions"), () -> List.of("minecraft:overworld"), value -> value instanceof String text && ResourceLocation.tryParse(text) != null);
+        builder.pop();
+        builder.push("waystones");
+        WAYSTONE_SETTLEMENT_NAMES = builder
+                .comment("With Waystones installed: a normal waystone inside a recognized settlement is named after it when it first needs a name",
+                        "(a generated stone's first activation, or a newly placed unnamed stone). Existing names and every name a player chooses are kept.")
+                .define("settlementNames", true);
+        WAYSTONE_PENDING_TICKS = builder
+                .comment("How long a new waystone waits for its settlement to be recognized before it keeps Waystones' own name, in ticks.")
+                .defineInRange("pendingTicks", 6000, 200, 72000);
         builder.pop();
         SPEC = builder.build();
     }
